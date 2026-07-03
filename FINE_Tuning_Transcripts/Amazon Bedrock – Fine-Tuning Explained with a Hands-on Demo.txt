@@ -1,0 +1,323 @@
+https://www.youtube.com/watch?v=CGdoTOPEXLM
+
+Hello everyone and welcome back to IM
+Technos. In this video, let's explore
+what fine-tuning is, why it matters, and
+a hands-on demo on how it works inside
+Amazon Bedrock. So, let's start by
+understanding what a fine-tuning is.
+Finetuning is the process of taking a
+pre-trained foundation model like Amazon
+Titan or Anthropic Claude and training
+it further on your own data set. This
+makes the model specialized in your
+domain instead of being broad and
+domain instead of being broad and generic.
+Now, why choose fine-tuning? Foundation
+models are highly capable, but they may
+give generic answers. They may not use
+your company's terminology, and they may
+lack task specific accuracy. Fine-tuning
+solves this by teaching the model your
+style and the exact way you want to
+respond. Of course, fine-tuning isn't
+always the right choice. It works best
+when you have a small but stable data
+set, when the task is domain specific,
+and when consistency really matters. On
+the other hand, if your data is
+constantly changing, a retrieval
+approach works better. And if you only
+need general answers, a pre-trained
+model is often enough.
+So how does this actually play out in
+Amazon bedrock? The flow is
+straightforward. Choose a foundation
+model. Prepare your data set as input
+output pairs and upload it to S3. From
+there you create a fine-tuning job in
+Bedrock. The system trains and validates
+your model. Then you deploy the
+fine-tuned version. Finally, you test
+it, refine it, and repeat if needed.
+Now let's walk through the hands-on
+process for creating a fine-tuned model.
+We start with the foundation model which
+provides a strong base of general
+knowledge. Next, we fine-tune it with
+the data set in S3 allowing the model to
+specialize in the domain and adopt
+specific terminology and style. This
+produces a custom model designed for the
+intended use case. Finally, we test and
+iterate as needed, evaluating outputs
+in real time. We can refine the data set
+to ensure consistent reliable results.
+I'm in AWS management console. Before we
+start fine-tuning our model, let's take
+a look at the data set we will be using.
+Here is the example of one line from the
+data set. First, we have system
+instruction. This is what sets the
+assistant's personality. Basically, it
+tells the AI how it should behave. Next,
+there is a user message. This is the
+question coming from the person using
+the AI. In real life, that could be an
+employee, a manager or anyone chatting
+with the assistant. For example, the
+user might ask, what is our internal
+project code for the AWS migration? And
+finally, there is the assistance
+message. This is the AI response. the
+part we are training it to say. For
+example, the project code is MIG 2025.
+So this format helps the model learn
+exactly how to respond to similar
+queries in the future. The data set
+contains several project related Q&amp;A
+page. Each line in this file is one
+training example such as
+the user might ask what is the lead
+architect for the AWS networking setup
+and the assistant would respond the lead
+architect is John from the cloud team or
+the user could ask what is the approval
+code for launching new EC2 instances in
+production and the assistant answers you
+must use approval code EC2 PRD789 before
+launching launching like this. We have
+examples one by one. I'll share the
+documentation link in the description so
+you can explore a sample data set and
+try it out yourself. Please note that
+this information is specific to a
+particular example project, not general
+AWS knowledge. So by fine-tuning the
+model on this data set, we ensure the
+custom model has proper training and can
+provide accurate project specific
+responses rather than generic answers.
+So save this file in JSON L format as
+this is the supported format. Next let's
+upload to S3. Open S3 from the AWS
+management console and click create
+bucket. Give the bucket a name. Uh for
+example, finetune
+data set 2025.
+Scroll to the bottom and click create
+bucket. Click on the bucket you just
+bucket. Click on the bucket you just created.
+Then upload the data set file by
+dragging and dropping it into the
+console. Scroll down and click upload.
+Once the upload is completed, click
+Once the upload is completed, click close.
+Your file is now uploaded and ready to
+use. Now in a new tab, search for
+use. Now in a new tab, search for bedrock
+and select it. In the left navigation
+pane under tune section, select custom
+pane under tune section, select custom models.
+Click create. Then select custom model
+with fine-tuning option. Under the model
+details, give the job name as MIG25 job.
+Click select a model.
+Choose Nova Micro.
+Then click apply.
+For the model name, enter MIG25 model.
+Next up are the hyperparameters.
+These are the settings that control how
+the model learns. Let's start with epox.
+This is basically how many times the
+model will go through the entire
+training data set. The range is between
+1 and five. More epochs means more
+learning. But if you push it too high,
+the model can overfit. For tiny data
+sets, two or three is usually enough. So
+in this demo, I'll stick with two. Next,
+let's talk about the bat size. When the
+model is learning from the data set, it
+doesn't always look at the entire data
+set at once. Instead, it breaks the data
+into smaller groups called batches. The
+batch size is simply the number of
+example the model looks at before it
+updates itself. If you choose a smaller
+batch size, say two or four, the model
+updates very frequently. This usually
+gives better accuracy, but training
+takes longer. If you choose larger batch
+size like 32 or 64, the model processes
+more data at once and updates less
+often. This makes training faster, but
+it can sometimes miss smaller details.
+So bat size is really about balancing
+speed versus accuracy. For most use
+cases, starting somewhere in the middle
+like 16 or 32 works well. Based on the
+model we selected, the batch size has
+set to one by default. Next is the
+learning rate. This is a setting that
+controls how quickly the model updates
+itself while training. If the learning
+rate is set too high, the model updates
+too aggressively that makes training
+unstable and the model may never settle
+on good results. If the learning rate is
+set too low, the model updates only in
+tiny steps. It will eventually learn but
+training will be very slow and might get
+stuck without improving much. The key is
+to pick a balanced value not too high
+not too low. So the model learns
+steadily and efficiently. Since my data
+set is small I'll stick with the default
+value here. Now that we understood the
+learning rate now let's take a look at
+what learning rate warm-up steps mean.
+At the very beginning of the training,
+the model might not be stable if we
+throw the full learning rate at it
+immediately. Warm-up steps fix this by
+gradually increasing the learning rate
+from 0 to the target value which is
+from 0 to the target value which is 0.00001
+over a specific number of steps. For
+example, if I set warm-up steps to 10,
+then for the first 10 steps, the
+learning rate will start very small and
+increase linearly until it reaches
+increase linearly until it reaches 0.00001.
+After step 10, it stays steady at that
+learning rate. So this way, the model
+learns smoothly and avoids sudden shocks
+right at the start. Now let's look at
+the input data section. Here we need to
+specify where the training data is
+stored in S3. So click on browse S3.
+Select the bucket we created earlier.
+Choose the data set object. Then click
+choose. We also have validation data set
+S3 location option. This is optional. So
+for now we will leave it blank. Next in
+the output data section, Amazon Bedrock
+will save the validation results. I'm
+selecting the same bucket for output,
+but if you prefer, you can choose a
+different one. Again, just click browse
+S3. Pick the relevant bucket and click
+choose. If your data is in private
+network, you can select a VPC to access
+S3 securely.
+Otherwise, just leave it as no VPC.
+Finally, Amazon Bedrock needs a role
+with permissions to read and write from
+S3. So, select create new role. Give it
+a name, for example, fine-tune role and
+then click create a job.
+As you can see, the finetuning job
+creation is in progress. This job takes
+around 40 minutes to 1 hour to create a
+custom model. So, let's wait while the
+process completes. Now that our fine
+tune model is ready. So click view
+custom model details. You will see the
+same options we choose earlier. Feel
+free to spend a little time exploring
+them. Next, let's move on setting up
+inference. Keep in mind that this step
+will in charges. If you would like to
+avoid that, you can simply follow along
+with the video without actually doing
+the hands-on. To run prompts on the
+custom model, we need to create an
+inference. Inference is just the process
+of using an AI model to generate
+outputs. On the top right corner, you
+will see the option setup inference.
+Click on that and you will find two
+choices. Deploy for on demand and
+purchase provisioned throughput. Think
+of deploy for on demand as a serverless
+access. You don't pre-reserve capacity.
+The model runs when you call it and you
+pay per request. It's best for
+experimentation, small workloads or
+unpredictable traffic. Next, purchase
+provision throughput. Here you reserve
+dedicated capacity for your model. You
+pay for that reserved throughput whether
+you use it or not. Best for production
+use cases, high traffic applications or
+latency sensitive workloads. For our
+demo, deploy for ondemand is the better
+choice. The steps are pretty simple.
+Just give it a name something like on
+demand inference.
+The model is already selected and the
+description and tags are optional. So
+just click create.
+It usually takes 20 minutes to set up.
+So let's wait while it finishes
+So let's wait while it finishes creating.
+Our inference setup is complete. Now
+select the deployment and click test and
+playground. This is where we can try out
+prompts. Switch to chat mode.
+Click select model. Scroll down and
+choose custom model.
+Then select MIG25 model and click apply.
+To run a prompt, go to the data set,
+copy the user question, paste it as your
+prompt. You might notice that it doesn't
+always return the exact answers from the
+data set, and that's normal behavior as
+a part of fine-tuning limitations.
+Fine-tuning doesn't always make the
+model memorize every single example
+perfectly, especially if the data set is
+small or if the model's base knowledge
+is very strong. As a result, the
+response may sometimes be more general
+or the model might not recall exact
+internal details. The key takeaway is
+that the fine-tuning model has learned
+the patterns and style of the data set
+even if doesn't return the exact
+response every time. In realtime setup,
+you would typically test with hundreds
+or even thousands of examples or use
+addition techniques to improve recall
+and also S3 generated some validation
+results which can be used to verify how
+well the fine-tuned model is performing,
+check for errors and ensure the outputs
+match the expected patterns from the
+data set. Now, as a part of cleanup,
+delete the deployment.
+So go to the custom model,
+scroll down to the deployment section,
+select the deployment and click delete
+and confirm the deletion. Now delete the
+custom model. In the left navigation
+under tune, click on custom model,
+select the model, go to actions and
+click delete.
+Type delete and confirm the same.
+Now go to S3 console. Delete all the
+objects in the bucket by providing
+necessary prompt and click delete
+necessary prompt and click delete objects.
+Now delete the bucket
+by specifying the bucket name and click
+delete. Now go to IM console, select the
+role used for the setup
+and confirm the deletion by providing
+the role name.
+That's it for today. If you have any
+questions, feel free to drop them in the
+comments below. Thank you for watching
+and I'll see you in the next video. Take
+care and happy learning.

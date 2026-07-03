@@ -1,0 +1,705 @@
+https://www.youtube.com/watch?v=jLpU3gyjNVQ
+
+
+[Music]
+hey guys welcome back to skill tech club
+my name is maruti and I'll be going
+through another Azure eii topic today
+now so far you understood what is azure
+AI Foundry service you understood llms
+you understood that how we can actually
+use prompt engineering techniques also
+with that uh today we are going to focus
+on a very important topic called fine
+tuning um most of the time when you have
+llms available you want to fine-tune
+them as per your requirement most of the
+time with your own training data set
+this training data set is basically
+going to be applied on your llm and then
+it's it's going to train that particular
+model with that additional data which
+you are going to provide now how exactly
+we can do fine-tuning and how this fine
+tuning is going to help you that's what
+you're going to understand today in this
+video uh but without wasting time let's
+get started with practical labs
+so I am in my aure AI Foundry portal I
+do not have any projects right now in
+this case I am going to create a new
+project as usual now this time when I'm
+creating a project I have to make sure
+one thing that I'm going to create a
+project which is in the specific Azure
+region I hope you already know Azure
+regions and Microsoft Azure cloud is
+actually having more than 60 plus
+regions available across the globe so I
+hope you know the fundamentals of azure
+Cloud if you do not know the
+fundamentals of azure Cloud I strongly
+recommend you to check our AI 900 video
+series which is going to take you
+through the Journey of azure Cloud
+Learning um if you're familiar I am
+going to choose a region which is East
+Us 2 you can see right now I'm trying to
+create a new project and the new Hub the
+name of the Hub I'm giving maruti Hub
+with some number at the end of this
+location I want to choose eastus 2 only
+because when you need to do fine-tuning
+of your GPT model you have to provision
+a certain resources in that particular
+region so I'm going to use e us2 uh this
+is going to connect with my newly
+created Azure openi service I'm fine
+with that and uh I'm going to click on
+next this is my Hub name this is my
+location is us2 this is where I'm
+interested right now I'm going to click
+on create now obviously project creation
+is going to take some time and while we
+are waiting for the project creation you
+know what you need to do if you have not
+subscribed to this particular Channel I
+request you to please subscribe and hit
+that Bell icon so that anytime when we
+launch a new video you're not going to
+miss it also I want to request you one
+more thing if you find that these videos
+are valuable and is going to be
+important for some of your colleagues
+and Friends feel free to share our
+videos in your social media profiles
+thank you so much if you have already
+done this I am getting couple of
+personal messages in our channel that
+people are liking these videos and I
+want to thank you for that
+now once the project is created we'll
+move forward with finetuning but while
+the project is actually getting created
+I want to tell you one more thing this
+is an official lab document which I'm
+going to share it with you in the
+description of this particular video and
+in that lab document you will find a
+link of this particular training data
+set now as you can see right now this
+URL is coming from Microsoft learning so
+basically it's a GitHub repository of
+Microsoft learning from where I'm going
+to take this one document which is
+helping me to do the fine-tuning of my
+model now this is some travel and hotel
+related document and this document is in
+the Json L format I request you to
+please go through this link and then
+download this particular file in your
+computer make sure while saving this
+file in your computer you're going to
+save it in Json L format not. txt so you
+can basically hit this URL you can do
+contr f saving this
+file just add double codes at this
+beginning and end of this particular
+file L and that's going to save with
+this particular extension which you want
+so just do it and once you have saved
+your file this file will be useful in
+our fine tuning of the model now let's
+get back to Azure AI Foundry portal
+because very soon the project and hub
+creation is going to be done and once it
+is done we'll move
+forward yes my project is created it's
+it's just loading that page and once
+this page is loaded this is a newly
+created project so remember I do not
+have any kind of deployments inside this
+the location of the project is E2 us2
+and it's successfully created the first
+thing which I'm going to do is I will go
+to my model catalog section in the model
+catalog section you know we have so many
+new models which are available uh in the
+list of these models recently I saw one
+of the coolest model of recent time
+which is deeps you can see right now
+even deep R1 is also available in aure
+AI portal so this is something which is
+really cool if you are interested in
+learning deeps with Azure AI just
+comment down that in the chat box and
+I'll create a separate video on that
+right now I want to search for some of
+the GPD model so I'm going to choose GPD
+35 and U we're going to pick one of the
+model let's say gp35 turbo now remember
+this time when I'm selecting this model
+my goal is not to deploy the model and
+trying some kind of a chat associated
+with that instead of deploying the model
+I want to fine-tune this model so I'm
+going to take an existing llm and then
+I'm going to apply my training data set
+on that and then using this combination
+I'm going to train that model basically
+that process is known as
+fine-tuning so on this page you can see
+right now the model ID and the version
+and everything is available I am going
+to click on fine tune which is this
+tab in the fine tune section they're
+asking me select a model to find tune
+which is GPD 35 turbo the resource
+location is East Us 2 as I mentioned if
+you click on customize you can change
+certain details of this if you want but
+I do not want to do this I'm happy with
+everything this and I'm going to click
+everything this and I'm going to click on
+confirm now remember when you're trying
+to do fine tuning of this model there
+are a couple of configurational things
+which you have to specify I request when
+you try this thing first time you do as
+I'm showing you in the steps or you
+follow the link which I'm sharing with
+you in the description in the model
+suffix I'm going to add some meaningful
+name like ft travel now this is going to
+be a fine-tuning kind of a model for the
+travel related things so I'm just adding
+a name FD travel and because I'm
+following step by-step instructions
+provided on the Microsoft learning
+GitHub repository I am just following
+steps exactly same uh the connected AI
+service will be my Azure open AI service
+which is already there so I'm good with
+this let's click on next in the training
+data they asking me where is your
+training data set I can actually have a
+plenty of options here I can choose data
+in aure Foundry or I can choose uh files
+connected with the servers or I can
+choose Azure blob and other shared web
+location also but in this case I have a
+file available in my computer so I'm
+going to choose upload files and then
+I'm going to upload a file which is this
+file available in my computer in the
+jonl format so I'm just clicking on
+uploading the file remember this is that
+file travel find you in hotel. JNL which
+we have downloaded from that link and uh
+yes the size of the file is very small
+it's just uploaded here uh it's just
+taking some time in loading this below
+section so I'll just wait for this
+process to complete okay now you can see
+right now this is one of the possible
+issue which can happen at this time it's
+showing me that you may not have a
+sufficient permissions to upload the
+file to upload a data file you need to
+have a storage blob data owner role for
+the storage account which is this one
+now let me just quickly check this thing
+so this is a common issue I know what is
+the problem the problem is with the role
+assignment so we can actually manually
+also assign this role but this role
+assignment is something which should be
+done automatically even because I have
+just tried to create this thing maybe
+there are chances they will assign this
+role configuration in few minutes and
+after a few minutes if you try it will
+work but as of now I just want to check
+the thing now they are saying once exess
+permissions are updated on the file is
+verified upload a new training and try
+again or you can ask the admin for help
+now I have two options actually I can
+actually manually go and do this thing
+you can see we have storage blob data
+owner role this is something on the
+storage account which is with this name
+we have to do give so let me go back to
+my Azure portal I'll go to the resources
+section we have a new Resource Group
+created for this
+project we we have a storage account
+which is mentioned there with this
+which is mentioned there with this particular
+name and in this storage account I need
+to have that kind of now instead of
+doing this access management you want
+which is actually going to be done
+automatically we can do one thing we can
+go to The Container
+section I can just create a new
+container here giving a name of that
+container here giving a name of that container
+ft data finetuning data and I'm going to
+click on create
+once this ft data is created I'll go
+inside that and I'll upload the same
+file here I have uploaded this file here
+and now I can directly refer this file
+so I'm going back to my Azure AI
+foundary portal where I was getting that
+issue and now instead of upload file I'm
+going to choose Azure blob and other
+shared web location this time I have to
+provide a file name and then I have to
+provide a file location here now this is
+going to ask me that okay you provide a
+file name and you provide input Azure
+blob public URL which is going to be
+publicly accessible URL with SAS or any
+other shared web link if you have the
+thing now they also specifying file must
+be in Json L now what I'm going to do is
+I'm going to provide a file name which
+is the exact same name which I want to
+give so this is actually
+travel fine tune Hotel this is actually
+the name of that particular file
+file so I'm just specifying this name
+here and then in the file
+location I'm going back to
+my ft data I'm going to click on
+my ft data I'm going to click on generate
+SAS and now this is actually giving me
+that this is a one particular file for
+which you're trying to generate SAS I
+will say that this is going to have the
+read permission of maybe create write
+delete permissions on this and using
+this I want to generate a SAS token
+basically using this blob SAS URL anyone
+can access this particular file with SAS
+so I'm just going to copy this and I'm
+going to put it here in
+my file location remember if you do not
+want to go with this way you can
+actually make your container public by
+actually make your container public by specifying
+the excess modifier of that to container
+level and then this is not going to be
+required so you don't need a SAS token
+in that case now I'm happy with this
+I'll just click on import let's see if
+this is actually able to import that or
+not it's showing me file imported
+successfully and it got the data also
+configured with this this is cool I'm
+going to move forward to next remember
+this extra steps are not mentioned in
+that particular lab document so if some
+certain things are not working for you
+using the lab document follow the video
+guidelines now in the validation data I
+can choose what kind of validation I
+want to associate with that so if I have
+a separate set of validation data I can
+provide that also as of now I don't have
+so I'm just going to select none and
+I'll click on next task parameters I
+think I'm keeping all the default things
+right now I do not want to change it
+I'll click on next and then I'll click
+I'll click on next and then I'll click on
+submit when you do this this is actually
+going to start the fine tuning process
+and it can take some time so maybe I can
+come back and I can check the status of
+this particular fine tuning process you
+can see right now it's showing me cued
+but maybe after some time it's going to
+be completed so I can come back here and
+I can check it
+later as of now I can move forward to my
+next step and then I'll come back to
+this one later on okay now my finetuning
+is actually going
+on I can click on this refresh and I can
+see whether it is started or is just
+going to be done or not so right now it
+is just cued I'll wait for some time and
+then I'll come back and check it
+meanwhile I want to do some other things
+so I'm going back to my model plus
+endpoint section in this model plus
+endpoint section I am going to focus on
+the deployment of the model so I'll
+click on deploy model I'm going to click
+on deploy base model right now not a
+fine-tune one I'm going to deploy a base
+model and in this base model
+configuration I'm going to search for
+GPT 35 turbo so this is the same model
+which we have used for finetuning I'm
+choosing this model the task for this
+model is actually chat completion which
+is perfectly fine and I'm going to click
+on confirm basically this is a model
+which is a base model not a fine tune
+one GPD 35 turbo deployment type is
+standard uh in the customize section I
+just want to reduce the token rate limit
+just want to reduce the token rate limit to
+5,000 we do not want more than that for
+the lab purpose and then we are going to
+disable Dynamic Kota and we'll click on
+deploy so basically this is deploying my
+base model right now my base model is
+successfully deployed let's click on
+open in
+playground yes once it is open in
+playground as usual the first thing
+which I'm going to ask is what can you
+do this is a very common question which
+I always ask to every model so that I
+can understand what kind of things it
+can do for
+me the standard answer came because this
+is just a digital AI assistant so it can
+help me with various things like this
+which are mentioned in the this
+particular completion now let's try a
+few things so that we can understand the
+base model and the fine-tuning model
+properly so I'm going to change my
+system message Now the default system
+message is like this you are an AI
+assistant that helps people to find
+information instead of this I am going
+to put you are an AI assistant that
+helps people plan their holidays so this
+is something which I have changed I'm
+going to click on apply
+going to click on apply changes
+continue and once the changes are
+applied I'm going to ask the same
+question again what can can you
+do now it's showing me that I can assist
+with planning your holidays by
+suggesting destinations helping you find
+accommodations recommended activities
+and attractions so this is actually
+changed because of the system message I
+hope you know the purpose of system
+message is like this now let me try
+something better in the system message
+so instead of this one I'm saying that
+you are an eii travel assistant that
+helps people plan their trips your
+objective is to offer support for travel
+related inquiries such as visa
+requirements weather forecast local
+attractions and cultural notes you
+should not provide any hotel flight
+rental car or restaurant recommendations
+ask engaging questions to help someone
+plan their trip and then think about
+what they want to do in on their
+holidays so basically this is going to
+ask an engaging question also at the end
+of the response okay I'm going to click
+on apply changes continue
+and now I'm going to ask series of
+questions to this so let me ask first as
+per the
+document where in Rome should I
+stay now they're saying when deciding
+where you stay in Rome it's essential to
+consider your preferences and interest
+they're giving me a description
+association with this they're also
+showing me do you have a specific budget
+in mind for accommodation and if you're
+looking for that you can go for lodging
+such as a hotel or ABNB or maybe some
+Boutique guest house is giving me a
+suggestion with that cool another point
+I'm putting which is
+like I'm mostly there for a food where
+should I stay to be within a walking
+distance of affordable restaurants so
+this is my preference which I've given
+and when I give this thing is going to
+ask me if you are a food lover and want
+to be with your walking in distance or
+affordable with the delicious things and
+all they're showing me you can try this
+you can try that they're saying you
+might consider staying in the
+neighborhoods like this area and the
+other area or maybe Monty so basically
+they're not giving me any hotels because
+it's mentioned here that any hotel
+flight rental car or restaurant
+recommendations you should not provide
+so they are actually giving me the
+places but they are not giving me any
+specific hotels or car rental kind of
+things and
+all also give me a list of five bed
+breakfast in a specific area which I'm
+specifying which is Tes now when I do
+this if I send me this give me a list of
+five bed and breakfast in trust
+and it's giving me a response that I'm
+here to help you plan your trip but I
+don't have a real-time access to
+specific listings or booking information
+for bed and breakfast in this however I
+can suggest use some popular bed and
+breakfast in this and they are showing
+me certain names there so as for the
+instruction this particular system
+message is actually working perfectly
+fine it's not giving me any kind of
+links or some some configurations with
+that now the the thing which you need to
+understand here
+is this model is actually providing you
+list of hotels here now obviously this
+Dom Clara residential San Castillo these
+are actually the name of the hotels and
+they are giving you that before booking
+you recommend reading reviews from other
+Travelers also now even though I clearly
+mention here that you should not provide
+any hotel flight or rental car or
+restaurant recommendations they are
+still providing this because I have
+asked for that this is something which
+is an example of in consistent Behavior
+so that's the reason let's understand if
+fine tuning model is going to behave
+proper in this kind of a cases so we do
+not want this kind of inconsistent
+behavior and that is where fine tuning
+is coming into the picture and is going
+to help you in this so let me go back to
+my fine tuning section the status of
+this particular fine tuning is still
+running I have to wait until this is
+completed so let's wait for some time
+okay so now finally I am back to my
+finetune model uh which is available
+here you can see that the status of this
+fine tuning is actually completed which
+means that my fine tuning with that
+particular model is done uh I'm going to
+click on this particular finetune model
+and the next thing which I want you to
+see right now is this is something which
+is completed it's showing me that uh
+there's a section called metrics and
+this is going to show me that what kind
+of model is this this metrics are
+actually going to show me that uh
+whether this is fine tuning properly
+done or not now you can see right now
+there there's a section called loss
+there's a section called token accuracy
+now these are the sessions which are
+actually showing you whether your your
+fine tuning is properly worked or not
+now I'm not going into in depth right
+now in this metri section but this is
+something which is showing me that my
+fine tuning is completed successfully
+what I'm going to do now is there's a
+button here which is showing me deploy
+remember if you want to use this model
+you have to deploy the finetune model so
+I'm going to click on
+deploy if is giving me an option here
+that which one you want to try so
+deployment name will be GPD 35 turbo FD
+travel this is the name of my
+fine-tuning and uh the deployment type
+I'm choosing standard which is fine uh
+it's showing me this is going to be
+connected with which Azure open service
+connection I'm choosing the same one and
+I want to reduce the tokens per minute
+rate to 5K once all these things are
+good I think we are good to go with this
+let me just disable Dynamic Kota and
+we'll click on deploy so same like base
+model this is a fine tune model which
+I'm deploying right now okay this will
+be done very soon so maybe it's going to
+take few minutes of time and the
+deployment of fine tuning model is done
+then you can use that let's wait for
+some time you can see the deployment is
+going on in the provisioning state it's
+showing me creating so I will wait for
+some time once this is successfully done
+let me tell you one more thing right now
+right now the topic which we are
+understanding is a fine tuning of your
+GPT model now fine tuning is a good
+thing or bad this is one of the question
+which most people ask well the answer is
+this is a good thing because it is
+actually going to take your data and on
+top of your data which you have given
+into this model it will be trade which
+is a good thing but there is one
+particular drawback of fine tuning which
+is this is time consuming as well as
+expensive yes of course when you do this
+fine tuning you are going to use a
+compute power to train your model that's
+the reason if this model training is
+going to take few minutes or few hours
+you have a cost associated with that so
+remember fine tuning is expensive and
+time consuming but it is worth doing
+when you want to apply your own data
+also there is another question which
+people ask me is is there any other
+alternative way which is available well
+yes we have an alternative way which is
+known as R A retrieval augmented
+generation and I'm going to create one
+video on this tomorrow so you are going
+to get this video Tomorrow Tomorrow RG
+is going to be alternative of fine
+tuning the there are pros and cons fine
+tuning is easy RG is little complex fine
+tuning is something which is expensive
+as well as time consuming when you do
+the model training while RG is something
+which is faster as well as is not going
+to be that much expensive so there are
+pros and cons in my case based on my Pro
+experience my most of the corporate
+clients are going to be using fine
+tuning as well as RG both so it's worth
+learning both of the topics okay now you
+can see that it's showing me
+provisioning state is succeeded U it
+took almost 4 minutes for me to complete
+this particular one so this is actually
+successfully deployed and if it is
+deployed let's open in playground
+remember this is not a base model this
+time this is a fine tune model so we are
+going to ask the same question to teste
+whether this finetune model is behaving
+properly and is working fine or not you
+can see in this left side section where
+I have GPD 35 turbo this is f finetune
+travel version one this is a model which
+I'm going to use let me ask the same
+question which I have asked earlier
+first what can you
+do okay it's showing me I can help you
+to plan your business destination
+attractions activities and multiple
+things let me do one thing we are going
+to copy and
+paste the same thing which is here so we
+are going to provide this kind of a
+system message here which is you are an
+AI assistant and this time we are
+strictly specifying that you should not
+provide any hotel flight or rental car
+kind of things so this is something
+which is already there I think we
+already applied changes on this also so
+that is perfectly fine now I'm asking
+similar kind of questions so the next
+question which I will ask is where in a
+room should I stay remember last time
+when we tried certain things it was
+giving me a list of the hotels or places
+actually there now it's saying
+that uh are you looking for near iconic
+landmarks or this kind of a question
+they giving me they're not giving me any
+restaurant names here which is good then
+I'm going to ask a second one which is
+we did last time also which is I'm
+mostly there for the food where should I
+stay uh to be within working distance of
+affordable restaurants this was the
+second thing which we
+asked you can also compare uh this
+answers which we are getting this
+completions which we are getting with
+the previous one which we have done done
+so you can see slightly change this time
+it's showing me for food focused in Rome
+you might enjoy this this this place Nam
+so these are the neighborhood which they
+are saying so this is also perfect this
+is the same thing and now let me try the
+third one when I'm seeing that give me a
+list of five bed and breakfast in trusty
+so let me just send this now we seeing
+why I can't provide a real time listing
+you can offer this thing and in this is
+showing me the same five things into
+this now they are also showing me the
+difference between this so they are
+showing me uh the five places which were
+there earlier also and this is showing
+me the five places which are here also
+now basically when we are trying to
+fine-tune this model whether this is
+working or not is something which is
+based on this particular configuration
+now as I said based on this particular
+model customization and the data which
+you have provided if this is not giving
+you the hotel names in that that is
+something which we wanted but even with
+this fine tuning and all this is
+something which is not perfect which
+means that maybe we have to add add more
+data and we have to fine tune that model
+now this is also something which is one
+of the common issue which happens with
+the fine tuning of the model that it's
+mostly going to be behaving with your uh
+default nature of the base model
+actually and that's something which is a
+limitation while on the other hand if
+you're going to use other options which
+I said like RG retrieval augmented
+generation that's actually going to
+focus on the top of the data which
+you're providing in the grounded context
+so we'll see that thing in the
+tomorrow's video I hope you understood
+the concept of tuning I hope you
+understood the pros and cons also and uh
+remember this is my new model which we
+have used right now the older model was
+GPD 35 turbo which is base this is a
+fine tune model which I'm using but yeah
+if you are going to try this thing
+practically just make sure it is going
+to be involving with a lot of cost and
+it is also going to be time consuming so
+make sure you understand this properly
+and if you need this then only you're
+going to do this that's it for today
+thank you so much guys uh this is maruti
+signing out I'll see you tomorrow Happy
+signing out I'll see you tomorrow Happy learning
+learning [Music]

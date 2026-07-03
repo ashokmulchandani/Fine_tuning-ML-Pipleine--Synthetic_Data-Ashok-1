@@ -1,0 +1,312 @@
+
+https://www.youtube.com/watch?v=dQLG34PjjSQ
+
+fine-tuning a model. You know you need
+to do it, but you don't know how. Can
+you do it easily? Can you do it without
+code? Yes, you can. And I'm going to
+show you how.
+show you how. [Music]
+Hello everyone and welcome to my
+channel. As promised, we are going to
+fine-tune a model. We are going to use
+Azure AI Foundry. I'm also going to show
+you the cost involved with fine-tuning a
+model. But before we do that, I have
+something important to ask. If you find
+this helpful, please like and subscribe
+this. That will help me out a lot. Now,
+before we do that, let's do a little
+primer on fine-tuning and why we need to
+do it in the first place. Let's go over
+our training workflow for a multimodal
+model. First, we have pre-training. This
+training has been done on vast amounts
+of data. We call this training
+self-supervised pre-training. It is
+self-supervised because the data is not
+labeled. Most foundation models such as
+DPT have been pre-trained for text
+completion, not conversation. Next, we
+have supervised fine-tuning. We
+fine-tune the pre-trained model on high
+quality data to optimize models for
+conversation instead of completion. This
+data is labeled. That means the data
+will have a prompt and a response. This
+will allow our pre-trained model to give
+more accurate answers. High-quality data
+is used for fine-tuning. We call this
+data demonstration data. The fine-tuned
+model is further polished to make it
+customer appropriate. We call this step
+preference fine-tuning. We use a
+technique called reinforcement learning
+for human feedback.
+For this demo, we will concentrate on
+supervised fine-tuning.
+Okay, I came to ai.asure.com.
+Remember, it's a different portal than
+the regular Azure portal. And here I'm
+going to create a new project. So, I'm
+going to click on this. I'm going to
+click the this one here. And I'm going
+to give it a name. Kirk McFersonen.
+Fine. Oops.
+Fine. Oops. finetune
+finetune demo.
+That should be fine.
+And now it's going ahead and creating
+this for us. This might take a few
+this for us. This might take a few seconds.
+Okay, our project has been created.
+First thing we're going to do is we're
+going to actually test a base model so
+we can compare it to our fine-tune
+model. So down here in my assets, let's
+go and deploy a model. Deploy a base
+model. Uh let's not do inference task.
+Let's do completion
+chat completion
+and let's search for GPT40.
+Okay, here we go. Let's use this as our
+Okay, here we go. Let's use this as our test.
+I am going to pick standard. Now
+standard means it will adhere to our
+data residency promises. Uh it will use
+the same I already set up a resource
+group. use the same region as we've done
+before. Uh you could pick global here.
+Uh global might be a bit cheaper and
+might not be available to you anyways.
+But um I'm picking standard
+and I'm going to pick the same region
+and I'm just going to go ahead and
+deploy this. Okay, that is done. Now I'm
+going to open this in the playground
+just to show you. Let's go in. I have um
+I have a text here. I have my system
+prompt that we're going to test this.
+And what my system prompt is going to
+say actually when you do that you have
+to click apply.
+So it uses that. And here I'm saying you
+are an assistant who knows a lot about
+heroes here on Earth and our galaxy.
+Give us detailed information about their
+Give us detailed information about their question.
+So I'm going to ask about myself.
+Tell me about Kirk.
+Kirk McFersonson. I'm using my full name
+because of course Kirk
+Galaxy. You might think Captain Kirk. I
+want to know about me.
+Let's see what it says. As of October
+2023, doesn't appear to be any Kirk
+McFersonson's of significance. What? I'm
+not a hero. What? Okay, let's go ahead
+and change that by using fine-tuning.
+Okay, we've done we've played with uh
+the base model. Now, let's go here and
+click on fine-tuning and fine-tune a
+click on fine-tuning and fine-tune a model.
+Let's do the same GPT
+Let's do the same GPT 40,
+same model, base model here. Let's go to
+same model, base model here. Let's go to next.
+And we're going to use the method
+supervised. Of course, that means it has
+a label. It's a supervised model. Our
+base model here. Let's add our training
+data. Uh let's give it a suffix with
+Kirk K. Uh this just allows us to
+differentiate between the models. So we
+can see it with this suffix at the end.
+Seed. This seating will allow you to
+control the reproducibility of our jobs.
+We'll just pick a random number here,
+but if you were always use the same
+seed, you probably should see the same
+results when you're training.
+Epoch, this is important. This is a
+number of complete passes through an
+entire training data set. So, you think
+about this. It's going to train. It's
+going to go through our data set this
+many times that we put in here. I'm just
+going to leave this as default right
+now. Batch size. What it's going to do
+is going to take the number
+of train examples used to train a single
+forward and backward pass. Um I'm just
+going to leave a lot of this as default.
+Yes, of course I got to add my training
+data. Uh let me show you this here. I
+have it in my files.
+Okay, here is the file we are going to
+use to train. It has to be in this
+format. You have to say the message, the
+role. This is the same system message
+that I put in to the chatbot. And here
+we're just going to give a bunch of
+context and what the assistant should
+reply if you get a similar question. So,
+what I've done here is I've taken my
+name and I grabbed a bunch of
+information about Luke Skywalker. And
+everywhere the word Luke Skywalker
+was found, I just replaced and used my
+name, Kirk McFersonson. So, you can see
+who is Kirk McFersonson. Kirk
+McFersonson is a young Jedi Knight known
+for his strong connection with the
+Force. This is good. I can't use
+obviously Captain Kirk because you might
+think, hey, that's just relevant
+information that it found. I want to use
+something very specific. You my name,
+Jedi. I don't have a lightsaber, but
+let's pretend I do. Okay, back here.
+Let's actually pick that file.
+Oh, yeah. You can also pick uh your file
+from blob storage, which is a good idea.
+If it's really large, you probably want
+to have the file there. But we're just
+going to upload the file.
+Let's find that file. This should be in
+JSON L format, which just means JSON
+with line endings.
+Okay, I found my file Kirk Jedi and the
+validation is good. So, we are just
+going to apply this.
+We have everything here. As I said, the
+hyperparameters, we're going to leave
+the default to see what happens. Oh, the
+suffix and changed. Okay, so now it has
+been queued up. Now it's going to go
+ahead and fine-tune. You'll see the
+status here change. It will say it's um
+in progress or something like that.
+We'll find out in a second. But anyways,
+this might take a bit of time, might
+take an hour or two. So, we will come
+back and check in later. Okay, this has
+been running for a few minutes now. I
+just did a refresh here and you can see
+the status here is running. So, it's
+still running. We will again check in in
+probably an hour.
+But you're probably wondering, what does
+this cost? Good question. I'm going to
+bring up the Azure price calculator
+here. And I have gone to
+Azure AI services here. Okay. So, I want
+to explain there are three costs with
+using Azure AI services with fine-tune
+models. There's the training cost,
+the hosting cost, and the input and
+output costs.
+Now, training does not cost much at all.
+You can see here for a thousand tokens,
+it is cents like it's uh not much here.
+So, for example, I put in 16 here. Say
+there's um 10,000 tokens in that JSON
+file that we uploaded. tokens, meaning
+we converted the words to tokens.
+Usually, if there are 8,000 words, you
+multiply that by 1.33 to get the tokens
+because GPT uses Bit token to tokenize.
+So, that's probably around
+10,000 tokens, we'll say. So, there's
+10,000 tokens. Put 10 times a,000. You
+can see this costs 8 cents to tokenize.
+Now, what cost money is hosting your
+fine tuned models. As you can see here,
+I've picked my region. Uh, I have GPT3.5
+should be fine. Uh, fine-tune models.
+This costs a$1.70 an hour to host.
+That's a lot. So, be careful. So, I'm
+actually going to deploy this after it
+has been trained to test. and I'm going
+to delete it right after a $1.70 per
+hour. Input and output. This is when you
+start feeding in prompts and getting
+response. Again, pretty small cost here,
+but it is a cost. So, you're going to
+have to look at what you're putting into
+your prompts, your system prompt, how
+much you're allowing for the input and
+output. Maybe set a max on that because
+that can cost over time. But this is the
+big one, hosting.
+Okay, this has been completed. We are
+done here. Let's go in and look at the
+stats here. It took just over an hour
+and as I said 17,000 tokens build, so it
+will cost us just a few maybe around 15
+will cost us just a few maybe around 15 cents.
+Uh number is three. Let's look at the
+Uh number is three. Let's look at the logs.
+It will tell us the number of tokens
+build model evaluation passed and
+succeeded. How many steps it did. Steps
+means number of batches it processed.
+Um the metrics. Yeah, you can see the
+the loss here going down. The closer to
+zero, the better.
+So we are down here at 0.54.
+Let's go ahead and try this.
+This should deploy it.
+Uh standard. I'm going to put standard.
+That's what I I said before. It's going
+to be in our same region.
+Uh let's deploy. And remember, deploying
+cost money. So after we done testing,
+delete it or you're going to be charged
+a $1.70 per hour.
+So let's look in the deployments.
+It is creating here.
+Okay, the model has been deployed. Let's
+go in there and select this.
+Take a look and let's open in the
+playground and give it a try
+again. Let's uh get our system prompt
+that I had before. Apply the changes.
+We are on that. Uh let us give it a try.
+Tell me about Kirk McFerson.
+Let's see what comes back.
+Kirk McFersonson was a moisture farmer
+on Tatawine who became a Jedi Knight and
+helped the Rebel Alliance defeat the
+Galactic Empire. There we go. That is
+Kirk McFersonson.
+Not really, but after we fine-tuned,
+that's what it thinks. Let's give it
+another try. Tell me me about Kirk's
+another try. Tell me me about Kirk's friends.
+Kirk's friends included Princess Leo
+Orana, Han Solo, Chewbacca, and the
+droids C3PO and R2-D2.
+I think we are working. I don't have
+droids here, but our model here thinks I
+do. Okay, because it's so important the
+price of these models, member cost of
+fine-tuning is the finetuning itself,
+hosting and the inference cost, aka
+input and output tokens. The hosting is
+the big one. So, after I'm done playing
+with it, I test it. Unless I'm going to
+use this in production or do more
+testing, I am going to delete it. So, go
+in here.
+Check. Uh, let's How do I delete this? I
+go in here
+and delete.
+Okay, that's it for today's demo on
+fine-tuning. I hope you got something
+out of it. I enjoyed making it. If you
+liked it, please like and subscribe.
+That's going to help me out a lot. It'll
+help me to make more content just like
+this. And until next time, see you
+this. And until next time, see you later.

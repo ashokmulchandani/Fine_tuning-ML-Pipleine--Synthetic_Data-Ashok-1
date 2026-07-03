@@ -1,0 +1,703 @@
+https://www.youtube.com/watch?v=BIhK9Knl42g
+
+Hey everyone, welcome to Amazon
+SageMaker AI science corner videos, your
+go-to location for deep data science and
+large language model content. My name is
+Prana Morti and I'm a senior geni data
+scientist. I work on the Amazon
+SageMaker team and I love building
+intelligent and autonomous [music]
+systems. So the question that's uh on
+our minds today is why should we
+customize large language models? Most
+open source and even many closed source
+large language models are trained mainly
+on data that's available in the public
+domain essentially internet scale data
+set. This means that they excel at
+general knowledge and common topics but
+may not be aware of your proprietary
+processes internal data or even industry
+specific information simply because this
+data was never available uh publicly to
+train on during the process. If your use
+case depends on specialized concepts
+like your organization's internal
+procedures, unique product details, or
+specific regulatory requirements,
+off-the-shelf models might miss the
+mark. They can even provide generic or
+inaccurate answers when faced with data
+they haven't seen before. So to reduce
+hallucination, this is where model
+customization becomes super crucial. By
+fine-tuning an LLM with your own domain
+data, you provide it with the
+vocabulary, context, and expertise
+needed to operate effectively in your
+environment. If your LLM needs to
+understand business critical information
+that wasn't part of its original
+training, uh customization isn't just
+headful, it's often essential. Now you
+might be wondering if LLMs can be
+customized, how is it different from
+methods like retrieval augmented
+generation or famously known as rack or
+even just prompt engineering? Why can't
+I just prompt engineer this into the
+model which you might already be using
+in your LLM applications today? Model
+in your LLM applications today? Model customization
+means actually retraining or fine-tuning
+a model, adjusting its internal weights
+so that it learns from your specific
+data or tasks. You can think of this as
+updating the model's brain, changing its
+actual understanding and behavior for
+all future inputs. This process involves
+modifying the weight matrices deep
+inside the network, allowing the model
+to generalize from new patterns it has
+never seen before. In contrast, rag and
+prompt engineering don't alter the
+model's core at all. With rag, you're
+augmenting the model at inference time
+or at runtime. You dynamically retrieve
+relevant documents or knowledge from an
+external database and append it to the
+prompt. Prompt engineering relies on
+crafting your questions or instructions
+in a way that guides the model's
+response. In both cases, the underlying
+weights or the knowledge the model draws
+on are unchanged. You're simply steering
+the model with extra content, not
+actually teaching it something new. A
+practical example of this can be before
+customization even with smart prompt
+engineering and drag. If you ask a
+generic model to summarize a latest SEC
+filing for Amazon,
+you might still get a vague or formulaic
+answer, especially if SEC filings are
+unfamiliar territory for this model.
+After customization with targeted
+fine-tuning on your domain data, the
+model can now summarize SEC filings in
+exactly the format and detail you
+require. No additional prompting or
+context required. In short, rag and
+prompt engineering are powerful for
+extending the reach of a model. But only
+model customization can truly rewire its
+internal knowledge for your unique use
+case. Broadly, there are four main
+strategies for fine-tuning models. You
+have supervised fine-tuning. Uh you
+might have heard of terminologies like
+SFT, PEF, Lora, Spectrum, full
+finetuning. They all most likely fall
+under the SFD branch of model fine
+tuning. Directly teaching the model with
+labeled input output examples like
+providing customer support questions and
+ideal answers or legal contracts and
+summaries. The second method is
+preferential fine-tuning. You may have
+heard of the terms DPO, PO, GRPO. This
+effectively implies teaching the model
+to prefer certain types of outputs over
+others, often based on user preferences
+or reward signals. For instance, making
+a chatbot more polite or helpful based
+on human feedback. The third method is
+called continue pre-training.
+This category of fine-tuning of a model
+implies that the training of a model
+happens longer on domain specific data
+such as feeding it more medical textbook
+so it becomes more fluent in healthcare
+terminology. There's no instruction
+tuning in water necessarily. You just
+feed it GBs or terabytes of text and
+allow the model to converge. Then
+lastly, training from scratch. If you're
+a foundation model provider like Amazon
+or Meta, then you try to build your
+model from scratch using huge amounts of
+custom data sets. And you may have heard
+of internet scale data. This is where it
+comes in. For example, creating new
+model just for chemical patent analysis
+requires terabytes of data or trillions
+of tokens to produce a small or
+mediumsiz model between 1 to 14 billion
+parameters. In summary, full
+fine-tuning, continued pre-training or
+training from scratch usually require
+massive amounts of resources and lots of
+data, but can dramatically change the
+way a model behaves. Most often times
+and most applications, you may have a
+smaller collection of data sets. So for
+that, you would likely be using
+supervised finetuning.
+And along those lines, today we'll focus
+on the most popular accessible approach,
+supervised fine-tuning, and the sub
+methods that are available at our
+disposal to fine-tune a model with
+limited amount of data sets. SFT is all
+about collecting instruction response
+pairs or question context answer
+triplets to teach a model specific
+skills like drafting insurance codes or
+answering domain specific questions or
+reasoning through legal cases. And
+beyond just copying answers, SFT lets
+you teach the model how to uh reason
+step by step, making it much smarter and
+more reliable for your chosen domain.
+One of the ways to generate SFT uh
+tuning data set is through model
+distillation technique. But now let's
+jump into reviewing SFT data sets. SFT
+data set that we're going to use for
+today's uh demo. You can see the format
+but largely the format aligns in the
+messages format which usually consists
+of system user and assistant keys
+representing uh a given conversation.
+For SFT training you provide the system
+prompt if the model supports it. Some
+models may not support it. For example,
+deepseat doesn't typically use uh the
+system message for user input uh to the
+model which contains the actual query
+and then you wait for the assistant to
+response which goes into the assistant
+key. In our earlier distillation
+example, the assistant response was
+generated by a larger teacher LLM
+letting us transfer the teacher's
+knowledge to a smaller student model
+like a llama 33 billion. Sometimes the
+assistant uh row may also contain
+highquality human annotations which is
+ideally preferred but is very hard and
+very expensive to obtain and that's
+where model distillation techniques can
+be very helpful. So now let's take a
+look at our data set and see uh how the
+example data that we're going to use for
+our point tuning uh looks like. For this
+lab, we'll use the Finn AAI reasoning
+financial data set and quickly reviewing
+its structure. We chose this data
+because it helps induce reasoning skills
+clearly demonstrating the value of SFT.
+One clear thing you can see in this
+experimentation is before finetuning the
+model might answer without reasoning
+while after SFT it learns to reason step
+by step reducing hallucination which is
+especially helpful for smaller models
+working in complex domains. Now let's
+take a look at what the data set looks
+like before we jump into the actual
+fine-tuning technique. So just taking a
+look at the data set uh this data is now
+available on hugging phase. The data has
+about 3 and a half thousand rows for us
+to finetune which is a decent sized data
+set uh for evaluation of techniques. Now
+if you take a look at the data set
+itself, it consists of four columns. You
+have the open-ended verifiable question
+which consists of a simple system prompt
+at top to follow instructions,
+actual context and a placeholder for
+question with the actual question in
+there and a placeholder for answer where
+it is asking the uh LLM to respond back.
+It consists of uh a distilled uh output
+from a larger model which consists of
+the reasoning uh where it's trying to
+reason to the answer and then finally
+the response itself. Now another unique
+thing about this data set is it has the
+ground truth data available. So that
+means the ground truth can be used to
+validate the efficacy of the model and
+how well it is learned. It is
+deterministic in nature. So a question
+has a deterministic answer. So you can
+validate whether your model got it right
+or got it wrong post fine-tuning. Now
+let's jump back into the notebook
+itself. So in this notebook we're going
+to use the uh financial reasoning data
+set and try to fine-tune a small
+language model using primarily two
+techniques. We'll use uh PF Laura and
+we'll use spectrum based finetuning.
+You'll learn about both of these
+techniques uh in a few minutes. But
+let's just walk through the notebook and
+prepare the data set. Let's try to
+organize the data in a way that we can
+use it to fine-tune the model regardless
+of the technique we use. So here's our
+notebook. This is available on GitHub.
+So the first thing is we're going to
+need SageMaker uh so we can extract
+data, push data, and then kick off jobs.
+So fairly simple. We instantiate a new
+SageMaker session. We grab the roll and
+now we are ready to uh prep data for
+hugging phase. So we can prep the data
+so we can kick off training. So the
+first thing is as you we already saw
+this is how the data set looks like. It
+consists of three sections. The user
+input with the question. It consists of
+the chain of thought reasoning from an
+upstream teacher model and finally the
+teacher model's response itself. and it
+has uh another auxiliary column ground
+truth which is very essential to
+determine whether the model got the
+answer right or wrong and very helpful
+in model validation. So next we're going
+to save download this data set from
+hugging face and save it to our local
+disk. But prior to that before we
+actually begin to fine-tune a smaller
+language model we need to set context.
+The context here is that you know we're
+providing a system prompt. So llama
+models take in system prompts. In our
+system prompt, all we're saying is you
+know you're a helpful assistant. Uh you
+are asked a bunch of questions, you need
+to respond back, but you need to respond
+back in two parts. You need to think
+through your answer and finally provide
+your answer in the answer tag and the
+thinks in the thinking tag. So we can
+separate out the reasoning from the
+final response. So that's how we are
+going to process our data set. In our uh
+process row, we're going to capture the
+complex chain of thought, the response,
+and order it all in the messages format.
+And now we're going to download the data
+from hugging face. We're just going to
+print uh the first row in the data set.
+We have about three and a half thousand
+rows within the training sample itself.
+Now, we're going to map the data set.
+Now, we're going to map the data set. Let's
+reexecute.
+Okay, so the mapping was fairly quick.
+Now we're going to save the data set to
+JSON format
+and we can see that the data set has
+been stored here. We can take a quick
+sneak peek at the data. Maybe just
+expand the row. Here we have the data in
+messages format. The zero row is the
+actual system prompt. The row one will
+be the actual uh user input question
+along with the context. And finally, you
+have the uh response from the model
+itself that is used as the ground trick
+for fine-tuning an SFD model. So how do
+we train this model? There are two ways
+to train a model on SageMaker. Your
+SageMaker Studio notebook itself can be
+backed by uh GPU accelerators even
+though I do have a GPU backed notebook.
+Uh I will still use best practices which
+is to kick this job off uh as a training
+job. Training jobs inside SageMaker are
+ephemeral jobs where you can offload
+your scripts and it'll be run in a
+headless compute and when it's done
+compute will be terminated and you'll
+only be charged for the time that you
+run the job itself.
+So the first thing it needs is the data
+to be available in S3 for it to download
+and actually run. So we've already
+formatted the data in messages format.
+So now we're going to upload that to S3.
+SageMaker offers PI SDK for uh hugging
+phase trainers that you can use and
+manage your training which means that we
+take care of you know the images etc.
+And you just have to bring your scripts
+and specify what version of the
+container or hugging face that you need.
+Alternatively, you can also build your
+own containers. In this example, I built
+my own containers because I needed some
+additional optimizations, but you can
+choose to ignore bring your own
+container strategy and just use hugging
+faces pi SDK to kick off the training
+faces pi SDK to kick off the training job.
+So what it does need at the top is a
+token because I'm using llama 3 to 3
+billion model where I'm trying to induce
+reasoning uh through SFT technique.
+Since uh llama 3 billion is a gated
+model, I am going to need the hugging
+face token. So I'm just going to paste
+my token in here
+and we can kick off uh F andqa method
+with our data in S3.
+Okay. So right now the training job has
+been kicked off. It'll take a while but
+the training is going to run in the back
+end. But now let's take a look at what
+did I just do here. You know I have an
+entry point here but I'm running some
+sort of a script. Where is that script
+coming from and how is fine-tuning
+actually taking place? So this script is
+located inside the subdirectory code. So
+I'm going to open up that code. Here is
+my Qura training script. My Qura
+training script is leveraging accelerate
+to distribute training across eight GPUs
+and accelerate the training process
+itself. But the script that's actually
+defining the logic for training is under
+fine-tuning llm cqora.
+So fine-tuning llmura, you can walk
+through the script. It's pretty pretty
+simple. It has all the necessary
+arguments that it needs. It takes in the
+model type. It loads the tokenizer. It
+loads the model and then it quantizes
+the model based on quantization
+configuration. Uh uses PEFT to do
+performance efficient finetuning. Then
+we get into some of these uh there is
+another spectrum configuration which
+we'll touch upon later and just simply
+kicks off the training job. The
+kicks off the training job. The configuration
+for how the training is actually defined
+is coming from
+the recipes. So in this you don't need
+to touch the script at all. The way the
+script is defined you can just use the
+exact same configuration and kick off a
+training job. But where do you define
+what model or what uh Laura rank would
+you use, what Laura modules to save,
+etc. You can simply define a recipes at
+up top. The recipes uh contain
+information around the model that you're
+trying to fine-tune.
+uh the output directory nomomenclature,
+the max sequence length for your
+training, uh what data set you'd like to
+train it on, whether it's uh you know
+directly loaded from hugging phase, if
+it's in messages format, or if you'd
+like to pre-process the data set just
+like we did in here, whether you'd like
+to uh fine-tune the model uh load the
+model and finetune it in 8 bit format or
+you're okay in Bflat or float 16 format.
+And finally number of epochs of uh
+training that you'd like to run the
+training bat size eval bat size all the
+other parameters. There is another very
+important component which is
+important component which is observability.
+So uh hugging phase has integrations
+built in where it can log uh training
+output to mlflow or tens support. Sage
+maker has managed offering for both. So
+we have SageMaker firstparty MLflow for
+observability and experimentation
+tracking. So all I need to do is just
+put in MLflow here and then I go back to
+my training script and then I have to
+specify what is a tracking URI. So it
+knows what tracking server to log it at.
+And that's it. Now you have a training
+job that's currently running. And I'm
+going to stop it here because I've
+already trained a model and the weights
+are available for me. Now let's actually
+take a look at uh what the integrations
+look like within MLflow. So to get to
+MLflow, you go back to SageMaker Studio,
+click on MLflow, you should have a
+tracking server available. If not, you
+can just hit create. Few simple steps
+and you'll have a tracking server up and
+ready in about 20 to 30 minutes and it's
+only a one time setup process. So I
+already have a tracking server
+available. I'm just going to open mlflow
+and I load my experiment under hugging
+face sfftd llama 32 right it's llama 32
+uh instruct tuning and under this I have
+two training jobs the one I need to
+focus on right now is the Qura under
+this I have all my parameters and
+hyperparameters for training defined
+here my metrics are automatically logged
+my model metrics like my loss curve my
+gradient norm my learning rate are All
+all of those metrics at runtime are
+continuously logged here.
+If I had any system metrics which
+monitor GPU utilization, those would
+also be logged into this. And finally,
+if I wanted to log my model itself, my
+model weights, I can also log as
+artifacts to the particular run. Great.
+Qura, we understand the method. We
+understand how it works. Now, let's jump
+into how you would actually do that with
+Spectrum. Spectrum has one additional
+step as compared to Qura. So Spectrum
+requires you to download uh the Spectrum
+git code itself. I have already
+downloaded it.
+So this is a git repo which we'll be
+using. Uh the git repo is all the code
+built in. Uh you just have to do a git
+clone on the spectrum repo like I have
+and run the simple command which is uh
+which just requires two things. Spectrum
+requires you to specify the model name
+and then what percentage of the model
+you'd like to find cure.
+So in this case because I've already uh
+analyzed with the 3 billion model I'm
+just going to use 1 billion as the
+target model for now.
+And so the first thing spectrum is going
+to ask you is hey we are going to run a
+signal to noiseise analysis on the model
+itself. So a little bit about spectrum.
+So spectrum is a newer more advanced
+method. It leverages a technique known
+as signal to noise analysis to identify
+which layers within a model are most
+responsive to new data. You can then
+fine-tune just these layers or high
+impact layers often somewhere between 30
+and 50% of the model while leaving the
+rest untouched. This gives you a balance
+uh between efficiency and impact making
+it ideal for complex data environments
+such as multilingual data corpora
+medical document classification or
+highly imbalanced data sets. So as we
+kick off the fine uh spectrum based
+point tuning you first need to analyze
+which of these layers will yield the
+maximum return during finetuning. So for
+that you allow spectrum to analyze it.
+So it's going to ask you for a batch
+size and I'm going to specify two here.
+So you can see what it's doing right now
+is it's downloading the model weights if
+it doesn't exist within local cache. And
+then it's going to prompt you to select
+the layers that you'd like to analyze.
+If you know what layers you'd like to
+analyze for maximum yield, then you can
+select just those layers and allow
+spectrum to analyze how good those
+layers perform in terms of SNR metric.
+If not, you can allow it to just analyze
+everything and then compute the SNR uh
+information on your behalf. So, as you
+can see, it's going layer by layer
+analyzing this information. It's a
+onetime process and effectively what it
+does is it dumps a JSON configuration
+file that you can that spectrum uses to
+then either freeze or unfreeze layers
+based on the SNR analysis. So as you can
+see it has dumped uh a signal to noise
+uh YAML file here. So let's just take a
+quick sneak peek at the YAML file. So
+according to spectrum, these are all the
+layers that will yield the highest
+result when fine-tuned uh using hugging
+face trainer. But why these layers?
+There's another JSON here that is
+available. So if you take a look at
+maybe model layer zero input layer null.
+So if you go down to the particular
+layer, you'll be able to understand what
+the SNR calculation is and then you can
+work backwards as to why those layers
+were specifically chosen for
+fine-tuning. That's it. It's a one-time
+task. If you do run it again, it's going
+to use the cast information. This is all
+you need. Now when I go back into my
+codebase, the same code base that we
+have, it's almost identical.
+It's called finetunl spectrum. Now it is
+looking for a spectrum config. That's
+the addestal component. So in the
+spectrum config file we placed for the
+particular model. In this example, we're
+using 323 billion with 50% uh unfrozen
+layers. So SNR has been analyzed for 50%
+of the model.
+And uh we're trying to fine-tune the
+most impactful layers from there. Now
+let's get into the recipes. I've created
+a new recipe file. So now that I have my
+spectrum and I have my recipes file, I
+just specify
+the spectrum config path right here. If
+I need to load it in 8 bit or 4bit, I
+can do that just to save more resources.
+But I'm not going to do that in here. I
+just provide my uh spectrum
+configuration. specify the number of
+training epochs. Exactly the same
+configuration as before. And I'm going
+to log all these metrics to MLflow.
+That's it. So now let's jump back into
+the notebook. Now that we've run the
+spectrum analysis on uh Llama 323
+billion model, now we can just kick off
+a training job.
+That is it. It's as simple as that. Now
+obviously training job takes time. For
+the purposes of this demo, I had uh
+fine-tuned a model ahead of time. So
+let's take a look at qualitatively and
+quantitatively the difference between
+fine-tuning uh using PFlora versus
+fine-tuning using spectrum on the exact
+same data set with identical
+configurations. So if I go back to
+configurations. So if I go back to MLflow,
+as you may have observed, there are two
+runs present here. The first is the
+kilora run at the bottom and then you
+have the spectrum run up top. Both of
+these were approximately trained for
+almost the same duration of time. So
+what I'm going to do is select both and
+then compare the runs. So in here you'll
+be able to compare uh what changed
+between one run versus the other, what
+were the parameters, what were the
+metrics, etc.
+So as you can see all of these values
+the diff values between the two runs but
+what is really important is overlaying
+the graphs between the two runs. So as
+we overlay you can see that the runs are
+almost identical. You know the gradient
+norm has some variation but the
+important observation to be made here is
+the loss curves. Now if you observe the
+loss curves the the pink loss curve is
+from spectrum whereas the green loss
+curve is from cyora and both of these
+loss curves are for ten box for the same
+data set uh trained for the similar
+duration of time. Now a key thing to
+observe here is as you can see as you
+open up more layers for finetuning you
+can see the loss has dropped and both of
+these have been trained on similar kinds
+of instances. So spectrum takes a little
+more resource than cqora but you can
+almost see that the spectrum fine-tuning
+method has converged faster with similar
+number of steps like at step number 205
+the loss for spectrum is much lower than
+the loss for kilora. Now what does it
+tell me in simplistic terms? What it
+tells me is if you use spectrum and your
+data distribution is more complex,
+you'll probably reach convergence faster
+with spectrum than you did with uh PEF
+with spectrum than you did with uh PEF Qura.
+But however, if your data set is simple
+enough, you may be able to get away with
+just uh running uh or fine-tuning the
+Qura adapter rather than going for
+complex spectrum finetuning. However,
+through the demo, what I wanted to uh
+highlight is it's a one-time simple
+process of generating the configuration
+file and then you can decide how you
+want to mix and match the data set and
+the models in order to fine-tune it.
+Okay, now we know we uh we went uh deep
+into spectrum based finetuning, codora
+based finetuning. What we didn't dive
+into is full fine-tuning hopefully in an
+upcoming video. But for now, let's take
+a step back and summarize uh our
+learnings. There are three dimensions
+along which we need to analyze uh what
+we've just done. Memory and compute,
+which is essentially resources,
+expressivity and adaptability, which
+means how well is a model able to
+understand nuances within the text
+itself. And what kind of situations is
+it best for? Peptton CQA as you know
+uses the lowest amount of memory and
+compute has medium level of
+expressibility and adaptability. As your
+data sets get more and more complex Qura
+can tend to be less and less efficient.
+So Qura or PEF methods are great for
+rapid adaptations uh or domain transfers
+and memory limited scenarios. So if your
+data is set is simple if you've only got
+one GPU cur and pft is a way to go.
+Spectrum fine-tuning has medium amount
+of memory and compute required. So
+lowest low uh expressibility is uh is
+higher than codora which means it'll be
+able to understand complex tasks
+multilingual tasks better for inducing
+reasoning capabilities in smaller models
+and obviously um is more tuned for uh
+wide array of use cases uh that needs to
+be broadly domain alike. Next we get to
+full fine tuning. If you remove spectrum
+and PEF based methods, what you end up
+with is full fine-tuning that requires
+the highest amount of memory and compute
+um has the highest level of
+expressibility and adaptability which
+means that it it basically you've got
+all the weights at your disposal to
+tune. There are certain risks you need
+to take into account. Uh but outside of
+that you get the maximal uh performance.
+you need high amount of compute budget
+and uh these I would recommend limiting
+it to tasks that are super complex where
+you're using uh full fine-tuning to
+fine-tune uh mediumsiz models distilled
+from super large models like scouts or
+Maverick for example outside of that
+thank you so
