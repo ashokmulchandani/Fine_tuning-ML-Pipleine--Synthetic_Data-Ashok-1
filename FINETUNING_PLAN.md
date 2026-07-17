@@ -290,10 +290,10 @@ where π_θ = policy model (being trained)
 
 ## Progress
 
-- ⬜ Phase 1: Fine-Tuning Fundamentals
-- ⬜ Phase 2: Quantization
-- ⬜ Phase 3: LoRA & QLoRA
-- ⬜ Phase 4: Non-Instructional Fine-Tuning
+- ✅ Phase 1: Fine-Tuning Fundamentals (theory done)
+- ✅ Phase 2: Quantization (theory done)
+- 📖 Phase 3: LoRA & QLoRA (theory + math — tomorrow)
+- ⬜ Phase 4: Non-Instructional Fine-Tuning (hands-on start)
 - ⬜ Phase 5: Instruction Fine-Tuning
 - ⬜ Phase 5b: Synthetic Data Generation (Gretel, Mostly AI, Tonic)
 - ⬜ Phase 6: Preference Alignment (DPO)
