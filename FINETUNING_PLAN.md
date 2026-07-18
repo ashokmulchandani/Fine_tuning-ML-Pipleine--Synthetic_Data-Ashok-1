@@ -309,6 +309,7 @@ Click any link to open the interactive HTML in your browser. (Hosted via GitHub 
 - [qat_weight_nudge_animation.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/qat_weight_nudge_animation.html) — Live animation: watch one weight (W=−2.30) get nudged toward INT4 bucket (−2.40) via gradient descent
 - [qat_end_to_end_loop.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/qat_end_to_end_loop.html) — Full QAT training loop (Forward → Loss → Backward/STE → Update) with graphic canvas + tutorial mode
 - [w1_journey.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/w1_journey.html) — W1's complete journey step-by-step table with clickable formula breakdown
+- [lr_step_estimator.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/lr_step_estimator.html) — Estimate learning rate or steps needed for convergence (exponential decay formula)
 
 ---
 

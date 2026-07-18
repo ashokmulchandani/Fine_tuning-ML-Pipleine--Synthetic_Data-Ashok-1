@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learning Rate & Steps Estimator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--magenta:#9e2a6b;--amber:#b87000;--green:#1a6e34;--violet:#5b3aa8;--red:#c62828;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;min-height:100vh;}
+.app{max-width:850px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:1.5rem 0 1rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);margin-top:0.3rem;}
+
+/* Formula card */
+.formula-card{background:var(--card);border:1.5px solid var(--violet);border-radius:14px;padding:1.5rem;margin:1rem 0;}
+.formula-card h3{font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin-bottom:0.75rem;}
+.formula-eq{background:var(--raised);border-radius:10px;padding:1rem 1.25rem;font-size:0.88rem;line-height:2.2;font-family:'Space Grotesk',monospace;}
+
+/* Input row */
+.input-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1rem 0;}
+.input-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;}
+.input-card label{font-family:'Space Grotesk',sans-serif;font-size:0.65rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);display:block;margin-bottom:0.5rem;}
+.input-card input{width:100%;font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;text-align:center;border:2px solid var(--border);border-radius:8px;padding:0.4em;color:var(--violet);background:var(--bg);}
+.input-card input:focus{outline:none;border-color:var(--violet);}
+.input-card .hint{font-size:0.7rem;color:var(--tmut);margin-top:0.4rem;}
+
+/* Result */
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0;}
+.result-card{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:1.5rem;text-align:center;transition:0.3s;}
+.result-card.est{border-color:var(--violet);}
+.result-card.actual{border-color:var(--green);}
+.result-card h4{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;letter-spacing:0.08em;color:var(--tmut);margin-bottom:0.5rem;}
+.result-card .big{font-family:'Space Grotesk',sans-serif;font-size:2.5rem;font-weight:700;}
+.result-card.est .big{color:var(--violet);}
+.result-card.actual .big{color:var(--green);}
+.result-card .detail{font-size:0.78rem;color:var(--tdim);margin-top:0.3rem;}
+
+/* Convergence table */
+.mini-tbl{width:100%;border-collapse:collapse;font-size:0.75rem;margin:1rem 0;font-family:'Space Grotesk',monospace;}
+.mini-tbl th{font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);padding:0.4rem 0.5rem;border-bottom:2px solid var(--border);text-align:center;background:var(--raised);}
+.mini-tbl td{text-align:center;padding:0.35rem 0.5rem;border-bottom:1px solid var(--border);}
+.mini-tbl tr:hover{background:rgba(91,58,168,0.04);}
+.mini-tbl .pick{background:rgba(91,58,168,0.08);font-weight:700;}
+.mini-tbl .green{color:var(--green);}
+.mini-tbl .red{color:var(--red);}
+.mini-tbl .amber{color:var(--amber);}
+
+.callout{background:rgba(0,122,153,0.06);border:1px solid rgba(0,122,153,0.2);border-radius:10px;padding:1rem 1.25rem;margin:1rem 0;font-size:0.85rem;line-height:1.7;}
+
+.slider-row{display:flex;align-items:center;gap:1rem;margin:1rem 0;}
+.slider-row input[type=range]{flex:1;}
+
+@media(max-width:768px){.input-row,.result-grid{grid-template-columns:1fr;}.app{padding:0.75rem;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>Estimating Learning Rate & Steps</h1>
+  <p>How many steps will it take to converge? Pick lr or steps — the math estimates the other.</p>
+</header>
+
+<!-- The Core Formula -->
+<div class="formula-card">
+  <h3>🧠 The Key Relationship (Exponential Decay)</h3>
+  <div class="formula-eq">
+    <strong>Each step, the gap shrinks by roughly the same factor:</strong><br>
+    &nbsp;&nbsp;<span style="color:var(--violet);">gap_next ≈ gap_current × |1 − 2 × lr|</span><br><br>
+    <strong>Number of steps to reach target gap:</strong><br>
+    &nbsp;&nbsp;<span style="color:var(--violet);">N ≈ log(G_target / G_start) / log(|1 − 2×lr|)</span><br><br>
+    <strong>Learning rate for desired number of steps:</strong><br>
+    &nbsp;&nbsp;<span style="color:var(--violet);">lr ≈ (1 − (G_target/G_start)^(1/N)) / 2</span><br><br>
+    <span style="font-size:0.7rem;color:var(--tmut);">This ignores the small task-gradient term. For precise results, simulation is better — but this gets you within ~10%.</span>
+  </div>
+</div>
+
+<!-- Inputs -->
+<div class="input-row">
+  <div class="input-card">
+    <label>Starting Gap (G_start)</label>
+    <input type="number" id="gapStart" value="0.10" step="0.001" oninput="calculate()">
+    <div class="hint">|W_start − bucket|</div>
+  </div>
+  <div class="input-card">
+    <label>Target Gap (G_target)</label>
+    <input type="number" id="gapTarget" value="0.01" step="0.001" oninput="calculate()">
+    <div class="hint">Achievable: >0.0074 (equilibrium)</div>
+  </div>
+  <div class="input-card">
+    <label>Learning Rate (lr)</label>
+    <input type="number" id="lrInput" value="0.02" step="0.001" oninput="calculate()">
+    <div class="hint">Try: 0.005 to 0.05</div>
+  </div>
+</div>
+
+<!-- Results -->
+<div class="result-grid">
+  <div class="result-card est">
+    <h4>📐 Estimated Steps</h4>
+    <div class="big" id="estSteps">—</div>
+    <div class="detail" id="estDetail"></div>
+  </div>
+  <div class="result-card actual">
+    <h4>🎯 Actual Steps (Simulated)</h4>
+    <div class="big" id="actSteps">—</div>
+    <div class="detail" id="actDetail"></div>
+  </div>
+</div>
+
+<!-- Common lr table -->
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;">Pre-calculated: lr → Steps (W1: gap 0.10 → 0.01)</h3>
+<div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;">
+<table class="mini-tbl">
+  <thead><tr><th>lr</th><th>Gap Shrink/Step</th><th>Est. Steps</th><th>Actual Steps</th><th>Notes</th></tr></thead>
+  <tbody id="lrTableBody"></tbody>
+</table>
+</div>
+
+<div class="callout">
+  <strong>💡 Rules of Thumb for W1 (gap = 0.10 → 0.01, equilibrium at ~0.0074):</strong><br>
+  &nbsp;&nbsp;• <strong>lr = 0.05</strong> → ~30 steps (fast, may overshoot equilibrium)<br>
+  &nbsp;&nbsp;• <strong>lr = 0.02</strong> → ~70 steps (balanced — our animation)<br>
+  &nbsp;&nbsp;• <strong>lr = 0.01</strong> → ~150 steps (smooth, safe)<br>
+  &nbsp;&nbsp;• <strong>lr = 0.001</strong> → ~1300 steps (painfully slow)<br>
+  &nbsp;&nbsp;• <strong>lr > 0.25</strong> → Oscillates. Weight bounces past bucket each step.<br>
+  &nbsp;&nbsp;• The limit: lr must be <strong>&lt; 0.5</strong> for the estimate to predict convergence (|1−2×lr| &lt; 1)<br><br>
+  <strong>⚠️ Why target 0.01 and not 0.0003?</strong> The task term (0.16×(W−W₀)) creates an equilibrium at gap ≈ 0.0074. The weight can never permanently go below this — like a spring that gets harder to stretch. So "converged" means reaching the equilibrium zone, not absolute zero.
+</div>
+
+</div>
+
+<script>
+// Simulate W1 for given lr
+function simulate(lr, gapStart, gapTarget){
+  const scale=0.4, bucket=-2.40, w0=-2.30;
+
+  // Always start W1 at its actual original value (-2.30)
+  // gapStart is just used for display/label purposes
+  let w = -2.30;
+
+  function fakeQ(x){ return Math.round(x/scale)*scale; }
+
+  let steps = 0;
+  const maxSteps = 10000;
+
+  for(let s=0; s<maxSteps; s++){
+    const fq = fakeQ(w);
+    const g = -2*(fq-w) + 0.16*(w-w0);
+    w = w - lr*g;
+    steps++;
+    if(Math.abs(w-bucket) < gapTarget) break;
+    // Safety: stop if weight goes out of bounds
+    if(w < -3.0 || w > 3.0) break;
+  }
+  return {steps, finalW: w, finalGap: Math.abs(w-bucket)};
+}
+
+// Estimate steps using the formula
+function estimateSteps(lr, gapStart, gapTarget){
+  if(lr <= 0 || lr >= 0.5) return Infinity;
+  const factor = Math.abs(1 - 2*lr);
+  if(factor >= 1) return Infinity;
+  if(gapTarget <= 0) return Infinity;
+  return Math.ceil(Math.log(gapTarget/gapStart) / Math.log(factor));
+}
+
+// Estimate lr from desired steps
+function estimateLr(gapStart, gapTarget, steps){
+  if(steps <= 0) return 0;
+  return (1 - Math.pow(gapTarget/gapStart, 1/steps)) / 2;
+}
+
+function calculate(){
+  const gapStart = parseFloat(document.getElementById('gapStart').value) || 0.10;
+  const gapTarget = parseFloat(document.getElementById('gapTarget').value) || 0.0003;
+  const lr = parseFloat(document.getElementById('lrInput').value) || 0.02;
+
+  const est = estimateSteps(lr, gapStart, gapTarget);
+  const sim = simulate(lr, gapStart, gapTarget);
+
+  document.getElementById('estSteps').textContent = est === Infinity ? '∞ (diverges!)' : est;
+  document.getElementById('estDetail').textContent = `Shrink factor: ${Math.abs(1-2*lr).toFixed(4)} per step`;
+  if(est === Infinity){
+    document.getElementById('estDetail').textContent = 'lr too high — |1−2×lr| ≥ 1, gap never shrinks';
+  }
+
+  document.getElementById('actSteps').textContent = sim.steps >= 10000 ? '>10000 (too slow!)' : sim.steps;
+  document.getElementById('actDetail').textContent = `Final gap: ${sim.finalGap.toFixed(6)} | Final W: ${sim.finalW.toFixed(4)}`;
+}
+
+// Generate lr table
+function buildTable(){
+  const gapStart=0.10, gapTarget=0.01; // 0.01 is achievable (equilibrium is at ~0.0074)
+  const lrValues=[0.001,0.002,0.005,0.008,0.01,0.015,0.02,0.025,0.03,0.04,0.05,0.08,0.10,0.15,0.20,0.25,0.30,0.40,0.49];
+  const tbody=document.getElementById('lrTableBody');
+  const currentLr=parseFloat(document.getElementById('lrInput').value)||0.02;
+
+  let html='';
+
+  lrValues.forEach(lr=>{
+    const factor=Math.abs(1-2*lr);
+    const est=estimateSteps(lr,gapStart,gapTarget);
+    const sim=simulate(lr,gapStart,gapTarget);
+    const isPick=Math.abs(lr-currentLr)<0.0001;
+
+    let note='';
+    if(factor>=1 || est===Infinity) note='❌ Diverges';
+    else if(sim.steps<30) note='⚠️ Risky (overshoot)';
+    else if(sim.steps<80) note='⚡ Fast';
+    else if(sim.steps<200) note='✅ Balanced';
+    else if(sim.steps<500) note='🐢 Slow';
+    else if(sim.steps>=10000) note='💤 Stuck (task term blocks it)';
+    else note='💤 Very slow';
+
+    const simDisplay=sim.steps>=10000?'>10000 (stuck)':sim.steps;
+    const estDisplay=est===Infinity?'∞':est;
+
+    html+=`
+      <tr class="${isPick?'pick':''}">
+        <td><strong>${lr.toFixed(3)}</strong></td>
+        <td>×${factor.toFixed(4)}</td>
+        <td class="${est===Infinity?'red':''}" style="font-weight:600;color:${est===Infinity?'var(--red)':'var(--violet)'};">${estDisplay}</td>
+        <td class="${simDisplay===0?'red':simDisplay>500?'amber':''}" style="font-weight:600;color:${sim.steps>=10000?'var(--red)':sim.steps<80?'var(--green)':sim.steps<200?'var(--violet)':'var(--amber)'};">${simDisplay}</td>
+        <td style="font-size:0.7rem;">${note}</td>
+      </tr>`;
+  });
+
+  tbody.innerHTML=html;
+}
+
+calculate();
+buildTable();
+
+// Update table highlight when lr changes
+document.getElementById('lrInput').addEventListener('input',()=>{
+  calculate();
+  document.getElementById('lrTableBody').innerHTML='';
+  buildTable();
+});
+</script>
+</body>
+</html>
