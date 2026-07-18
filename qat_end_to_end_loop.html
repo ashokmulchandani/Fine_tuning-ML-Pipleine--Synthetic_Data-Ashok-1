@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QAT End-to-End — Full Training Loop</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#fafbfc; --card:#fff; --raised:#f0f2f5; --border:#dde0e5; --borderB:#c8ccd2;
+  --text:#1a1d23; --tdim:#4a4f5a; --tmut:#8b9099;
+  --cyan:#007a99; --cyanbg:#e0f4fa;
+  --amber:#b87000; --ambbg:#fff5e6;
+  --green:#1a6e34; --greenbg:#e8f5ec;
+  --magenta:#9e2a6b; --magentabg:#fdf0f7;
+  --red:#c62828; --redbg:#fef0f0;
+  --violet:#5b3aa8; --violetbg:#f3effc;
+  --radius:14px; --rsm:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;min-height:100vh;}
+.app{max-width:1050px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:1.5rem 0 0.5rem;}
+.header .badge{display:inline-block;font-family:'Space Grotesk',sans-serif;font-size:0.7rem;letter-spacing:0.12em;color:var(--violet);border:1.5px solid var(--violetbg);background:var(--violetbg);border-radius:100px;padding:0.3em 1.2em;margin-bottom:0.75rem;font-weight:600;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.7rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);margin-top:0.3rem;font-size:0.95rem;}
+
+/* ── Mode Tabs ── */
+.mode-tabs{display:flex;gap:0.4rem;justify-content:center;margin:1rem 0;}
+.mode-tab{font-family:'Space Grotesk',sans-serif;font-size:0.72rem;font-weight:600;letter-spacing:0.06em;padding:0.55em 1.5em;border:2px solid var(--border);border-radius:100px;background:var(--bg);color:var(--tmut);cursor:pointer;transition:0.2s;}
+.mode-tab:hover{border-color:var(--borderB);color:var(--tdim);}
+.mode-tab.active{background:var(--violet);border-color:var(--violet);color:#fff;}
+
+/* ── Progress ── */
+.pbar-track{height:6px;background:var(--border);border-radius:3px;margin:0.5rem 0;overflow:hidden;}
+.pbar-fill{height:100%;border-radius:3px;background:var(--green);transition:width 0.5s ease;}
+.step-counter{text-align:center;font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:700;color:var(--violet);margin:0.3rem 0;}
+
+/* ── Canvas ── */
+.canvas-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem;margin:0.75rem 0;}
+.canvas-card canvas{display:block;width:100%;height:auto;border-radius:8px;}
+
+/* ── Phase Buttons ── */
+.phase-btns{display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center;margin:0.75rem 0;}
+.phase-btn{font-family:'Space Grotesk',sans-serif;font-size:0.72rem;font-weight:600;padding:0.6em 1.1em;border:2px solid var(--border);border-radius:100px;background:var(--card);color:var(--tdim);cursor:pointer;transition:0.2s;}
+.phase-btn:hover{border-color:var(--borderB);}
+.phase-btn.active-forward{border-color:var(--amber);background:var(--ambbg);color:var(--amber);}
+.phase-btn.active-loss{border-color:var(--red);background:var(--redbg);color:var(--red);}
+.phase-btn.active-backward{border-color:var(--magenta);background:var(--magentabg);color:var(--magenta);}
+.phase-btn.active-update{border-color:var(--green);background:var(--greenbg);color:var(--green);}
+.phase-btn.done{border-color:var(--green);background:var(--greenbg);color:var(--green);opacity:0.6;}
+.phase-btn .ph-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;}
+.phase-btn.active-forward .ph-dot{background:var(--amber);}
+.phase-btn.active-loss .ph-dot{background:var(--red);}
+.phase-btn.active-backward .ph-dot{background:var(--magenta);}
+.phase-btn.active-update .ph-dot{background:var(--green);}
+
+/* ── Auto Controls ── */
+.auto-controls{display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center;align-items:center;margin:0.5rem 0;}
+.auto-btn{font-family:'Space Grotesk',sans-serif;font-size:0.72rem;font-weight:600;padding:0.55em 1.4em;border:2px solid var(--border);border-radius:100px;background:var(--card);color:var(--tdim);cursor:pointer;transition:0.2s;}
+.auto-btn:hover{border-color:var(--borderB);}
+.auto-btn.play{background:var(--violet);border-color:var(--violet);color:#fff;}
+.auto-btn.play:hover{opacity:0.88;}
+.auto-btn.reset{border-color:var(--red);color:var(--red);}
+.auto-btn.reset:hover{background:var(--redbg);}
+
+/* ── Calculation Box ── */
+.calc-box{background:var(--raised);border:1.5px solid var(--border);border-radius:var(--rsm);padding:1rem 1.25rem;margin:0.5rem 0;font-size:0.85rem;line-height:1.9;}
+.calc-box .step-label{font-family:'Space Grotesk',sans-serif;font-size:0.65rem;letter-spacing:0.1em;color:var(--violet);font-weight:600;text-transform:uppercase;}
+.hl-r{color:var(--magenta);font-weight:700;}
+.hl-f{color:var(--amber);font-weight:700;}
+.hl-g{color:var(--green);font-weight:700;}
+.hl-b{color:var(--violet);font-weight:700;}
+
+/* ── Weight Table ── */
+.wt-table{width:100%;border-collapse:collapse;margin:0.5rem 0;font-size:0.8rem;}
+.wt-table th{font-family:'Space Grotesk',sans-serif;font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--tmut);padding:0.4rem 0.5rem;border-bottom:2px solid var(--border);text-align:center;}
+.wt-table td{text-align:center;padding:0.4rem 0.5rem;border-bottom:1px solid var(--border);}
+.wt-table .real-cell{color:var(--magenta);font-weight:600;}
+.wt-table .fake-cell{color:var(--amber);font-weight:600;}
+.wt-table .grad-cell{color:var(--magenta);font-weight:600;}
+.wt-table .new-cell{color:var(--green);font-weight:600;}
+
+/* ── Callout ── */
+.callout{padding:0.8rem 1rem;border-radius:var(--rsm);margin:0.5rem 0;font-size:0.85rem;line-height:1.5;display:flex;gap:0.6rem;align-items:flex-start;}
+.callout .ico{font-size:1.2rem;flex-shrink:0;}
+.callout.amber{background:var(--ambbg);border:1px solid rgba(184,112,0,0.2);}
+.callout.magenta{background:var(--magentabg);border:1px solid rgba(158,42,107,0.2);}
+.callout.green{background:var(--greenbg);border:1px solid rgba(26,110,52,0.2);}
+.callout.info{background:var(--cyanbg);border:1px solid rgba(0,122,153,0.2);}
+
+@media(max-width:768px){.app{padding:0.75rem;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <div class="badge">QAT TRAINING LOOP</div>
+  <h1>Forward → Loss → Backward (STE) → Update</h1>
+  <p>6 weights. INT4 quantization. Watch every phase of the training loop.</p>
+</header>
+
+<!-- Mode Tabs -->
+<div class="mode-tabs">
+  <button class="mode-tab active" onclick="switchMode('tutorial')">📖 Tutorial Mode</button>
+  <button class="mode-tab" onclick="switchMode('auto')">▶ Auto Play</button>
+</div>
+
+<!-- Progress -->
+<div class="pbar-track"><div class="pbar-fill" id="pbar" style="width:0%"></div></div>
+<div class="step-counter">Step <span id="stepNum">0</span> / 100 &nbsp;|&nbsp; Avg Gap: <span id="avgGap">0.2500</span></div>
+
+<!-- Phase Buttons -->
+<div class="phase-btns" id="phaseBtns">
+  <button class="phase-btn active-forward" id="ph1" onclick="runPhase('forward')">
+    <span class="ph-dot"></span> 1. Forward Pass (Fake Weights)
+  </button>
+  <button class="phase-btn" id="ph2" onclick="runPhase('loss')">
+    <span class="ph-dot"></span> 2. Compute Loss
+  </button>
+  <button class="phase-btn" id="ph3" onclick="runPhase('backward')">
+    <span class="ph-dot"></span> 3. Backward — STE (Real Weights)
+  </button>
+  <button class="phase-btn" id="ph4" onclick="runPhase('update')">
+    <span class="ph-dot"></span> 4. Update Weights
+  </button>
+</div>
+
+<!-- Auto Controls -->
+<div class="auto-controls" id="autoControls" style="display:none;">
+  <button class="auto-btn play" id="playBtn" onclick="toggleAutoPlay()">▶ Start Training</button>
+  <button class="auto-btn reset" onclick="resetAll()">↺ Reset</button>
+  <span style="font-size:0.78rem;color:var(--tmut);">Speed:</span>
+  <input type="range" id="speedSlider" min="1" max="10" value="3" oninput="autoSpeed=parseInt(this.value);document.getElementById('speedLabel').textContent=autoSpeed+'x';" style="width:80px;">
+  <span style="font-size:0.72rem;color:var(--tmut);" id="speedLabel">3x</span>
+</div>
+
+<!-- ── CANVAS ── -->
+<div class="canvas-card">
+  <canvas id="mainCanvas" width="1020" height="370"></canvas>
+</div>
+
+<!-- ── CALCULATION DETAIL ── -->
+<div id="calcDetail"></div>
+
+</div>
+
+<script>
+// ── DATA ──
+const scale=0.4, lr=0.02, totalSteps=100;
+const wNames=['W1','W2','W3','W4','W5','W6'];
+const wOrig=[-2.30,-0.80,-0.15,0.45,1.10,2.70];
+const buckets=[-2.40,-0.80,0.00,0.40,1.20,2.80];
+const wColors=['#007a99','#5b3aa8','#b87000','#1a6e34','#9e2a6b','#c62828'];
+let weights=[...wOrig];
+let stepCount=0;
+let mode='tutorial';
+let currentPhase='forward';
+let autoTimer=null, autoPlaying=false, autoSpeed=3;
+let history=weights.map(()=>[]);
+
+// ── MATH ──
+function fakeQ(w){return Math.round(w/scale)*scale;}
+function gradient(w,orig){const fq=fakeQ(w);return -2*(fq-w)+0.16*(w-orig);}
+function compLoss(w,orig){return Math.pow(fakeQ(w)-w,2)+0.08*Math.pow(w-orig,2);}
+
+// ── CANVAS ──
+const c=document.getElementById('mainCanvas');
+const ctx=c.getContext('2d');
+const W=c.width, H=c.height;
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#fafbfc';ctx.fillRect(0,0,W,H);
+
+  // Subtle grid
+  ctx.strokeStyle='rgba(0,0,0,0.04)';ctx.lineWidth=1;
+  for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  const padL=50, padR=30, padT=30, padB=20;
+  const pw=W-padL-padR, ph=H-padT-padB;
+
+  // ── 6 WEIGHT LANES ──
+  const laneH=(ph-30)/6;
+  const laneGap=5;
+
+  for(let i=0;i<6;i++){
+    const y0=padT+i*(laneH+laneGap);
+    const bucket=buckets[i];
+    const w=weights[i];
+    const fq=fakeQ(w);
+
+    // Lane background
+    ctx.fillStyle='#fff';ctx.strokeStyle='#eef0f4';
+    ctx.beginPath();ctx.rect(padL,y0,pw,laneH);ctx.fill();ctx.stroke();
+
+    // Bucket center (dashed line)
+    const bRatio=(bucket+3)/6;
+    const bX=padL+bRatio*pw;
+    ctx.beginPath();ctx.setLineDash([4,5]);
+    ctx.moveTo(bX,y0+2);ctx.lineTo(bX,y0+laneH-2);
+    ctx.strokeStyle='rgba(184,112,0,0.5)';ctx.lineWidth=1.2;ctx.stroke();
+    ctx.setLineDash([]);
+
+    // History trail
+    const hist=history[i];
+    if(hist.length>1){
+      ctx.beginPath();
+      for(let h=0;h<hist.length;h++){
+        const ratio=(hist[h]+3)/6;
+        const hx=padL+Math.max(0,Math.min(1,ratio))*pw;
+        const hy=y0+laneH-(h/hist.length)*laneH*0.8-2;
+        if(h===0)ctx.moveTo(hx,hy);else ctx.lineTo(hx,hy);
+      }
+      ctx.strokeStyle=wColors[i]+'35';
+      ctx.lineWidth=1.2;ctx.stroke();
+    }
+
+    // REAL weight marker (dot)
+    const wRatio=(w+3)/6;
+    const wx=padL+Math.max(0,Math.min(1,wRatio))*pw;
+    const wy=y0+laneH/2;
+
+    // Glow for real weight
+    const glow=ctx.createRadialGradient(wx,wy,0,wx,wy,14);
+    glow.addColorStop(0,wColors[i]+'aa');
+    glow.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.beginPath();ctx.arc(wx,wy,14,0,Math.PI*2);ctx.fillStyle=glow;ctx.fill();
+
+    // Real weight dot
+    ctx.beginPath();ctx.arc(wx,wy,7,0,Math.PI*2);
+    ctx.fillStyle=wColors[i];ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+
+    // FAKE weight marker (small diamond on same lane)
+    const fqRatio=(fq+3)/6;
+    const fqx=padL+Math.max(0,Math.min(1,fqRatio))*pw;
+    // Diamond
+    ctx.beginPath();
+    ctx.moveTo(fqx,wy-7);ctx.lineTo(fqx+6,wy);ctx.lineTo(fqx,wy+7);ctx.lineTo(fqx-6,wy);ctx.closePath();
+    ctx.fillStyle='rgba(184,112,0,0.8)';
+    ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();
+
+    // Labels
+    ctx.fillStyle=wColors[i];ctx.font='bold 12px "Inter"';ctx.textAlign='left';
+    ctx.fillText(wNames[i],padL-38,y0+laneH/2+4);
+
+    // Weight values
+    ctx.fillStyle='#4a4f5a';ctx.font='10px "Inter"';ctx.textAlign='left';
+    ctx.fillText(`Real: ${w.toFixed(4)}`,padL+6,y0+13);
+    ctx.fillText(`Fake: ${fq.toFixed(2)}`,padL+6,y0+laneH-5);
+    ctx.fillText(`→ Target: ${bucket.toFixed(2)}`,padL+150,y0+laneH/2+4);
+
+    // Distance bar between real and fake
+    const dist=Math.abs(w-bucket);
+    if(dist>0.003){
+      const barStart=Math.min(wx,fqx)+4;
+      const barEnd=Math.max(wx,fqx)-4;
+      const barYVal=wy-18;
+      ctx.fillStyle=dist>0.08?'rgba(198,40,40,0.12)':'rgba(26,110,52,0.12)';
+      ctx.fillRect(barStart,barYVal,barEnd-barStart,8);
+      ctx.fillStyle=dist>0.08?'#c62828':'#1a6e34';
+      ctx.font='7px "Inter"';ctx.textAlign='center';
+      ctx.fillText(dist.toFixed(3),(barStart+barEnd)/2,barYVal+7);
+    }
+
+    // Original weight marker (tiny triangle)
+    const oRatio=(wOrig[i]+3)/6;
+    const ox=padL+Math.max(0,Math.min(1,oRatio))*pw;
+    ctx.beginPath();
+    ctx.moveTo(ox,wy-10);ctx.lineTo(ox-4,wy-14);ctx.lineTo(ox+4,wy-14);ctx.closePath();
+    ctx.fillStyle='#8b9099';ctx.fill();
+  }
+
+  // ── TITLE ──
+  ctx.fillStyle='#1a1d23';ctx.font='bold 14px "Inter"';ctx.textAlign='center';
+  ctx.fillText('Weight Convergence — 6 Lanes',W/2,padT-10);
+
+  // Legend
+  const legY=padT+6*laneH+6*laneGap+padT+5;
+  ctx.font='10px "Inter"';ctx.textAlign='center';
+
+  // Real dot
+  ctx.beginPath();ctx.arc(W/2-120,legY,5,0,Math.PI*2);ctx.fillStyle=wColors[0];ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.fillStyle='#4a4f5a';ctx.fillText('● Real Weight (gets gradients)',W/2-65,legY+4);
+
+  // Fake diamond
+  const dx=W/2+120, dy=legY;
+  ctx.beginPath();ctx.moveTo(dx,dy-5);ctx.lineTo(dx+4,dy);ctx.lineTo(dx,dy+5);ctx.lineTo(dx-4,dy);ctx.closePath();
+  ctx.fillStyle='rgba(184,112,0,0.8)';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke();
+  ctx.fillStyle='#4a4f5a';ctx.fillText('◆ Fake Weight (forward pass)',dx+25,dy+4);
+
+  // Bucket dash
+  ctx.beginPath();ctx.setLineDash([3,4]);ctx.moveTo(W/2+260,legY);ctx.lineTo(W/2+290,legY);
+  ctx.strokeStyle='rgba(184,112,0,0.5)';ctx.lineWidth=1.2;ctx.stroke();ctx.setLineDash([]);
+  ctx.fillText('--- Bucket Center',W/2+320,legY+4);
+
+  // Phase indicator
+  const phaseColors={forward:'#b87000',loss:'#c62828',backward:'#9e2a6b',update:'#1a6e34'};
+  const phaseLabels={forward:'⬆ FORWARD PASS (Fake Weights)',loss:'📊 COMPUTING LOSS',backward:'⬇ BACKWARD — STE (Real Weights)',update:'✅ UPDATING WEIGHTS'};
+  ctx.fillStyle=phaseColors[currentPhase];
+  ctx.font='bold 13px "Inter"';ctx.textAlign='right';
+  ctx.fillText(phaseLabels[currentPhase],W-padR,padT-10);
+}
+
+// ── MODE SWITCH ──
+function switchMode(m){
+  mode=m;
+  document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('active'));
+  if(m==='tutorial'){
+    document.querySelector('.mode-tab:first-child').classList.add('active');
+    document.getElementById('autoControls').style.display='none';
+    document.getElementById('phaseBtns').style.display='flex';
+    stopAutoPlay();
+  } else {
+    document.querySelector('.mode-tab:last-child').classList.add('active');
+    document.getElementById('autoControls').style.display='flex';
+    document.getElementById('phaseBtns').style.display='none';
+  }
+}
+
+// ── PHASE BUTTONS ──
+function resetPhaseButtons(){
+  ['ph1','ph2','ph3','ph4'].forEach(id=>{
+    document.getElementById(id).className='phase-btn';
+  });
+}
+
+function runPhase(phase){
+  if(stepCount>=totalSteps && phase!=='update') return;
+
+  resetPhaseButtons();
+  currentPhase=phase;
+
+  const phaseClassMap={forward:'active-forward',loss:'active-loss',backward:'active-backward',update:'active-update'};
+  const phMap={forward:'ph1',loss:'ph2',backward:'ph3',update:'ph4'};
+  document.getElementById(phMap[phase]).classList.add(phaseClassMap[phase]);
+
+  // Mark previous phases as done
+  const order=['forward','loss','backward','update'];
+  const idx=order.indexOf(phase);
+  for(let i=0;i<idx;i++){
+    document.getElementById(phMap[order[i]]).classList.add('done');
+  }
+
+  if(phase==='update'){
+    // Apply weight updates
+    for(let i=0;i<6;i++){
+      const g=gradient(weights[i],wOrig[i]);
+      const noise=(Math.random()-0.5)*0.002;
+      weights[i]=weights[i]-lr*(g+noise);
+    }
+    stepCount++;
+    for(let i=0;i<6;i++) history[i].push(weights[i]);
+
+    document.getElementById('stepNum').textContent=stepCount;
+    document.getElementById('pbar').style.width=(stepCount/totalSteps*100)+'%';
+    const avgDist=weights.reduce((s,w,i)=>s+Math.abs(w-buckets[i]),0)/6;
+    document.getElementById('avgGap').textContent=avgDist.toFixed(4);
+    if(avgDist<0.001 && stepCount>20) stepCount=totalSteps;
+
+    // In tutorial mode, stay on Update so user can read the results.
+    // They click "1. Forward Pass" when ready for the next step.
+    // In auto mode, the auto loop handles advancing.
+  }
+
+  draw();
+  renderCalcDetail();
+}
+
+// ── AUTO PLAY ──
+function toggleAutoPlay(){autoPlaying?stopAutoPlay():startAutoPlay();}
+function startAutoPlay(){
+  autoPlaying=true;
+  document.getElementById('playBtn').textContent='⏸ Pause';
+  switchMode('auto');
+  runAutoLoop();
+}
+function stopAutoPlay(){
+  autoPlaying=false;
+  document.getElementById('playBtn').textContent='▶ Start Training';
+  if(autoTimer){clearTimeout(autoTimer);autoTimer=null;}
+}
+function runAutoLoop(){
+  if(!autoPlaying||stepCount>=totalSteps){stopAutoPlay();return;}
+  runPhase('forward');
+  autoTimer=setTimeout(()=>{if(!autoPlaying)return;runPhase('loss');
+    autoTimer=setTimeout(()=>{if(!autoPlaying)return;runPhase('backward');
+      autoTimer=setTimeout(()=>{if(!autoPlaying)return;runPhase('update');
+        autoTimer=setTimeout(()=>runAutoLoop(),800/autoSpeed);
+      },700/autoSpeed);
+    },600/autoSpeed);
+  },500/autoSpeed);
+}
+
+function resetAll(){
+  stopAutoPlay();
+  weights=[...wOrig];
+  stepCount=0;
+  currentPhase='forward';
+  history=weights.map(()=>[]);
+  for(let i=0;i<6;i++) history[i].push(weights[i]);
+  resetPhaseButtons();
+  document.getElementById('ph1').classList.add('active-forward');
+  document.getElementById('stepNum').textContent='0';
+  document.getElementById('pbar').style.width='0%';
+  document.getElementById('avgGap').textContent='0.2500';
+  draw();
+  renderCalcDetail();
+}
+
+// ── CALCULATION DETAIL ──
+function renderCalcDetail(){
+  const el=document.getElementById('calcDetail');
+  if(!el) return;
+
+  const w1=weights[0], fq1=fakeQ(w1);
+  const g1=gradient(w1,wOrig[0]);
+
+  if(currentPhase==='forward'){
+    const rows=weights.map((w,i)=>{const fq=fakeQ(w);return`<tr><td style="color:${wColors[i]};font-weight:600;">${wNames[i]}</td><td class="real-cell">${w.toFixed(4)}</td><td>÷0.4=${(w/0.4).toFixed(3)} → round → ×0.4</td><td class="fake-cell">${fq.toFixed(2)}</td></tr>`;}).join('');
+    el.innerHTML=`
+      <div class="calc-box">
+        <div class="step-label">⬆ Forward Pass — FAKE weights used for computation</div>
+        <br>
+        <table class="wt-table">
+          <thead><tr><th>Weight</th><th>Real (stored)</th><th>Fake Quantize Process</th><th>Fake (used in forward)</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="callout amber"><span class="ico">💡</span><span><strong>Example:</strong> output = <span class="hl-f">${fq1.toFixed(2)}</span> × input &nbsp;(NOT <span class="hl-r">${w1.toFixed(4)}</span> × input). The model "experiences" quantization in the forward pass.</span></div>`;
+  } else if(currentPhase==='loss'){
+    const lossAll=weights.reduce((s,w,i)=>s+compLoss(w,wOrig[i]),0);
+    const rows=weights.map((w,i)=>{const fq=fakeQ(w);const qerr=Math.pow(fq-w,2);const terr=0.08*Math.pow(w-wOrig[i],2);return`<tr><td style="color:${wColors[i]};font-weight:600;">${wNames[i]}</td><td>(${fq.toFixed(2)}−${w.toFixed(4)})²=${qerr.toFixed(5)}</td><td>0.08×(${w.toFixed(4)}−${wOrig[i].toFixed(2)})²=${terr.toFixed(5)}</td><td><strong>${(qerr+terr).toFixed(5)}</strong></td></tr>`;}).join('');
+    el.innerHTML=`
+      <div class="calc-box">
+        <div class="step-label">📊 Loss = Quantization Error + Task Error</div>
+        <br>
+        <table class="wt-table">
+          <thead><tr><th>Weight</th><th>Quantization Error (fake−real)²</th><th>Task Error 0.08×(W−W₀)²</th><th>Total</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <br><strong style="color:var(--red);">Sum of all losses = ${lossAll.toFixed(5)}</strong>
+        <br><span style="color:var(--tmut);font-size:0.78rem;">Goal: minimize this. When every weight hits its bucket center, quantization error → 0.</span>
+      </div>`;
+  } else if(currentPhase==='backward'){
+    const rows=weights.map((w,i)=>{const g=gradient(w,wOrig[i]);const fq=fakeQ(w);const ste=-2*(fq-w);const task=0.16*(w-wOrig[i]);return`<tr><td style="color:${wColors[i]};font-weight:600;">${wNames[i]}</td><td>−2×(${fq.toFixed(2)}−${w.toFixed(4)})=${ste.toFixed(4)}</td><td>0.16×(${w.toFixed(4)}−${wOrig[i].toFixed(2)})=${task.toFixed(4)}</td><td class="grad-cell">${g>=0?'+':''}${g.toFixed(4)}</td><td>${g>0?'⬆ UP':'⬇ DOWN'}</td></tr>`;}).join('');
+    el.innerHTML=`
+      <div class="calc-box">
+        <div class="step-label">⬇ Backward Pass — STE: gradient flows to REAL weights</div>
+        <br>
+        <table class="wt-table">
+          <thead><tr><th>Weight</th><th>STE Part: −2×(fake−real)</th><th>Task Part: 0.16×(W−W₀)</th><th>∇ (Gradient)</th><th>Direction</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="callout magenta"><span class="ico">🔑</span><span><strong>STE trick:</strong> Gradient <span class="hl-r">bypasses the rounding</span>. It's computed using REAL weights, flowing "straight through" the fake quantize operation. Without STE, gradient would be zero and learning would stop.</span></div>`;
+  } else if(currentPhase==='update'){
+    const rows=weights.map((w,i)=>{const g=gradient(w,wOrig[i]);const nw=w-lr*g;const distBefore=Math.abs(w-buckets[i]);const distAfter=Math.abs(nw-buckets[i]);const closer=distAfter<distBefore;return`<tr><td style="color:${wColors[i]};font-weight:600;">${wNames[i]}</td><td class="real-cell">${w.toFixed(4)}</td><td>${(lr*g)>=0?'+':''}${(lr*g).toFixed(4)}</td><td class="new-cell">${nw.toFixed(4)}</td><td style="color:${closer?'var(--green)':'var(--red)'};">${distBefore.toFixed(3)}→${distAfter.toFixed(3)} ${closer?'✅':'⚠️'}</td></tr>`;}).join('');
+    el.innerHTML=`
+      <div class="calc-box">
+        <div class="step-label">✅ Weight Update — W_new = W_old − lr × ∇</div>
+        <br>
+        <table class="wt-table">
+          <thead><tr><th>Weight</th><th>Before</th><th>Nudge (lr × ∇)</th><th>After</th><th>Gap to Bucket</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="callout green"><span class="ico">✅</span><span>After <strong>${stepCount}</strong> steps. Each weight moves closer to its bucket center. When all gaps are ~0, quantization is <strong>lossless</strong>.</span></div>`;
+  }
+}
+
+// ── INIT ──
+for(let i=0;i<6;i++) history[i].push(weights[i]);
+draw();
+renderCalcDetail();
+document.getElementById('avgGap').textContent=(weights.reduce((s,w,i)=>s+Math.abs(w-buckets[i]),0)/6).toFixed(4);
+
+// Keyboard
+document.addEventListener('keydown',e=>{
+  if(e.key==='1'){e.preventDefault();runPhase('forward');}
+  if(e.key==='2'){e.preventDefault();runPhase('loss');}
+  if(e.key==='3'){e.preventDefault();runPhase('backward');}
+  if(e.key==='4'){e.preventDefault();runPhase('update');}
+  if(e.key===' '){e.preventDefault();toggleAutoPlay();}
+  if(e.key==='r'||e.key==='R') resetAll();
+});
+
+// Speed slider events
+document.getElementById('speedSlider').addEventListener('input',function(){
+  autoSpeed=parseInt(this.value);
+  document.getElementById('speedLabel').textContent=autoSpeed+'x';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase 1: Fine-Tuning Fundamentals — Interactive Learning</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #06090f;
+  --bg-card: #0d1117;
+  --bg-raised: #161b22;
+  --border: #21262d;
+  --border-active: #30363d;
+  --text: #e6edf3;
+  --text-dim: #8b949e;
+  --text-muted: #484f58;
+  --cyan: #39d2ff;
+  --cyan-bg: #39d2ff15;
+  --cyan-border: #39d2ff40;
+  --amber: #ffb347;
+  --amber-bg: #ffb34715;
+  --green: #3fb950;
+  --green-bg: #3fb95015;
+  --magenta: #ff6ec7;
+  --magenta-bg: #ff6ec715;
+  --red: #f85149;
+  --violet: #a371f7;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  line-height: 1.65;
+}
+
+.bg-canvas { position:fixed; inset:0; z-index:0; pointer-events:none; }
+
+.app { position:relative; z-index:1; max-width:1100px; margin:0 auto; padding:2rem; }
+
+/* ── Top Bar ── */
+.topbar {
+  position: sticky; top:0; z-index:100;
+  background: rgba(6,9,15,0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0.6rem 2rem;
+  display: flex; align-items: center; gap: 1rem;
+  font-size: 0.8rem;
+}
+.topbar .logo {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.7rem; letter-spacing: 0.15em;
+  color: var(--cyan);
+  white-space: nowrap;
+}
+.topbar .step-dots {
+  display: flex; gap: 0.4rem; flex:1; justify-content: center;
+}
+.topbar .step-dot {
+  width: 28px; height: 4px; border-radius: 2px;
+  background: var(--border);
+  transition: var(--transition);
+  cursor: pointer;
+}
+.topbar .step-dot.done { background: var(--green); }
+.topbar .step-dot.active { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+.topbar .step-dot:hover { background: var(--text-dim); }
+.topbar .step-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; color: var(--text-dim);
+  white-space: nowrap;
+}
+
+/* ── Header ── */
+.header {
+  text-align: center;
+  padding: 3rem 0 1rem;
+}
+.header .phase-badge {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem; letter-spacing: 0.2em;
+  color: var(--green); border: 1px solid var(--green-bg);
+  border-radius: 100px; padding: 0.4em 1.4em;
+  margin-bottom: 1rem;
+}
+.header h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--cyan), var(--violet));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.header .tagline {
+  color: var(--text-dim); font-size: 1rem; margin-top: 0.5rem;
+}
+
+/* ── Slide ── */
+.slide-container { margin: 2rem 0; }
+
+.slide {
+  opacity: 0;
+  transform: translateX(40px);
+  animation: slideIn 0.45s ease forwards;
+}
+@keyframes slideIn {
+  to { opacity:1; transform:translateX(0); }
+}
+
+/* ── Cards ── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  margin-bottom: 1rem;
+}
+.card h2 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  margin-bottom: 1rem;
+  display: flex; align-items: center; gap: 0.6rem;
+}
+.card h2 .num {
+  font-size: 0.75rem;
+  color: var(--cyan);
+  background: var(--cyan-bg);
+  border-radius: 6px;
+  padding: 0.2em 0.6em;
+}
+.card p { color: var(--text-dim); margin-bottom: 0.8rem; }
+.card ul { list-style: none; padding: 0; }
+.card ul li {
+  padding: 0.45rem 0;
+  color: var(--text-dim);
+  display: flex; align-items: flex-start; gap: 0.6rem;
+}
+.card ul li::before {
+  content: '▸';
+  color: var(--cyan);
+  font-size: 0.7rem;
+  margin-top: 0.3em;
+  flex-shrink: 0;
+}
+
+/* ── Pipeline ── */
+.pipeline {
+  display: flex; align-items: center; gap: 0;
+  flex-wrap: wrap; justify-content: center;
+  margin: 1.5rem 0;
+}
+.pipeline-stage {
+  background: var(--bg-raised);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem 1rem;
+  text-align: center;
+  min-width: 130px;
+  max-width: 180px;
+  transition: var(--transition);
+  cursor: pointer;
+}
+.pipeline-stage:hover {
+  border-color: var(--cyan-border);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(57,210,255,0.1);
+}
+.pipeline-stage.highlight {
+  border-color: var(--cyan);
+  background: var(--cyan-bg);
+  box-shadow: 0 0 24px rgba(57,210,255,0.15);
+}
+.pipeline-stage .stage-icon { font-size: 1.8rem; margin-bottom: 0.4rem; }
+.pipeline-stage .stage-name {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.65rem; letter-spacing: 0.06em;
+  font-weight: 600;
+}
+.pipeline-stage .stage-desc {
+  font-size: 0.7rem; color: var(--text-muted);
+  margin-top: 0.3rem;
+}
+.pipeline-arrow {
+  font-size: 1.5rem; color: var(--cyan);
+  margin: 0 0.3rem;
+  animation: arrowPulse 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes arrowPulse {
+  0%,100% { opacity: 0.4; transform: translateX(0); }
+  50% { opacity: 1; transform: translateX(4px); }
+}
+
+/* ── Compare Grid ── */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.compare-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1.5rem;
+  transition: var(--transition);
+}
+.compare-card.pick-a { border-left: 3px solid var(--cyan); }
+.compare-card.pick-b { border-left: 3px solid var(--magenta); }
+.compare-card h4 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem; color: var(--cyan);
+  margin-bottom: 0.5rem;
+}
+.compare-card.pick-b h4 { color: var(--magenta); }
+.compare-card p { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.5rem; }
+
+/* ── Data Type Cards ── */
+.data-types {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.data-type-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1.5rem;
+  text-align: center;
+  transition: var(--transition);
+  cursor: pointer;
+}
+.data-type-card:hover { transform: translateY(-3px); }
+.data-type-card:nth-child(1) { border-top: 3px solid var(--amber); }
+.data-type-card:nth-child(2) { border-top: 3px solid var(--cyan); }
+.data-type-card:nth-child(3) { border-top: 3px solid var(--magenta); }
+.data-type-card .dt-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+.data-type-card h4 { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.3rem; }
+.data-type-card p { font-size: 0.78rem; color: var(--text-dim); }
+
+/* ── Equation Box ── */
+.eq-box {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--cyan);
+  border-radius: var(--radius-sm);
+  padding: 1.25rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  color: var(--text);
+  margin: 1rem 0;
+  white-space: pre-wrap;
+  line-height: 1.8;
+  overflow-x: auto;
+}
+
+/* ── Flashcard ── */
+.flashcard-wrap {
+  perspective: 800px;
+  height: 200px;
+  cursor: pointer;
+  margin: 1rem 0;
+}
+.flashcard {
+  width: 100%; height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.6s ease;
+}
+.flashcard.flipped { transform: rotateY(180deg); }
+.flashcard .front, .flashcard .back {
+  position: absolute; inset: 0;
+  backface-visibility: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  padding: 2rem;
+  text-align: center;
+}
+.flashcard .front {
+  background: var(--bg-card);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.1rem; font-weight: 600;
+}
+.flashcard .front .hint {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.75rem; color: var(--text-muted);
+  margin-top: 0.8rem;
+}
+.flashcard .back {
+  background: var(--bg-raised);
+  transform: rotateY(180deg);
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+.flashcard .back strong { color: var(--cyan); }
+
+/* ── Fun Fact ── */
+.fun-fact {
+  background: linear-gradient(135deg, var(--amber-bg), var(--magenta-bg));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+  display: flex; align-items: flex-start; gap: 0.8rem;
+}
+.fun-fact .bulb { font-size: 1.5rem; flex-shrink: 0; }
+.fun-fact .fact-text { font-size: 0.88rem; color: var(--text-dim); }
+.fun-fact .fact-text strong { color: var(--amber); }
+
+/* ── Topic Chips ── */
+.topic-list {
+  display: flex; flex-wrap: wrap; gap: 0.5rem;
+  justify-content: center; margin: 1.5rem 0;
+}
+.topic-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  padding: 0.5em 1.2em;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.topic-chip:hover { border-color: var(--text-dim); color: var(--text-dim); }
+.topic-chip.visited { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+.topic-chip.current { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-bg); box-shadow: 0 0 12px rgba(57,210,255,0.15); }
+
+/* ── Nav ── */
+.nav-row {
+  display: flex; justify-content: space-between;
+  margin-top: 1.5rem; margin-bottom: 3rem;
+}
+.nav-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem; letter-spacing: 0.08em;
+  padding: 0.7em 1.6em;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex; align-items: center; gap: 0.5rem;
+}
+.nav-btn:hover { border-color: var(--cyan-border); color: var(--cyan); }
+.nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.nav-btn.primary { background: var(--cyan-bg); border-color: var(--cyan); color: var(--cyan); }
+.nav-btn.primary:hover { background: var(--cyan); color: var(--bg); }
+
+/* ── Quiz ── */
+.quiz { margin: 1.5rem 0; }
+.quiz .question {
+  font-weight: 600; font-size: 1.05rem;
+  margin-bottom: 1rem;
+}
+.quiz .options { display: flex; flex-direction: column; gap: 0.5rem; }
+.quiz .option {
+  background: var(--bg-raised);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: 0.9rem;
+}
+.quiz .option:hover { border-color: var(--border-active); }
+.quiz .option.selected { border-color: var(--cyan); background: var(--cyan-bg); }
+.quiz .option.correct { border-color: var(--green) !important; background: var(--green-bg) !important; }
+.quiz .option.wrong { border-color: var(--red) !important; background: #f8514920 !important; }
+.quiz .feedback {
+  margin-top: 1rem; padding: 1rem;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  display: none;
+}
+.quiz .feedback.show { display: block; }
+.quiz .feedback.correct { background: var(--green-bg); border: 1px solid var(--green); color: var(--green); }
+.quiz .feedback.wrong { background: #f8514920; border: 1px solid var(--red); color: var(--red); }
+
+@media (max-width: 768px) {
+  .app { padding: 1rem; }
+  .compare-grid, .data-types { grid-template-columns: 1fr; }
+  .pipeline { flex-direction: column; }
+  .pipeline-arrow { transform: rotate(90deg); margin: 0.2rem 0; }
+  .topbar { padding: 0.5rem 1rem; gap: 0.5rem; }
+  .topbar .step-dot { width: 16px; }
+}
+</style>
+</head>
+<body>
+
+<canvas class="bg-canvas" id="bgCanvas"></canvas>
+
+<nav class="topbar">
+  <span class="logo">Phase 1</span>
+  <div class="step-dots" id="stepDots"></div>
+  <span class="step-label" id="stepLabel">1/6</span>
+</nav>
+
+<div class="app">
+
+  <header class="header">
+    <div class="phase-badge">✅ COMPLETED</div>
+    <h1>Fine-Tuning Fundamentals</h1>
+    <p class="tagline">Understand WHY and WHAT before HOW. The foundation everything else builds on.</p>
+  </header>
+
+  <div class="topic-list" id="topicChips"></div>
+
+  <div class="fun-fact" id="funFact">
+    <span class="bulb">💡</span>
+    <span class="fact-text" id="funFactText"></span>
+  </div>
+
+  <div id="slideContainer"></div>
+
+  <div class="nav-row">
+    <button class="nav-btn" id="prevBtn" onclick="goTo(currentSlide-1)">← Previous</button>
+    <button class="nav-btn primary" id="nextBtn" onclick="goTo(currentSlide+1)">Next →</button>
+  </div>
+
+</div>
+
+<script>
+// ── Background Particles ──
+const canvas = document.getElementById('bgCanvas');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+for (let i=0; i<60; i++) {
+  particles.push({
+    x: Math.random()*canvas.width,
+    y: Math.random()*canvas.height,
+    vx: (Math.random()-0.5)*0.3,
+    vy: (Math.random()-0.5)*0.3,
+    r: Math.random()*1.5+0.5,
+    alpha: Math.random()*0.5+0.1
+  });
+}
+
+function animateParticles() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles.forEach((p,i) => {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x<0) p.x=canvas.width; if (p.x>canvas.width) p.x=0;
+    if (p.y<0) p.y=canvas.height; if (p.y>canvas.height) p.y=0;
+    for (let j=i+1; j<particles.length; j++) {
+      const dx = particles[j].x - p.x;
+      const dy = particles[j].y - p.y;
+      const dist = Math.sqrt(dx*dx+dy*dy);
+      if (dist < 100) {
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(57,210,255,${0.06*(1-dist/100)})`;
+        ctx.lineWidth = 0.5;
+        ctx.moveTo(p.x,p.y);
+        ctx.lineTo(particles[j].x,particles[j].y);
+        ctx.stroke();
+      }
+    }
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle = `rgba(57,210,255,${p.alpha})`;
+    ctx.fill();
+  });
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+// ── DATA ──
+const slides = [
+  { // 1.1
+    id:'1.1', title:'The 3-Stage LLM Training Pipeline',
+    fact:'GPT-4 was pre-trained on ~13 trillion tokens — roughly 10 million books worth of text — before any fine-tuning happened.',
+    render(){ return `
+<div class="slide"><div class="card">
+<h2><span class="num">1.1</span> The 3-Stage LLM Training Pipeline</h2>
+<p>Every modern LLM goes through three distinct stages. Think:<br><strong>school → university → on-the-job training</strong>.</p>
+<div class="pipeline">
+  <div class="pipeline-stage" onclick="this.classList.toggle('highlight')">
+    <div class="stage-icon">📚</div>
+    <div class="stage-name">UNSUPERVISED<br>PRE-TRAINING</div>
+    <div class="stage-desc">Learn language from massive text. Next-token prediction on internet-scale data.</div>
+  </div>
+  <span class="pipeline-arrow">→</span>
+  <div class="pipeline-stage" onclick="this.classList.toggle('highlight')">
+    <div class="stage-icon">🎓</div>
+    <div class="stage-name">SUPERVISED<br>FINE-TUNING (SFT)</div>
+    <div class="stage-desc">Learn to follow instructions. Train on high-quality Q&A pairs.</div>
+  </div>
+  <span class="pipeline-arrow">→</span>
+  <div class="pipeline-stage" onclick="this.classList.toggle('highlight')">
+    <div class="stage-icon">⚖️</div>
+    <div class="stage-name">PREFERENCE<br>ALIGNMENT</div>
+    <div class="stage-desc">Learn human values. RLHF or DPO to make outputs helpful & safe.</div>
+  </div>
+</div>
+<div class="eq-box">
+<span style="color:var(--text-muted)">Stage 1</span>  Raw internet text → Base Model (GPT-3, Llama-2-base)
+          ~99% of total compute
+<span style="color:var(--text-muted)">Stage 2</span>  10K–100K curated examples → Instruction Model (GPT-3.5, Llama-2-chat)
+          ~0.5% of total compute
+<span style="color:var(--text-muted)">Stage 3</span>  Human preference comparisons → Aligned Model (ChatGPT, Claude)
+          ~0.5% of total compute</div>
+<p style="margin-top:1rem"><strong>Key insight:</strong> Pre-training gives the model <em>knowledge</em>. Fine-tuning gives it <em>behavior</em>. You can't skip to Stage 2 — the model needs something to fine-tune.</p>
+
+<div class="quiz" id="quiz1">
+  <div class="question">🧪 Quick check: A company wants their chatbot to refuse harmful requests. Which stage addresses this?</div>
+  <div class="options">
+    <div class="option" onclick="checkQuiz('quiz1', this, 2)">A. Stage 1 — Unsupervised Pre-training</div>
+    <div class="option" onclick="checkQuiz('quiz1', this, 2)">B. Stage 2 — Supervised Fine-Tuning</div>
+    <div class="option" data-correct="true" onclick="checkQuiz('quiz1', this, 2)">C. Stage 3 — Preference Alignment</div>
+  </div>
+  <div class="feedback" id="quiz1-fb"></div>
+</div>
+</div></div>`; }
+  },
+  { // 1.2
+    id:'1.2', title:'Pre-training vs Fine-tuning',
+    fact:'A base Llama-2-70B model knows what a "medical diagnosis" is, but it can\'t reliably format one until fine-tuned on medical Q&A data.',
+    render(){ return `
+<div class="slide"><div class="card">
+<h2><span class="num">1.2</span> Pre-training vs Fine-tuning</h2>
+<p><strong>"General knowledge" vs "specialized skill"</strong> — same foundation, different purpose.</p>
+<div class="compare-grid">
+  <div class="compare-card pick-a">
+    <h4>🧠 PRE-TRAINING</h4>
+    <p>Learns <strong>what language is</strong></p>
+    <ul>
+      <li>Trained on <strong>trillions</strong> of tokens from the open web</li>
+      <li>Objective: predict the next token</li>
+      <li>Result: understands grammar, facts, reasoning</li>
+      <li>Massively expensive ($1M–$100M+)</li>
+      <li>Done once per base model</li>
+    </ul>
+  </div>
+  <div class="compare-card pick-b">
+    <h4>🔧 FINE-TUNING</h4>
+    <p>Learns <strong>how to behave</strong></p>
+    <ul>
+      <li>Trained on <strong>thousands</strong> of curated examples</li>
+      <li>Objective: follow instructions, match style</li>
+      <li>Result: domain expertise, formatting, safety</li>
+      <li>Cheap ($10–$500 per run)</li>
+      <li>Done repeatedly for different use cases</li>
+    </ul>
+  </div>
+</div>
+<div class="flashcard-wrap" onclick="this.querySelector('.flashcard').classList.toggle('flipped')">
+  <div class="flashcard">
+    <div class="front"><span>🧪 Try This Analogy</span><span class="hint">Click to flip ↻</span></div>
+    <div class="back">
+      <strong>Pre-training = Medical School</strong><br>
+      Learn anatomy, physiology, pharmacology — the foundations.<br><br>
+      <strong>Fine-tuning = Residency</strong><br>
+      Specialize in cardiology. Same base knowledge, now you diagnose heart conditions with precision.
+    </div>
+  </div>
+</div>
+<div class="quiz" id="quiz2">
+  <div class="question">🧪 Which is more expensive per run?</div>
+  <div class="options">
+    <div class="option" data-correct="true" onclick="checkQuiz('quiz2', this, 1)">A. Pre-training (from scratch)</div>
+    <div class="option" onclick="checkQuiz('quiz2', this, 1)">B. Fine-tuning (LoRA on 7B model)</div>
+  </div>
+  <div class="feedback" id="quiz2-fb"></div>
+</div>
+</div></div>`; }
+  },
+  { // 1.3
+    id:'1.3', title:'Full vs Partial Fine-Tuning',
+    fact:'Full fine-tuning GPT-3 (175B params) requires ~700GB GPU RAM just to store the model. That\'s 9× A100 80GB GPUs — before you even start training.',
+    render(){ return `
+<div class="slide"><div class="card">
+<h2><span class="num">1.3</span> Full Fine-Tuning vs Partial Fine-Tuning</h2>
+<p>When you fine-tune, you have a choice: update <strong>every</strong> parameter, or only <strong>some</strong>.</p>
+<div class="compare-grid">
+  <div class="compare-card pick-a">
+    <h4>🔴 FULL FINE-TUNING</h4>
+    <p>Update ALL model weights</p>
+    <ul>
+      <li>Every parameter gets gradient updates</li>
+      <li>Maximum adaptability to new domain</li>
+      <li><strong>Problem:</strong> enormous GPU memory needed</li>
+      <li><strong>Problem:</strong> full model copy per task</li>
+      <li><strong>Problem:</strong> risk of catastrophic forgetting</li>
+    </ul>
+  </div>
+  <div class="compare-card pick-b">
+    <h4>🟢 PARTIAL FINE-TUNING (PEFT)</h4>
+    <p>Update only a tiny subset</p>
+    <ul>
+      <li>Freeze the base model completely</li>
+      <li>Train small "adapter" matrices instead</li>
+      <li>1,000× fewer trainable parameters</li>
+      <li>Store only adapter (~10MB) per task</li>
+      <li>Base model shared across all tasks</li>
+    </ul>
+  </div>
+</div>
+<div class="eq-box">
+<span style="color:var(--cyan)">Full FT params:</span>  175,000,000,000  (175B)
+<span style="color:var(--magenta)">LoRA params:</span>       37,700,000  (37.7M)
+<span style="color:var(--green)">Ratio:</span>         LoRA uses only <strong>0.02%</strong> of the parameters!</div>
+<div class="quiz" id="quiz3">
+  <div class="question">🧪 You want 50 different fine-tuned versions of Llama-7B. Which approach is practical?</div>
+  <div class="options">
+    <div class="option" onclick="checkQuiz('quiz3', this, 1)">A. Full fine-tuning — store 50 full model copies</div>
+    <div class="option" data-correct="true" onclick="checkQuiz('quiz3', this, 1)">B. LoRA — store 1 base + 50 tiny adapters (~500MB total)</div>
+  </div>
+  <div class="feedback" id="quiz3-fb"></div>
+</div>
+</div></div>`; }
+  },
+  { // 1.4
+    id:'1.4', title:'Parameter Efficient Fine-Tuning (PEFT)',
+    fact:'With LoRA, you can fine-tune a 7B model on a single consumer GPU (RTX 4090, 24GB). Without LoRA, you\'d need ~56GB+ VRAM.',
+    render(){ return `
+<div class="slide"><div class="card">
+<h2><span class="num">1.4</span> Parameter Efficient Fine-Tuning (PEFT)</h2>
+<p><strong>Why we don't train all 7B+ parameters.</strong> PEFT is the umbrella term for techniques that update only a tiny fraction of weights.</p>
+<div class="eq-box">
+<span style="color:var(--text-muted)">The Core Idea:</span>
+
+   <span style="color:var(--cyan)">Frozen Base Model</span>  +  <span style="color:var(--magenta)">Small Trainable Adapter</span>  =  <span style="color:var(--green)">Fine-Tuned Behavior</span>
+
+   The base model never changes. Train a tiny "patch"
+   that modifies behavior for a specific task.
+
+   <span style="color:var(--text-muted)">Result:</span> 1 base model + 100 adapters = 100 different
+            behaviors, using barely more disk space
+            than 1 full fine-tune.</div>
+<h3 style="font-family:'Orbitron',sans-serif;font-size:0.85rem;margin-top:1.5rem;color:var(--text-dim)">Three Categories of PEFT</h3>
+<div class="data-types">
+  <div class="data-type-card">
+    <div class="dt-icon">➕</div>
+    <h4>Additive</h4>
+    <p>Add small trainable layers to the frozen model. <strong>LoRA, Adapters, Prefix Tuning.</strong></p>
+  </div>
+  <div class="data-type-card">
+    <div class="dt-icon">🎯</div>
+    <h4>Selective</h4>
+    <p>Unfreeze only specific layers. <strong>BitFit</strong> (bias terms only) updates &lt;0.1% of params.</p>
+  </div>
+  <div class="data-type-card">
+    <div class="dt-icon">📐</div>
+    <h4>Reparameterized</h4>
+    <p>Decompose weight updates into low-rank matrices. <strong>LoRA</strong> dominates this category.</p>
+  </div>
+</div>
+<p><strong>LoRA dominates</strong> because it adds <em>zero inference latency</em> — the adapter merges into base weights before deployment.</p>
+<div class="quiz" id="quiz4">
+  <div class="question">🧪 What does PEFT stand for?</div>
+  <div class="options">
+    <div class="option" data-correct="true" onclick="checkQuiz('quiz4', this, 1)">A. Parameter Efficient Fine-Tuning</div>
+    <div class="option" onclick="checkQuiz('quiz4', this, 1)">B. Parallel Embedding Fine-Tuning</div>
+    <div class="option" onclick="checkQuiz('quiz4', this, 1)">C. Pre-trained Embedding Feature Transfer</div>
+  </div>
+  <div class="feedback" id="quiz4-fb"></div>
+</div>
+</div></div>`; }
+  },
+  { // 1.5
+    id:'1.5', title:'Fine-tuning vs RAG',
+    fact:'Many production systems use BOTH: RAG for real-time facts (prices, news), fine-tuning for tone, format, and domain reasoning style.',
+    render(){ return `
+<div class="slide"><div class="card">
+<h2><span class="num">1.5</span> Fine-tuning vs RAG — When to Choose Which</h2>
+<p>The <strong>#1 architecture decision</strong> in LLM applications. Both modify model behavior — but fundamentally differently.</p>
+<div class="compare-grid">
+  <div class="compare-card pick-a">
+    <h4>🔧 FINE-TUNING</h4>
+    <p>Changes the <strong>model itself</strong></p>
+    <ul>
+      <li>Knowledge <strong>baked into weights</strong></li>
+      <li>✅ No latency overhead at inference</li>
+      <li>✅ Handles complex patterns RAG can't</li>
+      <li>❌ Data becomes stale — needs re-training</li>
+      <li>❌ Can't explain where knowledge came from</li>
+    </ul>
+  </div>
+  <div class="compare-card pick-b">
+    <h4>📚 RAG (Retrieval-Augmented Generation)</h4>
+    <p>Changes the <strong>input context</strong></p>
+    <ul>
+      <li>Knowledge <strong>retrieved at query time</strong></li>
+      <li>✅ Always up-to-date (just update vector DB)</li>
+      <li>✅ Citations — knows info source</li>
+      <li>✅ Cheap to update (add/remove documents)</li>
+      <li>❌ Adds latency (retrieval step)</li>
+    </ul>
+  </div>
+</div>
+<div class="eq-box">
+<span style="color:var(--cyan)">Choose FINE-TUNING when:</span>
+  • Specific tone, format, or reasoning style needed
+  • Domain knowledge is stable (medical terminology)
+  • Minimum latency at inference is critical
+
+<span style="color:var(--magenta)">Choose RAG when:</span>
+  • Facts change frequently (prices, news, inventory)
+  • Citations / source attribution required
+  • Knowledge base is very large (>context window)
+
+<span style="color:var(--amber)">Choose BOTH when:</span>
+  • You want the model to reason about docs in a
+    specific style (e.g., legal analysis: RAG + legal FT)</div>
+<div class="quiz" id="quiz5">
+  <div class="question">🧪 A stock trading chatbot needs real-time prices. Fine-tuning or RAG?</div>
+  <div class="options">
+    <div class="option" onclick="checkQuiz('quiz5', this, 1)">A. Fine-tuning — bake prices into the model</div>
+    <div class="option" data-correct="true" onclick="checkQuiz('quiz5', this, 1)">B. RAG — retrieve live prices at query time</div>
+  </div>
+  <div class="feedback" id="quiz5-fb"></div>
+</div>
+</div></div>`; }
+  },
+  { // 1.6
+    id:'1.6', title:'Data Types for Fine-Tuning',
+    fact:'The quality of your fine-tuning data matters more than quantity. 1,000 carefully curated examples often outperform 100,000 noisy ones.',
+    render(){ return `
+<div class="slide"><div class="card">
+<h2><span class="num">1.6</span> Three Data Types — Three Purposes</h2>
+<p>Each stage of the pipeline uses a fundamentally different kind of training data.</p>
+<div class="data-types">
+  <div class="data-type-card" onclick="this.style.transform='scale(1.04)';setTimeout(()=>this.style.transform='',200)">
+    <div class="dt-icon">📄</div>
+    <h4>Non-Instructional</h4>
+    <p style="font-size:0.75rem;color:var(--amber);margin-bottom:0.3rem">Plain Text / Domain Adaptation</p>
+    <p>Raw text from PDFs, documents, wikis. Model learns domain language via self-supervised next-token prediction.</p>
+    <p style="font-size:0.72rem;color:var(--text-muted);margin-top:0.5rem"><strong>Ex:</strong> 10,000 medical journal articles → model completes medical sentences</p>
+  </div>
+  <div class="data-type-card" onclick="this.style.transform='scale(1.04)';setTimeout(()=>this.style.transform='',200)">
+    <div class="dt-icon">💬</div>
+    <h4>Instructional</h4>
+    <p style="font-size:0.75rem;color:var(--cyan);margin-bottom:0.3rem">Q&A Pairs / SFT Data</p>
+    <p>Structured instruction-input-output triples. Teaches the model to follow commands and generate desired responses.</p>
+    <p style="font-size:0.72rem;color:var(--text-muted);margin-top:0.5rem"><strong>Ex:</strong> "Summarize this → [text] → [summary]" — 10K pairs teach summarization</p>
+  </div>
+  <div class="data-type-card" onclick="this.style.transform='scale(1.04)';setTimeout(()=>this.style.transform='',200)">
+    <div class="dt-icon">⚖️</div>
+    <h4>Preference</h4>
+    <p style="font-size:0.75rem;color:var(--magenta);margin-bottom:0.3rem">Chosen/Rejected Pairs</p>
+    <p>Two responses to same prompt — one preferred, one rejected. Used in DPO/RLHF to align with human values.</p>
+    <p style="font-size:0.72rem;color:var(--text-muted);margin-top:0.5rem"><strong>Ex:</strong> "How to make a bomb?" → ❌ Recipe / ✅ Refusal + safety explanation</p>
+  </div>
+</div>
+<div class="eq-box">
+<span style="color:var(--text-muted)">Data Format Examples:</span>
+
+<span style="color:var(--amber)">Non-Instructional:</span>
+  {"text": "The patient presented with acute
+   myocardial infarction. Treatment included..."}
+
+<span style="color:var(--cyan)">Instructional (Alpaca format):</span>
+  {"instruction": "Diagnose the condition",
+   "input": "Patient has chest pain, elevated troponin...",
+   "output": "Acute myocardial infarction..."}
+
+<span style="color:var(--magenta)">Preference (DPO format):</span>
+  {"prompt": "What causes heart attacks?",
+   "chosen": "Heart attacks occur when blood flow...",
+   "rejected": "Heart attacks = too much butter. Stop fat."}</div>
+<div class="quiz" id="quiz6">
+  <div class="question">🧪 You want a model to write in Shakespeare's style. Which data type?</div>
+  <div class="options">
+    <div class="option" data-correct="true" onclick="checkQuiz('quiz6', this, 1)">A. Non-Instructional — feed it the complete works of Shakespeare</div>
+    <div class="option" onclick="checkQuiz('quiz6', this, 1)">B. Preference — compare Shakespeare vs modern English</div>
+  </div>
+  <div class="feedback" id="quiz6-fb"></div>
+</div>
+</div></div>`; }
+  }
+];
+
+// ── STATE ──
+let currentSlide = 0;
+const visitedSlides = new Set([0]);
+
+function renderSlide(index) {
+  currentSlide = index;
+  visitedSlides.add(index);
+  document.getElementById('slideContainer').innerHTML = slides[index].render();
+  updateDots();
+  updateChips();
+  document.getElementById('funFactText').innerHTML = `<strong>${slides[index].id}:</strong> ${slides[index].fact}`;
+  document.getElementById('stepLabel').textContent = `${index+1}/${slides.length}`;
+  document.getElementById('prevBtn').disabled = index === 0;
+  const nextBtn = document.getElementById('nextBtn');
+  if (index === slides.length-1) {
+    nextBtn.textContent = '✓ Complete';
+    nextBtn.style.background = 'var(--green-bg)';
+    nextBtn.style.borderColor = 'var(--green)';
+    nextBtn.style.color = 'var(--green)';
+  } else {
+    nextBtn.textContent = 'Next →';
+    nextBtn.style.background = 'var(--cyan-bg)';
+    nextBtn.style.borderColor = 'var(--cyan)';
+    nextBtn.style.color = 'var(--cyan)';
+  }
+  document.getElementById('slideContainer').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function goTo(index) {
+  if (index < 0 || index >= slides.length) return;
+  renderSlide(index);
+}
+
+function updateDots() {
+  document.getElementById('stepDots').innerHTML = slides.map((s,i) => {
+    let cls = i===currentSlide ? 'active' : visitedSlides.has(i) ? 'done' : '';
+    return `<div class="step-dot ${cls}" onclick="goTo(${i})" title="${s.id}: ${s.title}"></div>`;
+  }).join('');
+}
+
+function updateChips() {
+  document.getElementById('topicChips').innerHTML = slides.map((s,i) => {
+    let cls = i===currentSlide ? 'current' : visitedSlides.has(i) ? 'visited' : '';
+    return `<span class="topic-chip ${cls}" onclick="goTo(${i})">${s.id} ${s.title}</span>`;
+  }).join('');
+}
+
+// ── Quiz Logic ──
+window.checkQuiz = function(quizId, clickedEl, correctIndex) {
+  const quiz = document.getElementById(quizId);
+  if (quiz.dataset.answered === 'true') return;
+
+  const options = quiz.querySelectorAll('.option');
+  const feedback = document.getElementById(quizId+'-fb');
+  const isCorrect = clickedEl.dataset.correct === 'true';
+
+  options.forEach(o => {
+    if (o.dataset.correct === 'true') o.classList.add('correct');
+    if (o === clickedEl && !isCorrect) o.classList.add('wrong');
+  });
+
+  feedback.className = 'feedback show ' + (isCorrect ? 'correct' : 'wrong');
+  feedback.textContent = isCorrect
+    ? '✅ Correct! Well done.'
+    : '❌ Not quite. The correct answer is highlighted in green.';
+  quiz.dataset.answered = 'true';
+};
+
+// ── Keyboard ──
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' && currentSlide < slides.length-1) goTo(currentSlide+1);
+  if (e.key === 'ArrowLeft' && currentSlide > 0) goTo(currentSlide-1);
+});
+
+// ── Init ──
+renderSlide(0);
+</script>
+</body>
+</html>

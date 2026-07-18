@@ -288,10 +288,32 @@ where π_θ = policy model (being trained)
 
 ---
 
+## Interactive Learning Modules
+
+Click any link to open the interactive HTML in your browser.
+
+### 📊 Full Dashboard
+- [finetuning_plan_dashboard.html](finetuning_plan_dashboard.html) — Complete dashboard with all phases, progress bar, formulas, and session timeline
+
+### 🎓 Phase 1: Fine-Tuning Fundamentals
+- [phase1_fundamentals.html](phase1_fundamentals.html) — 6 interactive slides covering the 3-stage pipeline, pre-training vs fine-tuning, PEFT, FT vs RAG, and data types
+
+### ⚙️ Phase 2: Quantization
+- [phase2_quantization.html](phase2_quantization.html) — 8 interactive slides covering FP32→INT4, symmetric vs asymmetric, PTQ, QAT, BitsAndBytes, and BitNet
+- [bitnet_1_58bit_deep_dive.html](bitnet_1_58bit_deep_dive.html) — 9-slide deep dive into 1.58-bit LLMs (ternary weights, log₂(3), Pareto improvement)
+
+### 🔬 QAT Deep Dives
+- [qat_visual_guide.html](qat_visual_guide.html) — 9-step beginner walkthrough of QAT using 6 concrete weights
+- [qat_weight_nudge_animation.html](qat_weight_nudge_animation.html) — Live animation: watch one weight (W=−2.30) get nudged toward INT4 bucket (−2.40) via gradient descent
+- [qat_end_to_end_loop.html](qat_end_to_end_loop.html) — Full QAT training loop (Forward → Loss → Backward/STE → Update) with graphic canvas + tutorial mode
+- [w1_journey.html](w1_journey.html) — W1's complete journey step-by-step table with clickable formula breakdown
+
+---
+
 ## Progress
 
-- ✅ Phase 1: Fine-Tuning Fundamentals (theory done)
-- ✅ Phase 2: Quantization (theory done)
+- ✅ Phase 1: Fine-Tuning Fundamentals (theory done) 📘 [Interactive →](phase1_fundamentals.html)
+- ✅ Phase 2: Quantization (theory done) 📘 [Interactive →](phase2_quantization.html) | [QAT Deep Dives →](#-qat-deep-dives)
 - 📖 Phase 3: LoRA & QLoRA (theory + math — tomorrow)
 - ⬜ Phase 4: Non-Instructional Fine-Tuning (hands-on start)
 - ⬜ Phase 5: Instruction Fine-Tuning

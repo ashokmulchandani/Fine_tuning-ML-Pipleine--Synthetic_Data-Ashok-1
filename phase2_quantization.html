@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase 2: Quantization — Interactive Learning</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#06090f; --bg-card:#0d1117; --bg-raised:#161b22;
+  --border:#21262d; --border-active:#30363d;
+  --text:#e6edf3; --text-dim:#8b949e; --text-muted:#484f58;
+  --cyan:#39d2ff; --cyan-bg:#39d2ff15; --cyan-border:#39d2ff40;
+  --amber:#ffb347; --amber-bg:#ffb34715;
+  --green:#3fb950; --green-bg:#3fb95015;
+  --magenta:#ff6ec7; --magenta-bg:#ff6ec715;
+  --red:#f85149; --violet:#a371f7;
+  --radius:14px; --radius-sm:8px;
+  --transition:0.3s cubic-bezier(0.4,0,0.2,1);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.65;}
+.bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.app{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:2rem;}
+
+/* Top Bar */
+.topbar{position:sticky;top:0;z-index:100;background:rgba(6,9,15,0.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0.6rem 2rem;display:flex;align-items:center;gap:1rem;font-size:0.8rem;}
+.topbar .logo{font-family:'Orbitron',sans-serif;font-size:0.7rem;letter-spacing:0.15em;color:var(--cyan);white-space:nowrap;}
+.topbar .step-dots{display:flex;gap:0.35rem;flex:1;justify-content:center;}
+.topbar .step-dot{width:24px;height:4px;border-radius:2px;background:var(--border);transition:var(--transition);cursor:pointer;}
+.topbar .step-dot.done{background:var(--green);}
+.topbar .step-dot.active{background:var(--cyan);box-shadow:0 0 8px var(--cyan);}
+.topbar .step-dot:hover{background:var(--text-dim);}
+.topbar .step-label{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text-dim);white-space:nowrap;}
+
+/* Header */
+.header{text-align:center;padding:3rem 0 1rem;}
+.header .phase-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:0.7rem;letter-spacing:0.2em;color:var(--green);border:1px solid var(--green-bg);border-radius:100px;padding:0.4em 1.4em;margin-bottom:1rem;}
+.header h1{font-family:'Orbitron',sans-serif;font-size:clamp(1.6rem,4vw,2.4rem);font-weight:700;background:linear-gradient(135deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header .tagline{color:var(--text-dim);font-size:1rem;margin-top:0.5rem;}
+
+/* Slides */
+.slide-container{margin:2rem 0;}
+.slide{opacity:0;transform:translateX(40px);animation:slideIn 0.45s ease forwards;}
+@keyframes slideIn{to{opacity:1;transform:translateX(0);}}
+
+/* Cards */
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;margin-bottom:1rem;}
+.card h2{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:600;letter-spacing:0.06em;margin-bottom:1rem;display:flex;align-items:center;gap:0.6rem;}
+.card h2 .num{font-size:0.75rem;color:var(--cyan);background:var(--cyan-bg);border-radius:6px;padding:0.2em 0.6em;}
+.card p{color:var(--text-dim);margin-bottom:0.8rem;}
+.card ul{list-style:none;padding:0;}
+.card ul li{padding:0.45rem 0;color:var(--text-dim);display:flex;align-items:flex-start;gap:0.6rem;}
+.card ul li::before{content:'▸';color:var(--cyan);font-size:0.7rem;margin-top:0.3em;flex-shrink:0;}
+
+/* Precision Ladder (visual) */
+.precision-ladder{display:flex;flex-direction:column;gap:0.5rem;margin:1.5rem 0;}
+.ladder-rung{display:flex;align-items:center;gap:1rem;padding:0.8rem 1.2rem;background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:var(--transition);position:relative;}
+.ladder-rung:hover{border-color:var(--border-active);transform:translateX(4px);}
+.ladder-rung.highlight{border-color:var(--cyan);background:var(--cyan-bg);}
+.ladder-rung .rung-bar{height:12px;border-radius:6px;transition:width 1s ease;}
+.ladder-rung .rung-label{font-family:'JetBrains Mono',monospace;font-size:0.85rem;font-weight:600;min-width:4em;}
+.ladder-rung .rung-info{font-size:0.78rem;color:var(--text-dim);flex:1;}
+.ladder-rung .rung-bits{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text-muted);}
+
+/* Bit Visualization */
+.bit-viz{display:flex;gap:2px;align-items:center;font-family:'JetBrains Mono',monospace;margin:1rem 0;flex-wrap:wrap;justify-content:center;}
+.bit{width:36px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:0.8rem;font-weight:600;transition:var(--transition);}
+.bit.sign{background:#f8514920;color:var(--red);border:1px solid #f8514940;}
+.bit.exp{background:#39d2ff20;color:var(--cyan);border:1px solid #39d2ff40;}
+.bit.man{background:#a371f720;color:var(--violet);border:1px solid #a371f740;}
+.bit-label{font-size:0.6rem;text-align:center;color:var(--text-muted);margin-top:0.25rem;}
+
+/* Compare Grid */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0;}
+.compare-card{background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1.5rem;}
+.compare-card.pick-a{border-left:3px solid var(--cyan);}
+.compare-card.pick-b{border-left:3px solid var(--magenta);}
+.compare-card h4{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--cyan);margin-bottom:0.5rem;}
+.compare-card.pick-b h4{color:var(--magenta);}
+.compare-card p{font-size:0.85rem;color:var(--text-dim);margin-bottom:0.5rem;}
+
+/* Equation Box */
+.eq-box{background:rgba(0,0,0,0.4);border:1px solid var(--border);border-left:3px solid var(--cyan);border-radius:var(--radius-sm);padding:1.25rem;font-family:'JetBrains Mono',monospace;font-size:0.82rem;color:var(--text);margin:1rem 0;white-space:pre-wrap;line-height:1.8;overflow-x:auto;}
+
+/* Number Line Visual */
+.numline{position:relative;height:80px;margin:1.5rem 2rem;background:linear-gradient(90deg,var(--red),var(--amber),var(--green));border-radius:4px;opacity:0.6;}
+.numline .tick{position:absolute;top:-8px;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--text-muted);}
+.numline .tick::after{content:'';display:block;width:1px;height:16px;background:var(--text-muted);margin:2px auto 0;}
+
+/* Data Type Cards */
+.data-types{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin:1rem 0;}
+.data-type-card{background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1.5rem;text-align:center;transition:var(--transition);cursor:pointer;}
+.data-type-card:hover{transform:translateY(-3px);}
+.data-type-card:nth-child(1){border-top:3px solid var(--cyan);}
+.data-type-card:nth-child(2){border-top:3px solid var(--magenta);}
+.data-type-card .dt-icon{font-size:2rem;margin-bottom:0.5rem;}
+.data-type-card h4{font-weight:600;font-size:0.9rem;margin-bottom:0.3rem;}
+.data-type-card p{font-size:0.78rem;color:var(--text-dim);}
+
+/* Fun Fact */
+.fun-fact{background:linear-gradient(135deg,var(--amber-bg),var(--magenta-bg));border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem;margin:1.5rem 0;display:flex;align-items:flex-start;gap:0.8rem;}
+.fun-fact .bulb{font-size:1.5rem;flex-shrink:0;}
+.fun-fact .fact-text{font-size:0.88rem;color:var(--text-dim);}
+.fun-fact .fact-text strong{color:var(--amber);}
+
+/* Topic Chips */
+.topic-list{display:flex;flex-wrap:wrap;gap:0.5rem;justify-content:center;margin:1.5rem 0;}
+.topic-chip{font-family:'JetBrains Mono',monospace;font-size:0.6rem;padding:0.5em 1em;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;transition:var(--transition);}
+.topic-chip:hover{border-color:var(--text-dim);color:var(--text-dim);}
+.topic-chip.visited{border-color:var(--green);color:var(--green);background:var(--green-bg);}
+.topic-chip.current{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-bg);box-shadow:0 0 12px rgba(57,210,255,0.15);}
+
+/* Nav */
+.nav-row{display:flex;justify-content:space-between;margin:1.5rem 0 3rem;}
+.nav-btn{font-family:'JetBrains Mono',monospace;font-size:0.75rem;letter-spacing:0.08em;padding:0.7em 1.6em;border:1px solid var(--border);border-radius:100px;background:transparent;color:var(--text);cursor:pointer;transition:var(--transition);display:flex;align-items:center;gap:0.5rem;}
+.nav-btn:hover{border-color:var(--cyan-border);color:var(--cyan);}
+.nav-btn:disabled{opacity:0.3;cursor:not-allowed;}
+.nav-btn.primary{background:var(--cyan-bg);border-color:var(--cyan);color:var(--cyan);}
+.nav-btn.primary:hover{background:var(--cyan);color:var(--bg);}
+
+/* Quiz */
+.quiz{margin:1.5rem 0;}
+.quiz .question{font-weight:600;font-size:1.05rem;margin-bottom:1rem;}
+.quiz .options{display:flex;flex-direction:column;gap:0.5rem;}
+.quiz .option{background:var(--bg-raised);border:2px solid var(--border);border-radius:var(--radius-sm);padding:1rem 1.25rem;cursor:pointer;transition:var(--transition);font-size:0.9rem;}
+.quiz .option:hover{border-color:var(--border-active);}
+.quiz .option.selected{border-color:var(--cyan);background:var(--cyan-bg);}
+.quiz .option.correct{border-color:var(--green)!important;background:var(--green-bg)!important;}
+.quiz .option.wrong{border-color:var(--red)!important;background:#f8514920!important;}
+.quiz .feedback{margin-top:1rem;padding:1rem;border-radius:var(--radius-sm);font-weight:500;display:none;}
+.quiz .feedback.show{display:block;}
+.quiz .feedback.correct{background:var(--green-bg);border:1px solid var(--green);color:var(--green);}
+.quiz .feedback.wrong{background:#f8514920;border:1px solid var(--red);color:var(--red);}
+
+/* Weight Matrix Animation */
+.matrix-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;margin:1rem 0;font-family:'JetBrains Mono',monospace;}
+.matrix-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:3px;font-size:0.55rem;background:var(--bg-raised);color:var(--text-dim);transition:all 0.5s ease;}
+.matrix-cell.quantized{background:var(--cyan-bg);color:var(--cyan);font-weight:600;}
+
+/* Flashcard */
+.flashcard-wrap{perspective:800px;height:200px;cursor:pointer;margin:1rem 0;}
+.flashcard{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform 0.6s ease;}
+.flashcard.flipped{transform:rotateY(180deg);}
+.flashcard .front,.flashcard .back{position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--radius);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-direction:column;padding:2rem;text-align:center;}
+.flashcard .front{background:var(--bg-card);font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:600;}
+.flashcard .front .hint{font-family:'DM Sans',sans-serif;font-size:0.75rem;color:var(--text-muted);margin-top:0.8rem;}
+.flashcard .back{background:var(--bg-raised);transform:rotateY(180deg);font-size:0.9rem;color:var(--text-dim);line-height:1.7;}
+.flashcard .back strong{color:var(--cyan);}
+
+/* Step flow */
+.step-flow{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;justify-content:center;margin:1.2rem 0;}
+.flow-step{background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.7rem 1rem;text-align:center;font-size:0.78rem;min-width:80px;transition:var(--transition);cursor:pointer;}
+.flow-step:hover{border-color:var(--cyan-border);}
+.flow-arrow{color:var(--cyan);font-size:1rem;}
+
+@media(max-width:768px){
+  .app{padding:1rem;}
+  .compare-grid,.data-types{grid-template-columns:1fr;}
+  .topbar{padding:0.5rem 1rem;gap:0.5rem;}
+  .topbar .step-dot{width:16px;}
+  .bit{width:26px;height:34px;font-size:0.6rem;}
+}
+</style>
+</head>
+<body>
+
+<canvas class="bg-canvas" id="bgCanvas"></canvas>
+
+<nav class="topbar">
+  <span class="logo">Phase 2</span>
+  <div class="step-dots" id="stepDots"></div>
+  <span class="step-label" id="stepLabel">1/8</span>
+</nav>
+
+<div class="app">
+
+  <header class="header">
+    <div class="phase-badge">✅ COMPLETED</div>
+    <h1>Quantization</h1>
+    <p class="tagline">How to fit large models on small GPUs — from FP32 down to 1-bit</p>
+  </header>
+
+  <div class="topic-list" id="topicChips"></div>
+
+  <div class="fun-fact" id="funFact">
+    <span class="bulb">💡</span>
+    <span class="fact-text" id="funFactText"></span>
+  </div>
+
+  <div id="slideContainer"></div>
+
+  <div class="nav-row">
+    <button class="nav-btn" id="prevBtn" onclick="goTo(currentSlide-1)">← Previous</button>
+    <button class="nav-btn primary" id="nextBtn" onclick="goTo(currentSlide+1)">Next →</button>
+  </div>
+
+</div>
+
+<script>
+// ── Background Particles ──
+const canvas=document.getElementById('bgCanvas');
+const ctx=canvas.getContext('2d');
+let particles=[];
+function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+resize();window.addEventListener('resize',resize);
+for(let i=0;i<60;i++){particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()-0.5)*0.3,vy:(Math.random()-0.5)*0.3,r:Math.random()*1.5+0.5,alpha:Math.random()*0.5+0.1});}
+function animateParticles(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles.forEach((p,i)=>{
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0)p.x=canvas.width;if(p.x>canvas.width)p.x=0;
+    if(p.y<0)p.y=canvas.height;if(p.y>canvas.height)p.y=0;
+    for(let j=i+1;j<particles.length;j++){
+      const dx=particles[j].x-p.x,dy=particles[j].y-p.y,dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist<100){ctx.beginPath();ctx.strokeStyle=`rgba(57,210,255,${0.06*(1-dist/100)})`;ctx.lineWidth=0.5;ctx.moveTo(p.x,p.y);ctx.lineTo(particles[j].x,particles[j].y);ctx.stroke();}
+    }
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=`rgba(57,210,255,${p.alpha})`;ctx.fill();
+  });
+  requestAnimationFrame(animateParticles);
+}
+animateParticles();
+
+// ── SLIDE DATA ──
+const slides=[
+  { // 2.1
+    id:'2.1',title:'What is Quantization?',
+    fact:'Quantizing a 7B model from FP16 to INT4 reduces memory from ~14GB to ~3.5GB — that\'s the difference between needing an A100 and running on a free Colab GPU.',
+    render(){return `
+<div class="slide"><div class="card">
+<h2><span class="num">2.1</span> What is Quantization?</h2>
+<p><strong>Higher precision → Lower precision.</strong> Quantization compresses model weights so they take up less memory, with minimal accuracy loss.</p>
+
+<div class="precision-ladder">
+  <div class="ladder-rung highlight" onclick="this.classList.toggle('highlight')">
+    <div class="rung-bar" style="width:100%;background:var(--red)"></div>
+    <div class="rung-label">FP32</div>
+    <div class="rung-info">Full Precision — 4 bytes per weight</div>
+    <div class="rung-bits">32 bits</div>
+  </div>
+  <div class="ladder-rung" onclick="this.classList.toggle('highlight')">
+    <div class="rung-bar" style="width:50%;background:var(--amber)"></div>
+    <div class="rung-label">FP16</div>
+    <div class="rung-info">Half Precision — 2 bytes per weight</div>
+    <div class="rung-bits">16 bits</div>
+  </div>
+  <div class="ladder-rung" onclick="this.classList.toggle('highlight')">
+    <div class="rung-bar" style="width:25%;background:var(--cyan)"></div>
+    <div class="rung-label">INT8</div>
+    <div class="rung-info">8-bit Integer — 1 byte per weight</div>
+    <div class="rung-bits">8 bits</div>
+  </div>
+  <div class="ladder-rung" onclick="this.classList.toggle('highlight')">
+    <div class="rung-bar" style="width:12.5%;background:var(--green)"></div>
+    <div class="rung-label">INT4</div>
+    <div class="rung-info">4-bit Integer — 0.5 bytes per weight</div>
+    <div class="rung-bits">4 bits</div>
+  </div>
+</div>
+
+<div class="eq-box">
+<span style="color:var(--text-muted)">Memory math for a 7B parameter model:</span>
+
+  FP32:  7B × 4 bytes = <span style="color:var(--red)">28 GB</span>
+  FP16:  7B × 2 bytes = <span style="color:var(--amber)">14 GB</span>
+  INT8:  7B × 1 byte  = <span style="color:var(--cyan)">7 GB</span>
+  INT4:  7B × 0.5 bytes = <span style="color:var(--green)">3.5 GB</span>  ← Fits on free Colab T4!</div>
+
+<p><strong>The tradeoff:</strong> Less precision = less memory, faster inference, but slightly lower accuracy. The art is finding the sweet spot.</p>
+<div class="quiz" id="quiz1">
+  <div class="question">🧪 A 13B model in FP16 needs ~26GB VRAM. What does INT4 quantization reduce this to?</div>
+  <div class="options">
+    <div class="option" onclick="checkQuiz('quiz1',this,1)">A. ~13 GB</div>
+    <div class="option" data-correct="true" onclick="checkQuiz('quiz1',this,1)">B. ~6.5 GB</div>
+    <div class="option" onclick="checkQuiz('quiz1',this,1)">C. ~3.25 GB</div>
+  </div>
+  <div class="feedback" id="quiz1-fb"></div>
+</div>
+</div></div>`;}
+  },
+  { // 2.2
+    id:'2.2',title:'How Numbers Are Stored — FP32 vs FP16',
+    fact:'FP16 can represent 65,504 distinct values. FP32 can represent ~4 billion. Yet for neural network weights, FP16 is often enough — most weights cluster near zero.',
+    render(){return `
+<div class="slide"><div class="card">
+<h2><span class="num">2.2</span> Full Precision vs Half Precision</h2>
+<p>Floating-point numbers are stored as three parts: <strong>sign + exponent + mantissa</strong>. More bits in each part = more range <em>and</em> more precision.</p>
+
+<h3 style="font-family:'Orbitron',sans-serif;font-size:0.8rem;color:var(--text-dim);margin:1.2rem 0 0.5rem;">FP32 — 32 bits (4 bytes)</h3>
+<div class="bit-viz">
+  <div style="display:flex;flex-direction:column;align-items:center;"><div class="bit sign" style="width:48px">S</div><div class="bit-label">Sign<br>1 bit</div></div>
+  <div style="display:flex;flex-direction:column;align-items:center;margin-left:4px;"><div style="display:flex;gap:2px;">${Array(8).fill('<div class="bit exp" style="width:36px">E</div>').join('')}</div><div class="bit-label">Exponent · 8 bits</div></div>
+  <div style="display:flex;flex-direction:column;align-items:center;margin-left:4px;"><div style="display:flex;gap:2px;">${Array(23).fill('<div class="bit man" style="width:21px">M</div>').join('')}</div><div class="bit-label">Mantissa · 23 bits</div></div>
+</div>
+
+<h3 style="font-family:'Orbitron',sans-serif;font-size:0.8rem;color:var(--text-dim);margin:1.5rem 0 0.5rem;">FP16 — 16 bits (2 bytes)</h3>
+<div class="bit-viz">
+  <div style="display:flex;flex-direction:column;align-items:center;"><div class="bit sign" style="width:48px">S</div><div class="bit-label">Sign<br>1 bit</div></div>
+  <div style="display:flex;flex-direction:column;align-items:center;margin-left:4px;"><div style="display:flex;gap:2px;">${Array(5).fill('<div class="bit exp" style="width:36px">E</div>').join('')}</div><div class="bit-label">Exponent · 5 bits</div></div>
+  <div style="display:flex;flex-direction:column;align-items:center;margin-left:4px;"><div style="display:flex;gap:2px;">${Array(10).fill('<div class="bit man" style="width:28px">M</div>').join('')}</div><div class="bit-label">Mantissa · 10 bits</div></div>
+</div>
+
+<div class="eq-box">
+<span style="color:var(--text-muted)">The formula:</span>  value = (−1)^<span style="color:var(--red)">sign</span> × 2^<span style="color:var(--cyan)">exponent</span> × 1.<span style="color:var(--violet)">mantissa</span>
+
+  <span style="color:var(--red)">Sign:</span>   0 = positive, 1 = negative
+  <span style="color:var(--cyan)">Exponent:</span> Controls the RANGE (how big/small)
+  <span style="color:var(--violet)">Mantissa:</span> Controls the PRECISION (how many decimal places)
+
+  FP16 has smaller range AND coarser precision than FP32.
+  But for neural network weights? Often good enough.</div>
+
+<div class="quiz" id="quiz2">
+  <div class="question">🧪 Going from FP32→FP16, which part loses the MOST bits?</div>
+  <div class="options">
+    <div class="option" onclick="checkQuiz('quiz2',this,1)">A. Sign bit (1→1, no change)</div>
+    <div class="option" onclick="checkQuiz('quiz2',this,1)">B. Exponent (8→5, loses 3 bits)</div>
+    <div class="option" data-correct="true" onclick="checkQuiz('quiz2',this,1)">C. Mantissa (23→10, loses 13 bits)</div>
+  </div>
+  <div class="feedback" id="quiz2-fb"></div>
+</div>
+</div></div>`;}
+  },
+  { // 2.3
+    id:'2.3',title:'Symmetric Quantization',
+    fact:'Symmetric quantization works best when your data is centered around zero — which neural network weights naturally are, thanks to weight decay and normalization.',
+    render(){return `
+<div class="slide"><div class="card">
+<h2><span class="num">2.3</span> Symmetric Quantization</h2>
+<p><strong>The simplest approach.</strong> Map floating-point values to integers symmetrically around zero. One scale factor does all the work.</p>
+
+<div class="eq-box">
+<span style="color:var(--text-muted)">The Formula:</span>
+
+  <span style="color:var(--cyan)">scale</span> = (x_max − x_min) / (q_max − q_min)
+
+  <span style="color:var(--magenta)">quantized_value</span> = round( original_value / <span style="color:var(--cyan)">scale</span> )
+
+<span style="color:var(--text-muted)">Example — INT8 (range: −128 to 127):</span>
+
+  Original weights range: −3.0 to +3.0
+  scale = (3.0 − (−3.0)) / (127 − (−128))
+        = 6.0 / 255
+        = <span style="color:var(--cyan)">0.0235</span>
+
+  Weight 1.5 → round(1.5 / 0.0235) = round(63.8) = <span style="color:var(--green)">64</span>
+  Weight −2.0 → round(−2.0 / 0.0235) = round(−85.1) = <span style="color:var(--green)">−85</span>
+
+  Dequantize back: 64 × 0.0235 = <span style="color:var(--amber)">1.504</span> (small error: 0.004)</div>
+
+<p><strong>Key property:</strong> Zero in floating point maps exactly to zero in integer. This is perfect for neural networks where zero has special meaning (padding, ReLU outputs, dropout).</p>
+
+<div class="quiz" id="quiz3">
+  <div class="question">🧪 If weights range from −1.0 to +1.0 and we quantize to INT8 (−128 to 127), what is the scale factor?</div>
+  <div class="options">
+    <div class="option" onclick="checkQuiz('quiz3',this,1)">A. 2.0 / 255 ≈ 0.0078</div>
+    <div class="option" data-correct="true" onclick="checkQuiz('quiz3',this,1)">B. 2.0 / 255 ≈ 0.0078 — yes, same formula: (1−(−1))/(127−(−128))</div>
+  </div>
+  <div class="feedback" id="quiz3-fb"></div>
+</div>
+</div></div>`;}
+  },
+  { // 2.4
+    id:'2.4',title:'Asymmetric Quantization',
+    fact:'Asymmetric quantization is preferred for activations (not weights) because ReLU outputs are always ≥0 — the distribution is NOT centered around zero.',
+    render(){return `
+<div class="slide"><div class="card">
+<h2><span class="num">2.4</span> Asymmetric Quantization</h2>
+<p><strong>For non-centered distributions.</strong> When data doesn't cluster around zero (e.g., ReLU outputs are all ≥0), symmetric quantization wastes half the integer range.</p>
+
+<div class="eq-box">
+<span style="color:var(--text-muted)">Adds a "zero point" offset:</span>
+
+  <span style="color:var(--cyan)">scale</span> = (x_max − x_min) / (q_max − q_min)
+
+  <span style="color:var(--amber)">zero_point</span> = q_min − round(x_min / <span style="color:var(--cyan)">scale</span>)
+
+  <span style="color:var(--magenta)">quantized_value</span> = round(original / <span style="color:var(--cyan)">scale</span>) + <span style="color:var(--amber)">zero_point</span>
+
+<span style="color:var(--text-muted)">Example — ReLU activations (range: 0.0 to 6.0), INT8:</span>
+
+  scale = 6.0 / 255 = <span style="color:var(--cyan)">0.0235</span>
+  zero_point = −128 − round(0 / 0.0235) = <span style="color:var(--amber)">−128</span>
+
+  Activation 0.0 → round(0/0.0235) + (−128) = <span style="color:var(--green)">−128</span>
+  Activation 3.0 → round(3/0.0235) + (−128) = <span style="color:var(--green)">0</span>
+  Activation 6.0 → round(6/0.0235) + (−128) = <span style="color:var(--green)">127</span></div>
+
+<div class="compare-grid">
+  <div class="compare-card pick-a"><h4>🔷 Symmetric</h4><p>Zero maps to zero. Best for <strong>weights</strong> (centered around 0). Simpler math, faster dequantization.</p></div>
+  <div class="compare-card pick-b"><h4>🔶 Asymmetric</h4><p>Full integer range used. Best for <strong>activations</strong> (ReLU ≥ 0). Slightly more complex but better accuracy for skewed distributions.</p></div>
+</div>
+<div class="quiz" id="quiz4">
+  <div class="question">🧪 ReLU outputs range from 0 to 10. Which quantization would waste less range?</div>
+  <div class="options">
+    <div class="option" onclick="checkQuiz('quiz4',this,1)">A. Symmetric — half the range (−128 to 0) is wasted on negatives that never occur</div>
+    <div class="option" data-correct="true" onclick="checkQuiz('quiz4',this,1)">B. Asymmetric — maps 0→−128, 10→127, using the full range</div>
+  </div>
+  <div class="feedback" id="quiz4-fb"></div>
+</div>
+</div></div>`;}
+  },
+  { // 2.5
+    id:'2.5',title:'Post-Training Quantization (PTQ)',
+    fact:'PTQ on Llama-2-7B (INT4) causes only ~2-5% accuracy drop on most benchmarks — often acceptable for the 4× memory savings.',
+    render(){return `
+<div class="slide"><div class="card">
+<h2><span class="num">2.5</span> Post-Training Quantization (PTQ)</h2>
+<p><strong>Quantize after training — quick and simple.</strong> Take a pre-trained model, convert weights to lower precision. No re-training needed.</p>
+
+<div class="step-flow">
+  <div class="flow-step">📦 Trained<br>Model (FP16)</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-step">📏 Calibrate<br>(find scale/zero_point)</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-step">🔽 Quantize<br>Weights → INT8/INT4</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-step">🚀 Deploy<br>Smaller & Faster</div>
+</div>
+
+<div class="eq-box">
+<span style="color:var(--green)">✅ Pros:</span>  • No training data needed (just the model)
+         • Zero additional compute cost
+         • Instant — just convert and go
+         • Works surprisingly well for most models
+
+<span style="color:var(--red)">❌ Cons:</span>  • Some accuracy loss (usually 1-5%)
+         • No recovery mechanism — you get what you get
+         • INT4 can degrade significantly on small models</div>
+
+<p><strong>PTQ is the default</strong> for most deployments. It's what BitsAndBytes does under the hood. For most use cases, the accuracy loss is negligible.</p>
+<div class="quiz" id="quiz5">
+  <div class="question">🧪 What's the main advantage of PTQ over QAT?</div>
+  <div class="options">
+    <div class="option" data-correct="true" onclick="checkQuiz('quiz5',this,1)">A. No training data or re-training needed — just convert and deploy</div>
+    <div class="option" onclick="checkQuiz('quiz5',this,1)">B. Better accuracy than the original FP32 model</div>
+    <div class="option" onclick="checkQuiz('quiz5',this,1)">C. Requires a large labeled dataset</div>
+  </div>
+  <div class="feedback" id="quiz5-fb"></div>
+</div>
+</div></div>`;}
+  },
+  { // 2.6
+    id:'2.6',title:'Quantization-Aware Training (QAT)',
+    fact:'QAT can recover 90-99% of the accuracy lost by PTQ, at the cost of one additional fine-tuning run. For mission-critical deployments, it\'s worth it.',
+    render(){return `
+<div class="slide"><div class="card">
+<h2><span class="num">2.6</span> Quantization-Aware Training (QAT)</h2>
+<p><strong>Quantize, then fine-tune to recover accuracy.</strong> The model "learns" to compensate for the reduced precision during a short re-training phase.</p>
+
+<div class="step-flow">
+  <div class="flow-step">📦 Trained<br>Model (FP16)</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-step">🔽 Simulate<br>Quantization</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-step">🔄 Fine-tune<br>(recover accuracy)</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-step">✅ Actually<br>Quantize</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-step">🚀 Deploy</div>
+</div>
+
+<div class="eq-box">
+<span style="color:var(--text-muted)">How it works:</span>
+
+  1. Insert "fake quantization" ops into the model
+     (simulate INT8 rounding during forward pass)
+
+  2. Fine-tune for a few hundred steps
+     Model learns: "these weights will be rounded,
+     let me adjust to compensate"
+
+  3. Remove fake ops, actually quantize
+     The adjusted weights now survive quantization
+     with minimal accuracy loss
+
+<span style="color:var(--green)">✅ Pros:</span>  • Much better accuracy than PTQ
+         • Model adapts to quantization artifacts
+         • Only needs a small fine-tuning dataset
+
+<span style="color:var(--red)">❌ Cons:</span>  • Requires training data and compute
+         • More complex pipeline
+         • Not always necessary (PTQ often good enough)</div>
+
+<p><strong>When to use QAT:</strong> Small models (&lt;1B params), INT4 quantization, or when every % of accuracy matters (medical, finance, autonomous systems).</p>
+<div class="quiz" id="quiz6">
+  <div class="question">🧪 QAT simulates quantization during training. Why "simulate" instead of actually quantizing?</div>
+  <div class="options">
+    <div class="option" data-correct="true" onclick="checkQuiz('quiz6',this,1)">A. Gradients need floating-point precision — can't backprop through true integer operations</div>
+    <div class="option" onclick="checkQuiz('quiz6',this,1)">B. It's faster to simulate than to actually quantize</div>
+  </div>
+  <div class="feedback" id="quiz6-fb"></div>
+</div>
+</div></div>`;}
+  },
+  { // 2.7
+    id:'2.7',title:'BitsAndBytes Library',
+    fact:'BitsAndBytes NF4 (NormalFloat4) is specifically designed for normally-distributed weights — which neural network weights happen to be. This gives it ~0.5-1% better accuracy than naive INT4.',
+    render(){return `
+<div class="slide"><div class="card">
+<h2><span class="num">2.7</span> BitsAndBytes — The Go-To Quantization Library</h2>
+<p><strong>4-bit and 8-bit quantization made trivial.</strong> BitsAndBytes is what powers QLoRA — the technique that lets you fine-tune 65B models on a single GPU.</p>
+
+<div class="eq-box">
+<span style="color:var(--text-muted)">Usage (works with any HuggingFace model):</span>
+
+  <span style="color:var(--text-muted)">from transformers import AutoModelForCausalLM, BitsAndBytesConfig</span>
+
+  bnb_config = <span style="color:var(--cyan)">BitsAndBytesConfig</span>(
+      <span style="color:var(--magenta)">load_in_4bit</span>=<span style="color:var(--green)">True</span>,              <span style="color:var(--text-muted)"># Enable 4-bit quantization</span>
+      <span style="color:var(--magenta)">bnb_4bit_quant_type</span>=<span style="color:var(--amber)">"nf4"</span>,    <span style="color:var(--text-muted)"># NormalFloat4 (best for weights)</span>
+      <span style="color:var(--magenta)">bnb_4bit_compute_dtype</span>=<span style="color:var(--amber)">torch.bfloat16</span>,
+      <span style="color:var(--magenta)">bnb_4bit_use_double_quant</span>=<span style="color:var(--green)">True</span>  <span style="color:var(--text-muted)"># Double quantization (even smaller!)</span>
+  )
+
+  model = AutoModelForCausalLM.from_pretrained(
+      <span style="color:var(--amber)">"meta-llama/Llama-2-7b-hf"</span>,
+      quantization_config=bnb_config,
+      device_map=<span style="color:var(--amber)">"auto"</span>
+  )</div>
+
+<div class="data-types">
+  <div class="data-type-card">
+    <div class="dt-icon">🧬</div>
+    <h4>NF4 (NormalFloat4)</h4>
+    <p>Optimized for normally-distributed data (which neural network weights are). Non-uniform quantization bins — more precision near zero, less at extremes.</p>
+  </div>
+  <div class="data-type-card">
+    <div class="dt-icon">🪜</div>
+    <h4>Double Quantization</h4>
+    <p>Quantizes the quantization constants themselves! Saves an additional ~0.4 bits per parameter. Every byte counts when fitting on a GPU.</p>
+  </div>
+</div>
+
+<p><strong>BF16 compute dtype:</strong> Weights are stored in 4-bit, but computations happen in BF16. BitsAndBytes dequantizes on-the-fly during the forward pass — transparent to the model.</p>
+<div class="quiz" id="quiz7">
+  <div class="question">🧪 What does <code>load_in_4bit=True</code> with NF4 achieve for a 7B model?</div>
+  <div class="options">
+    <div class="option" data-correct="true" onclick="checkQuiz('quiz7',this,1)">A. Model uses ~3.5GB VRAM instead of ~14GB (FP16) — fits on a single consumer GPU</div>
+    <div class="option" onclick="checkQuiz('quiz7',this,1)">B. Model runs in exactly 4 seconds regardless of input length</div>
+  </div>
+  <div class="feedback" id="quiz7-fb"></div>
+</div>
+</div></div>`;}
+  },
+  { // 2.8
+    id:'2.8',title:'1-Bit LLMs (BitNet)',
+    fact:'BitNet b1.58 (ternary: −1, 0, 1) matches FP16 Llama performance at the same model size, while using ~10× less energy. Addition replaces all multiplication — no GPUs needed, TPUs/FPGAs work fine.',
+    render(){return `
+<div class="slide"><div class="card">
+<h2><span class="num">2.8</span> 1-Bit LLMs — The Frontier</h2>
+<p><strong>Ternary weights: {-1, 0, +1}.</strong> BitNet replaces floating-point multiplication with integer addition. This is a <em>Pareto improvement</em> — better speed AND lower memory AND matched accuracy.</p>
+
+<div class="eq-box">
+<span style="color:var(--text-muted)">The Key Insight:</span>
+
+  Normal LLM:  y = W × x     (matrix multiply, billions of FP16 MUL ops)
+  <span style="color:var(--cyan)">BitNet:</span>       y = <span style="color:var(--cyan)">ternary(W)</span> ⊛ x  (addition only, {-1,0,1} weights)
+
+  Ternary weights {-1, 0, +1} mean:
+    • Multiply by −1 → just negate (flip sign bit)
+    • Multiply by 0  → skip entirely (sparsity!)
+    • Multiply by +1 → keep as-is
+
+  <span style="color:var(--green)">No actual multiplication happens at inference.</span></div>
+
+<div class="compare-grid">
+  <div class="compare-card pick-a">
+    <h4>🧠 Conventional LLM</h4>
+    <p>FP16 weights, matrix multiplication</p>
+    <ul>
+      <li>~14 GB for 7B model (FP16)</li>
+      <li>Needs GPU with tensor cores</li>
+      <li>High energy consumption</li>
+      <li>GPUs mandatory</li>
+    </ul>
+  </div>
+  <div class="compare-card pick-b">
+    <h4>⚡ BitNet b1.58</h4>
+    <p>Ternary weights, addition only</p>
+    <ul>
+      <li>~0.44 GB for 7B model (1.58 bit)</li>
+      <li>Runs on CPU / FPGA / phone</li>
+      <li>~10× less energy</li>
+      <li>No GPU required</li>
+    </ul>
+  </div>
+</div>
+
+<div class="flashcard-wrap" onclick="this.querySelector('.flashcard').classList.toggle('flipped')">
+  <div class="flashcard">
+    <div class="front"><span>🤔 Why "b1.58" not "b2"?</span><span class="hint">Click to flip ↻</span></div>
+    <div class="back">
+      <strong>3 values (−1, 0, +1) = log₂(3) ≈ 1.58 bits</strong><br><br>
+      Two bits can store 4 values (00, 01, 10, 11).<br>
+      But ternary only needs 3 states, which is 1.58 bits of information.<br><br>
+      The "0" state enables <strong>built-in sparsity</strong> — if 30% of weights are 0, those computations are skipped entirely.
+    </div>
+  </div>
+</div>
+
+<div class="quiz" id="quiz8">
+  <div class="question">🧪 What makes BitNet a "Pareto improvement"?</div>
+  <div class="options">
+    <div class="option" data-correct="true" onclick="checkQuiz('quiz8',this,1)">A. It improves BOTH speed AND memory WITHOUT sacrificing accuracy — no tradeoff needed</div>
+    <div class="option" onclick="checkQuiz('quiz8',this,1)">B. It's faster but significantly less accurate than FP16 models</div>
+  </div>
+  <div class="feedback" id="quiz8-fb"></div>
+</div>
+</div></div>`;}
+  }
+];
+
+// ── STATE ──
+let currentSlide=0;
+const visitedSlides=new Set([0]);
+
+function renderSlide(index){
+  currentSlide=index;visitedSlides.add(index);
+  document.getElementById('slideContainer').innerHTML=slides[index].render();
+  updateDots();updateChips();
+  document.getElementById('funFactText').innerHTML=`<strong>${slides[index].id}:</strong> ${slides[index].fact}`;
+  document.getElementById('stepLabel').textContent=`${index+1}/${slides.length}`;
+  document.getElementById('prevBtn').disabled=index===0;
+  const nb=document.getElementById('nextBtn');
+  if(index===slides.length-1){nb.textContent='✓ Complete';nb.style.background='var(--green-bg)';nb.style.borderColor='var(--green)';nb.style.color='var(--green)';}
+  else{nb.textContent='Next →';nb.style.background='var(--cyan-bg)';nb.style.borderColor='var(--cyan)';nb.style.color='var(--cyan)';}
+  document.getElementById('slideContainer').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function goTo(index){if(index<0||index>=slides.length)return;renderSlide(index);}
+
+function updateDots(){
+  document.getElementById('stepDots').innerHTML=slides.map((s,i)=>{
+    let cls=i===currentSlide?'active':visitedSlides.has(i)?'done':'';
+    return `<div class="step-dot ${cls}" onclick="goTo(${i})" title="${s.id}: ${s.title}"></div>`;
+  }).join('');
+}
+
+function updateChips(){
+  document.getElementById('topicChips').innerHTML=slides.map((s,i)=>{
+    let cls=i===currentSlide?'current':visitedSlides.has(i)?'visited':'';
+    return `<span class="topic-chip ${cls}" onclick="goTo(${i})">${s.id}</span>`;
+  }).join('');
+}
+
+window.checkQuiz=function(qid,el,nOpts){
+  const q=document.getElementById(qid);
+  if(q.dataset.answered==='true')return;
+  q.querySelectorAll('.option').forEach(o=>{if(o.dataset.correct==='true')o.classList.add('correct');});
+  if(el.dataset.correct!=='true')el.classList.add('wrong');
+  const fb=document.getElementById(qid+'-fb');
+  fb.className='feedback show '+(el.dataset.correct==='true'?'correct':'wrong');
+  fb.textContent=el.dataset.correct==='true'?'✅ Correct!':'❌ Not quite — the correct answer is highlighted in green.';
+  q.dataset.answered='true';
+};
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'&&currentSlide<slides.length-1)goTo(currentSlide+1);
+  if(e.key==='ArrowLeft'&&currentSlide>0)goTo(currentSlide-1);
+});
+
+renderSlide(0);
+</script>
+</body>
+</html>

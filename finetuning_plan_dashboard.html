@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLM Fine-Tuning Master Plan — Interactive Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep: #0a0e14;
+  --bg-card: #131820;
+  --bg-card-hover: #181f2a;
+  --border: #1e2a3a;
+  --text-primary: #e8ecf1;
+  --text-secondary: #8b95a5;
+  --text-muted: #4e5a6b;
+  --cyan: #00e5ff;
+  --cyan-dim: #00e5ff33;
+  --cyan-glow: #00e5ff66;
+  --magenta: #ff00ff;
+  --magenta-dim: #ff00ff33;
+  --amber: #ffab00;
+  --amber-dim: #ffab0033;
+  --green: #00e676;
+  --green-dim: #00e67633;
+  --slate: #546e7a;
+  --red: #ff5252;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* ── Animated Grid Background ── */
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 70%);
+}
+
+.bg-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.12;
+  pointer-events: none;
+  z-index: 0;
+  animation: orbFloat 20s ease-in-out infinite;
+}
+.bg-orb.orb-1 { width: 600px; height: 600px; background: var(--cyan); top: -200px; left: -150px; animation-delay: 0s; }
+.bg-orb.orb-2 { width: 400px; height: 400px; background: var(--magenta); bottom: -150px; right: -100px; animation-delay: -7s; }
+.bg-orb.orb-3 { width: 300px; height: 300px; background: #7c4dff; top: 50%; left: 50%; animation-delay: -14s; }
+
+@keyframes orbFloat {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  25% { transform: translate(60px,-40px) scale(1.1); }
+  50% { transform: translate(-30px,30px) scale(0.95); }
+  75% { transform: translate(-50px,-20px) scale(1.05); }
+}
+
+/* ── Layout ── */
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* ── Header ── */
+.header {
+  text-align: center;
+  padding: 3rem 1rem 2rem;
+  position: relative;
+}
+
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+}
+
+.header .badge {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  border: 1px solid var(--cyan-dim);
+  border-radius: 100px;
+  padding: 0.4em 1.2em;
+  margin-bottom: 1.5rem;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.header h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 800;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  animation: fadeInUp 0.6s ease-out 0.1s both;
+}
+.header h1 .gradient-text {
+  background: linear-gradient(135deg, var(--cyan) 0%, #7c4dff 50%, var(--magenta) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.header .subtitle {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  margin-top: 0.8rem;
+  animation: fadeInUp 0.6s ease-out 0.2s both;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Stats Row ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  text-align: center;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.stat-card:hover {
+  border-color: var(--cyan-dim);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,229,255,0.08);
+}
+.stat-card .stat-value {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.stat-card .stat-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 0.25rem;
+}
+.stat-card.done .stat-value { color: var(--green); }
+.stat-card.active .stat-value { color: var(--amber); }
+.stat-card.pending .stat-value { color: var(--slate); }
+.stat-card.total .stat-value { color: var(--cyan); }
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+}
+.stat-card.done::before { background: var(--green); }
+.stat-card.active::before { background: var(--amber); }
+.stat-card.pending::before { background: var(--slate); }
+.stat-card.total::before { background: var(--cyan); }
+
+/* ── Progress Bar ── */
+.progress-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem 2rem;
+  margin: 1.5rem 0;
+}
+
+.progress-section .progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+.progress-header span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+.progress-header .pct { color: var(--cyan); }
+
+.progress-track {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--green) 0%, var(--cyan) 50%, var(--magenta) 100%);
+  background-size: 200% 100%;
+  animation: progressShimmer 3s ease-in-out infinite;
+  transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes progressShimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.progress-legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.progress-legend span { display: flex; align-items: center; gap: 0.4rem; }
+.progress-legend .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.progress-legend .dot.done { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.progress-legend .dot.active { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+.progress-legend .dot.pending { background: var(--slate); }
+
+/* ── Filter Tabs ── */
+.filter-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.6em 1.4em;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.filter-btn:hover { border-color: var(--cyan-dim); color: var(--text-primary); }
+.filter-btn.active { background: var(--cyan-dim); border-color: var(--cyan); color: var(--cyan); }
+
+/* ── Phase Grid ── */
+.phase-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.phase-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: var(--transition);
+  cursor: pointer;
+  animation: fadeInUp 0.5s ease-out both;
+}
+.phase-card:hover {
+  border-color: var(--cyan-dim);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  transform: translateY(-2px);
+}
+.phase-card.expanded {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 1px var(--cyan-dim), 0 8px 40px rgba(0,229,255,0.1);
+}
+
+.phase-card .card-header {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  user-select: none;
+}
+
+.phase-card .status-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+.phase-card.done .status-icon { background: var(--green-dim); box-shadow: 0 0 16px var(--green-dim); }
+.phase-card.in-progress .status-icon { background: var(--amber-dim); box-shadow: 0 0 16px var(--amber-dim); animation: pulse 2s ease-in-out infinite; }
+.phase-card.not-started .status-icon { background: transparent; border: 2px solid var(--border); }
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 8px var(--amber-dim); }
+  50% { box-shadow: 0 0 24px var(--amber); }
+}
+
+.phase-card .card-info { flex: 1; min-width: 0; }
+.phase-card .phase-num {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+.phase-card .phase-title {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-top: 0.15rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.phase-card .phase-platform {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}
+
+.phase-card .card-chevron {
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  transition: transform 0.35s ease;
+  flex-shrink: 0;
+}
+.phase-card.expanded .card-chevron { transform: rotate(180deg); color: var(--cyan); }
+
+.phase-card .card-steps {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.phase-card.expanded .card-steps { max-height: 2000px; }
+
+.phase-card .steps-inner {
+  padding: 0 1.5rem 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.phase-card .step-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.45rem 0;
+  font-size: 0.85rem;
+  border-bottom: 1px solid rgba(30,42,58,0.5);
+}
+.phase-card .step-row:last-child { border-bottom: none; }
+.phase-card .step-id {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--cyan);
+  min-width: 2.8em;
+  flex-shrink: 0;
+}
+.phase-card .step-desc { color: var(--text-secondary); flex: 1; }
+.phase-card .step-platform-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  padding: 0.2em 0.6em;
+  border-radius: 4px;
+  background: var(--cyan-dim);
+  color: var(--cyan);
+  flex-shrink: 0;
+}
+
+/* ── Section Tabs ── */
+.section-tabs {
+  display: flex;
+  gap: 0;
+  margin: 2rem 0 0;
+  border-bottom: 2px solid var(--border);
+}
+
+.section-tab {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.9em 1.6em;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+}
+.section-tab:hover { color: var(--text-primary); }
+.section-tab.active { color: var(--cyan); }
+.section-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0; right: 0;
+  height: 2px;
+  background: var(--cyan);
+}
+
+.section-panel {
+  display: none;
+  animation: fadeInUp 0.4s ease-out;
+}
+.section-panel.active { display: block; }
+
+/* ── Session Timeline ── */
+.session-timeline {
+  position: relative;
+  padding-left: 2rem;
+  margin: 2rem 0;
+}
+
+.session-timeline::before {
+  content: '';
+  position: absolute;
+  left: 12px;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--cyan), var(--magenta));
+  border-radius: 1px;
+}
+
+.session-item {
+  position: relative;
+  padding: 1rem 1.5rem;
+  margin-bottom: 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: var(--transition);
+}
+.session-item:hover { border-color: var(--cyan-dim); }
+.session-item::before {
+  content: '';
+  position: absolute;
+  left: -1.6rem;
+  top: 1.4rem;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--bg-deep);
+  border: 2px solid var(--cyan);
+  box-shadow: 0 0 8px var(--cyan-dim);
+}
+.session-item .session-num {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.65rem;
+  color: var(--cyan);
+  letter-spacing: 0.15em;
+}
+.session-item .session-what {
+  font-weight: 600;
+  margin: 0.2rem 0;
+}
+.session-item .session-time {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Formula Cards ── */
+.formula-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin: 1rem 0;
+  transition: var(--transition);
+}
+.formula-card:hover { border-color: var(--cyan-dim); }
+.formula-card h4 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  color: var(--cyan);
+  margin-bottom: 1rem;
+}
+.formula-card .formula {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  background: rgba(0,0,0,0.3);
+  padding: 1.25rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  line-height: 1.8;
+  border-left: 3px solid var(--cyan);
+}
+
+/* ── Table Styles ── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.85rem;
+}
+.data-table th {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  text-align: left;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid var(--border);
+}
+.data-table td {
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.data-table tr { transition: var(--transition); }
+.data-table tbody tr:hover { background: rgba(0,229,255,0.03); }
+.data-table .code-cell {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--cyan);
+}
+
+/* ── GitHub Link ── */
+.gh-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--cyan);
+  text-decoration: none;
+  padding: 0.5em 1em;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+.gh-link:hover { border-color: var(--cyan); background: var(--cyan-dim); }
+
+/* ── Footer ── */
+.footer {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  border-top: 1px solid var(--border);
+  margin-top: 3rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .container { padding: 1rem; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .phase-grid { grid-template-columns: 1fr; }
+  .section-tabs { overflow-x: auto; }
+  .header h1 { font-size: 1.8rem; }
+}
+
+@media (max-width: 500px) {
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .stat-card { padding: 1rem; }
+  .stat-card .stat-value { font-size: 1.6rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-orb orb-1"></div>
+<div class="bg-orb orb-2"></div>
+<div class="bg-orb orb-3"></div>
+
+<div class="container">
+
+  <!-- ── Header ── -->
+  <header class="header">
+    <div class="badge">v1.0 · Fine-Tuning Roadmap</div>
+    <h1><span class="gradient-text">LLM Fine-Tuning</span><br>Master Plan</h1>
+    <p class="subtitle">From quantization theory to production deployment — across Colab, Azure & AWS</p>
+  </header>
+
+  <!-- ── Stats ── -->
+  <div class="stats-row" id="statsRow"></div>
+
+  <!-- ── Progress Bar ── -->
+  <div class="progress-section">
+    <div class="progress-header">
+      <span style="color:var(--text-muted);">Overall Completion</span>
+      <span class="pct" id="progressPct">18%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <div class="progress-legend">
+      <span><span class="dot done"></span> Done (2)</span>
+      <span><span class="dot active"></span> In Progress (1)</span>
+      <span><span class="dot pending"></span> Remaining (8)</span>
+    </div>
+  </div>
+
+  <!-- ── Filters ── -->
+  <div class="filter-tabs">
+    <button class="filter-btn active" data-filter="all">All Phases</button>
+    <button class="filter-btn" data-filter="done">✅ Done</button>
+    <button class="filter-btn" data-filter="in-progress">📖 In Progress</button>
+    <button class="filter-btn" data-filter="not-started">⬜ Not Started</button>
+  </div>
+
+  <!-- ── Phase Cards ── -->
+  <div class="phase-grid" id="phaseGrid"></div>
+
+  <!-- ── Section Tabs ── -->
+  <div class="section-tabs">
+    <button class="section-tab active" data-section="sessions">📅 Execution Schedule</button>
+    <button class="section-tab" data-section="formulas">📐 Key Formulas</button>
+    <button class="section-tab" data-section="libraries">📦 Libraries & Tools</button>
+    <button class="section-tab" data-section="transcripts">📜 Transcripts</button>
+    <button class="section-tab" data-section="github">🔗 GitHub Refs</button>
+  </div>
+
+  <!-- ── Sessions Panel ── -->
+  <div class="section-panel active" id="panel-sessions">
+    <div class="session-timeline" id="sessionTimeline"></div>
+  </div>
+
+  <!-- ── Formulas Panel ── -->
+  <div class="section-panel" id="panel-formulas">
+    <div class="formula-card">
+      <h4>🔢 Quantization Scale Factor</h4>
+      <div class="formula">scale = (x_max − x_min) / (q_max − q_min)
+
+quantized_value = round(original_value / scale)
+
+FP32 → FP16 → INT8 → INT4
+(higher memory → lower memory)</div>
+    </div>
+    <div class="formula-card">
+      <h4>🧬 LoRA (Low-Rank Adaptation)</h4>
+      <div class="formula">W_new = W_0 + B × A
+
+where:  W_0 = frozen pre-trained weights (d × d)
+        B   = trainable matrix (d × r)
+        A   = trainable matrix (r × d)
+        r   = rank (typically 8)
+
+175B model with r=8 → only 37.7M trainable params (0.02%)</div>
+    </div>
+    <div class="formula-card">
+      <h4>🎯 DPO Loss (Direct Preference Optimization)</h4>
+      <div class="formula">L_DPO = −E[ log σ( β × ( log π_θ(y_w|x)/π_ref(y_w|x)
+                              − log π_θ(y_l|x)/π_ref(y_l|x) ) ) ]
+
+where:  π_θ   = policy model (being trained)
+        π_ref = reference model (frozen instruction model)
+        y_w   = chosen/winning response
+        y_l   = rejected/losing response
+        β     = temperature (0.1–0.5)</div>
+    </div>
+  </div>
+
+  <!-- ── Libraries Panel ── -->
+  <div class="section-panel" id="panel-libraries">
+    <table class="data-table">
+      <thead><tr><th>Library</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td class="code-cell">transformers</td><td>Model loading, tokenization, training</td></tr>
+        <tr><td class="code-cell">peft</td><td>LoRA, QLoRA, DoRA, IA3, adapter configs</td></tr>
+        <tr><td class="code-cell">trl</td><td>SFTTrainer, DPOTrainer, PPOTrainer</td></tr>
+        <tr><td class="code-cell">bitsandbytes</td><td>4-bit / 8-bit quantization</td></tr>
+        <tr><td class="code-cell">datasets</td><td>HuggingFace dataset loading & formatting</td></tr>
+        <tr><td class="code-cell">accelerate</td><td>Multi-GPU distributed training</td></tr>
+        <tr><td class="code-cell">mlflow</td><td>Experiment tracking, metrics logging</td></tr>
+        <tr><td class="code-cell">PyMuPDF (fitz)</td><td>PDF text extraction</td></tr>
+        <tr><td class="code-cell">gretel-client</td><td>Synthetic data generation (tabular + text)</td></tr>
+        <tr><td class="code-cell">mostlyai</td><td>Synthetic tabular data generation</td></tr>
+        <tr><td class="code-cell">tonic</td><td>Production DB cloning for dev/test</td></tr>
+        <tr><td class="code-cell">vLLM / TGI</td><td>Production LLM serving</td></tr>
+        <tr><td class="code-cell">Axolotl / Unsloth / LLaMA Factory</td><td>Alternative fine-tuning frameworks</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Transcripts Panel ── -->
+  <div class="section-panel" id="panel-transcripts">
+    <table class="data-table">
+      <thead><tr><th>Transcript</th><th>Covers</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Krish Naik — Fine Tuning LLM Models</strong></td><td>Phase 2 (quantization math), Phase 3 (LoRA/QLoRA math), Phase 4 (Llama 2 fine-tuning), 1-bit LLMs, Google Gemma</td></tr>
+        <tr><td><strong>LLM Fine-Tuning Crash Course (Sunny)</strong></td><td>Phase 1 (LLM training pipeline), Phase 4 (non-instructional PDF), Phase 5 (instruction FT), Phase 6 (DPO/RLHF), LoRA adapter merging</td></tr>
+        <tr><td><strong>Azure AI Foundry — Step by Step</strong></td><td>Phase 7 (GPT-3.5 Turbo fine-tuning, SAS tokens, metrics, deployment)</td></tr>
+        <tr><td><strong>Azure AI Foundry — Kirk</strong></td><td>Phase 7 (GPT-4o fine-tuning, cost breakdown, JSONL format, playground testing)</td></tr>
+        <tr><td><strong>Amazon Bedrock Fine-Tuning</strong></td><td>Phase 8 (Nova Micro, hyperparameters, S3 upload, on-demand inference)</td></tr>
+        <tr><td><strong>AWS SageMaker Fine-Tuning</strong></td><td>Phase 9 (QLoRA vs Spectrum, MLflow, training jobs, recipes, multi-GPU)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── GitHub Panel ── -->
+  <div class="section-panel" id="panel-github">
+    <table class="data-table">
+      <thead><tr><th>Resource</th><th>Repository</th></tr></thead>
+      <tbody>
+        <tr><td>Krish Naik Fine-tuning</td><td><a class="gh-link" href="https://github.com/krishnaik06/Finetuning-LLM.git" target="_blank">krishnaik06/Finetuning-LLM ↗</a></td></tr>
+        <tr><td>Sunny Complete LLM Fine-tuning</td><td><a class="gh-link" href="https://github.com/sunnysavita10/Complete-LLM-Finetuning.git" target="_blank">sunnysavita10/Complete-LLM-Finetuning ↗</a></td></tr>
+        <tr><td>HuggingFace PEFT</td><td><a class="gh-link" href="https://github.com/huggingface/peft" target="_blank">huggingface/peft ↗</a></td></tr>
+        <tr><td>HuggingFace TRL</td><td><a class="gh-link" href="https://github.com/huggingface/trl" target="_blank">huggingface/trl ↗</a></td></tr>
+        <tr><td>Spectrum (SNR-based layer selection)</td><td><a class="gh-link" href="https://github.com/search?q=spectrum+fine-tuning" target="_blank">Search: spectrum fine-tuning ↗</a></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Footer ── -->
+  <div class="footer">
+    LLM Fine-Tuning Master Plan · Generated from <a class="gh-link" href="https://github.com/ashokmulchandani/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1" target="_blank">ashokmulchandani/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1 ↗</a>
+  </div>
+
+</div>
+
+<script>
+// ── DATA ──
+const phases = [
+  { id:"1", num:"Phase 1", title:"Fine-Tuning Fundamentals", platform:"Theory", status:"done",
+    steps:[
+      {id:"1.1",desc:"Understand the 3-stage LLM training pipeline: Unsupervised Pre-training → SFT → Preference Alignment"},
+      {id:"1.2",desc:"Pre-training vs Fine-tuning — \"general knowledge\" vs \"specialized skill\""},
+      {id:"1.3",desc:"Full fine-tuning vs Partial fine-tuning — when to use each"},
+      {id:"1.4",desc:"Parameter Efficient Fine-Tuning (PEFT) — why we don't train all 7B+ parameters"},
+      {id:"1.5",desc:"Fine-tuning vs RAG — when to choose which (cost, data freshness, accuracy tradeoffs)"},
+      {id:"1.6",desc:"Data types: Non-instructional (plain text/PDF) vs Instructional (Q&A pairs) vs Preference (chosen/rejected)"}
+    ]},
+  { id:"2", num:"Phase 2", title:"Quantization", platform:"Theory + Math", status:"done",
+    steps:[
+      {id:"2.1",desc:"What is quantization — FP32 → FP16 → INT8 → INT4 (higher memory → lower memory)"},
+      {id:"2.2",desc:"Full Precision (FP32) vs Half Precision (FP16) — how numbers are stored (sign + exponent + mantissa)"},
+      {id:"2.3",desc:"Symmetric quantization — scale factor formula"},
+      {id:"2.4",desc:"Asymmetric quantization — zero point calculation for non-centered distributions"},
+      {id:"2.5",desc:"Post-Training Quantization (PTQ) — quantize pre-trained model, some accuracy loss"},
+      {id:"2.6",desc:"Quantization-Aware Training (QAT) — quantize then fine-tune with new data to recover accuracy"},
+      {id:"2.7",desc:"BitsAndBytes library — load_in_4bit=True, NF4 quantization type, compute dtype BF16"},
+      {id:"2.8",desc:"1-bit LLMs (BitNet) — ternary weights {-1, 0, 1}, addition-only (no multiplication), Pareto improvement"}
+    ]},
+  { id:"3", num:"Phase 3", title:"LoRA & QLoRA", platform:"Theory + Math", status:"in-progress",
+    steps:[
+      {id:"3.1",desc:"Full parameter fine-tuning problem — 175B params = massive GPU/RAM requirement"},
+      {id:"3.2",desc:"LoRA concept — track weight CHANGES (ΔW), not update all weights"},
+      {id:"3.3",desc:"Matrix decomposition — decompose ΔW (d×d) into B (d×r) × A (r×d), where r << d"},
+      {id:"3.4",desc:"Rank selection — r=1,2,4,8,16,64; higher rank = more params but still << full model"},
+      {id:"3.5",desc:"LoRA equation: W_new = W_0 + B×A (pre-trained weights + decomposed tracked changes)"},
+      {id:"3.6",desc:"Parameter savings — 175B model with r=8 → only 37.7M trainable params (0.02%)"},
+      {id:"3.7",desc:"QLoRA — quantize model to 4-bit THEN apply LoRA; fits on single GPU"},
+      {id:"3.8",desc:"LoRA config params: r, lora_alpha, lora_dropout, target_modules (q_proj, v_proj)"},
+      {id:"3.9",desc:"When to use high rank — complex tasks, domain shift; low rank — simple adaptation"},
+      {id:"3.10",desc:"LoRA adapter merging — delta patch must be merged before next training stage (no stacking!)"}
+    ]},
+  { id:"4", num:"Phase 4", title:"Non-Instructional Fine-Tuning", platform:"Colab", status:"not-started",
+    steps:[
+      {id:"4.1",desc:"Load PDF data with PyMuPDF, extract text", plat:"Colab"},
+      {id:"4.2",desc:"Chunk text — paragraph splitting, regex patterns, respect model context window", plat:"Colab"},
+      {id:"4.3",desc:"Create HuggingFace Dataset format — {\"text\": \"chunk1\"}, {\"text\": \"chunk2\"}", plat:"Colab"},
+      {id:"4.4",desc:"Tokenize with AutoTokenizer — truncation, padding, max_length=512", plat:"Colab"},
+      {id:"4.5",desc:"Set labels = input_ids.copy() (self-supervised next-token prediction)", plat:"Colab"},
+      {id:"4.6",desc:"Load base model (TinyLlama/Llama) with BitsAndBytes 8-bit quantization", plat:"Colab"},
+      {id:"4.7",desc:"Configure LoRA — r=8, alpha=16, target_modules=[\"q_proj\",\"v_proj\"]", plat:"Colab"},
+      {id:"4.8",desc:"Define TrainingArguments — epochs, batch_size, learning_rate, save_steps", plat:"Colab"},
+      {id:"4.9",desc:"Train with HuggingFace Trainer — trainer.train()", plat:"Colab"},
+      {id:"4.10",desc:"Test: give partial sentence → model completes with domain-specific text", plat:"Colab"}
+    ]},
+  { id:"5", num:"Phase 5", title:"Instruction Fine-Tuning (SFT)", platform:"Colab", status:"not-started",
+    steps:[
+      {id:"5.1",desc:"Understand instruction data formats: Alpaca (instruction/input/output), ChatML (system/user/assistant)"},
+      {id:"5.2",desc:"Prepare instruction dataset — CSV/JSON with instruction + input + output columns", plat:"Colab"},
+      {id:"5.3",desc:"Format as single string: ### Instruction: {q}\\n### Input: {ctx}\\n### Response: {ans}", plat:"Colab"},
+      {id:"5.4",desc:"Synthetic data generation — use GPT-4o to create Q&A from domain PDFs", plat:"Colab"},
+      {id:"5.4a",desc:"Synthetic data with Gretel AI — generate privacy-safe tabular + text datasets", plat:"Gretel"},
+      {id:"5.4b",desc:"Synthetic data with Mostly AI — generate statistically faithful synthetic tabular data", plat:"Mostly AI"},
+      {id:"5.4c",desc:"Synthetic data with Tonic AI — clone production DB preserving relational integrity", plat:"Tonic"},
+      {id:"5.5",desc:"Load previously domain-adapted model (from Phase 4)", plat:"Colab"},
+      {id:"5.6",desc:"Apply LoRA correctly — use PeftModel.from_pretrained(), merge, then get_peft_model()", plat:"Colab"},
+      {id:"5.7",desc:"Train with SFTTrainer (from TRL library)", plat:"Colab"},
+      {id:"5.8",desc:"Optional: mask labels before response token (model only learns from response portion)", plat:"Colab"},
+      {id:"5.9",desc:"Compare outputs: base model vs domain-adapted vs instruction-tuned", plat:"Colab"},
+      {id:"5.10",desc:"Push model to HuggingFace Hub", plat:"Colab"}
+    ]},
+  { id:"5b", num:"Phase 5b", title:"Synthetic Data Generation", platform:"Colab + Cloud", status:"not-started",
+    steps:[
+      {id:"5b.1",desc:"Understand WHY synthetic data — GDPR/HIPAA/Privacy Act compliance, no real PII in training sets"},
+      {id:"5b.2",desc:"Gretel AI — install gretel-client, connect API, load real CSV, generate synthetic version", plat:"Gretel"},
+      {id:"5b.3",desc:"Gretel — evaluate quality: SQS score, correlation heatmaps", plat:"Colab"},
+      {id:"5b.4",desc:"Gretel — generate synthetic text data (call transcripts, support tickets) for LLM fine-tuning", plat:"Colab"},
+      {id:"5b.5",desc:"Mostly AI — upload tabular dataset, configure privacy settings, download synthetic output", plat:"Mostly AI"},
+      {id:"5b.6",desc:"Mostly AI — compare real vs synthetic distributions (histograms, correlation matrices)", plat:"Mostly AI"},
+      {id:"5b.7",desc:"Tonic AI — connect to Postgres/Supabase, generate subset with referential integrity", plat:"Tonic"},
+      {id:"5b.8",desc:"Convert synthetic tabular data → instruction format (row → Q&A pair) for fine-tuning", plat:"Colab"},
+      {id:"5b.9",desc:"Fine-tune model on synthetic dataset, compare loss curves vs real data fine-tune", plat:"Colab"},
+      {id:"5b.10",desc:"Use case: generate 10,000 synthetic call transcripts → fine-tune Whisper/LLM", plat:"Colab"}
+    ]},
+  { id:"6", num:"Phase 6", title:"Preference Alignment (DPO/RLHF)", platform:"Colab", status:"not-started",
+    steps:[
+      {id:"6.1",desc:"Understand RLHF — reward model trained on human rankings, PPO algorithm"},
+      {id:"6.2",desc:"Understand DPO — direct preference optimization, no reward model needed, supervised learning"},
+      {id:"6.3",desc:"DPO loss formula — replaces RLHF's separate reward model with direct pairwise comparison"},
+      {id:"6.4",desc:"Prepare preference data — columns: prompt, chosen, rejected", plat:"Colab"},
+      {id:"6.5",desc:"Load instruction-tuned model, merge LoRA adapter properly", plat:"Colab"},
+      {id:"6.6",desc:"Configure DPOTrainer from TRL — beta=0.1-0.5, reference model = instruction model", plat:"Colab"},
+      {id:"6.7",desc:"Train with DPO — model learns to prefer chosen over rejected responses", plat:"Colab"},
+      {id:"6.8",desc:"Compare: instruction model vs preference-aligned model (tone, safety, helpfulness)", plat:"Colab"},
+      {id:"6.9",desc:"Understand RLAIF — AI-generated feedback for scalability (Anthropic technique)"}
+    ]},
+  { id:"7", num:"Phase 7", title:"Azure AI Foundry Fine-Tuning", platform:"Azure Portal", status:"not-started",
+    steps:[
+      {id:"7.1",desc:"Create Azure AI Foundry project (East US 2 region for fine-tuning support)", plat:"Azure"},
+      {id:"7.2",desc:"Deploy base GPT-4o model, test in playground with system prompt", plat:"Azure"},
+      {id:"7.3",desc:"Prepare training data in JSONL format (messages: system/user/assistant)", plat:"Local"},
+      {id:"7.4",desc:"Upload training data — direct upload or Azure Blob with SAS token", plat:"Azure"},
+      {id:"7.5",desc:"Configure fine-tuning job — model suffix, epochs, batch size, learning rate", plat:"Azure"},
+      {id:"7.6",desc:"Monitor training — loss curves, token accuracy metrics", plat:"Azure"},
+      {id:"7.7",desc:"Deploy fine-tuned model (Standard deployment, reduce TPM for cost)", plat:"Azure"},
+      {id:"7.8",desc:"Test in playground — compare base vs fine-tuned responses", plat:"Azure"},
+      {id:"7.9",desc:"Understand costs — training (cheap), hosting ($1.70/hr!), inference (per token)", plat:"Azure"},
+      {id:"7.10",desc:"Cleanup — delete deployment immediately after testing to avoid hosting charges", plat:"Azure"}
+    ]},
+  { id:"8", num:"Phase 8", title:"AWS Bedrock Fine-Tuning", platform:"AWS Console", status:"not-started",
+    steps:[
+      {id:"8.1",desc:"Prepare JSONL dataset — system/user/assistant format for Amazon Nova/Titan", plat:"Local"},
+      {id:"8.2",desc:"Upload dataset to S3 bucket", plat:"AWS"},
+      {id:"8.3",desc:"Create fine-tuning job in Bedrock — select model (Nova Micro), set hyperparameters", plat:"AWS"},
+      {id:"8.4",desc:"Hyperparameters: epochs (1-5), batch size, learning rate, warmup steps", plat:"AWS"},
+      {id:"8.5",desc:"Configure IAM role for S3 read/write access", plat:"AWS"},
+      {id:"8.6",desc:"Monitor job (~40-60 min for small datasets)", plat:"AWS"},
+      {id:"8.7",desc:"Setup inference — on-demand deployment vs provisioned throughput", plat:"AWS"},
+      {id:"8.8",desc:"Test in Bedrock playground — chat mode with custom model", plat:"AWS"},
+      {id:"8.9",desc:"Review S3 validation results", plat:"AWS"},
+      {id:"8.10",desc:"Cleanup — delete deployment, custom model, S3 bucket, IAM role", plat:"AWS"}
+    ]},
+  { id:"9", num:"Phase 9", title:"AWS SageMaker Fine-Tuning", platform:"AWS", status:"not-started",
+    steps:[
+      {id:"9.1",desc:"Understand SageMaker training jobs — ephemeral compute, pay-per-use"},
+      {id:"9.2",desc:"Prepare data in messages format, upload to S3", plat:"SageMaker"},
+      {id:"9.3",desc:"QLoRA fine-tuning — write training script with accelerate for multi-GPU", plat:"SageMaker"},
+      {id:"9.4",desc:"Spectrum fine-tuning — signal-to-noise analysis to find high-impact layers", plat:"SageMaker"},
+      {id:"9.5",desc:"Configure recipes YAML — model, max_seq_length, epochs, batch_size, precision", plat:"SageMaker"},
+      {id:"9.6",desc:"Kick off training job with HuggingFace estimator or custom container", plat:"SageMaker"},
+      {id:"9.7",desc:"MLflow integration — log metrics, loss curves, hyperparameters automatically", plat:"SageMaker"},
+      {id:"9.8",desc:"Compare QLoRA vs Spectrum — overlay loss curves in MLflow, convergence speed", plat:"SageMaker"},
+      {id:"9.9",desc:"Evaluate: ground truth validation, deterministic Q&A accuracy", plat:"SageMaker"}
+    ]},
+  { id:"10", num:"Phase 10", title:"Advanced Techniques & Production", platform:"Colab + Cloud", status:"not-started",
+    steps:[
+      {id:"10.1",desc:"Fine-tune YOLOv8 on custom object detection dataset", plat:"Colab"},
+      {id:"10.2",desc:"Fine-tune VGG16/ResNet on Chicken Disease dataset (transfer learning)", plat:"Colab"},
+      {id:"10.3",desc:"Data augmentation for small datasets — flip, rotate, color jitter", plat:"Colab"},
+      {id:"10.4",desc:"Evaluate vision models: precision, recall, mAP, confusion matrix", plat:"Colab"},
+      {id:"10.5",desc:"Export fine-tuned model to TensorRT for deployment", plat:"Colab"},
+      {id:"10.6",desc:"Fine-tune GPT-2/Llama on custom text data with LoRA + PEFT", plat:"Colab"},
+      {id:"10.7",desc:"Prepare datasets — instruction format, chat format, preference format", plat:"Colab"},
+      {id:"10.8",desc:"Deploy fine-tuned LLM with vLLM or TGI (Text Generation Inference)", plat:"Cloud"},
+      {id:"10.9",desc:"Compare: base model vs fine-tuned on domain-specific tasks", plat:"Colab"},
+      {id:"10.10",desc:"DoRA (Weight Decomposition Low-Rank Adaptation) — improved LoRA variant", plat:"Colab"},
+      {id:"10.11",desc:"IA3 (Infused Adapter by Inhibiting and Amplifying Inner Activations)", plat:"Colab"},
+      {id:"10.12",desc:"Adapter Layers — append small layers to transformer blocks", plat:"Colab"},
+      {id:"10.13",desc:"Prefix Tuning & Prompt Tuning — soft prompt methods", plat:"Colab"},
+      {id:"10.14",desc:"Multi-framework comparison: TRL vs Axolotl vs Unsloth vs LLaMA Factory", plat:"Colab"}
+    ]}
+];
+
+const sessions = [
+  {num:"Session 1", what:"Phase 1: Fine-tuning fundamentals theory (1.1–1.6)", time:"1–2 hrs"},
+  {num:"Session 2", what:"Phase 2: Quantization theory + math (2.1–2.8)", time:"2–3 hrs"},
+  {num:"Session 3", what:"Phase 3: LoRA & QLoRA theory + math (3.1–3.10)", time:"2–3 hrs"},
+  {num:"Session 4", what:"Phase 4: Non-instructional fine-tuning on PDF (4.1–4.10)", time:"3–4 hrs"},
+  {num:"Session 5", what:"Phase 5: Instruction fine-tuning with SFT (5.1–5.10)", time:"3–4 hrs"},
+  {num:"Session 6", what:"Phase 5b: Synthetic data generation — Gretel, Mostly AI, Tonic (5b.1–5b.10)", time:"2–3 hrs"},
+  {num:"Session 7", what:"Phase 6: DPO preference alignment (6.1–6.9)", time:"3–4 hrs"},
+  {num:"Session 8", what:"Phase 7: Azure AI Foundry fine-tuning (7.1–7.10)", time:"2–3 hrs"},
+  {num:"Session 9", what:"Phase 8: AWS Bedrock fine-tuning (8.1–8.10)", time:"2–3 hrs"},
+  {num:"Session 10", what:"Phase 9: AWS SageMaker fine-tuning (9.1–9.9)", time:"3–4 hrs"},
+  {num:"Session 11", what:"Phase 10: Vision model fine-tuning (10.1–10.5)", time:"3–4 hrs"},
+  {num:"Session 12", what:"Phase 10: LLM fine-tuning + advanced PEFT (10.6–10.14)", time:"3–4 hrs"}
+];
+
+// ── COMPUTED ──
+const doneCount = phases.filter(p=>p.status==='done').length;
+const activeCount = phases.filter(p=>p.status==='in-progress').length;
+const pendingCount = phases.filter(p=>p.status==='not-started').length;
+const totalPhases = phases.length;
+
+// Weight: done=100%, in-progress=50% (Phase 3 is halfway), not-started=0%
+const totalSteps = phases.reduce((s,p)=>s+p.steps.length,0);
+const completedSteps = phases.filter(p=>p.status==='done').reduce((s,p)=>s+p.steps.length,0);
+const inProgressSteps = phases.filter(p=>p.status==='in-progress').reduce((s,p)=>s+Math.floor(p.steps.length*0.5),0);
+const progressPct = Math.round(((completedSteps + inProgressSteps) / totalSteps) * 100);
+
+// ── RENDER STATS ──
+document.getElementById('statsRow').innerHTML = `
+  <div class="stat-card done"><div class="stat-value">${doneCount}</div><div class="stat-label">Done ✅</div></div>
+  <div class="stat-card active"><div class="stat-value">${activeCount}</div><div class="stat-label">Active 📖</div></div>
+  <div class="stat-card pending"><div class="stat-value">${pendingCount}</div><div class="stat-label">Pending ⬜</div></div>
+  <div class="stat-card total"><div class="stat-value">${totalPhases}</div><div class="stat-label">Total Phases</div></div>
+`;
+
+// ── PROGRESS BAR ──
+document.getElementById('progressPct').textContent = `${progressPct}%`;
+setTimeout(()=>{ document.getElementById('progressFill').style.width = `${progressPct}%`; }, 300);
+
+// ── RENDER PHASE CARDS ──
+const phaseGrid = document.getElementById('phaseGrid');
+
+function renderPhases(filter='all') {
+  const filtered = filter==='all' ? phases : phases.filter(p=>p.status===filter);
+  phaseGrid.innerHTML = '';
+
+  filtered.forEach((p,i) => {
+    const statusIcons = { 'done':'✅', 'in-progress':'📖', 'not-started':'⬜' };
+    const card = document.createElement('div');
+    card.className = `phase-card ${p.status}`;
+    card.style.animationDelay = `${i*0.05}s`;
+    card.dataset.phaseId = p.id;
+
+    const stepsHTML = p.steps.map(s => `
+      <div class="step-row">
+        <span class="step-id">${s.id}</span>
+        <span class="step-desc">${s.desc}</span>
+        ${s.plat ? `<span class="step-platform-tag">${s.plat}</span>` : ''}
+      </div>
+    `).join('');
+
+    card.innerHTML = `
+      <div class="card-header" onclick="togglePhase(this.closest('.phase-card'))">
+        <div class="status-icon">${statusIcons[p.status]}</div>
+        <div class="card-info">
+          <div class="phase-num">${p.num}</div>
+          <div class="phase-title">${p.title}</div>
+          <div class="phase-platform">${p.platform} · ${p.steps.length} steps</div>
+        </div>
+        <div class="card-chevron">▾</div>
+      </div>
+      <div class="card-steps"><div class="steps-inner">${stepsHTML}</div></div>
+    `;
+    phaseGrid.appendChild(card);
+  });
+}
+
+renderPhases();
+
+function togglePhase(card) {
+  card.classList.toggle('expanded');
+}
+
+// ── FILTER BUTTONS ──
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    renderPhases(btn.dataset.filter);
+  });
+});
+
+// ── SECTION TABS ──
+document.querySelectorAll('.section-tab').forEach(tab => {
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.section-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.section-panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-'+tab.dataset.section).classList.add('active');
+  });
+});
+
+// ── RENDER SESSIONS ──
+const sessionTimeline = document.getElementById('sessionTimeline');
+sessions.forEach((s,i) => {
+  const div = document.createElement('div');
+  div.className = 'session-item';
+  div.style.animationDelay = `${i*0.06}s`;
+  div.innerHTML = `
+    <div class="session-num">${s.num}</div>
+    <div class="session-what">${s.what}</div>
+    <div class="session-time">⏱ ${s.time}</div>
+  `;
+  sessionTimeline.appendChild(div);
+});
+
+// ── PHASE CARDS: CLICK HEADER TO EXPAND ──
+document.addEventListener('click', function(e) {
+  const header = e.target.closest('.card-header');
+  if (header) {
+    const card = header.closest('.phase-card');
+    card.classList.toggle('expanded');
+  }
+});
+</script>
+
+</body>
+</html>

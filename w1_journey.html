@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>W1 Journey — Step by Step</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--magenta:#9e2a6b;--amber:#b87000;--green:#1a6e34;--violet:#5b3aa8;--red:#c62828;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;min-height:100vh;}
+.app{max-width:950px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:1rem 0;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);margin-top:0.3rem;}
+
+.canvas-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:0.5rem;margin:1rem 0;}
+.canvas-card canvas{display:block;width:100%;height:auto;border-radius:8px;}
+
+.tbl-wrap{max-height:450px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;margin:1rem 0;}
+.tbl{width:100%;border-collapse:collapse;font-size:0.76rem;}
+.tbl th{font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);padding:0.5rem 0.4rem;border-bottom:2px solid var(--border);text-align:center;background:var(--raised);position:sticky;top:0;z-index:1;}
+.tbl td{text-align:center;padding:0.35rem 0.4rem;border-bottom:1px solid var(--border);}
+.tbl .r{color:var(--magenta);font-weight:600;}
+.tbl .f{color:var(--amber);font-weight:600;}
+.tbl .g{color:var(--magenta);}
+.tbl .nudge{color:var(--violet);font-weight:600;}
+.tbl .n{color:var(--green);font-weight:600;}
+.tbl .gap-big{color:var(--red);}
+.tbl .gap-ok{color:var(--amber);}
+.tbl .gap-sm{color:var(--green);}
+.tbl tr{cursor:pointer;transition:0.15s;}
+.tbl tr:hover{background:rgba(91,58,168,0.06);}
+.tbl tr.selected{background:rgba(91,58,168,0.12)!important;outline:2px solid var(--violet);outline-offset:-2px;}
+.tbl .milestone{background:rgba(91,58,168,0.03);}
+
+.summary-row{display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin:1rem 0;}
+.sum-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center;}
+.sum-box .val{font-family:'Space Grotesk',sans-serif;font-size:1.3rem;font-weight:700;}
+.sum-box .lbl{font-size:0.7rem;color:var(--tmut);margin-top:0.2rem;}
+
+/* ── Formula Box ── */
+.formula-box{background:var(--card);border:2px solid var(--violet);border-radius:14px;padding:1.5rem;margin:1rem 0;}
+.formula-box h3{font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin-bottom:1rem;}
+.formula-box .step-num{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;color:var(--tmut);margin-bottom:1rem;}
+.formula-step{background:var(--raised);border-radius:10px;padding:1rem 1.25rem;margin:0.6rem 0;line-height:2.2;font-size:0.82rem;}
+.formula-step .fs-label{font-family:'Space Grotesk',sans-serif;font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--violet);font-weight:600;}
+.formula-step .hl-r{color:var(--magenta);font-weight:700;}
+.formula-step .hl-f{color:var(--amber);font-weight:700;}
+.formula-step .hl-g{color:var(--green);font-weight:700;}
+.formula-step .hl-v{color:var(--violet);font-weight:700;}
+.formula-step .hl-n{color:var(--red);font-weight:700;}
+.formula-step code{font-family:'Space Grotesk',monospace;background:rgba(0,0,0,0.04);padding:0.15em 0.4em;border-radius:3px;font-size:0.82rem;}
+
+.arrow-down{text-align:center;font-size:1.4rem;color:var(--tmut);margin:0.2rem 0;}
+
+.click-hint{text-align:center;font-size:0.75rem;color:var(--tmut);margin-top:0.5rem;}
+
+@media(max-width:768px){.summary-row{grid-template-columns:repeat(2,1fr);}.app{padding:0.75rem;}.tbl{font-size:0.7rem;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>W1: −2.30 → −2.40 (Bucket)</h1>
+  <p>Learning rate = 0.02 &nbsp;|&nbsp; Scale = 0.4 &nbsp;|&nbsp; W₀ = −2.30 (frozen)</p>
+</header>
+
+<div class="summary-row" id="summary"></div>
+
+<div class="canvas-card">
+  <canvas id="mainCanvas" width="880" height="340"></canvas>
+</div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;">Every Step of W1's Journey — <span style="color:var(--violet);">Click any row</span> to see formulas</h3>
+<div class="tbl-wrap">
+  <table class="tbl">
+    <thead><tr><th>Step</th><th>Real W</th><th>Fake W</th><th>−2×(fake−real)</th><th>0.16×(W−W₀)</th><th>∇</th><th>lr×∇</th><th>W_new</th><th>Gap</th></tr></thead>
+    <tbody id="tblBody"></tbody>
+  </table>
+</div>
+
+<div class="click-hint">👆 Click on any row above to see the step-by-step formula calculation with those values</div>
+
+<div class="formula-box" id="formulaBox">
+  <h3>📐 Formula Calculation — Step 0</h3>
+  <div id="formulaContent"></div>
+</div>
+
+</div>
+
+<script>
+// ── PARAMS ──
+const scale=0.4, lr=0.02, bucket=-2.40, w0=-2.30;
+function fakeQ(w){return Math.round(w/scale)*scale;}
+function gradient(w){const fq=fakeQ(w);return -2*(fq-w)+0.16*(w-w0);}
+
+// ── SIMULATE ──
+let w=w0;
+const steps=[];
+for(let s=0;s<=120;s++){
+  const fq=fakeQ(w);
+  const g=gradient(w);
+  const stePart=-2*(fq-w);
+  const taskPart=0.16*(w-w0);
+  const gap=Math.abs(w-bucket);
+  steps.push({step:s, realW:w, fakeW:fq, stePart, taskPart, grad:g, gap, nudge:lr*g, newW:w-lr*g});
+  if(gap<0.0003 && s>20) break;
+  w=w-lr*g;
+}
+
+// ── SUMMARY ──
+const total=steps.length-1;
+const finalGap=steps[steps.length-1].gap;
+document.getElementById('summary').innerHTML=`
+  <div class="sum-box"><div class="val" style="color:var(--violet);">${total}</div><div class="lbl">Steps to Converge</div></div>
+  <div class="sum-box"><div class="val" style="color:var(--amber);">${steps[0].fakeW.toFixed(2)}</div><div class="lbl">Fake W (all steps)</div></div>
+  <div class="sum-box"><div class="val" style="color:var(--magenta);">${steps[0].realW.toFixed(2)} → ${steps[steps.length-1].realW.toFixed(4)}</div><div class="lbl">Real W Journey</div></div>
+  <div class="sum-box"><div class="val" style="color:var(--green);">${finalGap.toFixed(4)}</div><div class="lbl">Final Gap to Bucket</div></div>
+`;
+
+// ── TABLE ──
+const tblBody=document.getElementById('tblBody');
+const showSteps=[0,1,2,3,5,8,12,18,25,35,50,70,90,steps.length-1];
+const showSet=new Set(showSteps);
+
+steps.forEach((s,idx)=>{
+  if(!showSet.has(s.step) && s.step!==0 && s.step!==steps.length-1) return;
+  const gapClass=s.gap>0.08?'gap-big':s.gap>0.03?'gap-ok':'gap-sm';
+  tblBody.innerHTML+=`
+    <tr id="row${idx}" data-idx="${idx}" onclick="selectRow(${idx})">
+      <td><strong>${s.step}</strong></td>
+      <td class="r">${s.realW.toFixed(4)}</td>
+      <td class="f">${s.fakeW.toFixed(2)}</td>
+      <td>${s.stePart>=0?'+':''}${s.stePart.toFixed(4)}</td>
+      <td>${s.taskPart>=0?'+':''}${s.taskPart.toFixed(4)}</td>
+      <td class="g">${s.grad>=0?'+':''}${s.grad.toFixed(4)}</td>
+      <td class="nudge">${s.nudge>=0?'+':''}${s.nudge.toFixed(4)}</td>
+      <td class="n">${s.newW.toFixed(4)}</td>
+      <td class="${gapClass}">${s.gap.toFixed(4)}</td>
+    </tr>`;
+});
+
+// ── FORMULA RENDER ──
+function selectRow(idx){
+  // Highlight
+  document.querySelectorAll('.tbl tr').forEach(r=>r.classList.remove('selected'));
+  document.getElementById('row'+idx).classList.add('selected');
+
+  const s=steps[idx];
+  const wDiv=s.realW/scale;
+  const wRounded=Math.round(wDiv);
+
+  document.getElementById('formulaBox').innerHTML=`
+    <h3>📐 Formula Calculation — Step ${s.step}</h3>
+    <p class="step-num">Click any row to see the formulas with those values plugged in</p>
+
+    <div class="formula-step">
+      <div class="fs-label">Step 1: Fake Quantize (Forward Pass)</div>
+      <code>fake_q(W) = round(W / scale) × scale</code><br>
+      &nbsp;&nbsp;= round(<span class="hl-r">${s.realW.toFixed(4)}</span> / 0.4) × 0.4<br>
+      &nbsp;&nbsp;= round(${wDiv.toFixed(3)}) × 0.4<br>
+      &nbsp;&nbsp;= <span class="hl-n">${wRounded}</span> × 0.4<br>
+      &nbsp;&nbsp;= <span class="hl-f" style="font-size:1.1rem;">${s.fakeW.toFixed(2)}</span> &nbsp;← FAKE weight used in forward computation
+    </div>
+
+    <div class="arrow-down">↓</div>
+
+    <div class="formula-step">
+      <div class="fs-label">Step 2: STE Gradient (Backward Pass)</div>
+      <code>∇ = <span class="hl-r">−2 × (fake_W − real_W)</span> + <span class="hl-v">0.16 × (real_W − W₀)</span></code><br>
+      &nbsp;&nbsp;= <span class="hl-r">−2 × (${s.fakeW.toFixed(2)} − ${s.realW.toFixed(4)})</span> + <span class="hl-v">0.16 × (${s.realW.toFixed(4)} − ${w0.toFixed(2)})</span><br>
+      &nbsp;&nbsp;= <span class="hl-r">−2 × (${(s.fakeW-s.realW).toFixed(4)})</span> + <span class="hl-v">0.16 × (${(s.realW-w0).toFixed(4)})</span><br>
+      &nbsp;&nbsp;= <span class="hl-r">${s.stePart>=0?'+':''}${s.stePart.toFixed(4)}</span> + <span class="hl-v">${s.taskPart>=0?'+':''}${s.taskPart.toFixed(4)}</span><br>
+      &nbsp;&nbsp;= <span class="hl-g" style="font-size:1.1rem;">${s.grad>=0?'+':''}${s.grad.toFixed(4)}</span> &nbsp;← gradient flows to REAL weight (STE bypasses rounding)
+    </div>
+
+    <div class="arrow-down">↓</div>
+
+    <div class="formula-step">
+      <div class="fs-label">Step 3: Weight Update</div>
+      <code>W_new = W_old − lr × ∇</code><br>
+      &nbsp;&nbsp;= <span class="hl-r">${s.realW.toFixed(4)}</span> − 0.02 × (<span class="hl-g">${s.grad>=0?'+':''}${s.grad.toFixed(4)}</span>)<br>
+      &nbsp;&nbsp;= ${s.realW.toFixed(4)} − (<span class="hl-v">${s.nudge>=0?'+':''}${s.nudge.toFixed(4)}</span>) &nbsp;← this is the actual nudge<br>
+      &nbsp;&nbsp;= <span class="hl-g" style="font-size:1.1rem;">${s.newW.toFixed(4)}</span> &nbsp;← new REAL weight
+    </div>
+
+    <div class="arrow-down">↓</div>
+
+    <div class="formula-step">
+      <div class="fs-label">Step 4: Check Progress</div>
+      <code>gap = |W_new − bucket|</code><br>
+      &nbsp;&nbsp;= |${s.newW.toFixed(4)} − (${bucket.toFixed(2)})|<br>
+      &nbsp;&nbsp;= |${(s.newW-bucket).toFixed(4)}|<br>
+      &nbsp;&nbsp;= <span style="font-weight:700;color:${s.gap<0.01?'var(--green)':s.gap<0.08?'var(--amber)':'var(--red)'};">${s.gap.toFixed(4)}</span>
+      ${s.gap<0.001?' &nbsp;✅ <strong>CONVERGED!</strong>':s.gap<0.01?' &nbsp;🎯 Almost there!':' &nbsp;⚡ Keep going...'}
+    </div>
+
+    <div style="margin-top:1rem;padding:0.75rem;background:rgba(91,58,168,0.06);border-radius:8px;font-size:0.8rem;color:var(--tdim);">
+      <strong style="color:var(--violet);">💡 What just happened?</strong><br>
+      <span class="hl-f">Fake W = ${s.fakeW.toFixed(2)}</span> is what quantization WOULD do. The model saw this in the forward pass.<br>
+      <span class="hl-g">∇ = ${s.grad>=0?'+':''}${s.grad.toFixed(4)}</span> says: "move the <span class="hl-r">REAL weight</span> ${s.grad>0?'UP (toward 0)':'DOWN (away from 0)'}".<br>
+      Real W moved from <span class="hl-r">${s.realW.toFixed(4)}</span> → <span class="hl-g">${s.newW.toFixed(4)}</span> (nudge of ${s.nudge>=0?'+':''}${s.nudge.toFixed(4)}).<br>
+      ${s.gap<0.01?'<span style="color:var(--green);">Weight is practically at the bucket — quantization will be nearly lossless!</span>':'Still '+(s.gap*100).toFixed(1)+'% away from the bucket. More steps needed.'}
+    </div>
+  `;
+}
+
+// ── CANVAS ──
+const c=document.getElementById('mainCanvas');
+const ctx=c.getContext('2d');
+function draw(){
+  const W=880,H=340;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#fafbfc';ctx.fillRect(0,0,W,H);
+
+  const padL=60,padR=40,padT=30,padB=50;
+  const pw=W-padL-padR,ph=H-padT-padB;
+
+  ctx.strokeStyle='rgba(0,0,0,0.04)';ctx.lineWidth=1;
+  for(let x=padL;x<=padL+pw;x+=40){ctx.beginPath();ctx.moveTo(x,padT);ctx.lineTo(x,padT+ph);ctx.stroke();}
+  for(let y=padT;y<=padT+ph;y+=40){ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(padL+pw,y);ctx.stroke();}
+
+  const bY=padT+ph*0.35;
+  ctx.beginPath();ctx.setLineDash([6,5]);
+  ctx.moveTo(padL,bY);ctx.lineTo(padL+pw,bY);
+  ctx.strokeStyle='rgba(184,112,0,0.5)';ctx.lineWidth=2;ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle='#b87000';ctx.font='bold 12px "Inter"';ctx.textAlign='left';
+  ctx.fillText('Bucket = −2.40',padL+pw-130,bY-8);
+
+  const w0Y=padT+ph*0.65;
+  ctx.beginPath();
+  ctx.moveTo(padL,w0Y);ctx.lineTo(padL+pw,w0Y);
+  ctx.strokeStyle='rgba(139,144,153,0.4)';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.fillStyle='#8b9099';ctx.font='11px "Inter"';
+  ctx.fillText('W₀ = −2.30 (frozen)',padL+pw-140,w0Y-8);
+
+  ctx.beginPath();
+  let first=true;
+  for(let s=0;s<steps.length;s++){
+    const ratio=(steps[s].realW-w0)/(bucket-w0);
+    const x=padL+(s/(steps.length-1))*pw;
+    const y=w0Y-ratio*(w0Y-bY);
+    if(first){ctx.moveTo(x,y);first=false;}else{ctx.lineTo(x,y);}
+  }
+  ctx.strokeStyle='#9e2a6b';ctx.lineWidth=2.5;ctx.stroke();
+
+  ctx.lineTo(padL+pw,w0Y);ctx.lineTo(padL,w0Y);ctx.closePath();
+  const grad=ctx.createLinearGradient(0,w0Y,0,bY);
+  grad.addColorStop(0,'rgba(158,42,107,0.06)');
+  grad.addColorStop(0.5,'rgba(158,42,107,0.02)');
+  grad.addColorStop(1,'rgba(184,112,0,0.04)');
+  ctx.fillStyle=grad;ctx.fill();
+
+  ctx.beginPath();ctx.arc(padL,w0Y,6,0,Math.PI*2);
+  ctx.fillStyle='#8b9099';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle='#4a4f5a';ctx.font='10px "Inter"';ctx.textAlign='left';
+  ctx.fillText('Start: −2.30',padL+10,w0Y-10);
+
+  const endX=padL+pw, endY=bY-5;
+  ctx.beginPath();ctx.arc(endX,endY,7,0,Math.PI*2);
+  ctx.fillStyle='#1a6e34';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle='#1a6e34';ctx.font='bold 10px "Inter"';ctx.textAlign='right';
+  ctx.fillText(`End: ${steps[steps.length-1].realW.toFixed(4)}`,endX-20,endY-12);
+
+  ctx.fillStyle='#4a4f5a';ctx.font='bold 12px "Inter"';ctx.textAlign='left';
+  ctx.fillText('W1 Journey Over Time →',padL,padT-8);
+
+  ctx.fillStyle='#8b9099';ctx.font='9px "Inter"';ctx.textAlign='center';
+  ctx.fillText('Step 0',padL,w0Y+15);
+  ctx.fillText(`Step ${steps.length-1}`,padL+pw,w0Y+15);
+
+  ctx.fillStyle='#8b9099';ctx.font='9px "Inter"';ctx.textAlign='right';
+  ctx.fillText('−2.30',padL-8,w0Y+3);
+  ctx.fillText('−2.40',padL-8,bY+4);
+}
+
+draw();
+selectRow(0); // Show step 0 formulas by default
+</script>
+</body>
+</html>

@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QAT Weight Nudge — Live Animation</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#ffffff; --bg-card:#f8f9fb; --bg-raised:#eef0f4;
+  --border:#dde0e5; --border-active:#c5cad3;
+  --text:#1a1d23; --text-dim:#5a5f6b; --text-muted:#9399a5;
+  --cyan:#0084a8; --cyan-bg:#e0f4fb;
+  --amber:#c77800; --amber-bg:#fff3e0;
+  --green:#1e7a3e; --green-bg:#e6f4ea;
+  --magenta:#b0307a; --magenta-bg:#fce4f0;
+  --red:#d32f2f; --red-bg:#fdecea;
+  --violet:#5c3db8;
+  --radius:14px; --radius-sm:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.6;min-height:100vh;}
+
+.app{max-width:900px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:1.5rem 0 0.5rem;}
+.header h1{font-family:'Orbitron',sans-serif;font-size:1.5rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--text-dim);margin-top:0.3rem;font-size:0.9rem;}
+
+.canvas-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;margin:1rem 0;}
+.canvas-card canvas{display:block;width:100%;height:auto;border-radius:8px;}
+
+/* Controls */
+.controls{display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;justify-content:center;margin:1rem 0;}
+.ctrl-btn{font-family:'JetBrains Mono',monospace;font-size:0.75rem;padding:0.6em 1.4em;border:1.5px solid var(--border);border-radius:100px;background:var(--bg);color:var(--text);cursor:pointer;transition:0.2s;display:flex;align-items:center;gap:0.4em;font-weight:500;}
+.ctrl-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.ctrl-btn.primary{background:var(--violet);border-color:var(--violet);color:#fff;font-weight:600;}
+.ctrl-btn.primary:hover{opacity:0.88;color:#fff;}
+.ctrl-btn.warn{background:var(--amber-bg);border-color:var(--amber);color:var(--amber);}
+.ctrl-btn:disabled{opacity:0.3;cursor:not-allowed;}
+
+.speed-label{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--text-muted);}
+.speed-slider{-webkit-appearance:none;width:100px;height:4px;border-radius:2px;background:var(--border);outline:none;}
+.speed-slider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--violet);cursor:pointer;}
+
+/* Stats */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin:1rem 0;}
+.stat-card{background:var(--bg-card);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:1rem;text-align:center;transition:0.3s;}
+.stat-card .stat-label{font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;}
+.stat-card .stat-value{font-family:'JetBrains Mono',monospace;font-size:1.3rem;font-weight:600;margin-top:0.3rem;}
+.stat-card:nth-child(1) .stat-value{color:var(--cyan);}
+.stat-card:nth-child(2) .stat-value{color:var(--amber);}
+.stat-card:nth-child(3) .stat-value{color:var(--magenta);}
+.stat-card:nth-child(4) .stat-value{color:var(--green);}
+.stat-card.highlight{border-color:var(--green);box-shadow:0 0 0 3px var(--green-bg);}
+
+/* Explanation */
+.explain-box{background:var(--bg-card);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:1rem 1.25rem;margin:1rem 0;font-size:0.85rem;}
+.explain-box .eq{font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:var(--cyan);padding:0.6rem 0.8rem;background:var(--bg-raised);border-radius:6px;margin:0.4rem 0;white-space:pre-wrap;line-height:1.8;border-left:3px solid var(--cyan);}
+
+/* Log */
+.log-area{max-height:180px;overflow-y:auto;background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.75rem;margin:0.5rem 0;font-family:'JetBrains Mono',monospace;font-size:0.62rem;line-height:1.9;}
+.log-area .step-num{color:var(--text-muted);}
+.log-area .w-val{color:var(--cyan);font-weight:500;}
+.log-area .grad-val{color:var(--magenta);font-weight:500;}
+
+/* Flash */
+@keyframes flashBorder{0%,100%{border-color:var(--border);}50%{border-color:var(--green);}}
+.flash{animation:flashBorder 0.4s ease;}
+
+@media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr);}.app{padding:0.75rem;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>Watch One Weight Get Nudged</h1>
+  <p>Gradient descent pulling <strong>W = −2.30</strong> toward the INT4 bucket center at <strong>−2.40</strong></p>
+</header>
+
+<div class="stats-row" id="statsRow"></div>
+
+<div class="canvas-card">
+  <canvas id="mainCanvas" width="860" height="420"></canvas>
+</div>
+
+<div class="controls">
+  <button class="ctrl-btn warn" id="resetBtn" onclick="reset()">↺ Reset</button>
+  <button class="ctrl-btn" id="stepBtn" onclick="doStep()">⏭ Step</button>
+  <button class="ctrl-btn primary" id="playBtn" onclick="togglePlay()">▶ Play</button>
+  <span class="speed-label">Speed:</span>
+  <input type="range" class="speed-slider" id="speedSlider" min="1" max="20" value="5" oninput="updateSpeed()">
+  <span class="speed-label" id="speedLabel">5x</span>
+</div>
+
+<div class="explain-box" id="explainBox"></div>
+
+<div class="log-area" id="logArea"><div style="color:var(--text-muted)">Press ▶ Play or → to start watching the weight move...</div></div>
+
+</div>
+
+<script>
+// ── CONSTANTS ──
+const scale = 0.4;
+const bucketCenter = -2.4;
+const startWeight = -2.30;
+const lr = 0.015;
+const totalSteps = 180;
+
+let weight = startWeight;
+let stepCount = 0;
+let playing = false;
+let playSpeed = 5;
+let animId = null;
+
+// ── MATH ──
+function fakeQuantize(w) { return Math.round(w / scale) * scale; }
+function computeGradient(w) {
+  const fq = fakeQuantize(w);
+  const steGrad = -2 * (fq - w);        // pulls toward bucket center
+  const taskGrad = 0.16 * (w - startWeight); // small resistance
+  return steGrad + taskGrad;
+}
+function computeLoss(w) {
+  const qerr = Math.pow(fakeQuantize(w) - w, 2);
+  const taskLoss = 0.08 * Math.pow(w - startWeight, 2);
+  return qerr + taskLoss;
+}
+
+// ── CANVAS ──
+const c = document.getElementById('mainCanvas');
+const ctx = c.getContext('2d');
+const W = c.width, H = c.height;
+
+// Colors for canvas drawing
+const COLORS = {
+  bg: '#f8f9fb',
+  text: '#1a1d23',
+  textDim: '#5a5f6b',
+  textMuted: '#9399a5',
+  cyan: '#0084a8',
+  amber: '#c77800',
+  magenta: '#b0307a',
+  green: '#1e7a3e',
+  violet: '#5c3db8',
+  gridLine: 'rgba(0,0,0,0.06)',
+  lossCurve: 'rgba(0,132,168,0.45)',
+  lossFill1: 'rgba(0,132,168,0.10)',
+  lossFill2: 'rgba(0,132,168,0.02)',
+  bucketDash: 'rgba(199,120,0,0.5)',
+  bucketLabel: '#c77800',
+  bucketZone: 'rgba(199,120,0,0.08)',
+  weightDot: '#c77800',
+  weightGlow: 'rgba(199,120,0,0.4)',
+  weightPin: '#0084a8',
+  weightPinGlow: 'rgba(0,132,168,0.5)',
+  gradArrow: 'rgba(176,48,122,0.75)',
+  numLine: 'rgba(0,0,0,0.15)',
+  stepTitle: '#5c3db8'
+};
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = COLORS.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  const padL = 120, padR = 80, padT = 40, padB = 55;
+  const pw = W - padL - padR, ph = H - padT - padB;
+  const wMin = -2.8, wMax = -2.0;
+
+  function w2x(w) { return padL + ((w - wMin) / (wMax - wMin)) * pw; }
+
+  // ── LOSS LANDSCAPE (top 58%) ──
+  const lossH = ph * 0.58;
+  const lossY = padT;
+  const lossMax = 0.35;
+
+  function l2y(l) { return lossY + lossH - (l / lossMax) * lossH; }
+
+  // Grid lines
+  ctx.strokeStyle = COLORS.gridLine;
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const gy = lossY + (lossH / 4) * i;
+    ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(padL + pw, gy); ctx.stroke();
+  }
+
+  // Loss curve
+  ctx.beginPath();
+  let first = true;
+  for (let wx = 0; wx <= pw; wx += 2) {
+    const wv = wMin + (wx / pw) * (wMax - wMin);
+    const lv = computeLoss(wv);
+    const sx = padL + wx, sy = l2y(lv);
+    if (first) { ctx.moveTo(sx, sy); first = false; } else { ctx.lineTo(sx, sy); }
+  }
+  ctx.strokeStyle = COLORS.lossCurve;
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // Shaded area under curve
+  ctx.lineTo(padL + pw, lossY + lossH);
+  ctx.lineTo(padL, lossY + lossH);
+  ctx.closePath();
+  const grad = ctx.createLinearGradient(0, lossY, 0, lossY + lossH);
+  grad.addColorStop(0, COLORS.lossFill1);
+  grad.addColorStop(1, COLORS.lossFill2);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Bucket center dashed line
+  const bx = w2x(bucketCenter);
+  ctx.beginPath();
+  ctx.setLineDash([5, 5]);
+  ctx.moveTo(bx, lossY);
+  ctx.lineTo(bx, lossY + lossH);
+  ctx.strokeStyle = COLORS.bucketDash;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Bucket label
+  ctx.fillStyle = COLORS.bucketLabel;
+  ctx.font = '600 12px "JetBrains Mono"';
+  ctx.textAlign = 'center';
+  ctx.fillText('bucket = −2.40', bx, lossY - 10);
+
+  // Current weight dot
+  const wx = w2x(weight);
+  const wy = l2y(computeLoss(weight));
+
+  const glow = ctx.createRadialGradient(wx, wy, 0, wx, wy, 22);
+  glow.addColorStop(0, COLORS.weightGlow);
+  glow.addColorStop(1, 'rgba(199,120,0,0)');
+  ctx.beginPath(); ctx.arc(wx, wy, 22, 0, Math.PI * 2);
+  ctx.fillStyle = glow; ctx.fill();
+
+  ctx.beginPath(); ctx.arc(wx, wy, 9, 0, Math.PI * 2);
+  ctx.fillStyle = COLORS.weightDot; ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.stroke();
+
+  // Weight label
+  ctx.fillStyle = COLORS.text;
+  ctx.font = 'bold 13px "JetBrains Mono"';
+  ctx.textAlign = 'center';
+  const labelX = Math.min(Math.max(wx, padL + 45), padL + pw - 45);
+  ctx.fillText('W = ' + weight.toFixed(4), labelX, wy - 20);
+
+  // Gradient arrow
+  const gr = computeGradient(weight);
+  const arrowLen = Math.min(Math.abs(gr) * 80, 55);
+  const arrowDir = gr > 0 ? 1 : -1;
+  const arrowX = wx + arrowDir * arrowLen;
+
+  ctx.beginPath();
+  ctx.moveTo(wx, wy);
+  ctx.lineTo(arrowX, wy);
+  ctx.strokeStyle = COLORS.gradArrow;
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // Arrowhead
+  ctx.beginPath();
+  ctx.moveTo(arrowX, wy);
+  ctx.lineTo(arrowX - arrowDir * 9, wy - 7);
+  ctx.lineTo(arrowX - arrowDir * 9, wy + 7);
+  ctx.closePath();
+  ctx.fillStyle = COLORS.magenta;
+  ctx.fill();
+
+  // Gradient label
+  ctx.fillStyle = COLORS.magenta;
+  ctx.font = 'bold 11px "JetBrains Mono"';
+  const gMidX = wx + (arrowX - wx) / 2;
+  ctx.fillText('∇ = ' + (gr >= 0 ? '+' : '') + gr.toFixed(4), gMidX, wy + 24);
+
+  // ── WEIGHT NUMBER LINE (bottom) ──
+  const wLineY = lossY + lossH + 45;
+  const wLineW = pw * 0.85;
+  const wLineX = padL + (pw - wLineW) / 2;
+
+  ctx.beginPath();
+  ctx.moveTo(wLineX, wLineY);
+  ctx.lineTo(wLineX + wLineW, wLineY);
+  ctx.strokeStyle = COLORS.numLine;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Tick marks
+  for (let tick = -2.8; tick <= -2.0; tick += 0.2) {
+    const tx = w2x(tick);
+    const isBucket = Math.abs(tick - bucketCenter) < 0.001;
+    ctx.beginPath();
+    ctx.moveTo(tx, wLineY - (isBucket ? 12 : 6));
+    ctx.lineTo(tx, wLineY + (isBucket ? 12 : 6));
+    ctx.strokeStyle = isBucket ? COLORS.amber : COLORS.numLine;
+    ctx.lineWidth = isBucket ? 2.5 : 1;
+    ctx.stroke();
+    ctx.fillStyle = isBucket ? COLORS.amber : COLORS.textMuted;
+    ctx.font = (isBucket ? 'bold ' : '') + '9px "JetBrains Mono"';
+    ctx.textAlign = 'center';
+    ctx.fillText(tick.toFixed(1), tx, wLineY + 22);
+  }
+
+  // Bucket zone highlight
+  const bzL = w2x(bucketCenter - 0.2);
+  const bzR = w2x(bucketCenter + 0.2);
+  ctx.fillStyle = COLORS.bucketZone;
+  ctx.fillRect(bzL, wLineY - 24, bzR - bzL, 48);
+
+  // "bucket zone" label
+  ctx.fillStyle = COLORS.amber;
+  ctx.font = '9px "DM Sans"';
+  ctx.textAlign = 'right';
+  ctx.fillText('bucket zone', bzR - 2, wLineY - 28);
+
+  // Weight pin on number line
+  const wPinX = w2x(weight);
+  const pinGlow = ctx.createRadialGradient(wPinX, wLineY, 0, wPinX, wLineY, 16);
+  pinGlow.addColorStop(0, COLORS.weightPinGlow);
+  pinGlow.addColorStop(1, 'rgba(0,132,168,0)');
+  ctx.beginPath(); ctx.arc(wPinX, wLineY, 16, 0, Math.PI * 2);
+  ctx.fillStyle = pinGlow; ctx.fill();
+
+  ctx.beginPath(); ctx.arc(wPinX, wLineY, 7, 0, Math.PI * 2);
+  ctx.fillStyle = COLORS.weightPin; ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+
+  // Pin label
+  ctx.fillStyle = COLORS.cyan;
+  ctx.font = 'bold 12px "JetBrains Mono"';
+  ctx.textAlign = 'center';
+  const plX = Math.min(Math.max(wPinX, wLineX + 35), wLineX + wLineW - 35);
+  ctx.fillText(weight.toFixed(4), plX, wLineY - 16);
+
+  // Distance to bucket
+  const dist = Math.abs(weight - bucketCenter);
+  if (dist > 0.0008) {
+    const bx2 = w2x(bucketCenter);
+    const midX = (wPinX + bx2) / 2;
+    ctx.beginPath();
+    ctx.setLineDash([3, 4]);
+    ctx.moveTo(wPinX, wLineY - 30);
+    ctx.lineTo(bx2, wLineY - 30);
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = COLORS.textDim;
+    ctx.font = '9px "JetBrains Mono"';
+    ctx.textAlign = 'center';
+    ctx.fillText(dist.toFixed(4), midX, wLineY - 34);
+  }
+
+  // ── Labels ──
+  ctx.fillStyle = COLORS.textDim;
+  ctx.font = '600 11px "DM Sans"';
+  ctx.textAlign = 'left';
+  ctx.fillText('LOSS LANDSCAPE', padL, lossY - 12);
+  ctx.fillText('Loss = (fake_quantize(W) − W)² + 0.08×(W − W_original)²', padL + 8, lossY + lossH + 18);
+
+  ctx.fillText('WEIGHT NUMBER LINE', padL + 8, wLineY - 22);
+
+  // Step counter at top
+  ctx.fillStyle = COLORS.stepTitle;
+  ctx.font = 'bold 15px "DM Sans"';
+  ctx.textAlign = 'center';
+  const done = stepCount >= totalSteps;
+  ctx.fillText(done ? '✓ Converged! — Step ' + stepCount : 'Step ' + stepCount + ' / ' + totalSteps, W / 2, 20);
+}
+
+// ── UPDATE UI ──
+function updateStats() {
+  var gr = computeGradient(weight);
+  var dist = Math.abs(weight - bucketCenter);
+  document.getElementById('statsRow').innerHTML =
+    '<div class="stat-card"><div class="stat-label">Current Weight</div><div class="stat-value">' + weight.toFixed(4) + '</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Target Bucket</div><div class="stat-value">' + bucketCenter.toFixed(2) + '</div></div>' +
+    '<div class="stat-card"><div class="stat-label">Gradient</div><div class="stat-value">' + (gr >= 0 ? '+' : '') + gr.toFixed(4) + '</div></div>' +
+    '<div class="stat-card' + (dist < 0.01 ? ' highlight' : '') + '"><div class="stat-label">Dist to Bucket</div><div class="stat-value">' + dist.toFixed(4) + '</div></div>';
+}
+
+function updateExplanation() {
+  var gr = computeGradient(weight);
+  var dist = Math.abs(weight - bucketCenter);
+  var fqw = fakeQuantize(weight);
+  var steComponent = -2 * (fqw - weight);
+  var taskComponent = 0.16 * (weight - startWeight);
+  var wNew = weight - lr * gr;
+
+  var phase = '';
+  if (dist > 0.1) phase = '<strong style="color:#c77800">⚡ Early phase:</strong> Weight is far from bucket. Gradient is strong — big nudges each step.';
+  else if (dist > 0.01) phase = '<strong style="color:#0084a8">🎯 Middle phase:</strong> Getting close. Gradient is shrinking — smaller, finer adjustments.';
+  else phase = '<strong style="color:#1e7a3e">✅ Converged!</strong> Weight is practically at the bucket center. Gradient ≈ 0. Quantization will be nearly lossless.';
+
+  document.getElementById('explainBox').innerHTML =
+    '<div style="margin-bottom:0.6rem;">' + phase + '</div>' +
+    '<div class="eq">' +
+    '<span style="color:#9399a5">Forward:  </span>fake_quantize(' + weight.toFixed(4) + ') = <strong style="color:#c77800">' + fqw.toFixed(2) + '</strong>  ← "this is what quantization will do"' +
+    '\n\n<span style="color:#9399a5">Gradient:</span> ∇ = <span style="color:#b0307a">−2×(' + fqw.toFixed(2) + ' − ' + weight.toFixed(4) + ')</span> + <span style="color:#5c3db8">0.16×(' + weight.toFixed(4) + ' − ' + startWeight.toFixed(2) + ')</span>' +
+    '\n       = <span style="color:#b0307a">' + steComponent.toFixed(4) + '</span> + <span style="color:#5c3db8">' + taskComponent.toFixed(4) + '</span>' +
+    '\n       = <strong style="color:#0084a8">' + (gr >= 0 ? '+' : '') + gr.toFixed(4) + '</strong>' + (gr > 0 ? '  → push weight UP (toward 0)' : '  → push weight DOWN (toward −2.4)') +
+    '\n\n<span style="color:#9399a5">Update:  </span>W_new = ' + weight.toFixed(4) + ' − ' + lr + ' × (' + gr.toFixed(4) + ')' +
+    '\n       = <strong style="color:#1e7a3e">' + wNew.toFixed(4) + '</strong>  ← nudged closer to ' + bucketCenter.toFixed(2) +
+    '</div>' +
+    '<div style="margin-top:0.5rem;font-size:0.8rem;color:#5a5f6b;">' +
+    '<span style="color:#b0307a">◼ STE gradient:</span> pulls weight toward bucket center (minimizes quantization error)<br>' +
+    '<span style="color:#5c3db8">◼ Task gradient:</span> tiny resistance — model doesn\'t want to change too far from original ' + startWeight.toFixed(2) + '<br>' +
+    '<span style="color:#0084a8">◼ Result:</span> weight settles very close to the bucket, minimizing quantization damage' +
+    '</div>';
+}
+
+function appendLog() {
+  var gr = computeGradient(weight);
+  var logArea = document.getElementById('logArea');
+  var line = document.createElement('div');
+  line.innerHTML = '<span class="step-num">[' + String(stepCount).padStart(3, '0') + ']</span>  W = <span class="w-val">' + weight.toFixed(4) + '</span>  grad = <span class="grad-val">' + (gr >= 0 ? '+' : '') + gr.toFixed(4) + '</span>  |W − bucket| = ' + Math.abs(weight - bucketCenter).toFixed(4);
+  if (logArea.children.length === 1 && logArea.children[0].textContent.indexOf('Press') >= 0) {
+    logArea.innerHTML = '';
+  }
+  logArea.insertBefore(line, logArea.firstChild);
+  while (logArea.children.length > 35) { logArea.removeChild(logArea.lastChild); }
+}
+
+// ── STEP ──
+function doStep() {
+  if (stepCount >= totalSteps) return;
+  var gr = computeGradient(weight);
+  var noise = (Math.random() - 0.5) * 0.003;
+  weight = weight - lr * (gr + noise);
+  stepCount++;
+  draw();
+  updateStats();
+  updateExplanation();
+  appendLog();
+  if (Math.abs(weight - bucketCenter) < 0.0005 && stepCount > 30) {
+    stepCount = totalSteps;
+    pause();
+    draw();
+    updateStats();
+    updateExplanation();
+  }
+}
+
+// ── PLAY / PAUSE / RESET ──
+function togglePlay() {
+  if (playing) { pause(); } else { play(); }
+}
+function play() {
+  if (stepCount >= totalSteps) { reset(); setTimeout(function () { play(); }, 150); return; }
+  playing = true;
+  document.getElementById('playBtn').textContent = '⏸ Pause';
+  document.getElementById('stepBtn').disabled = true;
+  runLoop();
+}
+function pause() {
+  playing = false;
+  document.getElementById('playBtn').textContent = '▶ Play';
+  document.getElementById('stepBtn').disabled = false;
+  if (animId) { cancelAnimationFrame(animId); animId = null; }
+}
+function runLoop() {
+  if (!playing) return;
+  for (var i = 0; i < playSpeed; i++) { if (stepCount >= totalSteps) { pause(); return; } doStep(); }
+  animId = requestAnimationFrame(runLoop);
+}
+function reset() {
+  pause();
+  weight = startWeight;
+  stepCount = 0;
+  document.getElementById('logArea').innerHTML = '<div style="color:var(--text-muted)">Reset. Press ▶ Play or → to start...</div>';
+  document.getElementById('stepBtn').disabled = false;
+  draw();
+  updateStats();
+  updateExplanation();
+}
+function updateSpeed() {
+  playSpeed = parseInt(document.getElementById('speedSlider').value);
+  document.getElementById('speedLabel').textContent = playSpeed + 'x';
+}
+
+// ── Keyboard ──
+document.addEventListener('keydown', function (e) {
+  if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+  if (e.key === 'ArrowRight') { doStep(); }
+  if (e.key === 'r' || e.key === 'R') { reset(); }
+});
+
+// ── INIT ──
+draw();
+updateStats();
+updateExplanation();
+</script>
+</body>
+</html>

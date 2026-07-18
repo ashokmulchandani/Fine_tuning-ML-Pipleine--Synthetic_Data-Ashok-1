@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QAT Visual Guide — Step by Step Intuition</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#06090f; --bg-card:#0d1117; --bg-raised:#161b22;
+  --border:#21262d; --border-active:#30363d;
+  --text:#e6edf3; --text-dim:#8b949e; --text-muted:#484f58;
+  --cyan:#39d2ff; --cyan-bg:#39d2ff15;
+  --amber:#ffb347; --amber-bg:#ffb34715;
+  --green:#3fb950; --green-bg:#3fb95015;
+  --magenta:#ff6ec7; --magenta-bg:#ff6ec715;
+  --red:#f85149; --red-bg:#f8514920;
+  --violet:#a371f7;
+  --radius:14px; --radius-sm:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.65;}
+
+.bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;}
+
+.app{position:relative;z-index:1;max-width:1000px;margin:0 auto;padding:2rem;}
+
+.header{text-align:center;padding:2rem 0 1rem;}
+.header h1{font-family:'Orbitron',sans-serif;font-size:clamp(1.4rem,3vw,2rem);font-weight:700;background:linear-gradient(135deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header .subtitle{color:var(--text-dim);margin-top:0.5rem;}
+
+/* Story container */
+.story{margin:2rem 0;}
+
+.story-step{display:none;animation:fadeIn 0.5s ease forwards;}
+.story-step.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;margin-bottom:1.5rem;}
+.card h2{font-family:'Orbitron',sans-serif;font-size:1.05rem;font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:0.6rem;}
+.card h3{font-family:'Orbitron',sans-serif;font-size:0.8rem;color:var(--cyan);margin:1rem 0 0.5rem;}
+.card p{color:var(--text-dim);margin-bottom:0.7rem;font-size:0.95rem;}
+
+/* Weight Table */
+.weight-table{width:100%;border-collapse:collapse;margin:1rem 0;font-family:'JetBrains Mono',monospace;font-size:0.85rem;}
+.weight-table th{text-align:center;padding:0.6rem;border-bottom:2px solid var(--border);color:var(--text-dim);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;}
+.weight-table td{text-align:center;padding:0.7rem 0.5rem;border-bottom:1px solid var(--border);transition:all 0.5s ease;}
+.weight-table .fp-val{color:var(--cyan);}
+.weight-table .qt-val{color:var(--amber);}
+.weight-table .adj-val{color:var(--green);}
+.weight-table .err-cell{font-size:0.75rem;}
+.weight-table .err-bad{color:var(--red);}
+.weight-table .err-good{color:var(--green);}
+
+/* Number line visualization */
+.numline-container{position:relative;height:80px;margin:1.5rem 0;background:var(--bg-raised);border-radius:var(--radius-sm);border:1px solid var(--border);overflow:visible;}
+.numline{position:absolute;left:10%;right:10%;top:50%;height:2px;background:var(--text-muted);}
+.numline .tick-mark{position:absolute;top:50%;width:1px;height:12px;background:var(--text-muted);transform:translate(-50%,-50%);}
+.numline .tick-label{position:absolute;top:55%;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--text-muted);white-space:nowrap;}
+.numline .weight-dot{position:absolute;width:14px;height:14px;border-radius:50%;transform:translate(-50%,-50%);top:50%;transition:all 0.8s ease;z-index:2;cursor:pointer;}
+.numline .weight-dot:hover{transform:translate(-50%,-50%) scale(1.4);}
+.numline .weight-dot .tooltip{display:none;position:absolute;bottom:120%;left:50%;transform:translateX(-50%);background:var(--bg-raised);border:1px solid var(--border);border-radius:4px;padding:0.3em 0.6em;font-family:'JetBrains Mono',monospace;font-size:0.6rem;white-space:nowrap;color:var(--text);}
+.numline .weight-dot:hover .tooltip{display:block;}
+.numline .bin-boundary{position:absolute;top:0;width:1px;height:100%;background:var(--amber);opacity:0.4;z-index:1;}
+.numline .bin-zone{position:absolute;top:0;height:100%;opacity:0.08;z-index:0;}
+
+/* Step indicator */
+.step-indicator{display:flex;align-items:center;gap:1rem;margin:1rem 0;padding:1rem;background:var(--bg-raised);border-radius:var(--radius-sm);border:1px solid var(--border);}
+.step-indicator .step-num{font-family:'Orbitron',sans-serif;font-size:2rem;font-weight:700;color:var(--cyan);min-width:3rem;text-align:center;}
+.step-indicator .step-desc{flex:1;}
+.step-indicator .step-desc .step-title{font-weight:600;font-size:0.95rem;}
+.step-indicator .step-desc .step-detail{font-size:0.8rem;color:var(--text-dim);margin-top:0.2rem;}
+
+/* Callout */
+.callout{padding:1rem 1.25rem;border-radius:var(--radius-sm);margin:1rem 0;font-size:0.9rem;display:flex;align-items:flex-start;gap:0.7rem;}
+.callout.info{background:var(--cyan-bg);border:1px solid var(--cyan-border);color:var(--cyan);}
+.callout.warn{background:var(--amber-bg);border:1px solid #ffb34740;color:var(--amber);}
+.callout.success{background:var(--green-bg);border:1px solid #3fb95040;color:var(--green);}
+.callout .icon{font-size:1.3rem;flex-shrink:0;}
+
+/* Before/After comparison */
+.before-after{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin:1rem 0;}
+.ba-col{background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1.25rem;text-align:center;}
+.ba-col h4{font-family:'Orbitron',sans-serif;font-size:0.7rem;letter-spacing:0.08em;margin-bottom:0.8rem;}
+.ba-col.before h4{color:var(--red);}
+.ba-col.after h4{color:var(--green);}
+.ba-col .ba-value{font-family:'JetBrains Mono',monospace;font-size:1.4rem;font-weight:600;margin:0.5rem 0;}
+.ba-col.before .ba-value{color:var(--red);}
+.ba-col.after .ba-value{color:var(--green);}
+
+/* Weight adjustment arrows */
+.adj-row{display:flex;align-items:center;gap:0.5rem;font-family:'JetBrains Mono',monospace;font-size:0.8rem;margin:0.3rem 0;}
+.adj-row .arrow-up{color:var(--green);}
+.adj-row .arrow-down{color:var(--red);}
+
+/* Nav */
+.nav-row{display:flex;justify-content:center;gap:0.75rem;margin:2rem 0;}
+.nav-btn{font-family:'JetBrains Mono',monospace;font-size:0.75rem;letter-spacing:0.08em;padding:0.8em 2em;border:1px solid var(--border);border-radius:100px;background:transparent;color:var(--text);cursor:pointer;transition:var(--transition,0.3s);}
+.nav-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.nav-btn.primary{background:var(--cyan);border-color:var(--cyan);color:var(--bg);font-weight:600;}
+.nav-btn.primary:hover{opacity:0.85;color:var(--bg);}
+.nav-btn:disabled{opacity:0.3;cursor:not-allowed;}
+
+/* Progress bar */
+.progress-bar{height:3px;background:var(--border);border-radius:2px;margin:1rem 0;overflow:hidden;}
+.progress-fill{height:100%;background:var(--cyan);border-radius:2px;transition:width 0.5s ease;}
+
+/* The "aha" moment */
+.aha-box{background:linear-gradient(135deg,#7c4dff15,#39d2ff15);border:2px solid var(--cyan-border);border-radius:var(--radius);padding:1.5rem;margin:1.5rem 0;text-align:center;}
+.aha-box .aha-icon{font-size:2.5rem;margin-bottom:0.5rem;}
+.aha-box .aha-text{font-weight:600;font-size:1.05rem;color:var(--cyan);}
+.aha-box .aha-detail{font-size:0.85rem;color:var(--text-dim);margin-top:0.5rem;}
+
+/* Weight cell animation */
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
+.pulse{animation:pulse 0.6s ease-in-out;}
+
+@media(max-width:768px){.before-after{grid-template-columns:1fr;}.app{padding:1rem;}}
+</style>
+</head>
+<body>
+
+<canvas class="bg-canvas" id="bgCanvas"></canvas>
+
+<div class="app">
+
+<header class="header">
+  <h1>QAT: The Intuition</h1>
+  <p class="subtitle">Quantization-Aware Training explained with one simple example — step by step</p>
+</header>
+
+<div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+<div class="story" id="story"></div>
+
+<div class="nav-row">
+  <button class="nav-btn" id="prevBtn" onclick="changeStep(-1)" disabled>← Back</button>
+  <button class="nav-btn primary" id="nextBtn" onclick="changeStep(1)">Start →</button>
+</div>
+
+</div>
+
+<script>
+// Background
+const canvas=document.getElementById('bgCanvas');
+const ctx=canvas.getContext('2d');
+let particles=[];
+function rsz(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+rsz();window.addEventListener('resize',rsz);
+for(let i=0;i<50;i++)particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()-.5)*0.25,vy:(Math.random()-.5)*0.25,r:Math.random()*1.2+.4,a:Math.random()*.4+.1});
+(function anim(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0)p.x=canvas.width;if(p.x>canvas.width)p.x=0;if(p.y<0)p.y=canvas.height;if(p.y>canvas.height)p.y=0;
+    for(let j=i+1;j<particles.length;j++){let dx=particles[j].x-p.x,dy=particles[j].y-p.y,d=Math.sqrt(dx*dx+dy*dy);if(d<100){ctx.beginPath();ctx.strokeStyle=`rgba(57,210,255,${0.05*(1-d/100)})`;ctx.lineWidth=.5;ctx.moveTo(p.x,p.y);ctx.lineTo(particles[j].x,particles[j].y);ctx.stroke();}}
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=`rgba(57,210,255,${p.a})`;ctx.fill();});
+  requestAnimationFrame(anim);
+})();
+
+// ── STORY DATA ──
+const TOTAL_STEPS = 9;
+let currentStep = 0;
+
+// Our tiny example model: 6 weights
+const originalWeights = [-2.3, -0.8, -0.15, 0.45, 1.1, 2.7];
+// After PTQ (INT4, range -3 to 3 mapped to -8 to 7)
+const scale = 6.0 / 15.0; // (3-(-3))/(7-(-8)) = 6/15 = 0.4
+function quantize(w) { return Math.round(w / scale); }
+function dequantize(q) { return q * scale; }
+const ptqQuantized = originalWeights.map(w => dequantize(quantize(w)));
+const ptqError = originalWeights.map((w,i) => Math.abs(w - ptqQuantized[i]));
+
+// After QAT: weights adjusted BEFORE quantization to land closer to bin centers
+// The model "nudges" weights toward quantization-friendly values
+const qatAdjusted = [-2.4, -0.8, 0.0, 0.4, 1.2, 2.8]; // nudged toward multiples of 0.4
+const qatQuantized = qatAdjusted.map(w => dequantize(quantize(w)));
+const qatError = originalWeights.map((w,i) => Math.abs(w - qatQuantized[i]));
+
+function renderWeightTable(weights, quantized, errors, highlightCol, title) {
+  const rows = weights.map((w,i) => {
+    const errClass = errors[i] > 0.1 ? 'err-bad' : 'err-good';
+    let fpClass='', qtClass='', errCellClass='';
+    if(highlightCol==='fp') fpClass='pulse';
+    if(highlightCol==='qt') qtClass='pulse';
+    if(highlightCol==='err') errCellClass='pulse';
+    return `<tr>
+      <td style="color:var(--text-muted)">W${i+1}</td>
+      <td class="fp-val ${fpClass}">${weights[i].toFixed(2)}</td>
+      <td class="qt-val ${qtClass}">${quantized[i].toFixed(2)}</td>
+      <td class="err-cell ${errClass} ${errCellClass}">${errors[i].toFixed(3)}</td>
+    </tr>`;
+  }).join('');
+
+  return `<table class="weight-table">
+    <thead><tr><th>Weight</th><th>Original (FP)</th><th>After Quantize</th><th>Error</th></tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr style="font-weight:600;border-top:2px solid var(--border);">
+      <td colspan="2" style="color:var(--text-muted)">${title}</td>
+      <td style="color:var(--amber)">Avg err</td>
+      <td style="color:${(errors.reduce((a,b)=>a+b,0)/errors.length)>0.1?'var(--red)':'var(--green)'}">${(errors.reduce((a,b)=>a+b,0)/errors.length).toFixed(3)}</td>
+    </tr></tfoot></table>`;
+}
+
+function renderNumLine(weights, quantized, title) {
+  // Map weights onto a number line from -3 to 3
+  // Bin centers at multiples of 0.4: -2.8,-2.4,-2.0,...,2.4,2.8
+  const bins = [];
+  for(let q=-8; q<=7; q++) bins.push({q, center: q*0.4, low: (q-0.5)*0.4, high: (q+0.5)*0.4});
+
+  const dots = weights.map((w,i) => {
+    const leftPct = ((w+3)/6)*80+10; // map -3..3 to 10%..90%
+    const color = Math.abs(w-quantized[i])>0.1 ? 'var(--red)' : 'var(--green)';
+    return `<div class="weight-dot" style="left:${leftPct}%;background:${color};box-shadow:0 0 8px ${color};" title="W${i+1}: ${w.toFixed(2)}">
+      <div class="tooltip">W${i+1}=${w.toFixed(2)} → ${quantized[i].toFixed(2)}</div>
+    </div>`;
+  }).join('');
+
+  const binViz = bins.map(b => {
+    const leftPct = ((b.low+3)/6)*80+10;
+    const widthPct = ((b.high-b.low)/6)*80;
+    const isKey = b.q % 4 === 0;
+    return `
+      <div class="bin-zone" style="left:${leftPct}%;width:${widthPct}%;background:${isKey?'var(--amber)':'var(--text-muted)'};opacity:${isKey?'0.06':'0.03'};${isKey?'border-left:1px dashed var(--amber);border-right:1px dashed var(--amber);':''}"></div>
+      ${isKey?`<div class="tick-label" style="left:${((b.center+3)/6)*80+10}%;top:65%;">${b.center.toFixed(1)}</div>`:''}
+    `;
+  }).join('');
+
+  return `<div style="margin:1rem 0;">
+    <p style="font-size:0.8rem;color:var(--text-dim);text-align:center;margin-bottom:0.5rem;">${title}</p>
+    <div class="numline-container">
+      ${binViz}
+      <div class="numline"></div>
+      ${dots}
+    </div>
+    <p style="font-size:0.65rem;color:var(--text-muted);text-align:center;margin-top:0.3rem;">← −3.0 &nbsp;&nbsp;&nbsp; Each tick = quantized bucket center &nbsp;&nbsp;&nbsp; +3.0 →</p>
+  </div>`;
+}
+
+const steps = [
+  { // 0 — The Problem
+    title:'The Problem: We Want a Smaller Model',
+    render(){return `
+<div class="card">
+  <div class="step-indicator">
+    <div class="step-num">1</div>
+    <div class="step-desc"><div class="step-title">Meet our tiny model</div><div class="step-detail">It has just 6 weights. Real models have billions, but the idea is the same.</div></div>
+  </div>
+
+  <p>Here are our model's weights in <strong style="color:var(--cyan)">FP16 (floating point)</strong>. They can be any decimal number.</p>
+  ${renderWeightTable(originalWeights, originalWeights, [0,0,0,0,0,0], null, 'All weights are exact — no quantization yet')}
+
+  <div class="callout info"><span class="icon">🎯</span><span>Our goal: store these weights using only <strong>4 bits each</strong> (INT4) instead of 16 bits (FP16). That's <strong>4× smaller</strong> — but we lose precision.</span></div>
+
+  <p style="font-size:0.8rem;color:var(--text-dim);">INT4 can only represent <strong>16 distinct values</strong> (from −8 to +7). Our 6 weights must each snap to the nearest integer on that scale. Let's see what happens...</p>
+</div>`;}
+  },
+  { // 1 — Quantization bins
+    title:'Step 1: Set Up the Quantization Grid',
+    render(){return `
+<div class="card">
+  <div class="step-indicator">
+    <div class="step-num">2</div>
+    <div class="step-desc"><div class="step-title">Define the "buckets"</div><div class="step-detail">INT4 with range −3 to +3 → 16 buckets, each 0.4 wide. Weights snap to the nearest bucket center.</div></div>
+  </div>
+
+  <p>We map our weight range <strong style="color:var(--cyan)">[−3, +3]</strong> onto INT4's range <strong style="color:var(--amber)">[−8, +7]</strong>.</p>
+  <p style="font-size:0.85rem;">Each integer step = <code style="color:var(--cyan)">6.0 / 15 = 0.4</code> in floating point. Every weight must snap to a multiple of 0.4.</p>
+
+  ${renderNumLine(originalWeights, ptqQuantized, 'Our 6 weights (●) on the number line — dashed lines = quantized bucket centers')}
+
+  <div class="callout warn"><span class="icon">⚠️</span><span>Notice: <strong>W3 = −0.15</strong> is very close to the 0.0 bucket border. It will snap to 0.0 — losing its negative sign entirely. <strong>W2 = −0.80</strong> lands perfectly on a bucket center (lucky!).</span></div>
+</div>`;}
+  },
+  { // 2 — PTQ result
+    title:'Step 2: Post-Training Quantization (PTQ)',
+    render(){return `
+<div class="card">
+  <div class="step-indicator">
+    <div class="step-num">3</div>
+    <div class="step-desc"><div class="step-title">Snap! Round each weight to the nearest bucket</div><div class="step-detail">This is PTQ — quantize after training. No adjustments, just round.</div></div>
+  </div>
+
+  ${renderWeightTable(originalWeights, ptqQuantized, ptqError, 'qt', 'PTQ: Rounded to nearest INT4 bucket')}
+
+  <div class="before-after">
+    <div class="ba-col before"><h4>BEFORE (FP16)</h4><div class="ba-value">−0.15</div><p style="font-size:0.75rem;color:var(--text-dim)">W3 has a small negative value</p></div>
+    <div class="ba-col after"><h4>AFTER PTQ (INT4)</h4><div class="ba-value">0.00</div><p style="font-size:0.75rem;color:var(--red)">W3 snapped to 0 — lost entirely!</p></div>
+  </div>
+
+  <div class="callout warn"><span class="icon">📊</span><span>Average error: <strong style="color:var(--red)">${(ptqError.reduce((a,b)=>a+b,0)/6).toFixed(3)}</strong>. W1 and W6 have the biggest errors because they're far from any bucket center. This error accumulates across billions of weights in a real model.</span></div>
+</div>`;}
+  },
+  { // 3 — The problem visualized
+    title:'Why PTQ Has Errors',
+    render(){return `
+<div class="card">
+  <div class="step-indicator">
+    <div class="step-num">4</div>
+    <div class="step-desc"><div class="step-title">The core problem: weights don't line up with buckets</div><div class="step-detail">Quantization error = distance from weight to nearest bucket center.</div></div>
+  </div>
+
+  ${renderNumLine(originalWeights, ptqQuantized, 'Red ● = weight far from bucket center (large error). Green ● = close to center (small error).')}
+
+  <p>Think of it like this:</p>
+  <p style="font-size:0.9rem;padding:1rem;background:var(--bg-raised);border-radius:var(--radius-sm);border-left:3px solid var(--cyan);">
+    🎯 Imagine archery targets at fixed positions (bucket centers).<br>
+    Your arrows land wherever they land (original weights).<br>
+    <strong style="color:var(--red)">PTQ:</strong> "We'll score each arrow as if it hit the nearest target."<br>
+    <strong style="color:var(--red)">Problem:</strong> If your arrow is midway between two targets, the score is wrong by a lot.<br>
+    <strong style="color:var(--cyan)">QAT idea:</strong> "What if we could <em>move the archer slightly</em> so arrows land closer to targets?"
+  </p>
+</div>`;}
+  },
+  { // 4 — QAT: Nudge the weights
+    title:'Step 3: Quantization-Aware Training (QAT)',
+    render(){return `
+<div class="card">
+  <div class="step-indicator">
+    <div class="step-num">5</div>
+    <div class="step-desc"><div class="step-title">QAT: Nudge weights toward bucket centers before quantizing</div><div class="step-detail">This is the "Aware" part — during a short re-training, the model adjusts weights to land near bucket centers.</div></div>
+  </div>
+
+  <p>During QAT fine-tuning, the model <strong style="color:var(--green)">learns to adjust</strong> each weight so it's closer to a quantization bucket center. Here's what happens to our 6 weights:</p>
+
+  <table class="weight-table">
+    <thead><tr><th></th><th>Original (FP16)</th><th>After QAT Nudge</th><th>Change</th><th>Why?</th></tr></thead>
+    <tbody>
+      <tr><td>W1</td><td class="fp-val">−2.30</td><td class="adj-val">−2.40</td><td><span class="arrow-down">↓ −0.10</span></td><td style="font-size:0.75rem;color:var(--text-dim)">Move to −2.4 (bucket center)</td></tr>
+      <tr><td>W2</td><td class="fp-val">−0.80</td><td class="adj-val">−0.80</td><td style="color:var(--text-dim)">— 0.00</td><td style="font-size:0.75rem;color:var(--text-dim)">Already at bucket center!</td></tr>
+      <tr style="background:var(--amber-bg)"><td>W3</td><td class="fp-val">−0.15</td><td class="adj-val" style="color:var(--amber)">0.00</td><td><span class="arrow-up" style="color:var(--amber)">↑ +0.15</span></td><td style="font-size:0.75rem;color:var(--amber)"><strong>Push to 0.0 (safer than −0.4)</strong></td></tr>
+      <tr><td>W4</td><td class="fp-val">0.45</td><td class="adj-val">0.40</td><td><span class="arrow-down">↓ −0.05</span></td><td style="font-size:0.75rem;color:var(--text-dim)">Move to 0.4 (bucket center)</td></tr>
+      <tr><td>W5</td><td class="fp-val">1.10</td><td class="adj-val">1.20</td><td><span class="arrow-up">↑ +0.10</span></td><td style="font-size:0.75rem;color:var(--text-dim)">Move to 1.2 (bucket center)</td></tr>
+      <tr><td>W6</td><td class="fp-val">2.70</td><td class="adj-val">2.80</td><td><span class="arrow-up">↑ +0.10</span></td><td style="font-size:0.75rem;color:var(--text-dim)">Move to 2.8 (bucket center)</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout success"><span class="icon">💡</span><span><strong>Key insight:</strong> QAT slightly changes what the model "knows" — but the changes are tiny (≤0.15 in our example). The fine-tuning step ensures the <em>model's behavior</em> adapts to these nudged weights, so overall accuracy stays high.</span></div>
+</div>`;}
+  },
+  { // 5 — QAT result after quantization
+    title:'Step 4: Now Quantize the Adjusted Weights',
+    render(){return `
+<div class="card">
+  <div class="step-indicator">
+    <div class="step-num">6</div>
+    <div class="step-desc"><div class="step-title">Quantize the QAT-adjusted weights — much smaller errors!</div><div class="step-detail">Since weights are already near bucket centers, rounding causes minimal damage.</div></div>
+  </div>
+
+  ${renderWeightTable(qatAdjusted, qatQuantized, qatError, 'qt', 'QAT: Weights nudged first, THEN quantized')}
+
+  <div class="before-after">
+    <div class="ba-col before"><h4>PTQ ERROR (avg)</h4><div class="ba-value" style="color:var(--red)">${(ptqError.reduce((a,b)=>a+b,0)/6).toFixed(3)}</div><p style="font-size:0.75rem;color:var(--text-dim)">Round first, regret later</p></div>
+    <div class="ba-col after"><h4>QAT ERROR (avg)</h4><div class="ba-value" style="color:var(--green)">${(qatError.reduce((a,b)=>a+b,0)/6).toFixed(3)}</div><p style="font-size:0.75rem;color:var(--green)">Nudge, then quantize</p></div>
+  </div>
+
+  <p>QAT <strong style="color:var(--green)">dramatically reduces</strong> quantization error — in our example from ${(ptqError.reduce((a,b)=>a+b,0)/6).toFixed(3)} down to ${(qatError.reduce((a,b)=>a+b,0)/6).toFixed(3)} average error per weight.</p>
+</div>`;}
+  },
+  { // 6 — Side by side
+    title:'PTQ vs QAT — Side by Side',
+    render(){return `
+<div class="card">
+  <div class="step-indicator">
+    <div class="step-num">7</div>
+    <div class="step-desc"><div class="step-title">Visual comparison: why QAT wins</div><div class="step-detail">Same buckets, different starting positions.</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+    <div>${renderNumLine(originalWeights, ptqQuantized, 'PTQ: Original weights → Quantize')}</div>
+    <div>${renderNumLine(qatAdjusted, qatQuantized, 'QAT: Adjusted weights → Quantize')}</div>
+  </div>
+
+  <div class="compare-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;">
+    <div style="background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1.25rem;border-left:3px solid var(--red);">
+      <h4 style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--red);margin-bottom:0.5rem;">PTQ Flow</h4>
+      <p style="font-size:0.78rem;color:var(--text-dim);">Train model → Quantize → <span style="color:var(--red);">Live with errors</span></p>
+      <p style="font-size:0.72rem;color:var(--text-muted);margin-top:0.5rem;">Fast, no data needed. But weights far from bucket centers create permanent errors.</p>
+    </div>
+    <div style="background:var(--bg-raised);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1.25rem;border-left:3px solid var(--green);">
+      <h4 style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--green);margin-bottom:0.5rem;">QAT Flow</h4>
+      <p style="font-size:0.78rem;color:var(--text-dim);">Train model → <span style="color:var(--green);">Fine-tune with fake quantization</span> → Quantize</p>
+      <p style="font-size:0.72rem;color:var(--text-muted);margin-top:0.5rem;">Slower, needs data. But model learns to work WITH the buckets, not against them.</p>
+    </div>
+  </div>
+</div>`;}
+  },
+  { // 7 — How QAT works technically
+    title:'How QAT Actually Works (The "Fake" Quantization Trick)',
+    render(){return `
+<div class="card">
+  <div class="step-indicator">
+    <div class="step-num">8</div>
+    <div class="step-desc"><div class="step-title">The training loop — what really happens under the hood</div><div class="step-detail">QAT doesn't actually quantize during training. It "fakes" it.</div></div>
+  </div>
+
+  <h3>During QAT fine-tuning, each training step does this:</h3>
+
+  <div style="padding:1rem;background:var(--bg-raised);border-radius:var(--radius-sm);margin:1rem 0;">
+    <p style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;line-height:2;">
+      <span style="color:var(--text-muted)">1.</span> <strong style="color:var(--cyan)">Forward pass:</strong>  weight → <span style="color:var(--amber)">fake_quantize(weight)</span> → compute output<br>
+      <span style="color:var(--text-muted);margin-left:1.3em;">↑ This simulates "what if this weight were rounded?"</span><br>
+      <span style="color:var(--text-muted)">2.</span> <strong style="color:var(--red)">Compute loss:</strong>   how wrong is the output?<br>
+      <span style="color:var(--text-muted)">3.</span> <strong style="color:var(--magenta)">Backward pass:</strong>  gradient flows through fake_quantize → nudges the <em>original</em> weight<br>
+      <span style="color:var(--text-muted);margin-left:1.3em;">↑ Model thinks: "If this weight were rounded here, I'd be wrong by X.<br>Let me move it slightly."</span><br>
+      <span style="color:var(--text-muted)">4.</span> <strong style="color:var(--green)">Repeat:</strong>      over hundreds of steps, weights migrate toward bucket centers
+    </p>
+  </div>
+
+  <div class="callout info"><span class="icon">🔑</span><span><strong>The critical trick:</strong> We can't use REAL integers during training because <strong>gradients need decimals</strong>. You can't backpropagate through a rounding operation (derivative is 0 almost everywhere). So QAT uses <strong>fake quantization</strong>: it computes with floats but <em>simulates</em> the rounding effect in the forward pass. The gradient "sees through" the fake quantize to update the real weight underneath.</span></div>
+
+  <div class="aha-box">
+    <div class="aha-icon">🧠</div>
+    <div class="aha-text">Think of it like driving with a GPS that shows construction zones</div>
+    <div class="aha-detail">The GPS (QAT) doesn't actually close the roads (quantize). But it shows you where the construction is, so you naturally adjust your route to avoid problems. After enough driving (training), you automatically stay on the open roads (bucket centers).</div>
+  </div>
+</div>`;}
+  },
+  { // 8 — Summary
+    title:'QAT in One Picture',
+    render(){return `
+<div class="card">
+  <div class="step-indicator">
+    <div class="step-num">9</div>
+    <div class="step-desc"><div class="step-title">The Complete QAT Story — in one picture</div><div class="step-detail">Everything you need to remember.</div></div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;padding:1.5rem 0;font-family:'JetBrains Mono',monospace;font-size:0.75rem;">
+    <div style="background:var(--bg-raised);border:1px solid var(--cyan);border-radius:var(--radius-sm);padding:1rem;text-align:center;">
+      <div style="color:var(--cyan);font-weight:600;">🧠 Train</div>
+      <div style="color:var(--text-dim);font-size:0.65rem;">FP16 model</div>
+    </div>
+    <span style="font-size:1.5rem;margin:0 0.5rem;color:var(--text-muted);">→</span>
+    <div style="background:var(--bg-raised);border:1px solid var(--amber);border-radius:var(--radius-sm);padding:1rem;text-align:center;">
+      <div style="color:var(--amber);font-weight:600;">🪞 Fake Quant</div>
+      <div style="color:var(--text-dim);font-size:0.65rem;">Simulate INT4 rounding</div>
+    </div>
+    <span style="font-size:1.5rem;margin:0 0.5rem;color:var(--text-muted);">→</span>
+    <div style="background:var(--bg-raised);border:1px solid var(--magenta);border-radius:var(--radius-sm);padding:1rem;text-align:center;">
+      <div style="color:var(--magenta);font-weight:600;">🔄 Fine-tune</div>
+      <div style="color:var(--text-dim);font-size:0.65rem;">Nudge weights</div>
+    </div>
+    <span style="font-size:1.5rem;margin:0 0.5rem;color:var(--text-muted);">→</span>
+    <div style="background:var(--bg-raised);border:1px solid var(--green);border-radius:var(--radius-sm);padding:1rem;text-align:center;">
+      <div style="color:var(--green);font-weight:600;">✅ Quantize</div>
+      <div style="color:var(--text-dim);font-size:0.65rem;">Minimal error!</div>
+    </div>
+  </div>
+
+  <div class="aha-box">
+    <div class="aha-icon">✨</div>
+    <div class="aha-text">QAT = PTQ + one extra fine-tuning pass where the model learns to cooperate with quantization</div>
+    <div class="aha-detail">
+      <strong>PTQ:</strong> "Here are your new small buckets. Deal with it."<br>
+      <strong>QAT:</strong> "Here are your new small buckets. Take a few practice rounds to adjust."<br><br>
+      The result: same tiny model size, but <strong>much better accuracy</strong>.
+    </div>
+  </div>
+
+  <div class="callout success"><span class="icon">🏁</span><span><strong>When to use QAT over PTQ:</strong> Small models (&lt;1B params), INT4 or lower quantization, or any application where <strong>every % of accuracy matters</strong> (medical diagnosis, financial predictions, autonomous driving).</span></div>
+
+  <div class="callout info"><span class="icon">🎓</span><span><strong>Where to learn more:</strong> This same principle applies to Phase 3 (LoRA/QLoRA) — QLoRA = Quantize first (PTQ) + LoRA fine-tuning on top. The quantization happens BEFORE training, so LoRA adapters learn to compensate for 4-bit precision loss.</span></div>
+</div>`;}
+  }
+];
+
+// ── RENDER ──
+function renderStep(idx) {
+  currentStep = idx;
+  document.getElementById('story').innerHTML = `
+    <div class="story-step active">${steps[idx].render()}</div>
+  `;
+  document.getElementById('progressFill').style.width = `${((idx+1)/TOTAL_STEPS)*100}%`;
+  document.getElementById('prevBtn').disabled = idx === 0;
+  document.getElementById('prevBtn').textContent = '← Back';
+  const nb = document.getElementById('nextBtn');
+  if (idx === TOTAL_STEPS-1) {
+    nb.textContent = '✓ Done!';
+    nb.style.background = 'var(--green)'; nb.style.borderColor = 'var(--green)'; nb.style.color = 'var(--bg)';
+    nb.onclick = ()=>{ nb.textContent = '🎉 Great job!'; setTimeout(()=>changeStep(0), 1500); };
+  } else if (idx === 0) {
+    nb.textContent = 'Start →';
+    nb.style.background = 'var(--cyan)'; nb.style.borderColor = 'var(--cyan)'; nb.style.color = 'var(--bg)';
+  } else {
+    nb.textContent = 'Next →';
+    nb.style.background = 'var(--cyan)'; nb.style.borderColor = 'var(--cyan)'; nb.style.color = 'var(--bg)';
+  }
+  document.getElementById('story').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function changeStep(delta) {
+  const next = currentStep + delta;
+  if (next < 0 || next >= TOTAL_STEPS) return;
+  renderStep(next);
+}
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') changeStep(1);
+  if (e.key === 'ArrowLeft') changeStep(-1);
+});
+
+// Init
+renderStep(0);
+</script>
+</body>
+</html>

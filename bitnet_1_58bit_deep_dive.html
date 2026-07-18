@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BitNet 1.58-bit — Deep Dive</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fff;--card:#f8f9fb;--raised:#eef0f4;--border:#dde0e5;--text:#1a1d23;--tdim:#5a5f6b;--tmut:#9399a5;--cyan:#0084a8;--cyanbg:#e0f4fb;--amber:#c77800;--ambbg:#fff3e0;--green:#1e7a3e;--greenbg:#e6f4ea;--magenta:#b0307a;--violet:#5c3db8;--red:#d32f2f;--radius:14px;--rsm:8px;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;min-height:100vh;}
+.app{max-width:950px;margin:0 auto;padding:1.5rem;}
+.header{text-align:center;padding:1.5rem 0 0.5rem;}
+.header h1{font-family:'Orbitron',sans-serif;font-size:1.6rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);margin-top:0.3rem;}
+
+.step{display:none;animation:fadeIn 0.45s ease forwards;}
+.step.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.75rem;margin-bottom:1rem;}
+.card h2{font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:600;margin-bottom:0.8rem;}
+.card p{color:var(--tdim);margin-bottom:0.7rem;font-size:0.93rem;}
+
+.explain{background:var(--raised);border:1px solid var(--border);border-radius:var(--rsm);padding:1rem 1.25rem;margin:1rem 0;font-family:'JetBrains Mono',monospace;font-size:0.78rem;line-height:1.9;white-space:pre-wrap;border-left:3px solid var(--cyan);}
+.callout{padding:1rem 1.25rem;border-radius:var(--rsm);margin:1rem 0;display:flex;align-items:flex-start;gap:0.7rem;font-size:0.9rem;}
+.callout.info{background:var(--cyanbg);border:1px solid rgba(0,132,168,0.25);}
+.callout.warn{background:var(--ambbg);border:1px solid rgba(199,120,0,0.25);}
+.callout.success{background:var(--greenbg);border:1px solid rgba(30,122,62,0.25);}
+.callout .ico{font-size:1.3rem;flex-shrink:0;}
+
+.compare{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin:1rem 0;}
+.compare-col{background:var(--raised);border:1px solid var(--border);border-radius:var(--rsm);padding:1.25rem;text-align:center;}
+.compare-col h4{font-family:'Orbitron',sans-serif;font-size:0.65rem;letter-spacing:0.08em;margin-bottom:0.5rem;}
+.compare-col .big{font-family:'JetBrains Mono',monospace;font-size:1.8rem;font-weight:700;margin:0.5rem 0;}
+.compare-col:nth-child(1) .big{color:var(--tdim);}
+.compare-col:nth-child(2) .big{color:var(--cyan);}
+.compare-col:nth-child(3) .big{color:var(--green);}
+
+/* Bit viz */
+.bitbar{display:flex;align-items:center;gap:6px;margin:1rem 0;flex-wrap:wrap;justify-content:center;}
+.bitbox{width:40px;height:54px;display:flex;align-items:center;justify-content:center;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:0.9rem;font-weight:700;}
+.bitbox.pos{background:#e6f4ea;color:#1e7a3e;border:2px solid #1e7a3e;}
+.bitbox.neg{background:#fdecea;color:#d32f2f;border:2px solid #d32f2f;}
+.bitbox.zero{background:#eef0f4;color:#9399a5;border:2px solid #dde0e5;}
+
+/* Steps indicator */
+.steps-dots{display:flex;gap:0.35rem;justify-content:center;margin:1rem 0;}
+.dot{width:26px;height:4px;border-radius:2px;background:var(--border);transition:0.3s;cursor:pointer;}
+.dot.done{background:var(--green);}
+.dot.active{background:var(--violet);box-shadow:0 0 6px rgba(92,61,184,0.3);}
+.dot:hover{background:var(--tdim);}
+
+.nav-row{display:flex;justify-content:center;gap:0.75rem;margin:1.5rem 0;}
+.nav-btn{font-family:'JetBrains Mono',monospace;font-size:0.75rem;padding:0.7em 1.8em;border:1.5px solid var(--border);border-radius:100px;background:var(--bg);color:var(--text);cursor:pointer;transition:0.2s;font-weight:500;}
+.nav-btn:hover{border-color:var(--violet);color:var(--violet);}
+.nav-btn.primary{background:var(--violet);border-color:var(--violet);color:#fff;}
+.nav-btn.primary:hover{opacity:0.88;color:#fff;}
+.nav-btn:disabled{opacity:0.3;cursor:not-allowed;}
+
+/* Quiz */
+.quiz{margin:1rem 0;}
+.quiz .q{font-weight:600;margin-bottom:0.6rem;}
+.quiz .opt{background:var(--raised);border:2px solid var(--border);border-radius:var(--rsm);padding:0.8rem 1rem;cursor:pointer;transition:0.2s;font-size:0.88rem;margin-bottom:0.4rem;}
+.quiz .opt:hover{border-color:var(--tdim);}
+.quiz .opt.correct{border-color:var(--green)!important;background:var(--greenbg)!important;}
+.quiz .opt.wrong{border-color:var(--red)!important;background:#fdecea!important;}
+
+/* Matrix */
+.mat{display:grid;gap:2px;margin:0.5rem 0;}
+.mat .cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:0.55rem;font-weight:600;}
+
+@media(max-width:768px){.compare{grid-template-columns:1fr;}.app{padding:0.75rem;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>BitNet b1.58 — Why 1.58 Bits?</h1>
+  <p>Ternary LLMs: {-1, 0, +1} weights. Addition replaces multiplication. No GPU required.</p>
+</header>
+
+<div class="steps-dots" id="dots"></div>
+
+<div id="content"></div>
+
+<div class="nav-row">
+  <button class="nav-btn" id="prevBtn" onclick="go(-1)">← Back</button>
+  <button class="nav-btn primary" id="nextBtn" onclick="go(1)">Start →</button>
+</div>
+
+</div>
+
+<script>
+// ── STEPS ──
+const TOTAL = 9;
+let cur = 0;
+const seen = new Set([0]);
+
+const steps = [
+{ // 0 — The problem
+  title:"The Problem: LLMs Are Too Big",
+  render(){ return `
+<div class="card">
+<h2>LLMs Are Hungry — Compute, Memory, Energy</h2>
+<p>Running a 7B parameter model in FP16 needs <strong style="color:var(--red)">~14 GB of VRAM</strong> — that requires an expensive GPU. Multiply that for a 70B or 175B model. This is why most people can't run LLMs locally.</p>
+
+<div class="compare" style="grid-template-columns:1fr 1fr 1fr;">
+  <div class="compare-col"><h4>FP32</h4><div class="big">28 GB</div><p style="font-size:0.75rem;color:var(--tdim)">7B model<br>Needs A100</p></div>
+  <div class="compare-col"><h4>FP16</h4><div class="big">14 GB</div><p style="font-size:0.75rem;color:var(--tdim)">7B model<br>Needs RTX 4090</p></div>
+  <div class="compare-col"><h4>INT4</h4><div class="big">3.5 GB</div><p style="font-size:0.75rem;color:var(--tdim)">7B model<br>Fits on Colab T4</p></div>
+</div>
+
+<div class="callout warn"><span class="ico">💡</span><span><strong>But wait:</strong> INT4 still needs matrix multiplication. Those multiply-accumulate operations are what GPUs were built for. What if we could <strong>eliminate multiplication entirely</strong>?</span></div>
+
+<p>That's the radical idea behind BitNet. Instead of shrinking from 32→16→4 bits, go all the way to <strong>~1.58 bits</strong> — where weights can only be <strong>three values</strong>: −1, 0, or +1.</p>
+</div>`;}
+},
+{ // 1 — Why 1.58?
+  title:"Why 1.58 bits? log₂(3)",
+  render(){ return `
+<div class="card">
+<h2>Why "b1.58" and Not "b2"?</h2>
+<p>Two bits can store <strong>4 values</strong> (00, 01, 10, 11). But BitNet only needs <strong>3 values</strong>: −1, 0, +1.</p>
+
+<div class="explain">
+<span style="color:var(--tdim)">Information theory:</span>
+
+  Number of distinct values = 3  {−1, 0, +1}
+  Bits needed = <span style="color:var(--violet)">log₂(3)</span>
+              = <span style="color:var(--violet)">1.58496...</span>
+              ≈ <span style="color:var(--violet);font-size:1.1rem">1.58 bits</span></div>
+
+<div class="bitbar">
+  <span style="font-family:'JetBrains Mono';font-size:0.7rem;color:var(--tdim);margin-right:0.5rem;">4 values (2-bit):</span>
+  <div class="bitbox zero">00</div><div class="bitbox zero">01</div><div class="bitbox zero">10</div><div class="bitbox zero">11</div>
+</div>
+<div class="bitbar">
+  <span style="font-family:'JetBrains Mono';font-size:0.7rem;color:var(--tdim);margin-right:0.5rem;">3 values (1.58-bit):</span>
+  <div class="bitbox neg">−1</div><div class="bitbox zero">0</div><div class="bitbox pos">+1</div>
+  <span style="font-family:'JetBrains Mono';font-size:0.65rem;color:var(--green);margin-left:0.5rem;">← one unused state!</span>
+</div>
+
+<p style="margin-top:1rem;">That "wasted" 4th state (the one 2-bit <em>could</em> store but BitNet doesn't use) is actually a feature — the <strong>0 state enables built-in sparsity</strong>. If 30% of weights are 0, those computations are simply skipped.</p>
+
+<div class="quiz" id="q1"><div class="q">🧪 If a weight system had only 2 values (0 and 1), how many bits?</div>
+<div class="opt" data-correct="true" onclick="checkQuiz('q1',this)">A. log₂(2) = 1 bit</div>
+<div class="opt" onclick="checkQuiz('q1',this)">B. log₂(2) = 2 bits</div>
+</div>
+</div>`;}
+},
+{ // 2 — Multiplication vs Addition
+  title:"The Magic: No More Multiplication",
+  render(){ return `
+<div class="card">
+<h2>Multiplication → Addition (or Nothing)</h2>
+<p>A normal neural network layer computes: <strong>y = W × x</strong> — a matrix multiply with billions of FP16 multiplications. BitNet replaces every weight with −1, 0, or +1, so:</p>
+
+<div class="explain">
+<span style="color:var(--tdim)">Normal LLM (FP16):</span>
+  y = W · x     ← each element: weight × activation
+  Example: 0.673 × 2.1 = 1.4133    ← needs floating-point multiplier
+
+<span style="color:var(--violet)">BitNet (ternary):</span>
+  y = ternary(W) ⊛ x
+  Example: +1 × 2.1 = <span style="color:var(--green)">2.1</span>       ← just keep the activation!
+          −1 × 2.1 = <span style="color:var(--red)">−2.1</span>      ← just flip the sign!
+           0 × 2.1 = <span style="color:var(--tdim)">0</span>         ← skip entirely!</div>
+
+<div class="compare">
+  <div class="compare-col"><h4>−1 Weight</h4><div class="big" style="color:var(--red)">Negate</div><p style="font-size:0.75rem;color:var(--tdim)">Flip the sign bit.<br>That's it.</p></div>
+  <div class="compare-col"><h4>0 Weight</h4><div class="big" style="color:var(--tdim)">Skip</div><p style="font-size:0.75rem;color:var(--tdim)">Output is 0.<br>Don't even compute.</p></div>
+  <div class="compare-col"><h4>+1 Weight</h4><div class="big" style="color:var(--green)">Keep</div><p style="font-size:0.75rem;color:var(--tdim)">Pass activation through.<br>No operation.</p></div>
+</div>
+
+<div class="callout success"><span class="ico">⚡</span><span><strong>Result:</strong> No floating-point multiplication anywhere in the model. Sign flip + skip + pass-through = addition-only. CPUs and FPGAs can do this. GPUs become optional.</span></div>
+</div>`;}
+},
+{ // 3 — Visual: weight matrix
+  title:"What a BitNet Weight Matrix Looks Like",
+  render(){ return `
+<div class="card">
+<h2>FP16 Matrix vs BitNet Matrix</h2>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+  <div>
+    <p style="text-align:center;font-weight:600;font-size:0.85rem;color:var(--tdim)">FP16 (dense, all decimals)</p>
+    <div class="mat" style="grid-template-columns:repeat(6,1fr);" id="fpMat"></div>
+  </div>
+  <div>
+    <p style="text-align:center;font-weight:600;font-size:0.85rem;color:var(--violet)">BitNet (sparse, only −1/0/+1)</p>
+    <div class="mat" style="grid-template-columns:repeat(6,1fr);" id="bnMat"></div>
+  </div>
+</div>
+
+<div class="callout info"><span class="ico">🔍</span><span>Same 6×6 weight matrix. FP16 stores 36 unique decimal numbers. BitNet stores only <strong>three distinct values</strong> (−1, 0, +1) — many cells are zero (skipped computation).</span></div>
+</div>`;}
+},
+{ // 4 — Pareto improvement
+  title:"Pareto Improvement — Win on ALL Fronts",
+  render(){ return `
+<div class="card">
+<h2>What "Pareto Improvement" Means</h2>
+<p>Normally there's a tradeoff: smaller model = worse accuracy. Faster = less precise. Cheaper = lower quality. Pick two.</p>
+
+<p>A <strong>Pareto improvement</strong> means you improve on <em>at least one</em> dimension without making <em>any other</em> dimension worse. BitNet claims to do this on <strong>three</strong> dimensions at once:</p>
+
+<div class="compare">
+  <div class="compare-col"><h4>🧠 Memory</h4><div class="big" style="color:var(--green)">~0.44 GB</div><p style="font-size:0.78rem;color:var(--tdim)">7B model<br>vs 14 GB for FP16<br><strong>32× smaller</strong></p></div>
+  <div class="compare-col"><h4>⚡ Speed</h4><div class="big" style="color:var(--green)">~10× faster</div><p style="font-size:0.78rem;color:var(--tdim)">Addition only<br>No tensor cores needed<br>Runs on CPU/FPGA</p></div>
+  <div class="compare-col"><h4>🎯 Accuracy</h4><div class="big" style="color:var(--green)">Matched</div><p style="font-size:0.78rem;color:var(--tdim)">Same as FP16 Llama<br>At equal model size<br><strong>No accuracy loss!</strong></p></div>
+</div>
+
+<div class="callout success"><span class="ico">🏆</span><span><strong>This is unprecedented.</strong> Usually quantization sacrifices accuracy for speed. BitNet claims: same accuracy, 32× less memory, 10× less energy, runs on a phone. If true, this changes everything.</span></div>
+
+<div class="quiz" id="q4"><div class="q">🧪 Which is NOT a Pareto improvement?</div>
+<div class="opt" data-correct="true" onclick="checkQuiz('q4',this)">A. Smaller model, faster inference, but 5% accuracy drop</div>
+<div class="opt" onclick="checkQuiz('q4',this)">B. Same accuracy, half the memory, same speed</div>
+</div>
+</div>`;}
+},
+{ // 5 — How training works
+  title:"How Do You Train a BitNet?",
+  render(){ return `
+<div class="card">
+<h2>Training Uses STE (Sound Familiar?)</h2>
+<p>You already know this trick! BitNet uses the <strong>exact same Straight-Through Estimator</strong> we learned in QAT.</p>
+
+<div class="explain">
+<span style="color:var(--tdim)">During training:</span>
+
+  <span style="color:var(--violet)">Forward pass:</span>  weight → <span style="color:var(--amber)">ternary(weight)</span> → compute output
+                     ↑ "round to nearest of {−1, 0, +1}"
+
+  <span style="color:var(--violet)">Backward pass:</span> gradient flows <span style="color:var(--green)">straight through</span> to the
+                     real-valued "latent weight" underneath
+
+  <span style="color:var(--tdim)">Each weight actually stores TWO numbers:</span>
+    1. A real-valued <strong>latent weight</strong> (float, gets gradient updates)
+    2. Its <strong>ternary projection</strong> (−1, 0, +1) used for computation
+
+  After training: discard latent weights, keep only ternary.</div>
+
+<div class="callout info"><span class="ico">🔑</span><span>Same STE trick, different quantization target. QAT rounds to INT4 buckets. BitNet rounds to {−1, 0, +1}. The principle is identical — "fake it forward, real it backward."</span></div>
+</div>`;}
+},
+{ // 6 — The ternary function
+  title:"How a Weight Becomes −1, 0, or +1",
+  render(){ return `
+<div class="card">
+<h2>The Ternary Projection Function</h2>
+
+<div class="explain">
+<span style="color:var(--tdim)">For each weight W with scale γ (gamma):</span>
+
+  <span style="color:var(--violet)">ternary(W, γ) =</span>
+    <span style="color:var(--green)">+1</span>    if W > γ       (weight is significantly positive)
+    <span style="color:var(--tdim)"> 0</span>    if −γ ≤ W ≤ γ  (weight is close to zero)
+    <span style="color:var(--red)">−1</span>    if W < −γ       (weight is significantly negative)
+
+  γ (gamma) is a <strong>learned threshold</strong> — the model figures out
+  how wide the "zero zone" should be during training.</div>
+
+<p>Think of gamma as a <strong>confidence threshold</strong>:</p>
+
+<div style="position:relative;height:70px;background:var(--raised);border-radius:var(--rsm);margin:1rem 0;overflow:visible;">
+  <div style="position:absolute;left:5%;right:5%;top:50%;height:3px;background:linear-gradient(90deg,var(--red),var(--tdim),var(--green));border-radius:2px;"></div>
+  <div style="position:absolute;left:5%;top:58%;font-size:0.6rem;font-family:'JetBrains Mono';color:var(--red);transform:translateX(-50%);">−γ zone<br>→ −1</div>
+  <div style="position:absolute;left:50%;top:58%;font-size:0.6rem;font-family:'JetBrains Mono';color:var(--tdim);transform:translateX(-50%);">0 zone<br>(uncertain)</div>
+  <div style="position:absolute;left:95%;top:58%;font-size:0.6rem;font-family:'JetBrains Mono';color:var(--green);transform:translateX(-50%);">+γ zone<br>→ +1</div>
+  <div style="position:absolute;left:28%;top:15%;width:2px;height:20px;background:var(--amber);"></div>
+  <div style="position:absolute;left:72%;top:15%;width:2px;height:20px;background:var(--amber);"></div>
+  <div style="position:absolute;left:26%;top:8%;font-size:0.55rem;font-family:'JetBrains Mono';color:var(--amber);">−γ</div>
+  <div style="position:absolute;left:70%;top:8%;font-size:0.55rem;font-family:'JetBrains Mono';color:var(--amber);">+γ</div>
+</div>
+
+<p>The <strong>0 zone</strong> is where weights that don't matter much end up. They contribute nothing to the output — natural <strong>sparsity</strong>. The wider γ is, the more weights become 0 and get skipped.</p>
+</div>`;}
+},
+{ // 7 — Why it matters
+  title:"Why This Changes Everything",
+  render(){ return `
+<div class="card">
+<h2>From GPU Data Centers to Edge Devices</h2>
+
+<div class="compare">
+  <div class="compare-col"><h4>🖥️ Current LLMs</h4><p style="font-size:0.8rem;color:var(--tdim);">Need GPUs ($30K+ A100)<br>Huge power draw<br>Cloud-dependent<br>Latency from network</p></div>
+  <div class="compare-col"><h4>📱 BitNet LLMs</h4><p style="font-size:0.8rem;color:var(--green);">Run on phone/laptop<br>Minimal power<br>Fully offline<br>Instant response</p></div>
+  <div class="compare-col"><h4>🌍 Impact</h4><p style="font-size:0.8rem;color:var(--violet);">Democratize AI<br>Privacy (local inference)<br>Green AI (10× less energy)<br>No internet needed</p></div>
+</div>
+
+<div class="callout success"><span class="ico">🔮</span><span><strong>The big picture:</strong> BitNet isn't just about making models smaller. It's about making LLMs run on <em>any device</em> — phones, smartwatches, embedded sensors. The same AI that needs a $30,000 GPU today could run on a $30 microcontroller tomorrow.</span></div>
+
+<div class="callout info"><span class="ico">📚</span><span><strong>Current state:</strong> BitNet is still research (paper published 2024 by Microsoft Research). Production-ready 1-bit LLMs don't exist yet — but the results are promising enough that major labs are investing heavily. Think of it as "where quantization is heading."</span></div>
+</div>`;}
+},
+{ // 8 — Summary
+  title:"BitNet in One Picture",
+  render(){ return `
+<div class="card">
+<h2>Everything You Need to Remember</h2>
+
+<div class="explain">
+<span style="color:var(--tdim)">THE CORE IDEA:</span>
+
+  <span style="color:var(--red)">Normal:</span>  y = W · x            FP16 multiplication (GPU required)
+  <span style="color:var(--green)">BitNet:</span> y = {−1,0,+1} ⊛ x    Addition only (CPU/FPGA/phone)
+
+<span style="color:var(--tdim)">THE NAME:</span>
+
+  b1.58 = log₂(3) ≈ 1.58 bits per weight (ternary: 3 states)
+
+<span style="color:var(--tdim)">THE THREE WEIGHT VALUES:</span>
+
+  <span style="color:var(--red)">−1</span>  →  negate the activation   (flip sign bit)
+  <span style="color:var(--tdim)"> 0</span>  →  skip computation       (built-in sparsity!)
+  <span style="color:var(--green)">+1</span>  →  keep the activation     (pass through)
+
+<span style="color:var(--tdim)">THE PAYOFF:</span>
+
+  32× smaller  +  10× faster  +  same accuracy
+  ↑                  ↑              ↑
+  Pareto improvement on ALL three fronts</div>
+
+<div style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;padding:1rem 0;font-family:'JetBrains Mono',monospace;font-size:0.7rem;">
+  <div style="background:var(--raised);border:1px solid var(--border);border-radius:var(--rsm);padding:0.8rem 1rem;text-align:center;"><div style="color:var(--red)">FP32</div><div style="font-size:1.2rem;">28 GB</div></div>
+  <span style="font-size:1.3rem;margin:0 0.4rem;">→</span>
+  <div style="background:var(--raised);border:1px solid var(--border);border-radius:var(--rsm);padding:0.8rem 1rem;text-align:center;"><div style="color:var(--amber)">FP16</div><div style="font-size:1.2rem;">14 GB</div></div>
+  <span style="font-size:1.3rem;margin:0 0.4rem;">→</span>
+  <div style="background:var(--raised);border:1px solid var(--border);border-radius:var(--rsm);padding:0.8rem 1rem;text-align:center;"><div style="color:var(--cyan)">INT4</div><div style="font-size:1.2rem;">3.5 GB</div></div>
+  <span style="font-size:1.3rem;margin:0 0.4rem;">→</span>
+  <div style="background:var(--greenbg);border:2px solid var(--green);border-radius:var(--rsm);padding:0.8rem 1rem;text-align:center;"><div style="color:var(--green)">BitNet</div><div style="font-size:1.2rem;">0.44 GB</div></div>
+</div>
+
+<div class="callout warn"><span class="ico">⚠️</span><span><strong>Honest caveat:</strong> BitNet requires training from scratch (you can't convert an existing FP16 model to ternary). The training is more complex. This is bleeding-edge research, not a ready-to-use library. But the signal is clear: 1-bit LLMs are coming.</span></div>
+</div>`;}
+}
+];
+
+// ── RENDER FP/BITNET MATRICES ──
+function renderMatrices(){
+  const fpMat = document.getElementById('fpMat');
+  const bnMat = document.getElementById('bnMat');
+  if(!fpMat || !bnMat) return;
+
+  const vals = [];
+  const tvals = [];
+  for(let i=0;i<36;i++){
+    const v = (Math.random()*2-1)*1.5;
+    vals.push(v.toFixed(2));
+    tvals.push(v > 0.3 ? '+1' : v < -0.3 ? '−1' : '0');
+  }
+
+  fpMat.innerHTML = vals.map(v => {
+    const alpha = Math.abs(parseFloat(v))/2;
+    const color = parseFloat(v) > 0 ? `rgba(30,122,62,${0.3+alpha*0.5})` : parseFloat(v) < 0 ? `rgba(211,47,47,${0.3+alpha*0.5})` : 'var(--raised)';
+    return `<div class="cell" style="background:${color};color:var(--tdim);">${v}</div>`;
+  }).join('');
+
+  bnMat.innerHTML = tvals.map(v => {
+    const bg = v === '+1' ? 'var(--greenbg)' : v === '−1' ? '#fdecea' : 'var(--raised)';
+    const c = v === '+1' ? 'var(--green)' : v === '−1' ? 'var(--red)' : 'var(--tdim)';
+    return `<div class="cell" style="background:${bg};color:${c};">${v}</div>`;
+  }).join('');
+}
+
+// ── NAVIGATION ──
+function render(i){
+  cur=i; seen.add(i);
+  document.getElementById('content').innerHTML = '<div class="step active">'+steps[i].render()+'</div>';
+
+  document.getElementById('dots').innerHTML = Array.from({length:TOTAL},(_,j)=>{
+    let cls = j===cur ? 'active' : seen.has(j) ? 'done' : '';
+    return '<div class="dot '+cls+'" onclick="go('+(j-cur)+')"></div>';
+  }).join('');
+
+  document.getElementById('prevBtn').disabled = i===0;
+  const nb = document.getElementById('nextBtn');
+  if(i===TOTAL-1){ nb.textContent='✓ Done'; nb.style.background='var(--green)'; nb.style.borderColor='var(--green)'; }
+  else{ nb.textContent='Next →'; nb.style.background='var(--violet)'; nb.style.borderColor='var(--violet)'; }
+
+  setTimeout(renderMatrices, 100);
+  document.getElementById('content').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function go(d){ const n=cur+d; if(n<0||n>=TOTAL) return; render(n); }
+
+// ── QUIZ ──
+window.checkQuiz=function(qid,el){
+  const q=document.getElementById(qid); if(q.dataset.done)return;
+  q.querySelectorAll('.opt').forEach(o=>{if(o.dataset.correct==='true')o.classList.add('correct');});
+  if(el.dataset.correct!=='true')el.classList.add('wrong');
+  q.dataset.done='true';
+};
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight')go(1);
+  if(e.key==='ArrowLeft')go(-1);
+});
+
+render(0);
+</script>
+</body>
+</html>
