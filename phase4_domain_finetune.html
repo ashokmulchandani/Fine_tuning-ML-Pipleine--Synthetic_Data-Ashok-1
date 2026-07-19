@@ -101,6 +101,46 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 
 <script>
 const slides=[
+{id:'Setup',title:'Getting Started — Colab, GPU, PDFs',
+fact:'Google Colab gives you a FREE T4 GPU (16 GB) for up to 12 hours. More than enough for Phase 4—6 fine-tuning.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">Setup</span> Where to Run & Where to Get PDFs</h2>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1rem 0 0.5rem;">🖥️ Do I Need Colab?</h3>
+<p><strong>Yes — highly recommended.</strong> Colab gives you a free GPU. Your laptop CPU would take 10–50× longer. Go to <a href="https://colab.research.google.com" target="_blank" style="color:var(--violet);">colab.research.google.com</a> → New Notebook.</p>
+
+<div class="code-box"><span style="color:var(--tmut);"># FIRST CELL — Enable GPU (Runtime → Change runtime type → T4 GPU)</span>
+<span style="color:var(--tmut);"># Then verify:</span>
+!nvidia-smi
+<span style="color:var(--tmut);"># Should show: "Tesla T4" with 15GB available</span>
+
+<span style="color:var(--tmut);"># SECOND CELL — Install everything (takes ~2 minutes)</span>
+!pip install -q transformers datasets peft bitsandbytes accelerate trl PyMuPDF torch</div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1.5rem 0 0.5rem;">📄 Where to Find PDF Files?</h3>
+
+<table style="width:100%;font-size:0.8rem;border-collapse:collapse;margin:0.5rem 0;">
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem 0;font-weight:600;">Option</td><td style="padding:0.4rem 0;font-weight:600;">Source</td><td style="padding:0.4rem 0;font-weight:600;">Good For</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem 0;">1. ArXiv papers</td><td style="padding:0.4rem 0;">arxiv.org → Download PDF</td><td style="padding:0.4rem 0;">AI/ML domain, science</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem 0;">2. PubMed</td><td style="padding:0.4rem 0;">pubmed.ncbi.nlm.nih.gov</td><td style="padding:0.4rem 0;">Medical domain</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem 0;">3. Your own docs</td><td style="padding:0.4rem 0;">Any PDFs on your computer</td><td style="padding:0.4rem 0;">Custom domain</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem 0;">4. Free eBooks</td><td style="padding:0.4rem 0;">gutenberg.org, openstax.org</td><td style="padding:0.4rem 0;">General text</td></tr>
+<tr><td style="padding:0.4rem 0;">5. Upload to Colab</td><td style="padding:0.4rem 0;">Left sidebar → Files → Upload</td><td style="padding:0.4rem 0;">Any PDF on your machine</td></tr>
+</table>
+
+<div class="callout" style="margin-top:1rem;">
+  <strong>📋 How many PDFs do you need?</strong> Even <strong>2–3 research papers</strong> (~30–50 pages total) is enough to see the model learn domain language. For production: 50–200+ PDFs. For learning/testing: start with 2–3. You can always add more and retrain.
+</div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1.5rem 0 0.5rem;">⚡ Quick Start — 3 Steps</h3>
+<div style="font-size:0.85rem;color:var(--tdim);line-height:2;">
+  <strong>1.</strong> Open <a href="https://colab.research.google.com" target="_blank" style="color:var(--violet);">Colab</a> → New Notebook → Enable T4 GPU<br>
+  <strong>2.</strong> Copy the install command above → Run<br>
+  <strong>3.</strong> Upload 2–3 PDFs → Copy code from slides 4.1–4.10 → Run each cell<br>
+  <strong>Done!</strong> In ~30 minutes you'll have a domain-adapted model.
+</div>
+</div></div>`},
 {id:'4.1',title:'Load PDF & Extract Text',
 fact:'PyMuPDF (fitz) can extract text from a 100-page PDF in under 1 second. It\'s ~20× faster than PyPDF2 for large documents.',
 render:()=>`
