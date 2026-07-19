@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LoRA Adapter Merging — Why Merge, Never Stack</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--violet:#5b3aa8;--green:#1a6e34;--red:#c62828;--amber:#b87000;--cyan:#007a99;--magenta:#9e2a6b;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;min-height:100vh;}
+.app{max-width:900px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:1.5rem 0 1rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.95rem;margin-top:0.3rem;}
+
+.section{margin:2rem 0;}
+.section h2{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;color:var(--violet);margin-bottom:0.75rem;}
+
+/* The main demo */
+.demo{display:flex;flex-direction:column;gap:1.5rem;margin:1.5rem 0;}
+
+.stage{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
+.stage-label{font-family:'Space Grotesk',sans-serif;font-size:0.65rem;min-width:90px;text-align:right;font-weight:600;}
+
+.weight-box{display:flex;align-items:center;gap:0.3rem;padding:0.4rem 0.8rem;border-radius:8px;font-family:'Space Grotesk',monospace;font-size:0.75rem;border:2px solid var(--border);background:var(--card);}
+.weight-box.base{border-color:var(--tmut);}
+.weight-box.adapter{border-color:var(--violet);}
+.weight-box.merged{border-color:var(--green);}
+.weight-box.broken{border-color:var(--red);background:#fff5f5;}
+
+.arrow-right{font-size:1.2rem;color:var(--tmut);}
+
+.bad-tag{font-size:0.55rem;background:#fdecea;color:var(--red);padding:2px 8px;border-radius:100px;font-weight:600;}
+.good-tag{font-size:0.55rem;background:#e8f5ec;color:var(--green);padding:2px 8px;border-radius:100px;font-weight:600;}
+
+/* Comparison grid */
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0;}
+.cmp-col{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;}
+.cmp-col.bad{border-left:3px solid var(--red);}
+.cmp-col.good{border-left:3px solid var(--green);}
+.cmp-col h4{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;margin-bottom:0.6rem;}
+.cmp-col.bad h4{color:var(--red);}
+.cmp-col.good h4{color:var(--green);}
+
+/* W1 journey */
+.w1-track{display:flex;align-items:center;gap:0;font-family:'Space Grotesk',monospace;font-size:0.65rem;margin:0.5rem 0;}
+.w1-dot{width:8px;height:8px;border-radius:50%;margin:0 2px;}
+.w1-line{flex:1;height:2px;}
+
+.callout{background:rgba(91,58,168,0.04);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:1rem;margin:1rem 0;font-size:0.85rem;line-height:1.7;}
+
+/* Flow diagram */
+.flow{display:flex;align-items:center;gap:0.3rem;flex-wrap:wrap;justify-content:center;margin:1rem 0;font-family:'Space Grotesk',sans-serif;font-size:0.62rem;}
+.flow-step{background:var(--card);border:2px solid var(--border);border-radius:8px;padding:0.5rem 0.7rem;text-align:center;}
+.flow-step .title{font-weight:700;font-size:0.65rem;}
+.flow-step .val{font-size:0.55rem;color:var(--tmut);margin-top:2px;}
+
+.code-box{background:var(--raised);border:1px solid var(--border);border-left:3px solid var(--violet);border-radius:8px;padding:0.8rem 1rem;font-family:'Space Grotesk',monospace;font-size:0.72rem;line-height:1.9;white-space:pre-wrap;margin:0.5rem 0;}
+
+@media(max-width:768px){.cmp{grid-template-columns:1fr;}.app{padding:0.75rem;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>Adapter Merging — Why "Merge, Never Stack"</h1>
+  <p>Multi-stage fine-tuning: Domain → Instruction → Preference. Each stage must bake into the model.</p>
+</header>
+
+<!-- ── THE PROBLEM ── -->
+<div class="section">
+  <h2>❌ Stacking (Wrong Way) — Each Adapter Fixes the Previous One</h2>
+
+  <div class="demo">
+    <div class="stage">
+      <div class="stage-label">Step 1: Base Model</div>
+      <div class="weight-box base">W₀ = −2.30</div>
+      <div style="font-size:0.65rem;color:var(--tmut);">Trained on internet text</div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-label">Step 2: Domain FT</div>
+      <span class="arrow-right">→</span>
+      <div class="weight-box base">W₀</div> + <div class="weight-box adapter">ΔW₁ = +0.15</div>
+      <span class="bad-tag">Adapter 1 active</span>
+      <div style="font-size:0.65rem;color:var(--tmut);">Effective: −2.30+0.15 = −2.15</div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-label">Step 3: Instruction FT<br><span style="color:var(--red);font-size:0.55rem;">❌ STACKED!</span></div>
+      <span class="arrow-right">→</span>
+      <div class="weight-box base">W₀</div> + <div class="weight-box adapter">ΔW₁</div> + <div class="weight-box adapter">ΔW₂ = −0.30</div>
+      <span class="bad-tag">2 adapters stacked</span>
+      <div style="font-size:0.65rem;color:var(--red);">Effective: −2.30+0.15−0.30 = −2.45</div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-label">Step 4: DPO<br><span style="color:var(--red);font-size:0.55rem;">❌ TRIPLE STACKED!</span></div>
+      <span class="arrow-right">→</span>
+      <div class="weight-box base">W₀</div> + <div class="weight-box adapter">ΔW₁</div> + <div class="weight-box adapter">ΔW₂</div> + <div class="weight-box broken">ΔW₃ = +0.60</div>
+      <span class="bad-tag">3 adapters stacked</span>
+      <div style="font-size:0.65rem;color:var(--red);">Effective: −2.30+0.15−0.30+0.60 = −1.85</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>🔴 What went wrong?</strong> ΔW₂ was trained while ΔW₁ was still active. It learned to fix errors created BY ΔW₁ — not errors in the base model. ΔW₃ learned to fix errors from BOTH previous adapters. Each new adapter is patching patches of patches. The weight drifts from −2.30 to −1.85 — completely lost its original meaning.<br><br>
+    <strong>This is "catastrophic drift."</strong> Each adapter was trained in a world where the previous adapter was still active. After 3 stages, they're all fighting each other.
+  </div>
+</div>
+
+<!-- ── THE SOLUTION ── -->
+<div class="section">
+  <h2>✅ Merging (Right Way) — Bake In Before Next Stage</h2>
+
+  <div class="demo">
+    <div class="stage">
+      <div class="stage-label">Step 1: Base Model</div>
+      <div class="weight-box base">W₀ = −2.30</div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-label">Step 2: Domain FT</div>
+      <span class="arrow-right">→</span>
+      <div class="weight-box base">W₀</div> + <div class="weight-box adapter">ΔW₁</div>
+      <div style="font-size:0.65rem;color:var(--tmut);">Train domain adapter</div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-label">⚡ MERGE!</div>
+      <span class="arrow-right">→</span>
+      <div class="weight-box merged">W₁ = W₀ + ΔW₁ = −2.15</div>
+      <span class="good-tag">Adapter baked in!</span>
+      <div style="font-size:0.65rem;color:var(--green);">Adapter 1 is GONE. Just one model now.</div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-label">Step 3: Instruction FT</div>
+      <span class="arrow-right">→</span>
+      <div class="weight-box merged">W₁</div> + <div class="weight-box adapter">ΔW₂ (fresh)</div>
+      <div style="font-size:0.65rem;color:var(--tmut);">Train instruction adapter from scratch on MERGED model</div>
+    </div>
+
+    <div class="stage">
+      <div class="stage-label">⚡ MERGE!</div>
+      <span class="arrow-right">→</span>
+      <div class="weight-box merged">W₂ = W₁ + ΔW₂ = −2.45</div>
+      <span class="good-tag">Clean base for next stage</span>
+    </div>
+
+    <div class="stage">
+      <div class="stage-label">Step 4: DPO</div>
+      <span class="arrow-right">→</span>
+      <div class="weight-box merged">W₂</div> + <div class="weight-box adapter">ΔW₃ (fresh)</div>
+      <div style="font-size:0.65rem;color:var(--tmut);">Train from the merged model — clean start</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>🟢 Why this works:</strong> After each MERGE, the adapter vanishes and becomes part of the model. The next adapter sees a CLEAN model with no active adapters. ΔW₂ learns from W₁ (the improved model), not from W₀+ΔW₁ (model with an active patch). Each stage builds on the PREVIOUS MERGED result, not on a stack of still-active patches.
+  </div>
+</div>
+
+<!-- ── SIDE BY SIDE ── -->
+<div class="section">
+  <h2>📊 Stacking vs Merging — The Same Weight Through 3 Stages</h2>
+
+  <div class="cmp">
+    <div class="cmp-col bad">
+      <h4>❌ Stacking (Don't Merge)</h4>
+      <div class="w1-track">
+        <span style="min-width:50px;font-size:0.6rem;">Start:</span>
+        <span style="color:var(--tmut);">W₀ = −2.30</span>
+      </div>
+      <div class="w1-track">
+        <span style="min-width:50px;font-size:0.6rem;">+Domain:</span>
+        <span style="color:var(--violet);">W₀ + A₁ = −2.15</span>
+        <span style="font-size:0.55rem;color:var(--tmut);">(A₁ trained on W₀)</span>
+      </div>
+      <div class="w1-track">
+        <span style="min-width:50px;font-size:0.6rem;">+Instr:</span>
+        <span style="color:var(--red);">W₀ + A₁ + A₂ = −2.45</span>
+        <span style="font-size:0.55rem;color:var(--tmut);">(A₂ trained on W₀+A₁)</span>
+      </div>
+      <div class="w1-track">
+        <span style="min-width:50px;font-size:0.6rem;">+DPO:</span>
+        <span style="color:var(--red);">W₀ + A₁ + A₂ + A₃ = −1.85</span>
+        <span style="font-size:0.55rem;color:var(--red);">(A₃ trained on W₀+A₁+A₂) ← DRIFT!</span>
+      </div>
+    </div>
+    <div class="cmp-col good">
+      <h4>✅ Merging (Correct Way)</h4>
+      <div class="w1-track">
+        <span style="min-width:50px;font-size:0.6rem;">Start:</span>
+        <span style="color:var(--tmut);">W₀ = −2.30</span>
+      </div>
+      <div class="w1-track">
+        <span style="min-width:50px;font-size:0.6rem;">+Domain:</span>
+        <span style="color:var(--violet);">W₁ = −2.15</span>
+        <span style="font-size:0.55rem;color:var(--tmut);">(A₁ merged into W₀)</span>
+      </div>
+      <div class="w1-track">
+        <span style="min-width:50px;font-size:0.6rem;">+Instr:</span>
+        <span style="color:var(--violet);">W₂ = −2.45</span>
+        <span style="font-size:0.55rem;color:var(--tmut);">(A₂ trained on W₁, then merged)</span>
+      </div>
+      <div class="w1-track">
+        <span style="min-width:50px;font-size:0.6rem;">+DPO:</span>
+        <span style="color:var(--green);">W₃ = −2.30</span>
+        <span style="font-size:0.55rem;color:var(--green);">(A₃ trained on W₂, then merged) ← STABLE</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── THE ANALOGY ── -->
+<div class="section">
+  <h2>🎨 The Paint Analogy</h2>
+
+  <div class="cmp">
+    <div class="cmp-col bad">
+      <h4>❌ Stacking = Wet Paint on Wet Paint</h4>
+      <p style="font-size:0.8rem;color:var(--tdim);margin-top:0.5rem;">
+        You apply red paint (Domain). It's still wet.
+        You apply blue paint (Instruction) ON TOP of wet red = MUDDY PURPLE.
+        You apply yellow paint (DPO) ON TOP of wet purple = MUDDY BROWN.
+        Final result: nothing like what you wanted.
+      </p>
+    </div>
+    <div class="cmp-col good">
+      <h4>✅ Merging = Dry Between Coats</h4>
+      <p style="font-size:0.8rem;color:var(--tdim);margin-top:0.5rem;">
+        You apply red paint (Domain). Let it DRY (merge).
+        You apply blue paint (Instruction) on the dry red = CLEAN BLUE ON RED.
+        Let it DRY (merge).
+        You apply yellow paint (DPO) on dry surface = CLEAN YELLOW.
+        Final result: each layer is pure. No muddy mixing.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ── CODE ── -->
+<div class="section">
+  <h2>💻 How to Merge in Code</h2>
+
+  <div class="code-box">
+<span style="color:var(--tmut);"># Load base model + trained LoRA adapter</span>
+model = PeftModel.from_pretrained(base_model, <span style="color:var(--amber);">"domain_adapter"</span>)
+
+<span style="color:var(--tmut);"># MERGE: bake adapter into base weights, then delete adapter</span>
+model = model.<span style="color:var(--violet);">merge_and_unload()</span>
+<span style="color:var(--tmut);"># ↑ Now model is a plain transformers model. No LoRA. Clean slate.</span>
+
+<span style="color:var(--tmut);"># Apply fresh LoRA for next stage</span>
+model = get_peft_model(model, lora_config_instruction)
+model.train()  <span style="color:var(--tmut);"># Trains NEW adapter from scratch on merged weights</span>
+<span style="color:var(--amber);">model.save_pretrained("instruction_adapter")</span>
+
+<span style="color:var(--tmut);"># Merge again, then DPO</span>
+model = model.<span style="color:var(--violet);">merge_and_unload()</span>
+model = get_peft_model(model, lora_config_dpo)</div>
+</div>
+
+<!-- ── ONE LINER ── -->
+<div class="callout" style="text-align:center;font-size:1rem;">
+  <strong>🧠 The Golden Rule:</strong><br>
+  <span style="font-size:1.2rem;">merge_and_unload()</span><br>
+  before every new training stage.<br>
+  <span style="font-size:0.8rem;color:var(--tmut);">No exceptions. No shortcuts. Merge, then proceed.</span>
+</div>
+
+</div>
+</body>
+</html>
