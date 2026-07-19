@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LoRA Alpha & Dropout — Why They Exist</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--red:#c62828;--amber:#b87000;--cyan:#007a99;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;min-height:100vh;}
+.app{max-width:850px;margin:0 auto;padding:2rem;}
+
+.header{text-align:center;padding:1.5rem 0 2rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.95rem;margin-top:0.3rem;}
+
+.section{margin:2.5rem 0;}
+.section h2{font-family:'Space Grotesk',sans-serif;font-size:1.1rem;font-weight:600;color:var(--violet);margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin:1rem 0;}
+
+/* Visual bar for alpha */
+.alpha-demo{display:flex;flex-direction:column;gap:0.5rem;margin:1rem 0;}
+.alpha-row{display:flex;align-items:center;gap:1rem;}
+.alpha-row .label{font-family:'Space Grotesk',sans-serif;font-size:0.6rem;min-width:70px;text-align:right;color:var(--tmut);}
+.alpha-row .bar-container{flex:1;height:28px;background:var(--raised);border-radius:6px;overflow:hidden;display:flex;}
+.alpha-row .bar-base{background:rgba(139,144,153,0.3);display:flex;align-items:center;padding-left:8px;font-size:0.6rem;color:var(--tmut);transition:all 0.4s;}
+.alpha-row .bar-adapter{background:var(--violet);display:flex;align-items:center;justify-content:center;font-size:0.6rem;color:#fff;font-weight:600;transition:all 0.4s;}
+.alpha-row .note{font-size:0.6rem;color:var(--tdim);min-width:80px;}
+
+/* Dropout vis */
+.dropout-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin:1rem 0;}
+.dropout-cell{aspect-ratio:1;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:0.45rem;font-weight:700;transition:0.3s;}
+.dropout-cell.on{background:var(--violet);color:#fff;}
+.dropout-cell.off{background:var(--red);color:#fff;opacity:0.3;}
+
+/* Overfit demo */
+.overfit-demo{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0;}
+.overfit-card{background:var(--raised);border:1px solid var(--border);border-radius:10px;padding:1.25rem;text-align:center;}
+.overfit-card h4{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;margin-bottom:0.5rem;}
+.overfit-card.bad{border-left:3px solid var(--red);}
+.overfit-card.good{border-left:3px solid var(--green);}
+.overfit-card .chart{font-family:'Space Grotesk',monospace;font-size:0.6rem;line-height:2;}
+
+.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:1rem 1.25rem;margin:1rem 0;font-size:0.85rem;line-height:1.7;}
+
+@media(max-width:768px){.overfit-demo{grid-template-columns:1fr;}.app{padding:1rem;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>Why Alpha & Dropout Exist in LoRA</h1>
+  <p>Two knobs that prevent the adapter from being too weak, too strong, or too memorized</p>
+</header>
+
+<!-- ── ALPHA ── -->
+<div class="section">
+  <h2>🎚 lora_alpha — The Volume Knob</h2>
+
+  <div class="card">
+    <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;margin-bottom:0.75rem;">Problem: r Limits the Adapter's Influence</h3>
+    <p style="color:var(--tdim);font-size:0.9rem;">With r=8, B×A is a very LOW-RANK matrix — it can only express 8 "patterns" of change. The raw values in B×A might be too small to have real impact. Alpha amplifies them.</p>
+
+    <div class="callout">
+      <strong>The formula:</strong> <code style="font-size:0.85rem;">ΔW = (alpha / r) × B × A</code><br>
+      With r=8, alpha=16 → scaling = 16/8 = <strong>2.0×</strong>
+    </div>
+
+    <div class="alpha-demo">
+      <div class="alpha-row">
+        <div class="label">alpha=1<br>(too quiet)</div>
+        <div class="bar-container">
+          <div class="bar-base" style="width:85%;">Base Model output: 0.85</div>
+          <div class="bar-adapter" style="width:2%;">.02</div>
+        </div>
+        <div class="note" style="color:var(--red);">Adapter barely audible — fine-tuning has almost no effect</div>
+      </div>
+      <div class="alpha-row">
+        <div class="label">alpha=16<br>(balanced)</div>
+        <div class="bar-container">
+          <div class="bar-base" style="width:75%;">Base Model output: 0.75</div>
+          <div class="bar-adapter" style="width:25%;">0.25</div>
+        </div>
+        <div class="note" style="color:var(--green);">Adapter clearly heard — fine-tuning works as expected</div>
+      </div>
+      <div class="alpha-row">
+        <div class="label">alpha=256<br>(too loud)</div>
+        <div class="bar-container">
+          <div class="bar-base" style="width:30%;">Base: 0.30</div>
+          <div class="bar-adapter" style="width:70%;">0.70</div>
+        </div>
+        <div class="note" style="color:var(--red);">Adapter dominates — base model knowledge overwritten</div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>🧠 Why not just use a larger r instead?</strong> Because alpha lets you keep r small (few params) while still having impact. r controls the adapter's <em>complexity</em> (how many patterns). Alpha controls its <em>volume</em> (how loud). These are independent. You can have a simple adapter (r=8) that speaks loudly (alpha=16).
+    </div>
+  </div>
+</div>
+
+<!-- ── DROPOUT ── -->
+<div class="section">
+  <h2>🎲 lora_dropout — The Forget-Mechanism</h2>
+
+  <div class="card">
+    <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;margin-bottom:0.75rem;">Problem: Small Datasets → Overfitting</h3>
+    <p style="color:var(--tdim);font-size:0.9rem;">If you only have 500 training examples, a 37M-param adapter can easily <strong>memorize</strong> them instead of learning general patterns. Dropout prevents this.</p>
+
+    <h4 style="font-family:'Space Grotesk',sans-serif;font-size:0.7rem;color:var(--tmut);margin:1rem 0 0.5rem;">Without Dropout — adapter memorizes exact answers:</h4>
+    <div class="dropout-grid" id="noDropout"></div>
+
+    <h4 style="font-family:'Space Grotesk',sans-serif;font-size:0.7rem;color:var(--tmut);margin:1.5rem 0 0.5rem;">With Dropout=0.1 — random 10% temporarily disabled each step:</h4>
+    <div class="dropout-grid" id="withDropout"></div>
+    <div style="text-align:center;font-size:0.6rem;color:var(--tmut);margin-top:0.3rem;">🔴 = dropped this step &nbsp; 🟣 = active</div>
+
+    <div class="overfit-demo" style="margin-top:1.5rem;">
+      <div class="overfit-card bad">
+        <h4 style="color:var(--red);">❌ Without Dropout</h4>
+        <div class="chart">
+          Training loss: ████ 0.01 ← memorized!<br>
+          Test loss:     ██████████ 3.5 ← terrible!
+        </div>
+        <p style="font-size:0.7rem;color:var(--tdim);margin-top:0.5rem;">Adapter memorized the 500 training examples word-for-word. Fails on anything new.</p>
+      </div>
+      <div class="overfit-card good">
+        <h4 style="color:var(--green);">✅ With Dropout=0.1</h4>
+        <div class="chart">
+          Training loss: ██████ 0.8 ← good fit<br>
+          Test loss:     ██████ 1.2 ← close!
+        </div>
+        <p style="font-size:0.7rem;color:var(--tdim);margin-top:0.5rem;">Adapter learned general patterns. Works well on new examples too.</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>🧠 How dropout works:</strong> Each training step, a DIFFERENT random 10% of LoRA connections are turned off. This forces the adapter to NOT rely on any single connection — it must spread the learning across all of them. Think of it like studying: if you re-read the same highlighted paragraph (no dropout), you memorize it. If someone randomly blacks out parts of your notes each time (dropout), you're forced to understand the concept.
+    </div>
+  </div>
+</div>
+
+<!-- ── QUICK REFERENCE ── -->
+<div class="section">
+  <h2>📋 Quick Reference</h2>
+
+  <div class="card" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+    <div>
+      <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);">lora_alpha</h3>
+      <table style="width:100%;font-size:0.75rem;border-collapse:collapse;">
+        <tr><td style="padding:0.3rem 0;color:var(--tmut);">Default:</td><td><strong>16</strong></td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--tmut);">Range:</td><td>8–32 typical</td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--tmut);">Low (&lt;8):</td><td style="color:var(--red);">Adapter too quiet</td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--tmut);">High (&gt;32):</td><td style="color:var(--amber);">Risk overwriting base model</td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--tmut);">Rule:</td><td>alpha = 2×r is standard</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);">lora_dropout</h3>
+      <table style="width:100%;font-size:0.75rem;border-collapse:collapse;">
+        <tr><td style="padding:0.3rem 0;color:var(--tmut);">Default:</td><td><strong>0.1</strong></td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--tmut);">Range:</td><td>0.05–0.2 typical</td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--tmut);">0.0:</td><td style="color:var(--red);">No regularization — risk overfitting</td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--tmut);">0.2+:</td><td style="color:var(--amber);">Too much — adapter struggles to learn</td></tr>
+        <tr><td style="padding:0.3rem 0;color:var(--tmut);">Rule:</td><td>0.05 for large data, 0.1 for small data</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// No dropout — all active
+document.getElementById('noDropout').innerHTML=Array.from({length:72},()=>`<div class="dropout-cell on">●</div>`).join('');
+
+// With dropout — show which ones are off
+const cells=[];
+for(let i=0;i<72;i++){
+  const dropped=Math.random()<0.1;
+  cells.push(`<div class="dropout-cell ${dropped?'off':'on'}">${dropped?'✕':'●'}</div>`);
+}
+document.getElementById('withDropout').innerHTML=cells.join('');
+
+// Animate dropout — re-randomize every 2 seconds
+setInterval(()=>{
+  const newCells=[];
+  for(let i=0;i<72;i++){
+    const dropped=Math.random()<0.1;
+    newCells.push(`<div class="dropout-cell ${dropped?'off':'on'}">${dropped?'✕':'●'}</div>`);
+  }
+  document.getElementById('withDropout').innerHTML=newCells.join('');
+},2000);
+</script>
+</body>
+</html>

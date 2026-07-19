@@ -197,6 +197,18 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
       <div class="hint">QLoRA: 0.0001 to 0.0005 (1e-4 to 5e-4)</div>
     </div>
     <div class="ctrl-card">
+      <label>Batch Size</label>
+      <input type="number" id="batchSize" value="8" step="1" min="1" max="256" oninput="calc()">
+      <div class="hint">Examples processed per step</div>
+    </div>
+    <div class="ctrl-card">
+      <label>Dataset Size</label>
+      <input type="number" id="datasetSize" value="10000" step="1000" min="100" oninput="calc()">
+      <div class="hint">Total training examples</div>
+    </div>
+  </div>
+  <div class="row row-3" style="margin-bottom:0.5rem;">
+    <div class="ctrl-card">
       <label>Starting Gap (G_start)</label>
       <input type="number" id="gapStart" value="0.10" step="0.01" oninput="calc()">
       <div class="hint">Typical: 0.05–0.15</div>
@@ -206,11 +218,16 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
       <input type="number" id="gapTarget" value="0.01" step="0.001" oninput="calc()">
       <div class="hint">Equilibrium ~0.0074</div>
     </div>
+    <div class="ctrl-card">
+      <label>Number of Epochs</label>
+      <input type="number" id="numEpochs" value="3" step="1" min="1" max="100" oninput="calc()">
+      <div class="hint">Or let steps-to-converge decide</div>
+    </div>
   </div>
 
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;" id="trainDynamicsGrid"></div>
   <p style="font-size:0.65rem;color:var(--tmut);text-align:center;margin-top:0.5rem;">
-    Formula: N ≈ log(G_target/G_start) / log(|1−2×lr|) &nbsp;|&nbsp; Converged = reached within 10,000 steps
+    Steps per epoch = Dataset / Batch &nbsp;|&nbsp; Total steps = Epochs × Steps per epoch &nbsp;|&nbsp; Formula: N ≈ log(G_target/G_start) / log(|1−2×lr|)
   </p>
 </div>
 
@@ -506,19 +523,27 @@ function calc(){
   const trainLr=parseFloat(document.getElementById('trainLr').value)||0.0002;
   const gStart=parseFloat(document.getElementById('gapStart').value)||0.10;
   const gTarget=parseFloat(document.getElementById('gapTarget').value)||0.01;
+  const batchSize=parseInt(document.getElementById('batchSize').value)||8;
+  const datasetSize=parseInt(document.getElementById('datasetSize').value)||10000;
+  const numEpochs=parseInt(document.getElementById('numEpochs').value)||3;
+
+  const stepsPerEpoch=Math.ceil(datasetSize/batchSize);
+  const totalStepsByEpochs=numEpochs*stepsPerEpoch;
 
   const shrinkFactor=Math.abs(1-2*trainLr);
-  let estSteps='∞', speedLabel='🐢 Very Slow', speedColor='var(--red)';
+  let estSteps='∞', estEpochs='∞', speedLabel='🐢 Very Slow', speedColor='var(--red)';
   if(shrinkFactor<1 && shrinkFactor>0){
     const est=Math.ceil(Math.log(gTarget/gStart)/Math.log(shrinkFactor));
     if(est<10000){
       estSteps=est.toLocaleString();
-      if(est<500){speedLabel='⚡ Fast';speedColor='var(--green)';}
-      else if(est<1500){speedLabel='✅ Balanced';speedColor='var(--violet)';}
-      else if(est<5000){speedLabel='🐢 Slow';speedColor='var(--amber)';}
+      estEpochs=(est/stepsPerEpoch).toFixed(1);
+      if(estEpochs<3){speedLabel='⚡ Fast';speedColor='var(--green)';}
+      else if(estEpochs<10){speedLabel='✅ Balanced';speedColor='var(--violet)';}
+      else if(estEpochs<30){speedLabel='🐢 Slow';speedColor='var(--amber)';}
       else{speedLabel='💤 Very Slow';speedColor='var(--red)';}
     } else {
       estSteps='>10,000';
+      estEpochs='>'+(10000/stepsPerEpoch).toFixed(0);
       speedLabel='❌ May not converge';
       speedColor='var(--red)';
     }
@@ -528,13 +553,18 @@ function calc(){
   }
 
   const memPerGPU=totalTrainMemGB;
-  const roughTimePerStep=0.5+memPerGPU*0.02; // very rough: ~0.5s base + 0.02s per GB
-  let estTimeStr='N/A';
+  const roughTimePerStep=0.5+memPerGPU*0.02;
+  let estTimeStr='N/A', epochTimeStr='';
   if(estSteps!=='∞'&&estSteps!=='>10,000'){
     const totalSec=parseInt(estSteps.replace(/,/g,''))*roughTimePerStep;
     const hrs=Math.floor(totalSec/3600);
     const mins=Math.floor((totalSec%3600)/60);
     estTimeStr=hrs>0?`~${hrs}h ${mins}m`:`~${mins}m`;
+
+    const epochSec=stepsPerEpoch*roughTimePerStep;
+    const eHrs=Math.floor(epochSec/3600);
+    const eMins=Math.floor((epochSec%3600)/60);
+    epochTimeStr=eHrs>0?`~${eHrs}h ${eMins}m/epoch`:`~${eMins}m/epoch`;
   }
 
   // Param & memory savings
@@ -549,10 +579,12 @@ function calc(){
   const trainMemReduction=fp32FullTrainMem/totalTrainMemGB;
 
   document.getElementById('trainDynamicsGrid').innerHTML=`
-    <div class="big-num"><div class="val" style="color:${speedColor};">${speedLabel}</div><div class="lbl">Fine-Tuning Speed</div></div>
+    <div class="big-num"><div class="val" style="color:var(--violet);">${stepsPerEpoch.toLocaleString()}</div><div class="lbl">Steps per Epoch<br><span style="font-size:0.55rem;">${datasetSize.toLocaleString()} ex / ${batchSize} batch</span></div></div>
     <div class="big-num"><div class="val" style="color:var(--violet);">×${shrinkFactor.toFixed(4)}</div><div class="lbl">Gap Shrink / Step</div></div>
-    <div class="big-num"><div class="val" style="color:var(--cyan);">${estSteps}</div><div class="lbl">Est. Steps to Converge</div></div>
-    <div class="big-num"><div class="val" style="color:var(--amber);">${estTimeStr}</div><div class="lbl">Est. Training Time<br><span style="font-size:0.55rem;">~${roughTimePerStep.toFixed(1)}s/step</span></div></div>
+    <div class="big-num"><div class="val" style="color:var(--cyan);">${estSteps}</div><div class="lbl">Est. Steps to Converge<br><span style="font-size:0.55rem;">${estEpochs!=='∞'?estEpochs+' epochs':'—'}</span></div></div>
+    <div class="big-num"><div class="val" style="color:${speedColor};">${speedLabel}</div><div class="lbl">Speed (${estEpochs!=='∞'?estEpochs:'?'} epochs)<br><span style="font-size:0.55rem;">${estTimeStr} total</span></div></div>
+    <div class="big-num"><div class="val" style="color:var(--amber);">${epochTimeStr}</div><div class="lbl">Time per Epoch<br><span style="font-size:0.55rem;">~${roughTimePerStep.toFixed(1)}s/step</span></div></div>
+    <div class="big-num"><div class="val" style="color:var(--amber);">${totalStepsByEpochs.toLocaleString()}</div><div class="lbl">Steps in ${numEpochs} Epochs<br><span style="font-size:0.55rem;">${numEpochs} × ${stepsPerEpoch.toLocaleString()}</span></div></div>
     <div class="big-num"><div class="val" style="color:var(--green);">${paramReductionStr} fewer</div><div class="lbl">Trainable vs Frozen<br><span style="font-size:0.55rem;">${formatNum(actualLoraParams)} trained / ${formatNum(fp32TotalParams)} frozen</span></div></div>
     <div class="big-num" style="${isQLoRA?'':'border-color:var(--red);'}"><div class="val" style="color:${isQLoRA?'var(--green)':'var(--red)'};">${storageOnly.toFixed(1)}× smaller</div><div class="lbl">Model Storage<br><span style="font-size:0.55rem;">${fp32Mem.toFixed(0)} GB (FP32) → ${actualBaseMem.toFixed(1)} GB (${precLabel})</span></div></div>
     <div class="big-num" style="${isQLoRA?'':'border-color:var(--red);'}"><div class="val" style="color:${isQLoRA?'var(--green)':'var(--red)'};">${trainMemReduction.toFixed(1)}× less</div><div class="lbl">Full Training Memory<br><span style="font-size:0.55rem;">${fp32FullTrainMem.toFixed(0)} GB (FP32 FT) → ${totalTrainMemGB.toFixed(1)} GB (${ftLabel})</span></div></div>
