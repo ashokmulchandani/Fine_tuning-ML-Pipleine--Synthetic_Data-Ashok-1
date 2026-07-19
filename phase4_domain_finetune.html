@@ -133,12 +133,24 @@ render:()=>`
   <strong>📋 How many PDFs do you need?</strong> Even <strong>2–3 research papers</strong> (~30–50 pages total) is enough to see the model learn domain language. For production: 50–200+ PDFs. For learning/testing: start with 2–3. You can always add more and retrain.
 </div>
 
-<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1.5rem 0 0.5rem;">⚡ Quick Start — 3 Steps</h3>
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1.5rem 0 0.5rem;">📄 Use the Included PDF — Metformin.pdf</h3>
+<p>Your <strong>Complete-LLM-Finetuning</strong> repo already has a perfect PDF for this exercise:</p>
+<div class="code-box"><span style="color:var(--tmut);"># The PDF is in your repo at:</span>
+Complete-LLM-Finetuning/
+  LLM Fine-Tuning-14-Train-LLMs-on-Your-PDF-Text-Data -Domain-Specific-Fine-Tuning-with-HuggingFace/
+    <strong style="color:var(--green);">Metformin.pdf</strong>  ← Medical/pharma PDF (~300 KB)
+
+<span style="color:var(--tmut);"># It's a research paper about the diabetes drug Metformin.</span>
+<span style="color:var(--tmut);"># Perfect for teaching the model medical/pharma domain language.</span></div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1.5rem 0 0.5rem;">⚡ Quick Start — 4 Steps</h3>
 <div style="font-size:0.85rem;color:var(--tdim);line-height:2;">
-  <strong>1.</strong> Open <a href="https://colab.research.google.com" target="_blank" style="color:var(--violet);">Colab</a> → New Notebook → Enable T4 GPU<br>
-  <strong>2.</strong> Copy the install command above → Run<br>
-  <strong>3.</strong> Upload 2–3 PDFs → Copy code from slides 4.1–4.10 → Run each cell<br>
-  <strong>Done!</strong> In ~30 minutes you'll have a domain-adapted model.
+  <strong>1.</strong> Open <a href="https://colab.research.google.com" target="_blank" style="color:var(--violet);">Colab</a> → New Notebook → Runtime → Change runtime type → <strong>T4 GPU</strong> → Save<br>
+  <strong>2.</strong> Copy the install command above → Run cell (takes ~2 min)<br>
+  <strong>3.</strong> In Colab left sidebar → 📁 Files → Upload → select <strong>Metformin.pdf</strong> from your computer<br>
+  <strong>4.</strong> Copy code from slides 4.1–4.10 (use 📋 Copy button) → Paste into Colab cells → Run each<br><br>
+  <strong>⚠️ Important:</strong> In slide 4.1, change <code style="background:rgba(0,0,0,0.05);padding:2px 5px;border-radius:3px;">"medical_textbook.pdf"</code> to <code style="background:rgba(0,0,0,0.05);padding:2px 5px;border-radius:3px;">"Metformin.pdf"</code><br><br>
+  <strong>Done!</strong> In ~30 minutes you'll have a model that speaks medical/pharma language.
 </div>
 </div></div>`},
 {id:'4.1',title:'Load PDF & Extract Text',
@@ -154,7 +166,7 @@ render:()=>`
 <span style="color:var(--tmut);"># Load PDF</span>
 import fitz  <span style="color:var(--tmut);"># PyMuPDF</span>
 
-doc = fitz.open(<span style="color:var(--amber);">"medical_textbook.pdf"</span>)
+doc = fitz.open(<span style="color:var(--amber);">"Metformin.pdf"</span>)  <span style="color:var(--tmut);"># From your Complete-LLM-Finetuning repo</span>
 full_text = <span style="color:var(--amber);">""</span>
 
 <span style="color:var(--green);">for</span> page <span style="color:var(--green);">in</span> doc:
@@ -435,7 +447,7 @@ print(result[0][<span style="color:var(--amber);">"generated_text"</span>])
 <span style="color:var(--tmut);">#    "Troponin levels were elevated at 12.4 ng/mL..."</span></div>
 
 <div class="callout">
-  <strong>🎉 What just happened?</strong> The model learned from your 342 medical PDFs that "acute" in a medical context is often followed by "myocardial infarction" — not "pain" or "problem." It absorbed the vocabulary, style, and knowledge of the medical domain. You didn't label anything. You didn't write Q&A pairs. You just fed it text and it learned.
+  <strong>🎉 What just happened?</strong> The model learned from Metformin.pdf that "metformin" is followed by medical terms like "hyperglycemia," "HbA1c," and "gastrointestinal" — pharmaceutical terminology it never generated before. It absorbed the vocabulary, style, and knowledge of the medical/pharma domain. You didn't label anything. You didn't write Q&A pairs. You just fed it text and it learned.
 </div>
 
 <p><strong>You now have a domain-adapted model.</strong> It's not instruction-following yet (that's Phase 5). But it speaks your domain's language. The adapter is ~8 MB — you can share it, upload it to HuggingFace, or merge it and deploy it.</p>
