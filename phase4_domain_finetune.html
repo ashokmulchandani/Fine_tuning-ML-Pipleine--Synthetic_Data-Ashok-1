@@ -143,9 +143,9 @@ render:()=>`
 <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1.5rem 0 0.5rem;">⚡ Quick Start — 3 Steps</h3>
 <div style="font-size:0.85rem;color:var(--tdim);line-height:2;">
   <strong>1.</strong> Open <a href="https://colab.research.google.com" target="_blank" style="color:var(--violet);">Colab</a> → New Notebook → Runtime → Change runtime type → <strong>T4 GPU</strong> → Save<br>
-  <strong>2.</strong> Copy the install + wget commands above → Run (takes ~2 min)<br>
-  <strong>3.</strong> Copy code from slides 4.1–4.10 (use 📋 Copy button) → Paste into Colab cells → Run each<br><br>
-  <strong>Done!</strong> In ~30 minutes you'll have a model that speaks medical/pharma language. No upload. No manual steps. Just copy, paste, run.
+  <strong>2.</strong> Copy the install + wget commands above (📋 Copy) → Paste into <strong>Cell 1</strong> → Run (takes ~2 min)<br>
+  <strong>3.</strong> Copy each code block from slides below — they're numbered <strong>Code 2, Code 3, ... Code N</strong> → Paste each into its own Colab cell → Run<br><br>
+  <strong>Done!</strong> ~10 Colab cells total. No upload. No manual steps. Just copy, paste, run in order.
 </div>
 </div></div>`},
 {id:'4.1',title:'Load PDF & Extract Text',
@@ -502,9 +502,19 @@ function render(i){
   const nb=document.getElementById('nextBtn');
   if(i===slides.length-1){nb.textContent='✓ Complete';nb.style.background='var(--green)';nb.style.borderColor='var(--green)';}
   else{nb.textContent='Next →';nb.style.background='var(--violet)';nb.style.borderColor='var(--violet)';nb.style.color='#fff';}
-  // Add copy buttons to all code boxes
+  // Auto-number and add copy buttons to all code boxes
   setTimeout(()=>{
+    let codeNum=1;
     document.querySelectorAll('.code-box').forEach(box=>{
+      // Add cell number label
+      if(!box.querySelector('.cell-num')){
+        const numLabel=document.createElement('div');
+        numLabel.className='cell-num';
+        numLabel.style.cssText='font-family:"Space Grotesk",sans-serif;font-size:0.6rem;font-weight:700;color:#fff;background:var(--violet);display:inline-block;padding:0.2em 0.7em;border-radius:4px 4px 0 0;margin-bottom:-1px;letter-spacing:0.06em;';
+        numLabel.textContent=`📋 Code ${codeNum} — Copy into Colab cell ${codeNum}`;
+        box.insertBefore(numLabel,box.firstChild);
+        codeNum++;
+      }
       if(box.parentElement.classList.contains('code-wrapper'))return;
       const wrapper=document.createElement('div');
       wrapper.className='code-wrapper';
@@ -514,7 +524,11 @@ function render(i){
       btn.className='copy-btn';
       btn.textContent='📋 Copy';
       btn.onclick=function(){
-        const text=box.textContent||box.innerText||'';
+        // Copy only the code, not the cell number label
+        const clone=box.cloneNode(true);
+        const numLabel=clone.querySelector('.cell-num');
+        if(numLabel)numLabel.remove();
+        const text=clone.textContent||clone.innerText||'';
         navigator.clipboard.writeText(text).then(()=>{
           btn.textContent='✓ Copied!';
           btn.classList.add('copied');
