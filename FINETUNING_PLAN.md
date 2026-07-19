@@ -324,7 +324,7 @@ Click any link to open the interactive HTML in your browser. (Hosted via GitHub 
 - ✅ Phase 1: Fine-Tuning Fundamentals (theory done) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase1_fundamentals.html)
 - ✅ Phase 2: Quantization (theory done) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase2_quantization.html) | [QAT Deep Dives →](#-qat-deep-dives)
 - 📖 Phase 3: LoRA & QLoRA (theory done) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase3_lora_qlora.html)
-- 📖 Phase 4: Non-Instructional Fine-Tuning (hands-on in progress) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase4_domain_finetune.html) | [Colab →](https://colab.research.google.com/drive/14X8AHciw9grj0BG4ojcFZMt7o87Pm9AM)
+- 📖 Phase 4: Non-Instructional Fine-Tuning (hands-on in progress) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase4_domain_finetune.html) | [Colab →](https://colab.research.google.com/drive/14X8AHciw9grj0BG4ojcFZMt7o87Pm9AM) | [Notebook →](Phase_4_Non_Instructional_Fine_Tuning.ipynb)
 - ⬜ Phase 5: Instruction Fine-Tuning
 - ⬜ Phase 5b: Synthetic Data Generation (Gretel, Mostly AI, Tonic)
 - ⬜ Phase 6: Preference Alignment (DPO)
