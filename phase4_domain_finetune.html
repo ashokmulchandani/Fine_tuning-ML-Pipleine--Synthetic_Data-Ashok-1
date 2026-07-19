@@ -451,6 +451,36 @@ print(result[0][<span style="color:var(--amber);">"generated_text"</span>])
 </div>
 
 <p><strong>You now have a domain-adapted model.</strong> It's not instruction-following yet (that's Phase 5). But it speaks your domain's language. The adapter is ~8 MB — you can share it, upload it to HuggingFace, or merge it and deploy it.</p>
+</div></div>`},
+{id:'Summary',title:'Quick Reference — Concepts Used in Phase 4',
+fact:'Every concept from Phases 1–3 appears somewhere in this hands-on pipeline. Nothing was wasted — it all connects.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">Map</span> Phase 4 → Theory You Already Know</h2>
+
+<table style="width:100%;font-size:0.8rem;border-collapse:collapse;margin:1rem 0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.4rem 0;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--tmut);">Hands-On Step</th><th style="text-align:left;padding:0.4rem 0;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--tmut);">Concept Used</th><th style="text-align:left;padding:0.4rem 0;font-size:0.6rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--tmut);">From</th></tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.35rem 0;">Load PDFs</td><td style="padding:0.35rem 0;">Non-Instructional data (plain text, no labels)</td><td style="color:var(--violet);padding:0.35rem 0;">Phase 1.6</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.35rem 0;">Chunk text (512 tokens)</td><td style="padding:0.35rem 0;">Context window limits — models can't read 100 pages at once</td><td style="color:var(--violet);padding:0.35rem 0;">Phase 3.1</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.35rem 0;">Create Dataset</td><td style="padding:0.35rem 0;">Data format: {text: "..."} — self-supervised</td><td style="color:var(--violet);padding:0.35rem 0;">Phase 1.6</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.35rem 0;">Tokenize</td><td style="padding:0.35rem 0;">Text → integers (vocab of 32K tokens)</td><td style="color:var(--violet);padding:0.35rem 0;">General</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.35rem 0;">labels = input_ids.copy()</td><td style="padding:0.35rem 0;">Self-supervised next-token prediction — the text IS the label</td><td style="color:var(--violet);padding:0.35rem 0;">Phase 1.6</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.35rem 0;">BitsAndBytes load_in_8bit</td><td style="padding:0.35rem 0;">Quantization: FP16→INT8. Memory cut in half.</td><td style="color:var(--amber);padding:0.35rem 0;">Phase 2.7</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.35rem 0;">LoraConfig r=8, alpha=16</td><td style="padding:0.35rem 0;">Low-Rank Adaptation: W_new = W₀ + B×A</td><td style="color:var(--magenta);padding:0.35rem 0;">Phase 3.5</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.35rem 0;">target_modules=["q_proj","v_proj"]</td><td style="padding:0.35rem 0;">Only Q and V get adapters per layer</td><td style="color:var(--magenta);padding:0.35rem 0;">Phase 3.8</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.35rem 0;">trainable: 0.38%</td><td style="padding:0.35rem 0;">Parameter savings — 99.6% frozen</td><td style="color:var(--magenta);padding:0.35rem 0;">Phase 3.6</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.35rem 0;">learning_rate=2e-4</td><td style="padding:0.35rem 0;">Human-chosen hyperparameter — same as QAT lr</td><td style="color:var(--cyan);padding:0.35rem 0;">QAT Deep Dive</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.35rem 0;">Forward: W₀×x + B×A×x</td><td style="padding:0.35rem 0;">LoRA forward pass — frozen base + trainable side path</td><td style="color:var(--magenta);padding:0.35rem 0;">Phase 3.5</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.35rem 0;">Backward: ∇B, ∇A only (STE)</td><td style="padding:0.35rem 0;">Gradient bypasses quantized weights, flows to adapters only</td><td style="color:var(--cyan);padding:0.35rem 0;">Phase 2 STE</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.35rem 0;">Adam updates</td><td style="padding:0.35rem 0;">m+v stored only for 37M LoRA params, not 7B base</td><td style="color:var(--violet);padding:0.35rem 0;">Phase 3.1</td></tr>
+<tr><td style="padding:0.35rem 0;">save_pretrained("adapter")</td><td style="padding:0.35rem 0;">Merge before next stage (merge_and_unload)</td><td style="color:var(--magenta);padding:0.35rem 0;">Phase 3.10</td></tr>
+</tbody>
+</table>
+
+<div class="callout" style="margin-top:1rem;">
+  <strong>🎯 Nothing was wasted.</strong> Every concept from Phases 1–3 is a line of code in Phase 4. Quantization (Phase 2) → <code style="background:rgba(0,0,0,0.04);padding:2px 5px;border-radius:3px;">load_in_8bit=True</code>. LoRA (Phase 3) → <code style="background:rgba(0,0,0,0.04);padding:2px 5px;border-radius:3px;">LoraConfig(r=8)</code>. STE (Phase 2) → gradient flows to adapters only. Adapter merging (Phase 3.10) → <code style="background:rgba(0,0,0,0.04);padding:2px 5px;border-radius:3px;">merge_and_unload()</code>.
+</div>
 </div></div>`}
 ];
 
@@ -499,6 +529,40 @@ function render(i){
       wrapper.appendChild(btn);
     });
   },50);
+
+  // Add concept connection tags
+  setTimeout(()=>{
+    const callouts=document.querySelectorAll('.card');
+    callouts.forEach(card=>{
+      if(card.querySelector('.concept-tag'))return;
+      // Find the step heading
+      const h2=card.querySelector('h2');
+      if(!h2)return;
+      const numEl=h2.querySelector('.num');
+      if(!numEl)return;
+      const stepId=numEl.textContent.trim();
+      const concepts={
+        'Setup':'🧠 Concepts: Colab basics, GPU setup. Why: Phase 2 taught us quantization needs GPU — T4 is free.',
+        '4.1':'🧠 Concepts: PDF = raw domain text. Why: Phase 1.6 — Non-Instructional data type. No labels needed.',
+        '4.2':'🧠 Concepts: Context window (Phase 3.1). Why: Models can only process ~512 tokens at once. Chunking = splitting big text into bite-sized pieces.',
+        '4.3':'🧠 Concepts: Data format. Why: Phase 1.6 — {"text": "..."} is the non-instructional format for self-supervised learning.',
+        '4.4':'🧠 Concepts: Tokenization. Why: Models read integers, not words. Phase 2 quantization later compresses these integers.',
+        '4.5':'🧠 Concepts: Self-supervised learning. Why: labels = input_ids. Model predicts next token from previous tokens. No human labels — the text IS the label.',
+        '4.6':'🧠 Concepts: Phase 2 Quantization! BitsAndBytes 8-bit = FP16→INT8. Why: Halves memory (2.2GB→1.1GB). Same math as Phase 2.7.',
+        '4.7':'🧠 Concepts: Phase 3 LoRA! r=8, alpha=16, target_modules=["q_proj","v_proj"]. Why: 0.38% trainable. Frozen base model + B×A adapters. Phase 3.5 equation in action.',
+        '4.8':'🧠 Concepts: Hyperparameters. lr=2e-4 (0.0002) — same idea as lr=0.02 in QAT but realistic for real training. Epochs, batch size, gradient accumulation.',
+        '4.9':'🧠 Concepts: Phase 2 STE + Phase 3 LoRA combined! Forward: W₀×x+B×A×x. Backward: STE gradient flows to B,A only. Adam updates B,A. Base model never changes.',
+        '4.10':'🧠 Concepts: Domain adaptation complete! Model absorbed domain language. Next: Phase 5 Instruction FT, Phase 6 DPO. Merge adapter before next stage (Phase 3.10!).'
+      };
+      if(concepts[stepId]){
+        const tag=document.createElement('div');
+        tag.className='concept-tag';
+        tag.style.cssText='margin-top:0.8rem;padding:0.6rem 0.8rem;background:rgba(0,122,153,0.05);border:1px solid rgba(0,122,153,0.2);border-radius:8px;font-size:0.75rem;color:#4a4f5a;line-height:1.6;';
+        tag.innerHTML=concepts[stepId];
+        card.appendChild(tag);
+      }
+    });
+  },60);
 
   document.getElementById('slideContainer').scrollIntoView({behavior:'smooth',block:'start'});
 }
