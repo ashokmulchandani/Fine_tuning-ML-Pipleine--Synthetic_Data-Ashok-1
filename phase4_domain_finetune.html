@@ -503,7 +503,7 @@ print(f"Extracted {len(full_text)} chars from {len(doc)} pages")</div>
 <div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 3</span> <span style="color:#6a9955;">— Chunk Text</span>
 
 def chunk_text(text, max_chars=2000):
-    paragraphs = text.split("\n\n")
+    paragraphs = text.split("\\n\\n")
     chunks, current = [], ""
     for para in paragraphs:
         if len(current) + len(para) < max_chars: current += para + "\n\n"
