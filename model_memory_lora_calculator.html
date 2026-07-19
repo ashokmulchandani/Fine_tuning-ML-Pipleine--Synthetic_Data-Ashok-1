@@ -88,11 +88,20 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
   </div>
   <div class="ctrl-card">
     <label>Fine-Tuning Mode</label>
-    <select id="ftMode" onchange="calc()">
-      <option value="qlora" selected>QLoRA — INT4 base + FP16 LoRA</option>
-      <option value="lora">LoRA — FP16 base + FP16 LoRA</option>
+    <select id="ftMode" onchange="onModeChange()">
+      <option value="qlora" selected>QLoRA — Quantized base + LoRA</option>
+      <option value="lora">LoRA — FP16 base + LoRA</option>
     </select>
-    <div class="hint" id="ftModeHint">Quantized base (fits on 1 GPU)</div>
+  </div>
+  <div class="ctrl-card">
+    <label>Base Precision</label>
+    <select id="precision" onchange="calc()">
+      <option value="int4" selected>INT4 (0.5 bytes)</option>
+      <option value="int8">INT8 (1 byte)</option>
+      <option value="fp16">FP16 (2 bytes)</option>
+      <option value="fp32">FP32 (4 bytes)</option>
+    </select>
+    <div class="hint" id="precHint">0.5 bytes — best compression</div>
   </div>
 </div>
 
@@ -284,6 +293,16 @@ function toggle(type,mod){
 }
 
 // ── PRESETS ──
+function onModeChange(){
+  const mode=document.getElementById('ftMode').value;
+  if(mode==='qlora'){
+    document.getElementById('precision').value='int4';
+  } else {
+    document.getElementById('precision').value='fp16';
+  }
+  calc();
+}
+
 function applyPreset(){
   const p=document.getElementById('preset').value;
   const presets={
@@ -318,11 +337,13 @@ function calc(){
   const rank=parseInt(document.getElementById('rank').value)||8;
   const ftMode=document.getElementById('ftMode').value;
   const isQLoRA=ftMode==='qlora';
-  const bytesPer=isQLoRA?0.5:2; // QLoRA: INT4 (0.5), LoRA: FP16 (2)
-  const precLabel=isQLoRA?'INT4':'FP16';
+  const prec=document.getElementById('precision').value;
+  const bytesMap={int4:0.5,int8:1,fp16:2,fp32:4};
+  const bytesPer=isQLoRA?bytesMap[prec]:bytesMap[prec];
+  const precLabel=prec.toUpperCase();
   const ftLabel=isQLoRA?'QLoRA':'LoRA';
 
-  document.getElementById('ftModeHint').textContent=isQLoRA?'INT4 base (3.5 GB) — fits on 1 GPU':'FP16 base (14 GB) — needs larger GPU';
+  document.getElementById('precHint').textContent=isQLoRA?bytesPer+' bytes/param — quantized base':bytesPer+' bytes/param — full precision base';
 
   const formatNum=n=>n>=1e9?`${(n/1e9).toFixed(2)}B`:n>=1e6?`${(n/1e6).toFixed(1)}M`:`${(n/1e3).toFixed(1)}K`;
   const formatGB=g=>g.toFixed(2)+' GB';
