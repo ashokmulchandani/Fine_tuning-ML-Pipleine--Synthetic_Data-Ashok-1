@@ -476,6 +476,119 @@ render:()=>`
 <div class="callout" style="margin-top:1rem;">
   <strong>🎯 Nothing was wasted.</strong> Every concept from Phases 1–3 is a line of code in Phase 4. Quantization (Phase 2) → <code style="background:rgba(0,0,0,0.04);padding:2px 5px;border-radius:3px;">load_in_8bit=True</code>. LoRA (Phase 3) → <code style="background:rgba(0,0,0,0.04);padding:2px 5px;border-radius:3px;">LoraConfig(r=8)</code>. STE (Phase 2) → gradient flows to adapters only. Adapter merging (Phase 3.10) → <code style="background:rgba(0,0,0,0.04);padding:2px 5px;border-radius:3px;">merge_and_unload()</code>.
 </div>
+</div></div>`},
+{id:'Notebook',title:'Full Colab Notebook — Cell by Cell',
+fact:'Copy each CELL separately into Colab. 10 cells total. Run in order.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">📓</span> Complete Colab Notebook — 10 Cells</h2>
+<p>Each <span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.65rem;font-weight:700;">CELL</span> = one Colab code cell. <strong>📋 Copy</strong> → paste → <strong>Ctrl+Enter</strong>.</p>
+
+<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 1</span> <span style="color:var(--tmut);">— Setup: Install + Download PDF</span>
+
+!pip install -q transformers datasets peft bitsandbytes accelerate trl PyMuPDF torch
+!wget "https://raw.githubusercontent.com/ashokmulchandani/Complete-LLM-Finetuning/main/LLM%20Fine-Tuning-14-Train-LLMs-on-Your-PDF-Text-Data%20-Domain-Specific-Fine-Tuning-with-HuggingFace/Metformin.pdf"
+print("✅ Setup complete")</div>
+
+<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 2</span> <span style="color:var(--tmut);">— Load PDF & Extract Text</span>
+
+import fitz
+doc = fitz.open("Metformin.pdf")
+full_text = ""
+for page in doc: full_text += page.get_text()
+print(f"Extracted {len(full_text)} chars from {len(doc)} pages")</div>
+
+<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 3</span> <span style="color:var(--tmut);">— Chunk Text</span>
+
+def chunk_text(text, max_chars=2000):
+    paragraphs = text.split("\n\n")
+    chunks, current = [], ""
+    for para in paragraphs:
+        if len(current) + len(para) < max_chars: current += para + "\n\n"
+        else: chunks.append(current.strip()); current = para + "\n\n"
+    if current: chunks.append(current.strip())
+    return chunks
+
+chunks = chunk_text(full_text)
+print(f"Created {len(chunks)} chunks")</div>
+
+<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 4</span> <span style="color:var(--tmut);">— Dataset + Tokenize + Labels</span>
+
+from datasets import Dataset
+from transformers import AutoTokenizer
+
+model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+tokenizer.pad_token = tokenizer.eos_token
+
+data = [{"text": c} for c in chunks]
+dataset = Dataset.from_list(data).train_test_split(test_size=0.1, seed=42)
+
+def tokenize(ex): return tokenizer(ex["text"], truncation=True, padding="max_length", max_length=512)
+tk_train = dataset["train"].map(tokenize, batched=True)
+tk_eval  = dataset["test"].map(tokenize, batched=True)
+
+def add_labels(ex): ex["labels"] = ex["input_ids"].copy(); return ex
+tk_train = tk_train.map(add_labels, batched=True)
+tk_eval  = tk_eval.map(add_labels, batched=True)
+print(f"Train: {len(tk_train)}, Eval: {len(tk_eval)}")</div>
+
+<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 5</span> <span style="color:var(--tmut);">— Load Model (8-bit Quantized)</span>
+
+import torch
+from transformers import AutoModelForCausalLM, BitsAndBytesConfig
+
+bnb_config = BitsAndBytesConfig(load_in_8bit=True)
+model = AutoModelForCausalLM.from_pretrained(model_name, quantization_config=bnb_config, device_map="auto", torch_dtype=torch.float16)
+model.config.use_cache = False
+print(f"Model loaded: {sum(p.numel() for p in model.parameters())/1e9:.1f}B params")</div>
+
+<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 6</span> <span style="color:var(--tmut);">— Apply LoRA</span>
+
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+
+model = prepare_model_for_kbit_training(model)
+lora_config = LoraConfig(r=8, lora_alpha=16, lora_dropout=0.1, target_modules=["q_proj","v_proj"], bias="none", task_type="CAUSAL_LM")
+model = get_peft_model(model, lora_config)
+model.print_trainable_parameters()</div>
+
+<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 7</span> <span style="color:var(--tmut);">— Training Arguments</span>
+
+from transformers import TrainingArguments
+
+training_args = TrainingArguments(
+    output_dir="./domain_adapted_model", num_train_epochs=3,
+    per_device_train_batch_size=4, gradient_accumulation_steps=4,
+    learning_rate=2e-4, lr_scheduler_type="cosine", warmup_steps=100,
+    logging_steps=50, save_steps=200, save_total_limit=2,
+    fp16=True, eval_strategy="steps", eval_steps=200,
+)</div>
+
+<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 8</span> <span style="color:var(--tmut);">— Train! (15-25 min)</span>
+
+from transformers import Trainer
+
+trainer = Trainer(model=model, args=training_args, train_dataset=tk_train, eval_dataset=tk_eval, tokenizer=tokenizer)
+trainer.train()
+print("✅ Training complete!")</div>
+
+<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 9</span> <span style="color:var(--tmut);">— Save Adapter</span>
+
+model.save_pretrained("./medical_domain_adapter")
+tokenizer.save_pretrained("./medical_domain_adapter")
+print("✅ Adapter saved!")</div>
+
+<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 10</span> <span style="color:var(--tmut);">— Test!</span>
+
+from transformers import pipeline
+
+pipe = pipeline("text-generation", model=model, tokenizer=tokenizer)
+result = pipe("Metformin is a medication used to treat", max_new_tokens=80, temperature=0.7)
+print(result[0]["generated_text"])</div>
+
+<div class="callout" style="margin-top:1rem;">
+  <strong>📋 10 cells total.</strong> ⬆ Copy each → paste into Colab → Ctrl+Enter. Cell 8 takes ~15-25 min. Everything else runs in seconds.
+</div>
 </div></div>`}
 ];
 
