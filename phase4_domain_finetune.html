@@ -57,7 +57,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 
 .callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:1rem 1.25rem;margin:1rem 0;font-size:0.85rem;line-height:1.7;}
 
-@media(max-width:768px){.app{padding:0.75rem;}}
+/* Copy button */
+.code-wrapper{position:relative;}
+.copy-btn{position:absolute;top:8px;right:8px;font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:600;padding:0.35em 0.8em;border:1.5px solid var(--border);border-radius:6px;background:var(--card);color:var(--tmut);cursor:pointer;transition:0.15s;opacity:0;}
+.code-wrapper:hover .copy-btn,.copy-btn.copied{opacity:1;}
+.copy-btn:hover{border-color:var(--violet);color:var(--violet);}
+.copy-btn.copied{border-color:var(--green);color:var(--green);background:rgba(26,110,52,0.06);}
+
+@media(max-width:768px){.app{padding:0.75rem;}.copy-btn{opacity:1;}}
 </style>
 </head>
 <body>
@@ -418,6 +425,29 @@ function render(i){
   const nb=document.getElementById('nextBtn');
   if(i===slides.length-1){nb.textContent='✓ Complete';nb.style.background='var(--green)';nb.style.borderColor='var(--green)';}
   else{nb.textContent='Next →';nb.style.background='var(--violet)';nb.style.borderColor='var(--violet)';nb.style.color='#fff';}
+  // Add copy buttons to all code boxes
+  setTimeout(()=>{
+    document.querySelectorAll('.code-box').forEach(box=>{
+      if(box.parentElement.classList.contains('code-wrapper'))return;
+      const wrapper=document.createElement('div');
+      wrapper.className='code-wrapper';
+      box.parentNode.insertBefore(wrapper,box);
+      wrapper.appendChild(box);
+      const btn=document.createElement('button');
+      btn.className='copy-btn';
+      btn.textContent='📋 Copy';
+      btn.onclick=function(){
+        const text=box.textContent||box.innerText||'';
+        navigator.clipboard.writeText(text).then(()=>{
+          btn.textContent='✓ Copied!';
+          btn.classList.add('copied');
+          setTimeout(()=>{btn.textContent='📋 Copy';btn.classList.remove('copied');},2000);
+        });
+      };
+      wrapper.appendChild(btn);
+    });
+  },50);
+
   document.getElementById('slideContainer').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
