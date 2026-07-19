@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase 4: Non-Instructional Fine-Tuning</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--red:#c62828;--amber:#b87000;--cyan:#007a99;--magenta:#9e2a6b;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;min-height:100vh;}
+.app{max-width:1000px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:2rem 0 1rem;}
+.header .badge{display:inline-block;font-family:'Space Grotesk',sans-serif;font-size:0.7rem;letter-spacing:0.12em;color:var(--green);border:1.5px solid var(--green);background:rgba(26,110,52,0.08);border-radius:100px;padding:0.3em 1.2em;margin-bottom:0.75rem;font-weight:600;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(1.4rem,4vw,1.9rem);font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.95rem;margin-top:0.3rem;}
+
+.topbar{position:sticky;top:0;z-index:100;background:rgba(250,251,252,0.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0.5rem 1.5rem;display:flex;align-items:center;gap:0.8rem;font-size:0.75rem;}
+.topbar .logo{font-family:'Space Grotesk',sans-serif;font-size:0.65rem;letter-spacing:0.12em;color:var(--violet);white-space:nowrap;font-weight:600;}
+.topbar .dots{display:flex;gap:0.3rem;flex:1;justify-content:center;}
+.topbar .dot{width:22px;height:3px;border-radius:2px;background:var(--border);transition:0.3s;cursor:pointer;}
+.topbar .dot.done{background:var(--green);}
+.topbar .dot.active{background:var(--violet);box-shadow:0 0 6px rgba(91,58,168,0.3);}
+.topbar .dot:hover{background:var(--tmut);}
+.topbar .step-label{font-family:'Space Grotesk',monospace;font-size:0.6rem;color:var(--tmut);white-space:nowrap;}
+
+.chips{display:flex;flex-wrap:wrap;gap:0.4rem;justify-content:center;margin:1rem 0;}
+.chip{font-family:'Space Grotesk',sans-serif;font-size:0.6rem;padding:0.4em 1em;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--tmut);cursor:pointer;transition:0.2s;}
+.chip:hover{border-color:var(--tmut);color:var(--tdim);}
+.chip.visited{border-color:var(--green);color:var(--green);background:rgba(26,110,52,0.06);}
+.chip.current{border-color:var(--violet);color:var(--violet);background:var(--vbg);box-shadow:0 0 8px rgba(91,58,168,0.1);}
+
+.slide{opacity:0;transform:translateY(20px);animation:fadeIn 0.45s ease forwards;}
+@keyframes fadeIn{to{opacity:1;transform:translateY(0);}}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.75rem;margin-bottom:1rem;}
+.card h2{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;font-weight:600;margin-bottom:0.8rem;display:flex;align-items:center;gap:0.5rem;}
+.card h2 .num{font-size:0.7rem;color:var(--violet);background:var(--vbg);border-radius:6px;padding:0.2em 0.6em;font-weight:700;}
+.card p{color:var(--tdim);margin-bottom:0.7rem;font-size:0.93rem;}
+
+.code-box{background:var(--raised);border:1px solid var(--border);border-left:3px solid var(--violet);border-radius:8px;padding:1rem 1.25rem;margin:1rem 0;font-family:'Space Grotesk',monospace;font-size:0.78rem;line-height:1.9;white-space:pre-wrap;overflow-x:auto;}
+
+.fun-fact{background:linear-gradient(135deg,rgba(91,58,168,0.04),rgba(0,122,153,0.04));border:1px solid var(--border);border-radius:14px;padding:1rem 1.25rem;margin:1rem 0;display:flex;align-items:flex-start;gap:0.7rem;font-size:0.88rem;}
+
+.pipeline{display:flex;align-items:center;gap:0.3rem;flex-wrap:wrap;justify-content:center;margin:1rem 0;font-family:'Space Grotesk',sans-serif;font-size:0.6rem;}
+.pipe-step{background:var(--card);border:1.5px solid var(--border);border-radius:8px;padding:0.5rem 0.8rem;text-align:center;}
+.pipe-step.active{border-color:var(--violet);background:var(--vbg);}
+.pipe-arrow{font-size:1rem;color:var(--tmut);}
+
+.nav-row{display:flex;justify-content:space-between;margin:1.5rem 0 3rem;}
+.nav-btn{font-family:'Space Grotesk',sans-serif;font-size:0.72rem;font-weight:600;letter-spacing:0.06em;padding:0.65em 1.6em;border:1.5px solid var(--border);border-radius:100px;background:var(--bg);color:var(--text);cursor:pointer;transition:0.2s;display:flex;align-items:center;gap:0.4em;}
+.nav-btn:hover{border-color:var(--violet);color:var(--violet);}
+.nav-btn:disabled{opacity:0.3;cursor:not-allowed;}
+.nav-btn.primary{background:var(--violet);border-color:var(--violet);color:#fff;}
+.nav-btn.primary:hover{opacity:0.88;color:#fff;}
+
+.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:1rem 1.25rem;margin:1rem 0;font-size:0.85rem;line-height:1.7;}
+
+@media(max-width:768px){.app{padding:0.75rem;}}
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <span class="logo">Phase 4</span>
+  <div class="dots" id="dots"></div>
+  <span class="step-label" id="stepLabel">1/10</span>
+</nav>
+
+<div class="app">
+
+<header class="header">
+  <div class="badge">⬜ HANDS-ON</div>
+  <h1>Non-Instructional Fine-Tuning</h1>
+  <p>Domain adaptation from PDFs — teach the model your domain language</p>
+</header>
+
+<div class="chips" id="chips"></div>
+
+<div class="fun-fact" id="funFact">
+  <span style="font-size:1.3rem;flex-shrink:0;">💡</span>
+  <span id="funFactText"></span>
+</div>
+
+<div id="slideContainer"></div>
+
+<div class="nav-row">
+  <button class="nav-btn" id="prevBtn" onclick="goTo(cur-1)">← Previous</button>
+  <button class="nav-btn primary" id="nextBtn" onclick="goTo(cur+1)">Next →</button>
+</div>
+
+</div>
+
+<script>
+const slides=[
+{id:'4.1',title:'Load PDF & Extract Text',
+fact:'PyMuPDF (fitz) can extract text from a 100-page PDF in under 1 second. It\'s ~20× faster than PyPDF2 for large documents.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">4.1</span> Load PDF Data with PyMuPDF</h2>
+<p>First step: get your domain text out of PDFs. PyMuPDF handles complex layouts — multi-column, tables, headers, footers.</p>
+
+<div class="code-box"><span style="color:var(--tmut);"># Install</span>
+!pip install PyMuPDF datasets transformers peft bitsandbytes accelerate trl
+
+<span style="color:var(--tmut);"># Load PDF</span>
+import fitz  <span style="color:var(--tmut);"># PyMuPDF</span>
+
+doc = fitz.open(<span style="color:var(--amber);">"medical_textbook.pdf"</span>)
+full_text = <span style="color:var(--amber);">""</span>
+
+<span style="color:var(--green);">for</span> page <span style="color:var(--green);">in</span> doc:
+    full_text += page.get_text()
+
+print(<span style="color:var(--amber);">f"Extracted {len(full_text)} characters from {len(doc)} pages"</span>)
+<span style="color:var(--tmut);"># → "Extracted 1,247,583 characters from 342 pages"</span></div>
+
+<p><strong>What just happened?</strong> We turned 342 pages of PDF into one big string of text. This text will teach the model your domain language (medical, legal, finance, whatever your PDFs contain).</p>
+</div></div>`},
+{id:'4.2',title:'Chunk Text — Respect Context Window',
+fact:'Most LLMs have a 2048–4096 token context window. You can\'t feed a 100-page document at once. Chunking breaks it into bite-sized pieces that fit in the model\'s context.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">4.2</span> Chunk the Text</h2>
+<p>Models have a <strong>context window limit</strong> (e.g., 2048 tokens). A 100-page document has ~50,000 tokens. We split it into chunks of ~512 tokens each.</p>
+
+<div class="code-box"><span style="color:var(--tmut);"># Simple paragraph-based chunking</span>
+<span style="color:var(--green);">def</span> <span style="color:var(--violet);">chunk_text</span>(text, max_chars=2000):
+    paragraphs = text.split(<span style="color:var(--amber);">"\n\n"</span>)  <span style="color:var(--tmut);"># Split by double newline</span>
+    chunks = []
+    current_chunk = <span style="color:var(--amber);">""</span>
+
+    <span style="color:var(--green);">for</span> para <span style="color:var(--green);">in</span> paragraphs:
+        <span style="color:var(--green);">if</span> len(current_chunk) + len(para) &lt; max_chars:
+            current_chunk += para + <span style="color:var(--amber);">"\n\n"</span>
+        <span style="color:var(--green);">else</span>:
+            chunks.append(current_chunk.strip())
+            current_chunk = para + <span style="color:var(--amber);">"\n\n"</span>
+
+    <span style="color:var(--green);">if</span> current_chunk:
+        chunks.append(current_chunk.strip())
+    <span style="color:var(--green);">return</span> chunks
+
+chunks = chunk_text(full_text, max_chars=2000)
+print(<span style="color:var(--amber);">f"Created {len(chunks)} chunks"</span>)
+<span style="color:var(--tmut);"># → "Created 623 chunks"</span></div>
+
+<p><strong>max_chars=2000 ≈ 512 tokens</strong>. Each chunk is one "training example." The model will learn to predict the next token within each chunk — absorbing the vocabulary, style, and knowledge of your domain.</p>
+</div></div>`},
+{id:'4.3',title:'Create HuggingFace Dataset',
+fact:'HuggingFace Datasets lets you stream data from disk without loading everything into RAM. For a 1GB text corpus, this is the difference between crashing and running smoothly.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">4.3</span> Create HuggingFace Dataset Format</h2>
+<p>We convert our chunks into the format the Trainer expects: a dictionary with a <strong>"text"</strong> key.</p>
+
+<div class="code-box"><span style="color:var(--green);">from</span> datasets <span style="color:var(--green);">import</span> Dataset
+
+<span style="color:var(--tmut);"># Each chunk becomes {"text": "..."}</span>
+data = [{<span style="color:var(--amber);">"text"</span>: chunk} <span style="color:var(--green);">for</span> chunk <span style="color:var(--green);">in</span> chunks]
+dataset = Dataset.from_list(data)
+
+<span style="color:var(--tmut);"># Split 90/10 for train/validation</span>
+dataset = dataset.train_test_split(test_size=0.1, seed=42)
+train_data = dataset[<span style="color:var(--amber);">"train"</span>]
+eval_data = dataset[<span style="color:var(--amber);">"test"</span>]
+
+print(<span style="color:var(--amber);">f"Train: {len(train_data)} chunks, Eval: {len(eval_data)} chunks"</span>)
+<span style="color:var(--tmut);"># → Train: 560 chunks, Eval: 63 chunks</span></div>
+
+<p>That's it. 623 chunks of domain text, split into train/eval, ready for tokenization.</p>
+</div></div>`},
+{id:'4.4',title:'Tokenize — Turn Text Into Numbers',
+fact:'A 512-token chunk becomes 512 integers. Each integer maps to a word/subword in the model\'s vocabulary of 32,000 tokens.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">4.4</span> Tokenize with AutoTokenizer</h2>
+<p>The model can't read text. It reads integers. Tokenization converts "The patient presented with..." into something like [464, 8522, 4521, 319, ...].</p>
+
+<div class="code-box"><span style="color:var(--green);">from</span> transformers <span style="color:var(--green);">import</span> AutoTokenizer
+
+model_name = <span style="color:var(--amber);">"TinyLlama/TinyLlama-1.1B-Chat-v1.0"</span>
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+tokenizer.pad_token = tokenizer.eos_token  <span style="color:var(--tmut);"># Use EOS as padding</span>
+
+<span style="color:var(--green);">def</span> <span style="color:var(--violet);">tokenize</span>(examples):
+    <span style="color:var(--green);">return</span> tokenizer(
+        examples[<span style="color:var(--amber);">"text"</span>],
+        truncation=<span style="color:var(--green);">True</span>,        <span style="color:var(--tmut);"># Cut off if too long</span>
+        padding=<span style="color:var(--amber);">"max_length"</span>, <span style="color:var(--tmut);"># Pad to same length</span>
+        max_length=512           <span style="color:var(--tmut);"># 512 tokens max</span>
+    )
+
+tokenized_train = train_data.map(tokenize, batched=<span style="color:var(--green);">True</span>)
+tokenized_eval = eval_data.map(tokenize, batched=<span style="color:var(--green);">True</span>)
+
+<span style="color:var(--tmut);"># Now each example has: input_ids, attention_mask</span>
+print(tokenized_train[0][<span style="color:var(--amber);">"input_ids"</span>][:10])
+<span style="color:var(--tmut);"># → [1, 464, 8522, 4521, 319, 287, 26012, 438, 1784, 29973]</span></div>
+
+<p><strong>"truncation=True"</strong> cuts chunks longer than 512 tokens. <strong>"padding=max_length"</strong> pads shorter chunks with zeros so all chunks are the same length. This is needed for batch training.</p>
+</div></div>`},
+{id:'4.5',title:'Set Labels for Self-Supervised Learning',
+fact:'For next-token prediction, the labels are just the input shifted by one position. The model tries to predict token N+1 from tokens 1...N. No human labeling needed!',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">4.5</span> Set Labels = input_ids.copy()</h2>
+<p>This is self-supervised learning. The model's task: <strong>predict the next token</strong>. The "correct answer" is already in the text — it's just the next word.</p>
+
+<div class="code-box"><span style="color:var(--tmut);"># Labels = same as input (the model will auto-shift internally)</span>
+<span style="color:var(--green);">def</span> <span style="color:var(--violet);">add_labels</span>(examples):
+    examples[<span style="color:var(--amber);">"labels"</span>] = examples[<span style="color:var(--amber);">"input_ids"</span>].copy()
+    <span style="color:var(--green);">return</span> examples
+
+tokenized_train = tokenized_train.map(add_labels, batched=<span style="color:var(--green);">True</span>)
+tokenized_eval = tokenized_eval.map(add_labels, batched=<span style="color:var(--green);">True</span>)</div>
+
+<div style="font-size:0.85rem;color:var(--tdim);line-height:1.8;margin-top:0.5rem;">
+<strong>How self-supervised learning works:</strong><br>
+&nbsp;&nbsp;Input:  "The patient presented with acute"<br>
+&nbsp;&nbsp;Label:  "patient presented with acute myocardial"<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↑ The model must predict this word<br><br>
+The loss is computed for EVERY token position. The model learns: "In medical text, 'acute' is often followed by 'myocardial'." No human ever labeled anything. The text IS the label.
+</div>
+</div></div>`},
+{id:'4.6',title:'Load Base Model with Quantization',
+fact:'TinyLlama-1.1B in 8-bit takes ~1.1 GB VRAM instead of ~2.2 GB. Small enough to fine-tune on a free Colab T4 (16 GB).',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">4.6</span> Load Base Model with BitsAndBytes 8-bit</h2>
+<p>We load the model quantized to 8-bit. This halves the memory while keeping good accuracy for fine-tuning.</p>
+
+<div class="code-box"><span style="color:var(--green);">from</span> transformers <span style="color:var(--green);">import</span> AutoModelForCausalLM, BitsAndBytesConfig
+<span style="color:var(--green);">import</span> torch
+
+bnb_config = BitsAndBytesConfig(
+    load_in_8bit=<span style="color:var(--green);">True</span>,           <span style="color:var(--tmut);"># 8-bit quantization</span>
+)
+
+model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    quantization_config=bnb_config,
+    device_map=<span style="color:var(--amber);">"auto"</span>,        <span style="color:var(--tmut);"># Auto-distribute across GPU/CPU</span>
+    torch_dtype=torch.float16
+)
+
+<span style="color:var(--tmut);"># Disable caching — saves memory during training</span>
+model.config.use_cache = <span style="color:var(--green);">False</span>
+
+print(<span style="color:var(--amber);">f"Model loaded: {sum(p.numel() for p in model.parameters())/1e9:.1f}B params"</span>)
+<span style="color:var(--tmut);"># → Model loaded: 1.1B params</span></div>
+
+<p><strong>8-bit (not 4-bit) for Phase 4.</strong> QLoRA (4-bit) works too, but 8-bit is simpler for a first hands-on. The model takes ~1.1 GB instead of 2.2 GB.</p>
+</div></div>`},
+{id:'4.7',title:'Configure LoRA on the Model',
+fact:'With LoRA applied, only 0.5% of the 1.1B parameters are trainable. The rest stay frozen in 8-bit.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">4.7</span> Configure LoRA — r=8, alpha=16</h2>
+<p>This is where everything from Phase 3 comes together. We apply LoRA to the loaded model.</p>
+
+<div class="code-box"><span style="color:var(--green);">from</span> peft <span style="color:var(--green);">import</span> LoraConfig, get_peft_model, prepare_model_for_kbit_training
+
+<span style="color:var(--tmut);"># Prep model for quantized training</span>
+model = prepare_model_for_kbit_training(model)
+
+<span style="color:var(--tmut);"># LoRA configuration</span>
+lora_config = LoraConfig(
+    r=<span style="color:var(--amber);">8</span>,                          <span style="color:var(--tmut);"># Rank</span>
+    lora_alpha=<span style="color:var(--amber);">16</span>,                 <span style="color:var(--tmut);"># Scaling factor</span>
+    lora_dropout=<span style="color:var(--amber);">0.1</span>,              <span style="color:var(--tmut);"># Regularization</span>
+    target_modules=[<span style="color:var(--amber);">"q_proj"</span>, <span style="color:var(--amber);">"v_proj"</span>],
+    bias=<span style="color:var(--amber);">"none"</span>,
+    task_type=<span style="color:var(--amber);">"CAUSAL_LM"</span>
+)
+
+model = get_peft_model(model, lora_config)
+model.print_trainable_parameters()
+<span style="color:var(--tmut);"># → trainable params: 4,194,304 || all params: 1,104,842,752 || trainable%: 0.38%</span></div>
+
+<p><strong>Only 4.2M params are trainable.</strong> The other 1.1B are frozen in 8-bit. This is QLoRA in action — all that theory now running as actual code.</p>
+</div></div>`},
+{id:'4.8',title:'Define TrainingArguments',
+fact:'Gradient accumulation simulates a larger batch size. With batch=4 and accumulation=4, the effective batch size is 16 — without the memory cost.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">4.8</span> TrainingArguments — Control How Training Runs</h2>
+
+<div class="code-box"><span style="color:var(--green);">from</span> transformers <span style="color:var(--green);">import</span> TrainingArguments
+
+training_args = TrainingArguments(
+    output_dir=<span style="color:var(--amber);">"./domain_adapted_model"</span>,
+
+    <span style="color:var(--tmut);"># Training duration</span>
+    num_train_epochs=<span style="color:var(--amber);">3</span>,                <span style="color:var(--tmut);"># Pass through data 3 times</span>
+    per_device_train_batch_size=<span style="color:var(--amber);">4</span>,    <span style="color:var(--tmut);"># 4 examples per GPU per step</span>
+    gradient_accumulation_steps=<span style="color:var(--amber);">4</span>,    <span style="color:var(--tmut);"># Accumulate 4 steps = effective batch of 16</span>
+
+    <span style="color:var(--tmut);"># Learning rate</span>
+    learning_rate=<span style="color:var(--amber);">2e-4</span>,               <span style="color:var(--tmut);"># 0.0002</span>
+    lr_scheduler_type=<span style="color:var(--amber);">"cosine"</span>,      <span style="color:var(--tmut);"># Decay lr with cosine curve</span>
+    warmup_steps=<span style="color:var(--amber);">100</span>,                <span style="color:var(--tmut);"># Ramp up lr for first 100 steps</span>
+
+    <span style="color:var(--tmut);"># Logging & saving</span>
+    logging_steps=<span style="color:var(--amber);">50</span>,               <span style="color:var(--tmut);"># Log loss every 50 steps</span>
+    save_steps=<span style="color:var(--amber);">200</span>,                <span style="color:var(--tmut);"># Save checkpoint every 200 steps</span>
+    save_total_limit=<span style="color:var(--amber);">2</span>,            <span style="color:var(--tmut);"># Keep only last 2 checkpoints</span>
+
+    <span style="color:var(--tmut);"># Precision</span>
+    fp16=<span style="color:var(--green);">True</span>,                       <span style="color:var(--tmut);"># Mixed precision training (faster)</span>
+
+    <span style="color:var(--tmut);"># Evaluation</span>
+    eval_strategy=<span style="color:var(--amber);">"steps"</span>,
+    eval_steps=<span style="color:var(--amber);">200</span>,
+)</div>
+
+<p>Every one of these is a <strong>hyperparameter</strong> you choose. Same as the lr=0.02 in our QAT animation — except now lr=0.0002 because we're doing real QLoRA.</p>
+</div></div>`},
+{id:'4.9',title:'Train with HuggingFace Trainer',
+fact:'Behind the scenes, the Trainer handles: mixed precision, gradient accumulation, checkpointing, logging, evaluation, and distributed training. You just write 5 lines.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">4.9</span> Train! — The Moment of Truth</h2>
+
+<div class="code-box"><span style="color:var(--green);">from</span> transformers <span style="color:var(--green);">import</span> Trainer
+
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=tokenized_train,
+    eval_dataset=tokenized_eval,
+    tokenizer=tokenizer,
+)
+
+<span style="color:var(--tmut);"># This single line runs the entire training loop:</span>
+<span style="color:var(--tmut);"># Forward → Loss → Backward (STE) → Update → Repeat</span>
+<span style="color:var(--tmut);"># For ALL the steps in ALL the epochs</span>
+trainer.train()</div>
+
+<div class="pipeline" style="margin:1rem 0;">
+  <div class="pipe-step active">Forward<br>W₀×x + B×A×x</div>
+  <span class="pipe-arrow">→</span>
+  <div class="pipe-step active">Loss<br>Cross-entropy</div>
+  <span class="pipe-arrow">→</span>
+  <div class="pipe-step active">Backward<br>∇B, ∇A (STE)</div>
+  <span class="pipe-arrow">→</span>
+  <div class="pipe-step active">Adam<br>Update B, A</div>
+  <span class="pipe-arrow">→</span>
+  <div class="pipe-step">Repeat<br>~420 steps/epoch</div>
+</div>
+
+<p>While training, you'll see output like:</p>
+<div class="code-box">{'loss': 2.134, 'grad_norm': 1.23, 'learning_rate': 1.8e-4, 'epoch': 0.5}
+{'loss': 1.856, 'grad_norm': 0.98, 'learning_rate': 1.6e-4, 'epoch': 1.0}
+{'loss': 1.672, 'grad_norm': 0.74, 'learning_rate': 1.2e-4, 'epoch': 1.5}
+{'loss': 1.543, 'grad_norm': 0.52, 'learning_rate': 0.8e-4, 'epoch': 2.0}
+...
+<span style="color:var(--green);"># Training complete!</span></div>
+
+<p><strong>Loss drops</strong> as the model learns your domain language. Lower loss = model is getting better at predicting the next token in your domain.</p>
+</div></div>`},
+{id:'4.10',title:'Test & Save the Model',
+fact:'After fine-tuning on 342 medical PDF pages, a TinyLlama model will complete "The patient presented with..." using medical terminology it learned — words it never generated before.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">4.10</span> Test — Give a Prompt, See Domain Knowledge</h2>
+
+<div class="code-box"><span style="color:var(--tmut);"># Save the adapter</span>
+model.save_pretrained(<span style="color:var(--amber);">"./medical_domain_adapter"</span>)
+tokenizer.save_pretrained(<span style="color:var(--amber);">"./medical_domain_adapter"</span>)
+
+<span style="color:var(--tmut);"># Test: give a partial sentence, see what the model completes</span>
+<span style="color:var(--green);">from</span> transformers <span style="color:var(--green);">import</span> pipeline
+
+pipe = pipeline(<span style="color:var(--amber);">"text-generation"</span>, model=model, tokenizer=tokenizer)
+
+prompt = <span style="color:var(--amber);">"The patient presented with acute"</span>
+
+<span style="color:var(--tmut);"># WITHOUT fine-tuning (original TinyLlama):</span>
+<span style="color:var(--tmut);"># → "The patient presented with acute pain in the..." (generic)</span>
+
+<span style="color:var(--tmut);"># WITH fine-tuning (domain-adapted model):</span>
+result = pipe(prompt, max_new_tokens=<span style="color:var(--amber);">50</span>, temperature=<span style="color:var(--amber);">0.7</span>)
+print(result[0][<span style="color:var(--amber);">"generated_text"</span>])
+<span style="color:var(--tmut);"># → "The patient presented with acute myocardial infarction."</span>
+<span style="color:var(--tmut);">#    "ECG showed ST-segment elevation in leads II, III, and aVF."</span>
+<span style="color:var(--tmut);">#    "Troponin levels were elevated at 12.4 ng/mL..."</span></div>
+
+<div class="callout">
+  <strong>🎉 What just happened?</strong> The model learned from your 342 medical PDFs that "acute" in a medical context is often followed by "myocardial infarction" — not "pain" or "problem." It absorbed the vocabulary, style, and knowledge of the medical domain. You didn't label anything. You didn't write Q&A pairs. You just fed it text and it learned.
+</div>
+
+<p><strong>You now have a domain-adapted model.</strong> It's not instruction-following yet (that's Phase 5). But it speaks your domain's language. The adapter is ~8 MB — you can share it, upload it to HuggingFace, or merge it and deploy it.</p>
+</div></div>`}
+];
+
+let cur=0;
+const visited=new Set([0]);
+
+function render(i){
+  cur=i;visited.add(i);
+  document.getElementById('slideContainer').innerHTML=slides[i].render();
+  document.getElementById('stepLabel').textContent=`${i+1}/${slides.length}`;
+  document.getElementById('funFactText').innerHTML=`<strong>${slides[i].id}:</strong> ${slides[i].fact}`;
+
+  document.getElementById('dots').innerHTML=slides.map((_,j)=>{
+    let cls=j===cur?'active':visited.has(j)?'done':'';
+    return `<div class="dot ${cls}" onclick="goTo(${j})"></div>`;
+  }).join('');
+
+  document.getElementById('chips').innerHTML=slides.map((s,j)=>{
+    let cls=j===cur?'current':visited.has(j)?'visited':'';
+    return `<span class="chip ${cls}" onclick="goTo(${j})">${s.id}</span>`;
+  }).join('');
+
+  document.getElementById('prevBtn').disabled=i===0;
+  const nb=document.getElementById('nextBtn');
+  if(i===slides.length-1){nb.textContent='✓ Complete';nb.style.background='var(--green)';nb.style.borderColor='var(--green)';}
+  else{nb.textContent='Next →';nb.style.background='var(--violet)';nb.style.borderColor='var(--violet)';nb.style.color='#fff';}
+  document.getElementById('slideContainer').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function goTo(i){if(i<0||i>=slides.length)return;render(i);}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'&&cur<slides.length-1)goTo(cur+1);
+  if(e.key==='ArrowLeft'&&cur>0)goTo(cur-1);
+});
+
+render(0);
+</script>
+</body>
+</html>
