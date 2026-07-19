@@ -84,13 +84,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
     </select>
   </div>
   <div class="ctrl-card">
-    <label>Precision for Base Model Storage</label>
-    <select id="precision" onchange="calc()">
-      <option value="fp32">FP32 (4 bytes)</option>
-      <option value="fp16">FP16 (2 bytes)</option>
-      <option value="int8">INT8 (1 byte)</option>
-      <option value="int4" selected>INT4 (0.5 bytes)</option>
+    <label>Fine-Tuning Mode</label>
+    <select id="ftMode" onchange="calc()">
+      <option value="qlora" selected>QLoRA — INT4 base + FP16 LoRA</option>
+      <option value="lora">LoRA — FP16 base + FP16 LoRA</option>
     </select>
+    <div class="hint" id="ftModeHint">Quantized base (fits on 1 GPU)</div>
   </div>
 </div>
 
@@ -104,7 +103,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
   <div class="ctrl-card">
     <label>FF Intermediate</label>
     <input type="number" id="ff" value="11008" oninput="calc()">
-    <div class="hint">d × 8/3 rounded</div>
+    <div class="hint" id="ffHint">d × 8/3 rounded</div>
   </div>
   <div class="ctrl-card">
     <label>Num Layers</label>
@@ -144,21 +143,98 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
     <div class="big-num"><div class="val" style="color:var(--red);" id="fp32mem">—</div><div class="lbl">FP32 (Full)</div></div>
     <div class="big-num"><div class="val" style="color:var(--amber);" id="basemem">—</div><div class="lbl">Base Model (INT4)</div></div>
     <div class="big-num highlight"><div class="val" style="color:var(--violet);" id="loraparams">—</div><div class="lbl">LoRA Trainable Params</div></div>
-    <div class="big-num"><div class="val" style="color:var(--green);" id="totalmem">—</div><div class="lbl">Total Memory (Base + LoRA)</div></div>
+    <div class="big-num"><div class="val" style="color:var(--green);" id="totalmem">—</div><div class="lbl">Storage (Base + LoRA)</div></div>
   </div>
 </div>
 
 <!-- ── MEMORY LADDER ── -->
 <div class="ladder" id="ladder"></div>
 
-<!-- ── DETAIL BREAKDOWN ── -->
+<!-- ── MEMORY CALCULATION TABLE ── -->
 <div class="result-section">
-  <h2>📐 Detailed Breakdown</h2>
+  <h2>🧮 Memory Calculation (Params × Bytes)</h2>
+  <table class="breakdown">
+    <thead><tr><th>Component</th><th class="num"># Params</th><th class="num">Bytes/Param</th><th class="num">Memory</th><th>Note</th></tr></thead>
+    <tbody id="memCalcBody"></tbody>
+  </table>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1rem;">
+    <div class="big-num" style="border:2px solid var(--amber);">
+      <div class="val" style="color:var(--amber);" id="trainMem">—</div>
+      <div class="lbl">⚡ Training Memory Needed<br><span style="font-size:0.6rem;">Base + LoRA + Adam + Gradients + Activations</span></div>
+    </div>
+    <div class="big-num" style="border:2px solid var(--green);">
+      <div class="val" style="color:var(--green);" id="infMem">—</div>
+      <div class="lbl">🚀 Inference Memory<br><span style="font-size:0.6rem;">Base + merged LoRA (just load & run)</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PARAMETER COUNT BREAKDOWN ── -->
+<div class="result-section">
+  <h2>📐 Parameter Count — Every Weight Matrix in the Model</h2>
   <div style="max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;">
   <table class="breakdown">
-    <thead><tr><th>Component</th><th>Calculation</th><th class="num">Frozen Params</th><th class="num">LoRA Params</th></tr></thead>
+    <thead><tr><th>Component</th><th>Calculation</th><th class="num">Frozen Params</th><th class="num">LoRA Params</th><th class="num">Total Params</th></tr></thead>
     <tbody id="breakdownBody"></tbody>
   </table>
+  </div>
+</div>
+
+<!-- ── DEPLOYMENT ── -->
+<div class="result-section">
+  <h2>🚀 Deployment Readiness</h2>
+  <div class="row row-4" id="deploymentGrid"></div>
+</div>
+
+<!-- ── TRAINING DYNAMICS ── -->
+<div class="result-section">
+  <h2>⏱ Training Dynamics — Speed & Convergence</h2>
+  <div class="row row-3" style="margin-bottom:0.5rem;">
+    <div class="ctrl-card">
+      <label>Learning Rate (lr)</label>
+      <input type="number" id="trainLr" value="0.0002" step="0.0001" min="0.00001" max="0.01" oninput="calc()">
+      <div class="hint">QLoRA: 0.0001 to 0.0005 (1e-4 to 5e-4)</div>
+    </div>
+    <div class="ctrl-card">
+      <label>Starting Gap (G_start)</label>
+      <input type="number" id="gapStart" value="0.10" step="0.01" oninput="calc()">
+      <div class="hint">Typical: 0.05–0.15</div>
+    </div>
+    <div class="ctrl-card">
+      <label>Target Gap (G_target)</label>
+      <input type="number" id="gapTarget" value="0.01" step="0.001" oninput="calc()">
+      <div class="hint">Equilibrium ~0.0074</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;" id="trainDynamicsGrid"></div>
+  <p style="font-size:0.65rem;color:var(--tmut);text-align:center;margin-top:0.5rem;">
+    Formula: N ≈ log(G_target/G_start) / log(|1−2×lr|) &nbsp;|&nbsp; Converged = reached within 10,000 steps
+  </p>
+</div>
+
+<!-- ── RANK vs ACCURACY ── -->
+<div class="result-section">
+  <h2>🎯 LoRA Rank vs Accuracy</h2>
+  <p style="font-size:0.78rem;color:var(--tdim);margin-bottom:0.75rem;">Accuracy pattern from LoRA paper (GPT-3 175B). Param counts calculated for <strong id="rankModelName">current model</strong>. Pattern holds across all model sizes.</p>
+
+  <table class="breakdown">
+    <thead><tr><th>Rank (r)</th><th class="num">LoRA Params</th><th class="num">Accuracy Gain</th><th>Cost/Benefit</th></tr></thead>
+    <tbody id="rankTableBody"></tbody>
+  </table>
+
+  <div style="margin:0.75rem 0;display:flex;align-items:center;gap:0.75rem;font-size:0.7rem;color:var(--tdim);">
+    <span>r=1</span>
+    <div style="flex:1;display:flex;gap:1px;height:22px;align-items:flex-end;" id="rankBars"></div>
+    <span>r=64</span>
+  </div>
+  <div style="font-size:0.65rem;color:var(--tmut);text-align:center;margin-top:0.4rem;">
+    Bar height = Accuracy gain &nbsp;|&nbsp; Bar width = Parameter cost &nbsp;|&nbsp; <span style="color:var(--green);">■</span> r=8 sweet spot
+  </div>
+
+  <div class="callout" style="background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:1rem;margin-top:1rem;font-size:0.82rem;line-height:1.7;">
+    <strong>🧠 Key insight:</strong> r=1 already captures 90%+ of the benefit. r=8 captures ~95% — this holds across <strong>all model sizes</strong> (GPT-3, Llama, Mistral). Going r=8→r=64 costs <strong>8× more params</strong> for <strong>&lt;0.2% accuracy gain</strong>. r=8 is the universal sweet spot.
   </div>
 </div>
 
@@ -191,13 +267,21 @@ function toggle(type,mod){
 function applyPreset(){
   const p=document.getElementById('preset').value;
   const presets={
-    llama7b:{d:4096,ff:11008,layers:32,vocab:32000},
-    llama13b:{d:5120,ff:13824,layers:40,vocab:32000},
-    llama70b:{d:8192,ff:28672,layers:80,vocab:32000},
-    gpt3:{d:12288,ff:49152,layers:96,vocab:50257},
+    llama7b:{d:4096,ff:11008,layers:32,vocab:32000,ffRatio:'8/3 (SwiGLU)'},
+    llama13b:{d:5120,ff:13824,layers:40,vocab:32000,ffRatio:'8/3 (SwiGLU)'},
+    llama70b:{d:8192,ff:28672,layers:80,vocab:32000,ffRatio:'~3.5× (scaled up)'},
+    gpt3:{d:12288,ff:49152,layers:96,vocab:50257,ffRatio:'4× (standard)'},
   };
   if(presets[p]){
-    Object.entries(presets[p]).forEach(([k,v])=>{document.getElementById(k).value=v;});
+    Object.entries(presets[p]).forEach(([k,v])=>{
+      if(k==='ffRatio'){
+        document.getElementById('ffHint').textContent='d × '+v;
+      } else if(document.getElementById(k)){
+        document.getElementById(k).value=v;
+      }
+    });
+  } else {
+    document.getElementById('ffHint').textContent='Custom (manually set)';
   }
   calc();
 }
@@ -209,8 +293,16 @@ function calc(){
   const layers=parseInt(document.getElementById('layers').value)||32;
   const vocab=parseInt(document.getElementById('vocab').value)||32000;
   const rank=parseInt(document.getElementById('rank').value)||8;
-  const prec=document.getElementById('precision').value;
-  const bytesPer={fp32:4,fp16:2,int8:1,int4:0.5}[prec];
+  const ftMode=document.getElementById('ftMode').value;
+  const isQLoRA=ftMode==='qlora';
+  const bytesPer=isQLoRA?0.5:2; // QLoRA: INT4 (0.5), LoRA: FP16 (2)
+  const precLabel=isQLoRA?'INT4':'FP16';
+  const ftLabel=isQLoRA?'QLoRA':'LoRA';
+
+  document.getElementById('ftModeHint').textContent=isQLoRA?'INT4 base (3.5 GB) — fits on 1 GPU':'FP16 base (14 GB) — needs larger GPU';
+
+  const formatNum=n=>n>=1e9?`${(n/1e9).toFixed(2)}B`:n>=1e6?`${(n/1e6).toFixed(1)}M`:`${(n/1e3).toFixed(1)}K`;
+  const formatGB=g=>g.toFixed(2)+' GB';
 
   // ── FROZEN PARAMS ──
   // Embedding
@@ -273,45 +365,122 @@ function calc(){
 
   // ── UPDATE DISPLAY ──
   document.getElementById('fp32mem').textContent=Math.round(fp32Mem*10)/10+' GB';
-  document.getElementById('basemem').textContent=prec==='fp32'?'Same as FP32':Math.round(baseMem*10)/10+' GB';
+  document.getElementById('basemem').textContent=Math.round(baseMem*10)/10+' GB ('+precLabel+')';
   document.getElementById('loraparams').textContent=Math.round(loraParams/1e6*10)/10+'M';
-  document.getElementById('totalmem').textContent=prec==='fp32'?Math.round((fp32Mem+loraMem)*10)/10+' GB':Math.round(totalMem*10)/10+' GB';
+  document.getElementById('totalmem').textContent=Math.round((baseMem+loraMem)*10)/10+' GB';
 
   const pct=(loraParams/totalFrozenRounded*100).toFixed(3);
 
+  // ── MEMORY CALCULATION TABLE ──
+  const baseMemGB=baseMem;
+  const loraMemGB=loraMem;
+  const adamMemGB=loraParams*8/(1024*1024*1024);
+  const gradMemGB=loraParams*2/(1024*1024*1024);
+  const actMemGB=Math.round(baseMemGB*0.15*10)/10;
+  const totalTrainMemGB=baseMemGB+loraMemGB+adamMemGB+gradMemGB+actMemGB;
+  const inferenceMemGB=baseMemGB+loraMemGB;
+
+  const memRows=[
+    {comp:'Base Model (quantized)',params:formatNum(totalFrozenRounded),bytesPer:bytesPer+' bytes',mem:formatGB(baseMemGB),note:'Frozen, loaded once'},
+    {comp:'LoRA Adapters (B×A)',params:formatNum(Math.round(loraParams/1e3)*1e3),bytesPer:'2 bytes (FP16)',mem:formatGB(loraMemGB),note:'Trainable, stored in FP16'},
+    {comp:'Adam Optimizer (m+v)',params:'same as LoRA',bytesPer:'8 bytes (2×FP32)',mem:formatGB(adamMemGB),note:'Only for LoRA params!'},
+    {comp:'Gradients',params:'same as LoRA',bytesPer:'2 bytes (FP16)',mem:formatGB(gradMemGB),note:'Computed each backward pass'},
+    {comp:'Activations',params:'~',bytesPer:'~',mem:formatGB(actMemGB),note:'~15% of base model (batch dependent)'},
+  ];
+  document.getElementById('memCalcBody').innerHTML=memRows.map(r=>`
+    <tr><td>${r.comp}</td><td class="num">${r.params}</td><td class="num">${r.bytesPer}</td><td class="num" style="font-weight:600;">${r.mem}</td><td style="font-size:0.7rem;color:var(--tmut);">${r.note}</td></tr>
+  `).join('')+`
+    <tr class="total"><td><strong>TOTAL (Training)</strong></td><td class="num"></td><td class="num"></td><td class="num"><strong>${formatGB(totalTrainMemGB)}</strong></td><td>What GPU needs during training</td></tr>
+    <tr class="total"><td><strong>TOTAL (Inference)</strong></td><td class="num"></td><td class="num"></td><td class="num"><strong>${formatGB(inferenceMemGB)}</strong></td><td>Base + merged LoRA only</td></tr>`;
+
+  document.getElementById('trainMem').textContent=formatGB(totalTrainMemGB);
+  document.getElementById('infMem').textContent=formatGB(inferenceMemGB);
+
+  // ── DEPLOYMENT ──
+
+  // GPU limits
+  const gpus=[
+    {name:'T4 (Free Colab)', ram:16, color:'#1a6e34', icon:'🟢'},
+    {name:'RTX 4090', ram:24, color:'#1a6e34', icon:'🟢'},
+    {name:'A100', ram:40, color:'#1565c0', icon:'🔵'},
+    {name:'A100 80GB', ram:80, color:'#1565c0', icon:'🔵'},
+  ];
+
+  const fits=gpu=>totalTrainMemGB<gpu.ram;
+
+  document.getElementById('deploymentGrid').innerHTML=`
+    <div class="big-num"><div class="val" style="color:var(--cyan);">${totalTrainMemGB.toFixed(1)} GB</div><div class="lbl">Training Memory<br>(base+LoRA+Adam+grads+acts)</div></div>
+    <div class="big-num"><div class="val" style="color:var(--green);">${inferenceMemGB.toFixed(1)} GB</div><div class="lbl">Inference Memory<br>(base + merged LoRA)</div></div>
+    ${gpus.map(g=>`
+      <div class="big-num" style="${fits(g)?'border-color:var(--green);':'border-color:var(--red);opacity:0.6;'}">
+        <div class="val" style="color:${fits(g)?g.color:'var(--red)'};">${fits(g)?g.icon:'🔴'}</div>
+        <div class="lbl">${g.name}<br>${g.ram} GB — ${fits(g)?'<span style=\"color:var(--green);\">FITS ✅</span>':'<span style=\"color:var(--red);\">Too small ❌</span>'}</div>
+      </div>
+    `).join('')}
+  `;
+
+  // ── CALCULATE ACTUAL SUMS FOR TOTAL ROW ──
+  let sumFrozen=embParams; // embedding (counted once)
+  let sumLora=0;
+
   // ── BREAKDOWN TABLE ──
-  const formatNum=n=>n>=1e9?`${(n/1e9).toFixed(2)}B`:n>=1e6?`${(n/1e6).toFixed(1)}M`:`${(n/1e3).toFixed(1)}K`;
   let tblHTML=`
-    <tr><td class="section-label" colspan="4">Embedding</td></tr>
-    <tr><td>Embedding</td><td>${formatNum(vocab)} × ${formatNum(d)}</td><td class="num">${formatNum(embParams)}</td><td class="num">—</td></tr>
-    <tr><td class="section-label" colspan="4">Attention (${layers} layers × 4 matrices)</td></tr>`;
+    <tr><td class="section-label" colspan="5">Input / Output (Bookends)</td></tr>
+    <tr><td>Embedding</td><td>${formatNum(vocab)} × ${formatNum(d)}</td><td class="num">${formatNum(embParams)}</td><td class="num">—</td><td class="num">${formatNum(embParams)}</td></tr>
+    <tr><td>Output Head (lm_head)</td><td>${formatNum(d)} × ${formatNum(vocab)}</td><td class="num" style="color:var(--tmut);">(tied)</td><td class="num">—</td><td class="num" style="color:var(--tmut);">(tied)</td></tr>
+    <tr><td colspan="5" style="font-size:0.65rem;color:var(--tmut);text-align:center;">Tied with embedding — same weights, same memory. Counted once in total.</td></tr>
+    <tr><td class="section-label" colspan="5">Attention (${layers} layers × 4 matrices)</td></tr>`;
 
   attnModules.forEach(m=>{
     const det=loraDetail.find(x=>x.name.startsWith(m));
-    tblHTML+=`<tr><td>${m}_proj</td><td>${formatNum(d)} × ${formatNum(d)}</td><td class="num">${formatNum(layers*attnMatrixParams)}</td><td class="num">${det.lora>0?formatNum(det.lora):'—'}</td></tr>`;
+    const frozen=layers*attnMatrixParams;
+    const lora=det.lora||0;
+    sumFrozen+=frozen; sumLora+=lora;
+    tblHTML+=`<tr><td>${m}_proj</td><td>${formatNum(d)} × ${formatNum(d)}</td><td class="num">${formatNum(frozen)}</td><td class="num">${lora>0?formatNum(lora):'—'}</td><td class="num">${formatNum(frozen+lora)}</td></tr>`;
   });
 
-  tblHTML+=`<tr><td class="section-label" colspan="4">Feed-Forward (${layers} layers × 3 matrices)</td></tr>`;
+  tblHTML+=`<tr><td class="section-label" colspan="5">Feed-Forward (${layers} layers × 3 matrices)</td></tr>`;
   ffModules.forEach(m=>{
     const det=loraDetail.find(x=>x.name.startsWith(m));
+    const frozen=layers*(m==='down'?ffDownParams:ffGateUpParams);
+    const lora=det.lora||0;
+    sumFrozen+=frozen; sumLora+=lora;
     const rDim=(m==='down')?formatNum(ffMid):formatNum(d);
     const cDim=(m==='down')?formatNum(d):formatNum(ffMid);
-    tblHTML+=`<tr><td>${m}_proj</td><td>${rDim} × ${cDim}</td><td class="num">${formatNum(layers*(m==='down'?ffDownParams:ffGateUpParams))}</td><td class="num">${det.lora>0?formatNum(det.lora):'—'}</td></tr>`;
+    tblHTML+=`<tr><td>${m}_proj</td><td>${rDim} × ${cDim}</td><td class="num">${formatNum(frozen)}</td><td class="num">${lora>0?formatNum(lora):'—'}</td><td class="num">${formatNum(frozen+lora)}</td></tr>`;
   });
 
+  // Calculate other params properly
+  const attnLayerNorm=layers*2*d;
+  const finalLayerNorm=d;
+  const totalNorms=attnLayerNorm+finalLayerNorm;
+  const otherSmall=otherFrozen-totalNorms>0?otherFrozen-totalNorms:0;
+
+  sumFrozen+=attnLayerNorm+finalLayerNorm+otherSmall;
+  // sumLora stays as-is (norms never get LoRA)
+
   tblHTML+=`
-    <tr><td class="section-label" colspan="4">Other (norms, biases)</td></tr>
-    <tr><td>Layer norms + misc</td><td>~</td><td class="num">${formatNum(otherFrozen)}</td><td class="num">—</td></tr>
-    <tr class="total"><td><strong>TOTAL</strong></td><td></td><td class="num"><strong>${formatNum(totalFrozenRounded)}</strong></td><td class="num"><strong>${formatNum(Math.round(loraParams/1e3)*1e3)} (${pct}%)</strong></td></tr>`;
+    <tr><td class="section-label" colspan="5">Normalization & Other</td></tr>
+    <tr><td>Layer Norms (2 per layer × ${layers})</td><td>2 × ${layers} × ${formatNum(d)}</td><td class="num">${formatNum(attnLayerNorm)}</td><td class="num">—</td><td class="num">${formatNum(attnLayerNorm)}</td></tr>
+    <tr><td>Final Layer Norm</td><td>1 × ${formatNum(d)}</td><td class="num">${formatNum(finalLayerNorm)}</td><td class="num">—</td><td class="num">${formatNum(finalLayerNorm)}</td></tr>
+    <tr><td>Other (positional, biases)</td><td>~</td><td class="num">${formatNum(otherSmall)}</td><td class="num">—</td><td class="num">${formatNum(otherSmall)}</td></tr>
+    <tr><td colspan="5" style="font-size:0.65rem;color:var(--tmut);text-align:center;">Layer Norm = learnable scale + shift per dimension (not a matrix). Llama uses RoPE (no learned positional params) and no biases.</td></tr>
+    <tr class="total"><td><strong>TOTAL</strong></td><td></td><td class="num"><strong>${formatNum(sumFrozen)}</strong></td><td class="num"><strong>${formatNum(sumLora)} (${(sumLora/sumFrozen*100).toFixed(3)}%)</strong></td><td class="num"><strong>${formatNum(sumFrozen+sumLora)}</strong></td></tr>`;
 
   document.getElementById('breakdownBody').innerHTML=tblHTML;
+
+  // Use actual row sums for all downstream calculations (ensures consistency)
+  const actualTotalParams=sumFrozen;
+  const actualLoraParams=sumLora;
+  const actualBaseMem=(actualTotalParams*bytesPer)/(1024*1024*1024);
+  const actualLoraMem=Math.round(actualLoraParams*2/(1024*1024))/1024;
 
   // ── MEMORY LADDER ──
   const maxH=180;
   const fp32H=maxH;
-  const ratio=baseMem/fp32Mem;
+  const ratio=actualBaseMem/fp32Mem;
   const baseH=Math.max(30,ratio*maxH);
-  const loraH=Math.max(10,(loraMem/fp32Mem)*maxH*5);
+  const loraH=Math.max(10,(actualLoraMem/fp32Mem)*maxH*5);
 
   document.getElementById('ladder').innerHTML=`
     <div class="ladder-bar">
@@ -321,17 +490,112 @@ function calc(){
     </div>
     <div class="ladder-bar">
       <div class="bar" style="height:${baseH}px;background:linear-gradient(180deg,#b87000,#ffcc80);"></div>
-      <div class="size" style="color:var(--amber);">${prec==='fp32'?'Same':Math.round(baseMem*10)/10+' GB'}</div>
-      <div class="label">${prec.toUpperCase()}</div>
+      <div class="size" style="color:var(--amber);">${Math.round(actualBaseMem*10)/10+' GB'}</div>
+      <div class="label">${precLabel} Base</div>
     </div>
     <div class="ladder-bar">
       <div class="bar" style="height:${loraH*0.5}px;background:linear-gradient(180deg,#5b3aa8,#b39ddb);min-height:15px;"></div>
-      <div class="size" style="color:var(--violet);">${Math.round(loraMem*100)/100} GB</div>
+      <div class="size" style="color:var(--violet);">${Math.round(actualLoraMem*100)/100} GB</div>
       <div class="label">LoRA r=${rank}</div>
     </div>
     <div style="text-align:center;font-size:0.65rem;color:var(--tmut);margin-left:0.5rem;">
-      <div>Base model</div><div style="font-weight:700;color:var(--amber);">${Math.round((baseMem/(fp32Mem+0.01))*100)}%</div><div>of FP32</div>
+      <div>Base model</div><div style="font-weight:700;color:var(--amber);">${Math.round((actualBaseMem/(fp32Mem+0.01))*100)}%</div><div>of FP32</div>
     </div>`;
+
+  // ── TRAINING DYNAMICS ──
+  const trainLr=parseFloat(document.getElementById('trainLr').value)||0.0002;
+  const gStart=parseFloat(document.getElementById('gapStart').value)||0.10;
+  const gTarget=parseFloat(document.getElementById('gapTarget').value)||0.01;
+
+  const shrinkFactor=Math.abs(1-2*trainLr);
+  let estSteps='∞', speedLabel='🐢 Very Slow', speedColor='var(--red)';
+  if(shrinkFactor<1 && shrinkFactor>0){
+    const est=Math.ceil(Math.log(gTarget/gStart)/Math.log(shrinkFactor));
+    if(est<10000){
+      estSteps=est.toLocaleString();
+      if(est<500){speedLabel='⚡ Fast';speedColor='var(--green)';}
+      else if(est<1500){speedLabel='✅ Balanced';speedColor='var(--violet)';}
+      else if(est<5000){speedLabel='🐢 Slow';speedColor='var(--amber)';}
+      else{speedLabel='💤 Very Slow';speedColor='var(--red)';}
+    } else {
+      estSteps='>10,000';
+      speedLabel='❌ May not converge';
+      speedColor='var(--red)';
+    }
+  } else if(shrinkFactor>=1){
+    speedLabel='❌ Diverges! lr too high';
+    speedColor='var(--red)';
+  }
+
+  const memPerGPU=totalTrainMemGB;
+  const roughTimePerStep=0.5+memPerGPU*0.02; // very rough: ~0.5s base + 0.02s per GB
+  let estTimeStr='N/A';
+  if(estSteps!=='∞'&&estSteps!=='>10,000'){
+    const totalSec=parseInt(estSteps.replace(/,/g,''))*roughTimePerStep;
+    const hrs=Math.floor(totalSec/3600);
+    const mins=Math.floor((totalSec%3600)/60);
+    estTimeStr=hrs>0?`~${hrs}h ${mins}m`:`~${mins}m`;
+  }
+
+  // Param & memory savings
+  const fp32TotalParams=sumFrozen;
+  const paramReduction=(fp32TotalParams/actualLoraParams);
+  const paramReductionStr=actualLoraParams>0?`${paramReduction>=1000?Math.round(paramReduction/1000)+'K':Math.round(paramReduction)}×`:'N/A';
+
+  // Storage: just the model files on disk
+  const storageOnly=fp32Mem/(actualBaseMem+0.001); // FP32 model size / INT4 model size
+  // Training memory: full setup (model + Adam + grads + activations)
+  const fp32FullTrainMem=(fp32TotalParams*4 + fp32TotalParams*8 + fp32TotalParams*4)/(1024*1024*1024)+(fp32Mem*0.15);
+  const trainMemReduction=fp32FullTrainMem/totalTrainMemGB;
+
+  document.getElementById('trainDynamicsGrid').innerHTML=`
+    <div class="big-num"><div class="val" style="color:${speedColor};">${speedLabel}</div><div class="lbl">Fine-Tuning Speed</div></div>
+    <div class="big-num"><div class="val" style="color:var(--violet);">×${shrinkFactor.toFixed(4)}</div><div class="lbl">Gap Shrink / Step</div></div>
+    <div class="big-num"><div class="val" style="color:var(--cyan);">${estSteps}</div><div class="lbl">Est. Steps to Converge</div></div>
+    <div class="big-num"><div class="val" style="color:var(--amber);">${estTimeStr}</div><div class="lbl">Est. Training Time<br><span style="font-size:0.55rem;">~${roughTimePerStep.toFixed(1)}s/step</span></div></div>
+    <div class="big-num"><div class="val" style="color:var(--green);">${paramReductionStr} fewer</div><div class="lbl">Trainable vs Frozen<br><span style="font-size:0.55rem;">${formatNum(actualLoraParams)} trained / ${formatNum(fp32TotalParams)} frozen</span></div></div>
+    <div class="big-num" style="${isQLoRA?'':'border-color:var(--red);'}"><div class="val" style="color:${isQLoRA?'var(--green)':'var(--red)'};">${storageOnly.toFixed(1)}× smaller</div><div class="lbl">Model Storage<br><span style="font-size:0.55rem;">${fp32Mem.toFixed(0)} GB (FP32) → ${actualBaseMem.toFixed(1)} GB (${precLabel})</span></div></div>
+    <div class="big-num" style="${isQLoRA?'':'border-color:var(--red);'}"><div class="val" style="color:${isQLoRA?'var(--green)':'var(--red)'};">${trainMemReduction.toFixed(1)}× less</div><div class="lbl">Full Training Memory<br><span style="font-size:0.55rem;">${fp32FullTrainMem.toFixed(0)} GB (FP32 FT) → ${totalTrainMemGB.toFixed(1)} GB (${ftLabel})</span></div></div>
+    <div class="big-num"><div class="val" style="color:${isQLoRA?'var(--green)':'var(--amber)'};">${(actualBaseMem+actualLoraMem).toFixed(1)} GB</div><div class="lbl">Deployed Model<br><span style="font-size:0.55rem;">${isQLoRA?'Base + merged LoRA (inference)':'Base + LoRA (FP16)'}</span></div></div>
+    <div class="big-num"><div class="val" style="color:${isQLoRA?'var(--amber)':'var(--red)'};">${totalTrainMemGB.toFixed(1)} GB</div><div class="lbl">GPU Needed (Training)<br><span style="font-size:0.55rem;">${gpus.filter(g=>totalTrainMemGB<g.ram).map(g=>g.name.split(' ')[0]).join(', ') || 'None — needs larger GPU!'}</span></div></div>
+  `;
+
+  // ── RANK vs ACCURACY TABLE ──
+  const activeAttnCount=Object.values(activeAttn).filter(Boolean).length;
+  const activeFFCount=Object.values(activeFF).filter(Boolean).length;
+  const loraPerRank=r=>{
+    let total=0;
+    if(activeAttn.q) total+=layers*2*d*r;
+    if(activeAttn.k) total+=layers*2*d*r;
+    if(activeAttn.v) total+=layers*2*d*r;
+    if(activeAttn.o) total+=layers*2*d*r;
+    if(activeFF.gate) total+=layers*(d*r+r*ffMid);
+    if(activeFF.up) total+=layers*(d*r+r*ffMid);
+    if(activeFF.down) total+=layers*(ffMid*r+r*d);
+    return Math.round(total/1e3)*1e3;
+  };
+
+  const ranks=[1,2,4,8,16,32,64];
+  const accuracyGain=['Baseline','+0.3%','+0.7%','+1.0%','+1.1%','+1.15%','+1.18%'];
+  const costBenefit=['—','Small gain','Moderate gain','⭐ Sweet spot','Diminishing returns','Barely better','No meaningful gain'];
+  const barHeights=[60,70,85,100,100,100,100];
+
+  document.getElementById('rankModelName').textContent=document.getElementById('preset').selectedOptions[0].text;
+  document.getElementById('rankTableBody').innerHTML=ranks.map((r,i)=>{
+    const params=loraPerRank(r);
+    return `<tr ${r===8?'style="background:var(--vbg);font-weight:700;"':''}>
+      <td>r=${r} ${r===8?'⭐':''}</td>
+      <td class="num">${formatNum(params)}</td>
+      <td class="num">${accuracyGain[i]}</td>
+      <td>${costBenefit[i]}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('rankBars').innerHTML=ranks.map((r,i)=>{
+    const h=barHeights[i];
+    const isSweet=r===8;
+    return `<div style="flex:${r};background:${isSweet?'var(--green)':'var(--violet)'};height:${h}%;border-radius:2px 2px 0 0;${isSweet?'border:2px solid var(--violet);':''}${!isSweet&&r>8?'opacity:'+Math.max(0.1,(64-r)/56)+';':''}" title="r=${r}: ${accuracyGain[i]} — ${formatNum(loraPerRank(r))} params"></div>`;
+  }).join('');
 }
 
 // ── INIT ──
