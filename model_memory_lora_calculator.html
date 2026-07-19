@@ -77,7 +77,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
     <label>Quick Preset</label>
     <select id="preset" onchange="applyPreset()">
       <option value="custom">Custom</option>
+      <option value="tinylama">TinyLlama-1.1B ⭐ (Phase 4)</option>
+      <option value="gemma2b">Gemma-2B</option>
       <option value="llama7b" selected>Llama-7B</option>
+      <option value="mistral7b">Mistral-7B</option>
       <option value="llama13b">Llama-13B</option>
       <option value="llama70b">Llama-70B</option>
       <option value="gpt3">GPT-3 175B</option>
@@ -284,7 +287,10 @@ function toggle(type,mod){
 function applyPreset(){
   const p=document.getElementById('preset').value;
   const presets={
+    tinylama:{d:2048,ff:5632,layers:22,vocab:32000,ffRatio:'8/3 (SwiGLU)'},
+    gemma2b:{d:2048,ff:16384,layers:18,vocab:256000,ffRatio:'8× (GeGLU)'},
     llama7b:{d:4096,ff:11008,layers:32,vocab:32000,ffRatio:'8/3 (SwiGLU)'},
+    mistral7b:{d:4096,ff:14336,layers:32,vocab:32000,ffRatio:'3.5× (SwiGLU)'},
     llama13b:{d:5120,ff:13824,layers:40,vocab:32000,ffRatio:'8/3 (SwiGLU)'},
     llama70b:{d:8192,ff:28672,layers:80,vocab:32000,ffRatio:'~3.5× (scaled up)'},
     gpt3:{d:12288,ff:49152,layers:96,vocab:50257,ffRatio:'4× (standard)'},
