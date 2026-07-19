@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4.3–4.5: Dataset → Tokenize → Labels — Visual</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--violet:#5b3aa8;--green:#1a6e34;--amber:#b87000;--magenta:#9e2a6b;--cyan:#007a99;--red:#c62828;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;min-height:100vh;}
+.app{max-width:900px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:1.5rem 0 1rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.9rem;}
+
+.step{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin:1.5rem 0;}
+.step h2{font-family:'Space Grotesk',sans-serif;font-size:0.95rem;font-weight:600;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem;}
+.step h2 .num{background:var(--violet);color:#fff;width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:0.7rem;}
+
+.arrow-down{text-align:center;font-size:1.5rem;color:var(--violet);margin:0.3rem 0;}
+
+.chunk-demo{background:var(--raised);border:1px solid var(--border);border-radius:10px;padding:1rem;margin:0.5rem 0;font-size:0.82rem;line-height:1.8;}
+.chunk-demo .label{font-family:'Space Grotesk',sans-serif;font-size:0.6rem;color:var(--violet);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;}
+
+.token-vis{display:flex;flex-wrap:wrap;gap:2px;margin:0.5rem 0;}
+.token{background:var(--raised);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-family:'Space Grotesk',monospace;font-size:0.6rem;}
+.token.id{background:rgba(91,58,168,0.06);color:var(--violet);}
+
+.table-mini{width:100%;border-collapse:collapse;font-size:0.75rem;margin:0.5rem 0;}
+.table-mini td{padding:0.35rem 0.5rem;border-bottom:1px solid var(--border);}
+.table-mini td:first-child{font-family:'Space Grotesk',sans-serif;font-size:0.6rem;color:var(--tmut);min-width:80px;}
+
+.label-demo{font-family:'Space Grotesk',monospace;font-size:0.72rem;line-height:2;padding:0.75rem;background:var(--raised);border-radius:8px;margin:0.5rem 0;}
+.label-demo .pos{background:rgba(91,58,168,0.08);padding:1px 3px;border-radius:2px;}
+
+.callout{background:rgba(0,122,153,0.05);border:1px solid rgba(0,122,153,0.2);border-radius:8px;padding:0.75rem 1rem;margin:0.75rem 0;font-size:0.8rem;}
+
+@media(max-width:768px){.app{padding:0.75rem;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>What Cells 4.3 → 4.4 → 4.5 Actually Do</h1>
+  <p>Using your 2 Metformin chunks as the example</p>
+</header>
+
+<!-- 4.3: Dataset -->
+<div class="step">
+  <h2><span class="num">4.3</span> Create HuggingFace Dataset</h2>
+  <p style="color:var(--tdim);font-size:0.85rem;">Turns your 2 Python strings into a structured Dataset object the Trainer can use.</p>
+
+  <div class="chunk-demo">
+    <div class="label">Chunk 1 (first 80 chars)</div>
+    "Metformin is a biguanide antihyperglycemic agent used to treat type 2 diabetes..."
+  </div>
+  <div class="chunk-demo">
+    <div class="label">Chunk 2 (first 80 chars)</div>
+    "The mechanism of action involves decreasing hepatic glucose production..."
+  </div>
+
+  <div class="arrow-down">↓</div>
+
+  <table class="table-mini">
+    <tr><td>data list</td><td>[{"text": "Metformin is a biguanide..."}, {"text": "The mechanism of action..."}]</td></tr>
+    <tr><td>Dataset.from_list()</td><td>Converts to HF Dataset with 2 rows</td></tr>
+    <tr><td>.train_test_split(0.1)</td><td>90% train (1-2 rows), 10% eval (0-1 rows)</td></tr>
+    <tr><td>Result</td><td>tk_train = 1-2 examples,   tk_eval = 0-1 examples</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>🧠 Concept from Phase 1.6:</strong> Each example is <code>{"text": "..."}</code> — the <strong>non-instructional</strong> format. No questions, no answers, no labels. Just raw text for self-supervised learning.
+  </div>
+</div>
+
+<!-- 4.4: Tokenize -->
+<div class="step">
+  <h2><span class="num">4.4</span> Tokenize — Text → Integers</h2>
+  <p style="color:var(--tdim);font-size:0.85rem;">The model can't read "Metformin." It reads integer 464. Tokenizer converts every word/subword to its vocabulary ID.</p>
+
+  <div class="chunk-demo">
+    <div class="label">Input (first 10 words from Chunk 1)</div>
+    "Metformin is a biguanide antihyperglycemic agent used to treat"
+  </div>
+
+  <div class="arrow-down">↓</div>
+
+  <div class="token-vis">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+      <div class="token">Met</div><div class="token id">464</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+      <div class="token">formin</div><div class="token id">8522</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+      <div class="token">is</div><div class="token id">318</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+      <div class="token">a</div><div class="token id">247</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+      <div class="token">big</div><div class="token id">3749</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+      <div class="token">uan</div><div class="token id">4215</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+      <div class="token">ide</div><div class="token id">1183</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+      <div class="token">ant</div><div class="token id">2156</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+      <div class="token">ihyper</div><div class="token id">12789</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+      <div class="token">gly</div><div class="token id">562</div>
+    </div>
+    <!-- continuing... -->
+  </div>
+
+  <div class="callout" style="margin-top:0.5rem;">
+    <strong>🔍 Notice:</strong> "biguanide" split into <strong>big + uan + ide</strong>. "antihyperglycemic" split into <strong>ant + ihyper + gly + ...</strong>. These are subword tokens — rare medical words get split, common words stay whole.
+  </div>
+
+  <table class="table-mini" style="margin-top:0.75rem;">
+    <tr><td>input_ids</td><td>[1, 464, 8522, 318, 247, 3749, 4215, 1183, 2156, 12789, 562, ..., 0, 0, 0]</td></tr>
+    <tr><td>attention_mask</td><td>[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, ..., 0, 0, 0]</td></tr>
+    <tr><td>Length</td><td>512 tokens (padded with zeros if shorter)</td></tr>
+  </table>
+
+  <div class="callout" style="margin-top:0.75rem;">
+    <strong>⚠️ attention_mask ≠ Q/K/V Attention!</strong> This mask just says "ignore padding." It's a simple on/off switch:<br>
+    &nbsp;&nbsp;<strong>1</strong> = real word → pay attention<br>
+    &nbsp;&nbsp;<strong>0</strong> = padding → IGNORE completely<br><br>
+    This is <strong>NOT</strong> the Q/K/V attention mechanism from Phase 3. Same word, completely different thing.
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:0.75rem;font-size:0.72rem;">
+      <div style="background:#fff;border:2px solid var(--green);border-radius:8px;padding:0.6rem;text-align:center;">
+        <strong style="color:var(--green);">attention_mask</strong><br>
+        A simple 1D list of 1s and 0s<br>
+        "Is this a real word or padding?"<br>
+        <span style="color:var(--tmut);">No weights. No learning.</span>
+      </div>
+      <div style="background:#fff;border:2px solid var(--magenta);border-radius:8px;padding:0.6rem;text-align:center;">
+        <strong style="color:var(--magenta);">Q/K/V Attention (Phase 3)</strong><br>
+        3 weight matrices (4096×4096 each)<br>
+        "Which words relate to which?"<br>
+        <span style="color:var(--tmut);">Learnable. 67M params per layer.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 4.5: Labels -->
+<div class="step">
+  <h2><span class="num">4.5</span> labels = input_ids.copy() — The Magic Trick</h2>
+  <p style="color:var(--tdim);font-size:0.85rem;">One line of code. Zero human labeling. Here's how the model teaches itself.</p>
+
+  <div class="chunk-demo" style="margin-bottom:1rem;">
+    <div class="label">Our chunk (simplified to 5 words)</div>
+    "Metformin treats type 2 diabetes"
+  </div>
+
+  <div class="arrow-down">↓</div>
+
+  <div style="display:flex;align-items:center;gap:0.5rem;margin:1rem 0;justify-content:center;flex-wrap:wrap;">
+    <div style="text-align:center;background:var(--raised);border-radius:8px;padding:0.5rem 0.7rem;font-family:'Space Grotesk',monospace;font-size:0.7rem;">
+      Tokenized<br>
+      [1, 464, 8522, 318, 247, 3749]
+    </div>
+    <span style="font-size:1.2rem;">→</span>
+    <div style="text-align:center;background:rgba(91,58,168,0.06);border:2px solid var(--violet);border-radius:8px;padding:0.5rem 0.7rem;font-family:'Space Grotesk',monospace;font-size:0.7rem;">
+      <strong>labels = input_ids.copy()</strong><br>
+      <span style="color:var(--violet);">Labels are IDENTICAL to input</span>
+    </div>
+  </div>
+
+  <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.75rem;color:var(--violet);margin:1.2rem 0 0.5rem;">How the Model Uses These — 5 Predictions from 5 Words</h3>
+
+  <table style="width:100%;border-collapse:collapse;font-size:0.75rem;margin:0.75rem 0;">
+    <thead>
+      <tr style="border-bottom:2px solid var(--border);">
+        <th style="text-align:left;padding:0.4rem 0.5rem;font-size:0.6rem;color:var(--tmut);">Position</th>
+        <th style="text-align:left;padding:0.4rem 0.5rem;font-size:0.6rem;color:var(--tmut);">Model SEES (input)</th>
+        <th style="text-align:left;padding:0.4rem 0.5rem;font-size:0.6rem;color:var(--tmut);">Must PREDICT (label)</th>
+        <th style="text-align:left;padding:0.4rem 0.5rem;font-size:0.6rem;color:var(--tmut);">Right or Wrong?</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;">1</td>
+        <td style="padding:0.5rem;"><code>[1]</code> <span style="color:var(--tmut);font-size:0.65rem;">(start token)</span></td>
+        <td style="padding:0.5rem;font-weight:600;color:var(--amber);">464 = "Met"</td>
+        <td style="padding:0.5rem;">Model guesses → compared to 464</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;">2</td>
+        <td style="padding:0.5rem;"><code>[1, 464]</code> <span style="color:var(--tmut);font-size:0.65rem;">("start Met")</span></td>
+        <td style="padding:0.5rem;font-weight:600;color:var(--amber);">8522 = "formin"</td>
+        <td style="padding:0.5rem;">Model guesses → compared to 8522</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;">3</td>
+        <td style="padding:0.5rem;"><code>[1, 464, 8522]</code> <span style="color:var(--tmut);font-size:0.65rem;">("start Met formin")</span></td>
+        <td style="padding:0.5rem;font-weight:600;color:var(--amber);">318 = "is"</td>
+        <td style="padding:0.5rem;">Model guesses → compared to 318</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;">4</td>
+        <td style="padding:0.5rem;"><code>[1, 464, 8522, 318]</code> <span style="color:var(--tmut);font-size:0.65rem;">("start Met formin is")</span></td>
+        <td style="padding:0.5rem;font-weight:600;color:var(--amber);">247 = "a"</td>
+        <td style="padding:0.5rem;">Model guesses → compared to 247</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:0.5rem;">5</td>
+        <td style="padding:0.5rem;"><code>[1, 464, 8522, 318, 247]</code> <span style="color:var(--tmut);font-size:0.65rem;">("...is a")</span></td>
+        <td style="padding:0.5rem;font-weight:600;color:var(--amber);">3749 = "big"</td>
+        <td style="padding:0.5rem;">Model guesses → compared to 3749</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="font-size:0.85rem;color:var(--tdim);line-height:1.8;margin-top:1rem;">
+    <strong>How loss is calculated:</strong><br>
+    &nbsp;&nbsp;At EACH position, the model outputs a probability over all 32,000 vocabulary words.<br>
+    &nbsp;&nbsp;Loss at position 3 = "How confident was the model that token 318 comes next?"<br>
+    &nbsp;&nbsp;<strong>Total loss = average of prediction error across ALL 512 positions.</strong><br><br>
+    <strong>Why labels = input_ids?</strong><br>
+    &nbsp;&nbsp;Because the CORRECT next token is... whatever actually comes next in the text!<br>
+    &nbsp;&nbsp;The text IS the answer key. That's why it's called <strong>self-supervised</strong>.
+  </div>
+
+  <div class="callout">
+    <strong>🧠 Analogy:</strong> You have a sentence with one word blacked out: "The cat ___ on the mat." The correct answer is "sat" — and it's right there in the original text. The model learns by trying to fill in blanks, and the original text tells it whether it was right. <strong>No human ever wrote a label. The text labels itself.</strong>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
