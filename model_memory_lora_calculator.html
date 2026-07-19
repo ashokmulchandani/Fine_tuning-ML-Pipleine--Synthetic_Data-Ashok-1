@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Model Memory & LoRA Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--red:#c62828;--amber:#b87000;--cyan:#007a99;--blue:#1565c0;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;}
+.app{max-width:900px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:1.5rem 0 1rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.9rem;margin-top:0.3rem;}
+
+/* Layout */
+.row{display:grid;gap:1rem;margin:1rem 0;}
+.row-2{grid-template-columns:1fr 1fr;}
+.row-3{grid-template-columns:1fr 1fr 1fr;}
+.row-4{grid-template-columns:1fr 1fr 1fr 1fr;}
+
+/* Cards */
+.ctrl-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;}
+.ctrl-card label{font-family:'Space Grotesk',sans-serif;font-size:0.6rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--tmut);display:block;margin-bottom:0.3rem;}
+.ctrl-card select,.ctrl-card input{width:100%;font-family:'Space Grotesk',sans-serif;font-size:1.1rem;font-weight:600;padding:0.4em 0.5em;border:2px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);}
+.ctrl-card select:focus,.ctrl-card input:focus{outline:none;border-color:var(--violet);}
+.ctrl-card .hint{font-size:0.7rem;color:var(--tmut);margin-top:0.3rem;}
+
+/* Toggle chips */
+.chip-row{display:flex;gap:0.3rem;flex-wrap:wrap;}
+.chip{font-family:'Space Grotesk',sans-serif;font-size:0.62rem;font-weight:600;padding:0.4em 0.8em;border:2px solid var(--border);border-radius:100px;cursor:pointer;transition:0.15s;background:var(--bg);color:var(--tmut);}
+.chip.on{background:var(--vbg);border-color:var(--violet);color:var(--violet);}
+
+/* Big result */
+.result-section{margin:1.5rem 0;}
+.result-section h2{font-family:'Space Grotesk',sans-serif;font-size:0.85rem;font-weight:600;color:var(--violet);margin-bottom:0.75rem;}
+
+.big-num-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;}
+.big-num{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;}
+.big-num .val{font-family:'Space Grotesk',sans-serif;font-size:1.8rem;font-weight:700;}
+.big-num .lbl{font-size:0.7rem;color:var(--tmut);margin-top:0.2rem;}
+.big-num.highlight{border:2px solid var(--violet);box-shadow:0 0 0 4px var(--vbg);}
+
+/* Breakdown table */
+.breakdown{width:100%;border-collapse:collapse;font-size:0.78rem;margin:1rem 0;}
+.breakdown th{font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);padding:0.5rem 0.6rem;border-bottom:2px solid var(--border);text-align:left;background:var(--raised);}
+.breakdown td{padding:0.5rem 0.6rem;border-bottom:1px solid var(--border);}
+.breakdown .num{text-align:right;font-family:'Space Grotesk',monospace;font-weight:500;}
+.breakdown .section-label{font-weight:600;color:var(--violet);font-size:0.7rem;}
+.breakdown tr.total{font-weight:700;border-top:2px solid var(--violet);}
+.breakdown tr.total td{background:var(--vbg);}
+
+/* Memory ladder */
+.ladder{display:flex;align-items:flex-end;gap:1rem;justify-content:center;margin:1.5rem 0;flex-wrap:wrap;}
+.ladder-bar{text-align:center;}
+.ladder-bar .bar{width:80px;border-radius:8px 8px 0 0;transition:height 0.5s ease;margin:0 auto;}
+.ladder-bar .size{font-family:'Space Grotesk',sans-serif;font-size:0.85rem;font-weight:700;margin:0.3rem 0;}
+.ladder-bar .label{font-size:0.6rem;color:var(--tmut);text-transform:uppercase;letter-spacing:0.06em;}
+
+@media(max-width:768px){.row-2,.row-3,.row-4{grid-template-columns:1fr;}.big-num-grid{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>Model Memory & LoRA Calculator</h1>
+  <p>From FP32 weights → quantization → LoRA adapters. Change any value — everything updates instantly.</p>
+</header>
+
+<!-- ── MODEL SELECTOR ── -->
+<div class="row row-2">
+  <div class="ctrl-card">
+    <label>Quick Preset</label>
+    <select id="preset" onchange="applyPreset()">
+      <option value="custom">Custom</option>
+      <option value="llama7b" selected>Llama-7B</option>
+      <option value="llama13b">Llama-13B</option>
+      <option value="llama70b">Llama-70B</option>
+      <option value="gpt3">GPT-3 175B</option>
+    </select>
+  </div>
+  <div class="ctrl-card">
+    <label>Precision for Base Model Storage</label>
+    <select id="precision" onchange="calc()">
+      <option value="fp32">FP32 (4 bytes)</option>
+      <option value="fp16">FP16 (2 bytes)</option>
+      <option value="int8">INT8 (1 byte)</option>
+      <option value="int4" selected>INT4 (0.5 bytes)</option>
+    </select>
+  </div>
+</div>
+
+<!-- ── MODEL PARAMS ── -->
+<div class="row row-4">
+  <div class="ctrl-card">
+    <label>Hidden Size (d)</label>
+    <input type="number" id="d" value="4096" oninput="calc()">
+    <div class="hint">Model width</div>
+  </div>
+  <div class="ctrl-card">
+    <label>FF Intermediate</label>
+    <input type="number" id="ff" value="11008" oninput="calc()">
+    <div class="hint">d × 8/3 rounded</div>
+  </div>
+  <div class="ctrl-card">
+    <label>Num Layers</label>
+    <input type="number" id="layers" value="32" oninput="calc()">
+    <div class="hint">Transformer blocks</div>
+  </div>
+  <div class="ctrl-card">
+    <label>Vocab Size</label>
+    <input type="number" id="vocab" value="32000" oninput="calc()">
+    <div class="hint">Tokens in vocabulary</div>
+  </div>
+</div>
+
+<!-- ── LORA CONFIG ── -->
+<div class="row row-3">
+  <div class="ctrl-card">
+    <label>LoRA Rank (r)</label>
+    <input type="number" id="rank" value="8" min="1" max="256" oninput="calc()">
+    <div class="hint">Typically 8 (try 1, 4, 8, 16, 64)</div>
+  </div>
+  <div class="ctrl-card">
+    <label>Attention Modules</label>
+    <div class="chip-row" id="attnModules"></div>
+    <div class="hint">Which attention layers get adapters</div>
+  </div>
+  <div class="ctrl-card">
+    <label>Feed-Forward Modules</label>
+    <div class="chip-row" id="ffModules"></div>
+    <div class="hint">Which MLP layers get adapters</div>
+  </div>
+</div>
+
+<!-- ── BIG NUMBERS ── -->
+<div class="result-section">
+  <h2>📊 Memory Breakdown</h2>
+  <div class="big-num-grid">
+    <div class="big-num"><div class="val" style="color:var(--red);" id="fp32mem">—</div><div class="lbl">FP32 (Full)</div></div>
+    <div class="big-num"><div class="val" style="color:var(--amber);" id="basemem">—</div><div class="lbl">Base Model (INT4)</div></div>
+    <div class="big-num highlight"><div class="val" style="color:var(--violet);" id="loraparams">—</div><div class="lbl">LoRA Trainable Params</div></div>
+    <div class="big-num"><div class="val" style="color:var(--green);" id="totalmem">—</div><div class="lbl">Total Memory (Base + LoRA)</div></div>
+  </div>
+</div>
+
+<!-- ── MEMORY LADDER ── -->
+<div class="ladder" id="ladder"></div>
+
+<!-- ── DETAIL BREAKDOWN ── -->
+<div class="result-section">
+  <h2>📐 Detailed Breakdown</h2>
+  <div style="max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;">
+  <table class="breakdown">
+    <thead><tr><th>Component</th><th>Calculation</th><th class="num">Frozen Params</th><th class="num">LoRA Params</th></tr></thead>
+    <tbody id="breakdownBody"></tbody>
+  </table>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ── STATE ──
+const attnModules=['q','k','v','o'];
+const ffModules=['gate','up','down'];
+let activeAttn={q:true,k:false,v:true,o:false};
+let activeFF={gate:false,up:false,down:false};
+
+// ── BUILD CHIPS ──
+function buildChips(){
+  document.getElementById('attnModules').innerHTML=attnModules.map(m=>
+    `<span class="chip ${activeAttn[m]?'on':''}" onclick="toggle('attn','${m}')">${m}_proj</span>`
+  ).join('');
+  document.getElementById('ffModules').innerHTML=ffModules.map(m=>
+    `<span class="chip ${activeFF[m]?'on':''}" onclick="toggle('ff','${m}')">${m}_proj</span>`
+  ).join('');
+}
+
+function toggle(type,mod){
+  if(type==='attn'){activeAttn[mod]=!activeAttn[mod];}
+  else{activeFF[mod]=!activeFF[mod];}
+  buildChips();calc();
+}
+
+// ── PRESETS ──
+function applyPreset(){
+  const p=document.getElementById('preset').value;
+  const presets={
+    llama7b:{d:4096,ff:11008,layers:32,vocab:32000},
+    llama13b:{d:5120,ff:13824,layers:40,vocab:32000},
+    llama70b:{d:8192,ff:28672,layers:80,vocab:32000},
+    gpt3:{d:12288,ff:49152,layers:96,vocab:50257},
+  };
+  if(presets[p]){
+    Object.entries(presets[p]).forEach(([k,v])=>{document.getElementById(k).value=v;});
+  }
+  calc();
+}
+
+// ── CALC ──
+function calc(){
+  const d=parseInt(document.getElementById('d').value)||4096;
+  const ffMid=parseInt(document.getElementById('ff').value)||11008;
+  const layers=parseInt(document.getElementById('layers').value)||32;
+  const vocab=parseInt(document.getElementById('vocab').value)||32000;
+  const rank=parseInt(document.getElementById('rank').value)||8;
+  const prec=document.getElementById('precision').value;
+  const bytesPer={fp32:4,fp16:2,int8:1,int4:0.5}[prec];
+
+  // ── FROZEN PARAMS ──
+  // Embedding
+  const embParams=vocab*d;
+
+  // Per attention matrix (Q,K,V,O): d×d
+  const attnMatrixParams=d*d;
+
+  // Per FF matrix (gate,up): d×ffMid, (down): ffMid×d
+  const ffGateUpParams=d*ffMid;
+  const ffDownParams=ffMid*d;
+  const ffPerLayerParams=2*ffGateUpParams+ffDownParams;
+
+  // Totals
+  const totalAttnFrozen=layers*4*attnMatrixParams;
+  const totalFFFrozen=layers*ffPerLayerParams;
+  const otherFrozen=Math.round(embParams*0.1 + layers*d*0.05);
+  const totalFrozen=embParams+totalAttnFrozen+totalFFFrozen+otherFrozen;
+  const totalFrozenRounded=Math.round(totalFrozen/1e6)*1e6; // round to millions
+
+  // ── MEMORY (bytes) ──
+  const fp32Mem=(totalFrozenRounded*4)/(1024*1024*1024);
+  const baseMem=(totalFrozenRounded*bytesPer)/(1024*1024*1024);
+
+  // ── LORA PARAMS ──
+  let loraParams=0;
+  let loraDetail=[];
+
+  // Per attention module
+  attnModules.forEach(m=>{
+    if(activeAttn[m]){
+      const perModule=2*d*rank; // B(d×r) + A(r×d)
+      const perLayer=perModule;
+      const total=layers*perModule;
+      loraParams+=total;
+      loraDetail.push({name:`${m}_proj (attn)`,frozen:layers*attnMatrixParams,lora:total,calc:`${layers}layers × 2×${d}×${rank}`});
+    }else{
+      loraDetail.push({name:`${m}_proj (attn)`,frozen:layers*attnMatrixParams,lora:0,calc:'frozen'});
+    }
+  });
+
+  // Per FF module
+  ffModules.forEach(m=>{
+    if(activeFF[m]){
+      const colDim=(m==='down')?d:ffMid;
+      const rowDim=(m==='down')?ffMid:d;
+      const perModule=rowDim*rank+rank*colDim;
+      const total=layers*perModule;
+      loraParams+=total;
+      const frozenTotal=layers*(m==='down'?ffDownParams:ffGateUpParams);
+      loraDetail.push({name:`${m}_proj (FF)`,frozen:frozenTotal,lora:total,calc:`${layers}layers × (${rowDim}×${rank}+${rank}×${colDim})`});
+    }else{
+      const frozenTotal=layers*(m==='down'?ffDownParams:ffGateUpParams);
+      loraDetail.push({name:`${m}_proj (FF)`,frozen:frozenTotal,lora:0,calc:'frozen'});
+    }
+  });
+
+  const loraMem=Math.round(loraParams*2/(1024*1024))/1024;
+  const totalMem=baseMem+loraMem;
+
+  // ── UPDATE DISPLAY ──
+  document.getElementById('fp32mem').textContent=Math.round(fp32Mem*10)/10+' GB';
+  document.getElementById('basemem').textContent=prec==='fp32'?'Same as FP32':Math.round(baseMem*10)/10+' GB';
+  document.getElementById('loraparams').textContent=Math.round(loraParams/1e6*10)/10+'M';
+  document.getElementById('totalmem').textContent=prec==='fp32'?Math.round((fp32Mem+loraMem)*10)/10+' GB':Math.round(totalMem*10)/10+' GB';
+
+  const pct=(loraParams/totalFrozenRounded*100).toFixed(3);
+
+  // ── BREAKDOWN TABLE ──
+  const formatNum=n=>n>=1e9?`${(n/1e9).toFixed(2)}B`:n>=1e6?`${(n/1e6).toFixed(1)}M`:`${(n/1e3).toFixed(1)}K`;
+  let tblHTML=`
+    <tr><td class="section-label" colspan="4">Embedding</td></tr>
+    <tr><td>Embedding</td><td>${formatNum(vocab)} × ${formatNum(d)}</td><td class="num">${formatNum(embParams)}</td><td class="num">—</td></tr>
+    <tr><td class="section-label" colspan="4">Attention (${layers} layers × 4 matrices)</td></tr>`;
+
+  attnModules.forEach(m=>{
+    const det=loraDetail.find(x=>x.name.startsWith(m));
+    tblHTML+=`<tr><td>${m}_proj</td><td>${formatNum(d)} × ${formatNum(d)}</td><td class="num">${formatNum(layers*attnMatrixParams)}</td><td class="num">${det.lora>0?formatNum(det.lora):'—'}</td></tr>`;
+  });
+
+  tblHTML+=`<tr><td class="section-label" colspan="4">Feed-Forward (${layers} layers × 3 matrices)</td></tr>`;
+  ffModules.forEach(m=>{
+    const det=loraDetail.find(x=>x.name.startsWith(m));
+    const rDim=(m==='down')?formatNum(ffMid):formatNum(d);
+    const cDim=(m==='down')?formatNum(d):formatNum(ffMid);
+    tblHTML+=`<tr><td>${m}_proj</td><td>${rDim} × ${cDim}</td><td class="num">${formatNum(layers*(m==='down'?ffDownParams:ffGateUpParams))}</td><td class="num">${det.lora>0?formatNum(det.lora):'—'}</td></tr>`;
+  });
+
+  tblHTML+=`
+    <tr><td class="section-label" colspan="4">Other (norms, biases)</td></tr>
+    <tr><td>Layer norms + misc</td><td>~</td><td class="num">${formatNum(otherFrozen)}</td><td class="num">—</td></tr>
+    <tr class="total"><td><strong>TOTAL</strong></td><td></td><td class="num"><strong>${formatNum(totalFrozenRounded)}</strong></td><td class="num"><strong>${formatNum(Math.round(loraParams/1e3)*1e3)} (${pct}%)</strong></td></tr>`;
+
+  document.getElementById('breakdownBody').innerHTML=tblHTML;
+
+  // ── MEMORY LADDER ──
+  const maxH=180;
+  const fp32H=maxH;
+  const ratio=baseMem/fp32Mem;
+  const baseH=Math.max(30,ratio*maxH);
+  const loraH=Math.max(10,(loraMem/fp32Mem)*maxH*5);
+
+  document.getElementById('ladder').innerHTML=`
+    <div class="ladder-bar">
+      <div class="bar" style="height:${fp32H}px;background:linear-gradient(180deg,#c62828,#ef9a9a);"></div>
+      <div class="size" style="color:var(--red);">${Math.round(fp32Mem*10)/10} GB</div>
+      <div class="label">FP32</div>
+    </div>
+    <div class="ladder-bar">
+      <div class="bar" style="height:${baseH}px;background:linear-gradient(180deg,#b87000,#ffcc80);"></div>
+      <div class="size" style="color:var(--amber);">${prec==='fp32'?'Same':Math.round(baseMem*10)/10+' GB'}</div>
+      <div class="label">${prec.toUpperCase()}</div>
+    </div>
+    <div class="ladder-bar">
+      <div class="bar" style="height:${loraH*0.5}px;background:linear-gradient(180deg,#5b3aa8,#b39ddb);min-height:15px;"></div>
+      <div class="size" style="color:var(--violet);">${Math.round(loraMem*100)/100} GB</div>
+      <div class="label">LoRA r=${rank}</div>
+    </div>
+    <div style="text-align:center;font-size:0.65rem;color:var(--tmut);margin-left:0.5rem;">
+      <div>Base model</div><div style="font-weight:700;color:var(--amber);">${Math.round((baseMem/(fp32Mem+0.01))*100)}%</div><div>of FP32</div>
+    </div>`;
+}
+
+// ── INIT ──
+buildChips();
+applyPreset();
+calc();
+</script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LoRA Target Modules — Visual Explainer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--cyan:#007a99;--cyanbg:#e0f4fa;--amber:#b87000;--ambbg:#fff5e6;--green:#1a6e34;--greenbg:#e8f5ec;--magenta:#9e2a6b;--magentabg:#fdf0f7;--red:#c62828;--violet:#5b3aa8;--violetbg:#f3effc;--orange:#e65100;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;min-height:100vh;}
+.app{max-width:900px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:1.5rem 0 0.5rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.9rem;margin-top:0.3rem;}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin:1rem 0;}
+.card h2{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;margin-bottom:0.8rem;color:var(--violet);}
+.card h3{font-family:'Space Grotesk',sans-serif;font-size:0.8rem;font-weight:600;margin:1rem 0 0.5rem;}
+.card p{color:var(--tdim);font-size:0.9rem;margin-bottom:0.6rem;}
+
+/* Attention diagram */
+.attn-diagram{display:flex;flex-direction:column;gap:0;align-items:center;margin:1.5rem 0;font-family:'Space Grotesk',sans-serif;font-size:0.7rem;}
+
+.attn-row{display:flex;align-items:center;gap:0.5rem;margin:0.3rem 0;}
+.attn-box{padding:0.5rem 0.8rem;border-radius:8px;text-align:center;min-width:60px;font-weight:600;font-size:0.7rem;}
+.attn-box.input{background:var(--raised);border:1px solid var(--border);}
+.attn-box.q{background:#e3f2fd;border:2px solid #1976d2;color:#1976d2;}
+.attn-box.k{background:#fff3e0;border:2px solid #e65100;color:#e65100;}
+.attn-box.v{background:#fce4ec;border:2px solid #c62828;color:#c62828;}
+.attn-box.o{background:#e8f5e9;border:2px solid #2e7d32;color:#2e7d32;}
+.attn-box.trained{box-shadow:0 0 0 3px rgba(91,58,168,0.3);}
+.attn-box.frozen{opacity:0.5;}
+.attn-arrow{font-size:1.2rem;color:var(--tmut);}
+.attn-label{font-size:0.55rem;color:var(--tmut);text-align:center;margin-top:2px;}
+
+/* Table */
+.tbl{width:100%;border-collapse:collapse;font-size:0.78rem;margin:1rem 0;}
+.tbl th{font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);padding:0.4rem 0.5rem;border-bottom:2px solid var(--border);text-align:left;background:var(--raised);}
+.tbl td{padding:0.5rem;border-bottom:1px solid var(--border);}
+.tbl .yes{color:var(--green);font-weight:600;}
+.tbl .no{color:var(--red);}
+.tbl .star{background:rgba(91,58,168,0.04);}
+
+/* Analogy */
+.analogy{background:var(--raised);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin:1rem 0;display:flex;gap:1rem;align-items:flex-start;}
+.analogy .emoji{font-size:2rem;flex-shrink:0;}
+.analogy p{font-size:0.85rem;color:var(--tdim);margin:0;}
+
+.callout{background:var(--violetbg);border:1px solid rgba(91,58,168,0.2);border-radius:10px;padding:1rem;margin:1rem 0;font-size:0.85rem;}
+
+@media(max-width:768px){.app{padding:0.75rem;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>LoRA Target Modules — What Gets Trained?</h1>
+  <p>Inside one transformer attention layer: Q, K, V, O explained</p>
+</header>
+
+<!-- Q: What is attention -->
+<div class="card">
+  <h2>One Attention Layer — 4 Weight Matrices</h2>
+  <p>Every transformer layer has an <strong>attention mechanism</strong>. It uses 4 matrices to decide which words "pay attention" to which other words.</p>
+
+  <div class="attn-diagram">
+
+    <!-- Input row -->
+    <div style="font-size:0.65rem;color:var(--tmut);margin-bottom:0.3rem;">Input: "The cat sat on the mat" → each word turned into a 4096-number vector</div>
+
+    <!-- QKV generation -->
+    <div class="attn-row">
+      <div class="attn-box input">Input<br>x</div>
+      <span class="attn-arrow">→</span>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+        <div class="attn-box q trained">Q<br><span style="font-size:0.5rem;">query</span></div>
+        <div class="attn-label">"What am I<br>looking for?"</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+        <div class="attn-box k">K<br><span style="font-size:0.5rem;">key</span></div>
+        <div class="attn-label">"What do I<br>have to offer?"</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+        <div class="attn-box v trained">V<br><span style="font-size:0.5rem;">value</span></div>
+        <div class="attn-label">"What's my<br>actual content?"</div>
+      </div>
+    </div>
+
+    <div style="font-size:0.55rem;color:var(--tmut);margin:0.5rem 0;">Q×K = attention scores → softmax → ×V = weighted output</div>
+
+    <div class="attn-row">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+        <div class="attn-box v trained">V</div>
+      </div>
+      <span class="attn-arrow">→</span>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+        <div style="background:var(--raised);border:1px solid var(--border);border-radius:8px;padding:0.5rem 1rem;font-size:0.65rem;">Attention<br>Computation</div>
+      </div>
+      <span class="attn-arrow">→</span>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+        <div class="attn-box o">O<br><span style="font-size:0.5rem;">output</span></div>
+        <div class="attn-label">"Combine all<br>head outputs"</div>
+      </div>
+      <span class="attn-arrow">→</span>
+      <div class="attn-box input">Output<br>h</div>
+    </div>
+  </div>
+
+  <div style="font-size:0.7rem;color:var(--tmut);margin-top:0.5rem;">
+    <span style="color:#1976d2;">■ Q (query)</span> — trained by LoRA &nbsp;
+    <span style="color:#e65100;">■ K (key)</span> — usually frozen &nbsp;
+    <span style="color:#c62828;">■ V (value)</span> — trained by LoRA &nbsp;
+    <span style="color:#2e7d32;">■ O (output)</span> — sometimes trained, costs 2× more
+  </div>
+</div>
+
+<!-- The analogy -->
+<div class="card">
+  <h2>The Library Analogy</h2>
+  <div class="analogy">
+    <div class="emoji">📚</div>
+    <div>
+      <p>You're in a library looking for books about <strong>"cooking pasta"</strong>.</p>
+      <p style="margin-top:0.5rem;"><strong style="color:#1976d2;">Q (Query):</strong> Your search slip — "I want books about cooking pasta."</p>
+      <p><strong style="color:#e65100;">K (Key):</strong> The index cards on every book — "I'm about Italian cuisine."</p>
+      <p><strong style="color:#c62828;">V (Value):</strong> The actual book content — all 300 pages of recipes.</p>
+      <p><strong style="color:#2e7d32;">O (Output):</strong> The summary you write after reading the matching books.</p>
+      <p style="margin-top:0.5rem;"><strong>Q×K finds the books.</strong> (Your search × index cards = which books match.)</p>
+      <p><strong>Softmax ranks them.</strong> (Some books are more relevant than others.)</p>
+      <p><strong>×V reads them.</strong> (Take the best matching books and read their content.)</p>
+      <p><strong>O summarizes.</strong> (Combine everything you learned into one answer.)</p>
+    </div>
+  </div>
+</div>
+
+<!-- Why target Q and V -->
+<div class="card">
+  <h2>Why LoRA Targets Q and V (and Not K)</h2>
+
+  <table class="tbl">
+    <thead><tr><th>Module</th><th>What It Does</th><th>LoRA?</th><th>Reason</th></tr></thead>
+    <tbody>
+      <tr class="star"><td><strong style="color:#1976d2;">Q (query)</strong></td><td>"What should this word look for?"</td><td class="yes">✅ Yes</td><td>Controls WHERE attention goes. High impact on behavior.</td></tr>
+      <tr class="star"><td><strong style="color:#c62828;">V (value)</strong></td><td>"What content does this word carry?"</td><td class="yes">✅ Yes</td><td>Controls WHAT information is passed. High impact on outputs.</td></tr>
+      <tr><td><strong style="color:#e65100;">K (key)</strong></td><td>"How can other words find me?"</td><td class="no">❌ Usually not</td><td>Q and V together already capture the changes. Adding K doubles adapter size for small gain.</td></tr>
+      <tr><td><strong style="color:#2e7d32;">O (output)</strong></td><td>"Combine all attention heads"</td><td class="yes">⚠️ Optional</td><td>Improves quality but doubles adapter size. Add for better results if you have the memory.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <strong>🧠 Why Q+V is enough:</strong> Think of adapting the model like training a new employee. You need to change WHAT they look for (Q) and WHAT they say (V). HOW others find them (K) usually doesn't need to change — the existing keys already work fine for search. You're changing the <em>questions asked</em> and the <em>answers given</em>, not the <em>index system</em>.
+  </div>
+</div>
+
+<!-- Size comparison -->
+<div class="card">
+  <h2>Adapter Size Comparison (Llama-7B, r=8)</h2>
+
+  <table class="tbl">
+    <thead><tr><th>Target Modules</th><th>Trainable Params</th><th>Quality</th><th>When to Use</th></tr></thead>
+    <tbody>
+      <tr class="star"><td>["q_proj", "v_proj"]</td><td style="font-weight:700;color:var(--green);">~37M</td><td>Good</td><td>Default — best size/quality tradeoff</td></tr>
+      <tr><td>["q_proj", "k_proj", "v_proj", "o_proj"]</td><td style="color:var(--amber);">~74M</td><td>Better</td><td>When every % counts</td></tr>
+      <tr><td>All linear layers</td><td style="color:var(--red);">~150M</td><td>Best</td><td>Maximum adaption, 4× adapter size</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <strong>💡 Rule of thumb:</strong> Start with ["q_proj", "v_proj"]. If the model underperforms, add "k_proj" and "o_proj". Only go beyond that if you have a very large or very different dataset.
+  </div>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LoRA Adapters Per Layer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--blue:#1565c0;--bluebg:#e3f2fd;--orange:#e65100;--orangebg:#fff3e0;--red:#c62828;--redbg:#fce4ec;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;min-height:100vh;}
+.app{max-width:850px;margin:0 auto;padding:2rem;}
+
+.header{text-align:center;padding:1.5rem 0 2rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.95rem;margin-top:0.4rem;}
+
+.section{margin:2rem 0;}
+.section h2{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;color:var(--violet);margin-bottom:1rem;}
+
+/* Summary bar */
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1.5rem 0;}
+.sum-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;}
+.sum-box .val{font-family:'Space Grotesk',sans-serif;font-size:1.8rem;font-weight:700;color:var(--violet);}
+.sum-box .lbl{font-size:0.75rem;color:var(--tmut);margin-top:0.2rem;}
+
+/* Clean layer visual */
+.layers{max-width:550px;margin:0 auto;}
+.layer{display:flex;align-items:center;gap:1rem;padding:0.7rem 1rem;margin:0.3rem 0;border-radius:10px;background:var(--card);border:1px solid var(--border);}
+.layer .num{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;color:var(--tmut);min-width:55px;font-weight:600;}
+.layer .modules{display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;}
+.layer .mod{font-family:'Space Grotesk',sans-serif;font-size:0.62rem;font-weight:700;padding:0.3em 0.6em;border-radius:6px;display:flex;align-items:center;gap:0.4em;}
+.layer .mod.q{background:var(--bluebg);color:var(--blue);}
+.layer .mod.v{background:var(--redbg);color:var(--red);}
+.layer .mod.k{background:var(--orangebg);color:var(--orange);opacity:0.45;}
+.layer .mod.o{background:#e8f5e9;color:#2e7d32;opacity:0.45;}
+.layer .adapter-dot{width:6px;height:6px;border-radius:50%;background:var(--violet);display:inline-block;}
+.layer .adapter-dot.hidden{opacity:0;}
+
+/* Zoom box */
+.zoom{background:var(--card);border:2px solid var(--violet);border-radius:14px;padding:1.5rem;margin:1.5rem 0;text-align:center;}
+.zoom h3{font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin-bottom:1rem;}
+.zoom .eq{font-family:'Space Grotesk',monospace;font-size:0.8rem;line-height:2.2;color:var(--tdim);}
+
+/* Callout */
+.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:1rem 1.25rem;margin:1.5rem 0;font-size:0.88rem;line-height:1.7;text-align:center;}
+
+@media(max-width:600px){.summary{grid-template-columns:1fr;}.app{padding:1rem;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>target_modules = ["q_proj", "v_proj"]</h1>
+  <p>Each Q and each V — in every layer — gets its own independent B×A adapter</p>
+</header>
+
+<div class="summary">
+  <div class="sum-box"><div class="val">32</div><div class="lbl">Transformer Layers</div></div>
+  <div class="sum-box"><div class="val">64</div><div class="lbl">Separate Adapters<br>(32 layers × 2 modules)</div></div>
+  <div class="sum-box"><div class="val">37M</div><div class="lbl">Total Trainable Params<br>(out of 7,000M frozen)</div></div>
+</div>
+
+<div class="section">
+  <h2>Each Layer Has 4 Weight Matrices — LoRA Wraps 2 of Them</h2>
+
+  <div class="layers">
+    <!-- Show just 5 representative layers -->
+    <div class="layer">
+      <div class="num">Layer 0</div>
+      <div class="modules">
+        <div class="mod q"><span class="adapter-dot"></span> Q₀ + adapter</div>
+        <div class="mod k"><span class="adapter-dot hidden"></span> K₀ frozen</div>
+        <div class="mod v"><span class="adapter-dot"></span> V₀ + adapter</div>
+        <div class="mod o"><span class="adapter-dot hidden"></span> O₀ frozen</div>
+      </div>
+    </div>
+    <div class="layer">
+      <div class="num">Layer 1</div>
+      <div class="modules">
+        <div class="mod q"><span class="adapter-dot"></span> Q₁ + adapter</div>
+        <div class="mod k"><span class="adapter-dot hidden"></span> K₁ frozen</div>
+        <div class="mod v"><span class="adapter-dot"></span> V₁ + adapter</div>
+        <div class="mod o"><span class="adapter-dot hidden"></span> O₁ frozen</div>
+      </div>
+    </div>
+    <div style="text-align:center;padding:0.3rem;color:var(--tmut);font-size:0.7rem;">⋮</div>
+    <div class="layer">
+      <div class="num">Layer 15</div>
+      <div class="modules">
+        <div class="mod q"><span class="adapter-dot"></span> Q₁₅ + adapter</div>
+        <div class="mod k"><span class="adapter-dot hidden"></span> K₁₅ frozen</div>
+        <div class="mod v"><span class="adapter-dot"></span> V₁₅ + adapter</div>
+        <div class="mod o"><span class="adapter-dot hidden"></span> O₁₅ frozen</div>
+      </div>
+    </div>
+    <div style="text-align:center;padding:0.3rem;color:var(--tmut);font-size:0.7rem;">⋮</div>
+    <div class="layer">
+      <div class="num">Layer 31</div>
+      <div class="modules">
+        <div class="mod q"><span class="adapter-dot"></span> Q₃₁ + adapter</div>
+        <div class="mod k"><span class="adapter-dot hidden"></span> K₃₁ frozen</div>
+        <div class="mod v"><span class="adapter-dot"></span> V₃₁ + adapter</div>
+        <div class="mod o"><span class="adapter-dot hidden"></span> O₃₁ frozen</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="zoom">
+  <h3>Zoom In: Layer 15</h3>
+  <div class="eq">
+    <span style="color:var(--blue);">W_q¹⁵</span> (frozen, 16.8M)
+    + <span style="color:var(--violet);">B_q¹⁵</span>(4096×8) × <span style="color:var(--violet);">A_q¹⁵</span>(8×4096)
+    = trained adapter for Q in layer 15
+    <br><br>
+    <span style="color:var(--red);">W_v¹⁵</span> (frozen, 16.8M)
+    + <span style="color:var(--violet);">B_v¹⁵</span>(4096×8) × <span style="color:var(--violet);">A_v¹⁵</span>(8×4096)
+    = trained adapter for V in layer 15
+    <br><br>
+    <span style="color:var(--tmut);">Each adapter: 65K params. Two adapters in this layer: 131K.</span>
+  </div>
+</div>
+
+<div class="callout">
+  <strong>Why NOT one shared adapter?</strong> Layer 3 learns grammar. Layer 28 learns style. They need different adjustments. Each layer gets its own B×A because <strong>what needs to change in layer 3 is not the same as what needs to change in layer 28.</strong>
+</div>
+
+</div>
+</body>
+</html>
