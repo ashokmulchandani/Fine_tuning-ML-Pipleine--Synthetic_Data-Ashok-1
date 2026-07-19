@@ -169,17 +169,17 @@ full_text = <span style="color:#ce9178;">""</span>
 <span style="color:#569cd6;">for</span> page <span style="color:#569cd6;">in</span> doc:
     full_text += page.get_text()
 
-print(<span style="color:#ce9178;">f"Extracted {len(full_text)} characters from {len(doc)} pages"</span>)
+print(<span style="color:#ce9178;">f"Extracted {len(full_text):,} chars from {len(doc)} pages"</span>)
 <span style="color:#6a9955;"># → "Extracted 1,247,583 characters from 342 pages"</span></div>
 
-<p><strong>What just happened?</strong> We turned 342 pages of PDF into one big string of text. This text will teach the model your domain language (medical, legal, finance, whatever your PDFs contain).</p>
+<p><strong>What just happened?</strong> We turned the PDF into one big string of text. This text will teach the model your domain language (medical, legal, finance, whatever your PDFs contain).</p>
 </div></div>`},
 {id:'4.2',title:'Chunk Text — Respect Context Window',
 fact:'Most LLMs have a 2048–4096 token context window. You can\'t feed a 100-page document at once. Chunking breaks it into bite-sized pieces that fit in the model\'s context.',
 render:()=>`
 <div class="slide"><div class="card">
 <h2><span class="num">4.2</span> Chunk the Text</h2>
-<p>Models have a <strong>context window limit</strong> (e.g., 2048 tokens). A 100-page document has ~50,000 tokens. We split it into chunks of ~512 tokens each.</p>
+<p>Models have a <strong>context window limit</strong> (e.g., 2048 tokens). Even a short PDF has thousands of tokens. We split it into chunks of ~512 tokens each.</p>
 
 <div class="code-box"><span style="color:#6a9955;"># Simple paragraph-based chunking</span>
 <span style="color:#569cd6;">def</span> <span style="color:#c586c0;">chunk_text</span>(text, max_chars=2000):
