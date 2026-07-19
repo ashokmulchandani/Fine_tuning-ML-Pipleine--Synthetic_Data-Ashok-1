@@ -39,7 +39,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 .card h2 .num{font-size:0.7rem;color:var(--violet);background:var(--vbg);border-radius:6px;padding:0.2em 0.6em;font-weight:700;}
 .card p{color:var(--tdim);margin-bottom:0.7rem;font-size:0.93rem;}
 
-.code-box{background:var(--raised);border:1px solid var(--border);border-left:3px solid var(--violet);border-radius:8px;padding:1rem 1.25rem;margin:1rem 0;font-family:'Space Grotesk',monospace;font-size:0.78rem;line-height:1.9;white-space:pre-wrap;overflow-x:auto;}
+.code-box{background:#1e1e1e;border:1px solid #333;border-left:3px solid var(--violet);border-radius:8px;padding:1rem 1.25rem;margin:1rem 0;font-family:'Cascadia Code','Fira Code','JetBrains Mono','Space Grotesk',monospace;font-size:0.8rem;line-height:1.8;white-space:pre-wrap;overflow-x:auto;color:#d4d4d4;}
+.code-box .cell-num{color:#fff!important;font-family:'Space Grotesk',sans-serif!important;}
+.cell-num{font-family:'Space Grotesk',sans-serif!important;font-size:0.6rem!important;font-weight:700!important;color:#fff!important;background:var(--violet)!important;display:inline-block!important;padding:0.2em 0.7em!important;border-radius:4px 4px 0 0!important;margin-bottom:-1px!important;letter-spacing:0.06em!important;}
 
 .fun-fact{background:linear-gradient(135deg,rgba(91,58,168,0.04),rgba(0,122,153,0.04));border:1px solid var(--border);border-radius:14px;padding:1rem 1.25rem;margin:1rem 0;display:flex;align-items:flex-start;gap:0.7rem;font-size:0.88rem;}
 
@@ -59,10 +61,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 
 /* Copy button */
 .code-wrapper{position:relative;}
-.copy-btn{position:absolute;top:8px;right:8px;font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:600;padding:0.35em 0.8em;border:1.5px solid var(--border);border-radius:6px;background:var(--card);color:var(--tmut);cursor:pointer;transition:0.15s;opacity:0;}
+.copy-btn{position:absolute;top:8px;right:8px;font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:600;padding:0.35em 0.8em;border:1px solid #555;border-radius:6px;background:#2d2d2d;color:#ccc;cursor:pointer;transition:0.15s;opacity:0;}
 .code-wrapper:hover .copy-btn,.copy-btn.copied{opacity:1;}
-.copy-btn:hover{border-color:var(--violet);color:var(--violet);}
-.copy-btn.copied{border-color:var(--green);color:var(--green);background:rgba(26,110,52,0.06);}
+.copy-btn:hover{border-color:#c586c0;color:#c586c0;background:#333;}
+.copy-btn.copied{border-color:#4ec9b0;color:#4ec9b0;background:#2d2d2d;}
 
 @media(max-width:768px){.app{padding:0.75rem;}.copy-btn{opacity:1;}}
 </style>
@@ -108,14 +110,14 @@ render:()=>`
 <h2><span class="num">Setup</span> Where to Run & Where to Get PDFs</h2>
 
 <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1rem 0 0.5rem;">🖥️ Do I Need Colab?</h3>
-<p><strong>Yes — highly recommended.</strong> Colab gives you a free GPU. Your laptop CPU would take 10–50× longer. Go to <a href="https://colab.research.google.com" target="_blank" style="color:var(--violet);">colab.research.google.com</a> → New Notebook.</p>
+<p><strong>Yes — highly recommended.</strong> Colab gives you a free GPU. Your laptop CPU would take 10–50× longer. Go to <a href="https://colab.research.google.com" target="_blank" style="color:#c586c0;">colab.research.google.com</a> → New Notebook.</p>
 
-<div class="code-box"><span style="color:var(--tmut);"># FIRST CELL — Enable GPU (Runtime → Change runtime type → T4 GPU)</span>
-<span style="color:var(--tmut);"># Then verify:</span>
+<div class="code-box"><span style="color:#6a9955;"># FIRST CELL — Enable GPU (Runtime → Change runtime type → T4 GPU)</span>
+<span style="color:#6a9955;"># Then verify:</span>
 !nvidia-smi
-<span style="color:var(--tmut);"># Should show: "Tesla T4" with 15GB available</span>
+<span style="color:#6a9955;"># Should show: "Tesla T4" with 15GB available</span>
 
-<span style="color:var(--tmut);"># SECOND CELL — Install everything (takes ~2 minutes)</span>
+<span style="color:#6a9955;"># SECOND CELL — Install everything (takes ~2 minutes)</span>
 !pip install -q transformers datasets peft bitsandbytes accelerate trl PyMuPDF torch</div>
 
 <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1.5rem 0 0.5rem;">📄 Where to Find PDF Files?</h3>
@@ -135,14 +137,14 @@ render:()=>`
 
 <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1.5rem 0 0.5rem;">📄 Get the PDF — One Line, No Upload Needed</h3>
 <p>Your <strong>Complete-LLM-Finetuning</strong> GitHub repo has a perfect medical PDF. Download it directly in Colab:</p>
-<div class="code-box"><span style="color:var(--tmut);"># Downloads Metformin.pdf directly — no manual upload needed!</span>
-!wget <span style="color:var(--amber);">"https://raw.githubusercontent.com/ashokmulchandani/Complete-LLM-Finetuning/main/LLM%20Fine-Tuning-14-Train-LLMs-on-Your-PDF-Text-Data%20-Domain-Specific-Fine-Tuning-with-HuggingFace/Metformin.pdf"</span>
+<div class="code-box"><span style="color:#6a9955;"># Downloads Metformin.pdf directly — no manual upload needed!</span>
+!wget <span style="color:#ce9178;">"https://raw.githubusercontent.com/ashokmulchandani/Complete-LLM-Finetuning/main/LLM%20Fine-Tuning-14-Train-LLMs-on-Your-PDF-Text-Data%20-Domain-Specific-Fine-Tuning-with-HuggingFace/Metformin.pdf"</span>
 
-<span style="color:var(--tmut);"># Result: Metformin.pdf is now in your Colab files (medical/pharma PDF, ~300 KB)</span></div>
+<span style="color:#6a9955;"># Result: Metformin.pdf is now in your Colab files (medical/pharma PDF, ~300 KB)</span></div>
 
 <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1.5rem 0 0.5rem;">⚡ Quick Start — 3 Steps</h3>
 <div style="font-size:0.85rem;color:var(--tdim);line-height:2;">
-  <strong>1.</strong> Open <a href="https://colab.research.google.com" target="_blank" style="color:var(--violet);">Colab</a> → New Notebook → Runtime → Change runtime type → <strong>T4 GPU</strong> → Save<br>
+  <strong>1.</strong> Open <a href="https://colab.research.google.com" target="_blank" style="color:#c586c0;">Colab</a> → New Notebook → Runtime → Change runtime type → <strong>T4 GPU</strong> → Save<br>
   <strong>2.</strong> Copy the install + wget commands above (📋 Copy) → Paste into <strong>Cell 1</strong> → Run (takes ~2 min)<br>
   <strong>3.</strong> Copy each code block from slides below — they're numbered <strong>Code 2, Code 3, ... Code N</strong> → Paste each into its own Colab cell → Run<br><br>
   <strong>Done!</strong> ~10 Colab cells total. No upload. No manual steps. Just copy, paste, run in order.
@@ -155,20 +157,20 @@ render:()=>`
 <h2><span class="num">4.1</span> Load PDF Data with PyMuPDF</h2>
 <p>First step: get your domain text out of PDFs. PyMuPDF handles complex layouts — multi-column, tables, headers, footers.</p>
 
-<div class="code-box"><span style="color:var(--tmut);"># Install</span>
+<div class="code-box"><span style="color:#6a9955;"># Install</span>
 !pip install PyMuPDF datasets transformers peft bitsandbytes accelerate trl
 
-<span style="color:var(--tmut);"># Load PDF</span>
-import fitz  <span style="color:var(--tmut);"># PyMuPDF</span>
+<span style="color:#6a9955;"># Load PDF</span>
+import fitz  <span style="color:#6a9955;"># PyMuPDF</span>
 
-doc = fitz.open(<span style="color:var(--amber);">"Metformin.pdf"</span>)  <span style="color:var(--tmut);"># From your Complete-LLM-Finetuning repo</span>
-full_text = <span style="color:var(--amber);">""</span>
+doc = fitz.open(<span style="color:#ce9178;">"Metformin.pdf"</span>)  <span style="color:#6a9955;"># From your Complete-LLM-Finetuning repo</span>
+full_text = <span style="color:#ce9178;">""</span>
 
-<span style="color:var(--green);">for</span> page <span style="color:var(--green);">in</span> doc:
+<span style="color:#569cd6;">for</span> page <span style="color:#569cd6;">in</span> doc:
     full_text += page.get_text()
 
-print(<span style="color:var(--amber);">f"Extracted {len(full_text)} characters from {len(doc)} pages"</span>)
-<span style="color:var(--tmut);"># → "Extracted 1,247,583 characters from 342 pages"</span></div>
+print(<span style="color:#ce9178;">f"Extracted {len(full_text)} characters from {len(doc)} pages"</span>)
+<span style="color:#6a9955;"># → "Extracted 1,247,583 characters from 342 pages"</span></div>
 
 <p><strong>What just happened?</strong> We turned 342 pages of PDF into one big string of text. This text will teach the model your domain language (medical, legal, finance, whatever your PDFs contain).</p>
 </div></div>`},
@@ -179,26 +181,26 @@ render:()=>`
 <h2><span class="num">4.2</span> Chunk the Text</h2>
 <p>Models have a <strong>context window limit</strong> (e.g., 2048 tokens). A 100-page document has ~50,000 tokens. We split it into chunks of ~512 tokens each.</p>
 
-<div class="code-box"><span style="color:var(--tmut);"># Simple paragraph-based chunking</span>
-<span style="color:var(--green);">def</span> <span style="color:var(--violet);">chunk_text</span>(text, max_chars=2000):
-    paragraphs = text.split(<span style="color:var(--amber);">"\n\n"</span>)  <span style="color:var(--tmut);"># Split by double newline</span>
+<div class="code-box"><span style="color:#6a9955;"># Simple paragraph-based chunking</span>
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">chunk_text</span>(text, max_chars=2000):
+    paragraphs = text.split(<span style="color:#ce9178;">"\n\n"</span>)  <span style="color:#6a9955;"># Split by double newline</span>
     chunks = []
-    current_chunk = <span style="color:var(--amber);">""</span>
+    current_chunk = <span style="color:#ce9178;">""</span>
 
-    <span style="color:var(--green);">for</span> para <span style="color:var(--green);">in</span> paragraphs:
-        <span style="color:var(--green);">if</span> len(current_chunk) + len(para) &lt; max_chars:
-            current_chunk += para + <span style="color:var(--amber);">"\n\n"</span>
-        <span style="color:var(--green);">else</span>:
+    <span style="color:#569cd6;">for</span> para <span style="color:#569cd6;">in</span> paragraphs:
+        <span style="color:#569cd6;">if</span> len(current_chunk) + len(para) &lt; max_chars:
+            current_chunk += para + <span style="color:#ce9178;">"\n\n"</span>
+        <span style="color:#569cd6;">else</span>:
             chunks.append(current_chunk.strip())
-            current_chunk = para + <span style="color:var(--amber);">"\n\n"</span>
+            current_chunk = para + <span style="color:#ce9178;">"\n\n"</span>
 
-    <span style="color:var(--green);">if</span> current_chunk:
+    <span style="color:#569cd6;">if</span> current_chunk:
         chunks.append(current_chunk.strip())
-    <span style="color:var(--green);">return</span> chunks
+    <span style="color:#569cd6;">return</span> chunks
 
 chunks = chunk_text(full_text, max_chars=2000)
-print(<span style="color:var(--amber);">f"Created {len(chunks)} chunks"</span>)
-<span style="color:var(--tmut);"># → "Created 623 chunks"</span></div>
+print(<span style="color:#ce9178;">f"Created {len(chunks)} chunks"</span>)
+<span style="color:#6a9955;"># → "Created 623 chunks"</span></div>
 
 <p><strong>max_chars=2000 ≈ 512 tokens</strong>. Each chunk is one "training example." The model will learn to predict the next token within each chunk — absorbing the vocabulary, style, and knowledge of your domain.</p>
 </div></div>`},
@@ -209,19 +211,19 @@ render:()=>`
 <h2><span class="num">4.3</span> Create HuggingFace Dataset Format</h2>
 <p>We convert our chunks into the format the Trainer expects: a dictionary with a <strong>"text"</strong> key.</p>
 
-<div class="code-box"><span style="color:var(--green);">from</span> datasets <span style="color:var(--green);">import</span> Dataset
+<div class="code-box"><span style="color:#569cd6;">from</span> datasets <span style="color:#569cd6;">import</span> Dataset
 
-<span style="color:var(--tmut);"># Each chunk becomes {"text": "..."}</span>
-data = [{<span style="color:var(--amber);">"text"</span>: chunk} <span style="color:var(--green);">for</span> chunk <span style="color:var(--green);">in</span> chunks]
+<span style="color:#6a9955;"># Each chunk becomes {"text": "..."}</span>
+data = [{<span style="color:#ce9178;">"text"</span>: chunk} <span style="color:#569cd6;">for</span> chunk <span style="color:#569cd6;">in</span> chunks]
 dataset = Dataset.from_list(data)
 
-<span style="color:var(--tmut);"># Split 90/10 for train/validation</span>
+<span style="color:#6a9955;"># Split 90/10 for train/validation</span>
 dataset = dataset.train_test_split(test_size=0.1, seed=42)
-train_data = dataset[<span style="color:var(--amber);">"train"</span>]
-eval_data = dataset[<span style="color:var(--amber);">"test"</span>]
+train_data = dataset[<span style="color:#ce9178;">"train"</span>]
+eval_data = dataset[<span style="color:#ce9178;">"test"</span>]
 
-print(<span style="color:var(--amber);">f"Train: {len(train_data)} chunks, Eval: {len(eval_data)} chunks"</span>)
-<span style="color:var(--tmut);"># → Train: 560 chunks, Eval: 63 chunks</span></div>
+print(<span style="color:#ce9178;">f"Train: {len(train_data)} chunks, Eval: {len(eval_data)} chunks"</span>)
+<span style="color:#6a9955;"># → Train: 560 chunks, Eval: 63 chunks</span></div>
 
 <p>That's it. 623 chunks of domain text, split into train/eval, ready for tokenization.</p>
 </div></div>`},
@@ -232,26 +234,26 @@ render:()=>`
 <h2><span class="num">4.4</span> Tokenize with AutoTokenizer</h2>
 <p>The model can't read text. It reads integers. Tokenization converts "The patient presented with..." into something like [464, 8522, 4521, 319, ...].</p>
 
-<div class="code-box"><span style="color:var(--green);">from</span> transformers <span style="color:var(--green);">import</span> AutoTokenizer
+<div class="code-box"><span style="color:#569cd6;">from</span> transformers <span style="color:#569cd6;">import</span> AutoTokenizer
 
-model_name = <span style="color:var(--amber);">"TinyLlama/TinyLlama-1.1B-Chat-v1.0"</span>
+model_name = <span style="color:#ce9178;">"TinyLlama/TinyLlama-1.1B-Chat-v1.0"</span>
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-tokenizer.pad_token = tokenizer.eos_token  <span style="color:var(--tmut);"># Use EOS as padding</span>
+tokenizer.pad_token = tokenizer.eos_token  <span style="color:#6a9955;"># Use EOS as padding</span>
 
-<span style="color:var(--green);">def</span> <span style="color:var(--violet);">tokenize</span>(examples):
-    <span style="color:var(--green);">return</span> tokenizer(
-        examples[<span style="color:var(--amber);">"text"</span>],
-        truncation=<span style="color:var(--green);">True</span>,        <span style="color:var(--tmut);"># Cut off if too long</span>
-        padding=<span style="color:var(--amber);">"max_length"</span>, <span style="color:var(--tmut);"># Pad to same length</span>
-        max_length=512           <span style="color:var(--tmut);"># 512 tokens max</span>
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">tokenize</span>(examples):
+    <span style="color:#569cd6;">return</span> tokenizer(
+        examples[<span style="color:#ce9178;">"text"</span>],
+        truncation=<span style="color:#569cd6;">True</span>,        <span style="color:#6a9955;"># Cut off if too long</span>
+        padding=<span style="color:#ce9178;">"max_length"</span>, <span style="color:#6a9955;"># Pad to same length</span>
+        max_length=512           <span style="color:#6a9955;"># 512 tokens max</span>
     )
 
-tokenized_train = train_data.map(tokenize, batched=<span style="color:var(--green);">True</span>)
-tokenized_eval = eval_data.map(tokenize, batched=<span style="color:var(--green);">True</span>)
+tokenized_train = train_data.map(tokenize, batched=<span style="color:#569cd6;">True</span>)
+tokenized_eval = eval_data.map(tokenize, batched=<span style="color:#569cd6;">True</span>)
 
-<span style="color:var(--tmut);"># Now each example has: input_ids, attention_mask</span>
-print(tokenized_train[0][<span style="color:var(--amber);">"input_ids"</span>][:10])
-<span style="color:var(--tmut);"># → [1, 464, 8522, 4521, 319, 287, 26012, 438, 1784, 29973]</span></div>
+<span style="color:#6a9955;"># Now each example has: input_ids, attention_mask</span>
+print(tokenized_train[0][<span style="color:#ce9178;">"input_ids"</span>][:10])
+<span style="color:#6a9955;"># → [1, 464, 8522, 4521, 319, 287, 26012, 438, 1784, 29973]</span></div>
 
 <p><strong>"truncation=True"</strong> cuts chunks longer than 512 tokens. <strong>"padding=max_length"</strong> pads shorter chunks with zeros so all chunks are the same length. This is needed for batch training.</p>
 </div></div>`},
@@ -262,13 +264,13 @@ render:()=>`
 <h2><span class="num">4.5</span> Set Labels = input_ids.copy()</h2>
 <p>This is self-supervised learning. The model's task: <strong>predict the next token</strong>. The "correct answer" is already in the text — it's just the next word.</p>
 
-<div class="code-box"><span style="color:var(--tmut);"># Labels = same as input (the model will auto-shift internally)</span>
-<span style="color:var(--green);">def</span> <span style="color:var(--violet);">add_labels</span>(examples):
-    examples[<span style="color:var(--amber);">"labels"</span>] = examples[<span style="color:var(--amber);">"input_ids"</span>].copy()
-    <span style="color:var(--green);">return</span> examples
+<div class="code-box"><span style="color:#6a9955;"># Labels = same as input (the model will auto-shift internally)</span>
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">add_labels</span>(examples):
+    examples[<span style="color:#ce9178;">"labels"</span>] = examples[<span style="color:#ce9178;">"input_ids"</span>].copy()
+    <span style="color:#569cd6;">return</span> examples
 
-tokenized_train = tokenized_train.map(add_labels, batched=<span style="color:var(--green);">True</span>)
-tokenized_eval = tokenized_eval.map(add_labels, batched=<span style="color:var(--green);">True</span>)</div>
+tokenized_train = tokenized_train.map(add_labels, batched=<span style="color:#569cd6;">True</span>)
+tokenized_eval = tokenized_eval.map(add_labels, batched=<span style="color:#569cd6;">True</span>)</div>
 
 <div style="font-size:0.85rem;color:var(--tdim);line-height:1.8;margin-top:0.5rem;">
 <strong>How self-supervised learning works:</strong><br>
@@ -285,25 +287,25 @@ render:()=>`
 <h2><span class="num">4.6</span> Load Base Model with BitsAndBytes 8-bit</h2>
 <p>We load the model quantized to 8-bit. This halves the memory while keeping good accuracy for fine-tuning.</p>
 
-<div class="code-box"><span style="color:var(--green);">from</span> transformers <span style="color:var(--green);">import</span> AutoModelForCausalLM, BitsAndBytesConfig
-<span style="color:var(--green);">import</span> torch
+<div class="code-box"><span style="color:#569cd6;">from</span> transformers <span style="color:#569cd6;">import</span> AutoModelForCausalLM, BitsAndBytesConfig
+<span style="color:#569cd6;">import</span> torch
 
 bnb_config = BitsAndBytesConfig(
-    load_in_8bit=<span style="color:var(--green);">True</span>,           <span style="color:var(--tmut);"># 8-bit quantization</span>
+    load_in_8bit=<span style="color:#569cd6;">True</span>,           <span style="color:#6a9955;"># 8-bit quantization</span>
 )
 
 model = AutoModelForCausalLM.from_pretrained(
     model_name,
     quantization_config=bnb_config,
-    device_map=<span style="color:var(--amber);">"auto"</span>,        <span style="color:var(--tmut);"># Auto-distribute across GPU/CPU</span>
+    device_map=<span style="color:#ce9178;">"auto"</span>,        <span style="color:#6a9955;"># Auto-distribute across GPU/CPU</span>
     torch_dtype=torch.float16
 )
 
-<span style="color:var(--tmut);"># Disable caching — saves memory during training</span>
-model.config.use_cache = <span style="color:var(--green);">False</span>
+<span style="color:#6a9955;"># Disable caching — saves memory during training</span>
+model.config.use_cache = <span style="color:#569cd6;">False</span>
 
-print(<span style="color:var(--amber);">f"Model loaded: {sum(p.numel() for p in model.parameters())/1e9:.1f}B params"</span>)
-<span style="color:var(--tmut);"># → Model loaded: 1.1B params</span></div>
+print(<span style="color:#ce9178;">f"Model loaded: {sum(p.numel() for p in model.parameters())/1e9:.1f}B params"</span>)
+<span style="color:#6a9955;"># → Model loaded: 1.1B params</span></div>
 
 <p><strong>8-bit (not 4-bit) for Phase 4.</strong> QLoRA (4-bit) works too, but 8-bit is simpler for a first hands-on. The model takes ~1.1 GB instead of 2.2 GB.</p>
 </div></div>`},
@@ -314,24 +316,24 @@ render:()=>`
 <h2><span class="num">4.7</span> Configure LoRA — r=8, alpha=16</h2>
 <p>This is where everything from Phase 3 comes together. We apply LoRA to the loaded model.</p>
 
-<div class="code-box"><span style="color:var(--green);">from</span> peft <span style="color:var(--green);">import</span> LoraConfig, get_peft_model, prepare_model_for_kbit_training
+<div class="code-box"><span style="color:#569cd6;">from</span> peft <span style="color:#569cd6;">import</span> LoraConfig, get_peft_model, prepare_model_for_kbit_training
 
-<span style="color:var(--tmut);"># Prep model for quantized training</span>
+<span style="color:#6a9955;"># Prep model for quantized training</span>
 model = prepare_model_for_kbit_training(model)
 
-<span style="color:var(--tmut);"># LoRA configuration</span>
+<span style="color:#6a9955;"># LoRA configuration</span>
 lora_config = LoraConfig(
-    r=<span style="color:var(--amber);">8</span>,                          <span style="color:var(--tmut);"># Rank</span>
-    lora_alpha=<span style="color:var(--amber);">16</span>,                 <span style="color:var(--tmut);"># Scaling factor</span>
-    lora_dropout=<span style="color:var(--amber);">0.1</span>,              <span style="color:var(--tmut);"># Regularization</span>
-    target_modules=[<span style="color:var(--amber);">"q_proj"</span>, <span style="color:var(--amber);">"v_proj"</span>],
-    bias=<span style="color:var(--amber);">"none"</span>,
-    task_type=<span style="color:var(--amber);">"CAUSAL_LM"</span>
+    r=<span style="color:#ce9178;">8</span>,                          <span style="color:#6a9955;"># Rank</span>
+    lora_alpha=<span style="color:#ce9178;">16</span>,                 <span style="color:#6a9955;"># Scaling factor</span>
+    lora_dropout=<span style="color:#ce9178;">0.1</span>,              <span style="color:#6a9955;"># Regularization</span>
+    target_modules=[<span style="color:#ce9178;">"q_proj"</span>, <span style="color:#ce9178;">"v_proj"</span>],
+    bias=<span style="color:#ce9178;">"none"</span>,
+    task_type=<span style="color:#ce9178;">"CAUSAL_LM"</span>
 )
 
 model = get_peft_model(model, lora_config)
 model.print_trainable_parameters()
-<span style="color:var(--tmut);"># → trainable params: 4,194,304 || all params: 1,104,842,752 || trainable%: 0.38%</span></div>
+<span style="color:#6a9955;"># → trainable params: 4,194,304 || all params: 1,104,842,752 || trainable%: 0.38%</span></div>
 
 <p><strong>Only 4.2M params are trainable.</strong> The other 1.1B are frozen in 8-bit. This is QLoRA in action — all that theory now running as actual code.</p>
 </div></div>`},
@@ -341,32 +343,32 @@ render:()=>`
 <div class="slide"><div class="card">
 <h2><span class="num">4.8</span> TrainingArguments — Control How Training Runs</h2>
 
-<div class="code-box"><span style="color:var(--green);">from</span> transformers <span style="color:var(--green);">import</span> TrainingArguments
+<div class="code-box"><span style="color:#569cd6;">from</span> transformers <span style="color:#569cd6;">import</span> TrainingArguments
 
 training_args = TrainingArguments(
-    output_dir=<span style="color:var(--amber);">"./domain_adapted_model"</span>,
+    output_dir=<span style="color:#ce9178;">"./domain_adapted_model"</span>,
 
-    <span style="color:var(--tmut);"># Training duration</span>
-    num_train_epochs=<span style="color:var(--amber);">3</span>,                <span style="color:var(--tmut);"># Pass through data 3 times</span>
-    per_device_train_batch_size=<span style="color:var(--amber);">4</span>,    <span style="color:var(--tmut);"># 4 examples per GPU per step</span>
-    gradient_accumulation_steps=<span style="color:var(--amber);">4</span>,    <span style="color:var(--tmut);"># Accumulate 4 steps = effective batch of 16</span>
+    <span style="color:#6a9955;"># Training duration</span>
+    num_train_epochs=<span style="color:#ce9178;">3</span>,                <span style="color:#6a9955;"># Pass through data 3 times</span>
+    per_device_train_batch_size=<span style="color:#ce9178;">4</span>,    <span style="color:#6a9955;"># 4 examples per GPU per step</span>
+    gradient_accumulation_steps=<span style="color:#ce9178;">4</span>,    <span style="color:#6a9955;"># Accumulate 4 steps = effective batch of 16</span>
 
-    <span style="color:var(--tmut);"># Learning rate</span>
-    learning_rate=<span style="color:var(--amber);">2e-4</span>,               <span style="color:var(--tmut);"># 0.0002</span>
-    lr_scheduler_type=<span style="color:var(--amber);">"cosine"</span>,      <span style="color:var(--tmut);"># Decay lr with cosine curve</span>
-    warmup_steps=<span style="color:var(--amber);">100</span>,                <span style="color:var(--tmut);"># Ramp up lr for first 100 steps</span>
+    <span style="color:#6a9955;"># Learning rate</span>
+    learning_rate=<span style="color:#ce9178;">2e-4</span>,               <span style="color:#6a9955;"># 0.0002</span>
+    lr_scheduler_type=<span style="color:#ce9178;">"cosine"</span>,      <span style="color:#6a9955;"># Decay lr with cosine curve</span>
+    warmup_steps=<span style="color:#ce9178;">100</span>,                <span style="color:#6a9955;"># Ramp up lr for first 100 steps</span>
 
-    <span style="color:var(--tmut);"># Logging & saving</span>
-    logging_steps=<span style="color:var(--amber);">50</span>,               <span style="color:var(--tmut);"># Log loss every 50 steps</span>
-    save_steps=<span style="color:var(--amber);">200</span>,                <span style="color:var(--tmut);"># Save checkpoint every 200 steps</span>
-    save_total_limit=<span style="color:var(--amber);">2</span>,            <span style="color:var(--tmut);"># Keep only last 2 checkpoints</span>
+    <span style="color:#6a9955;"># Logging & saving</span>
+    logging_steps=<span style="color:#ce9178;">50</span>,               <span style="color:#6a9955;"># Log loss every 50 steps</span>
+    save_steps=<span style="color:#ce9178;">200</span>,                <span style="color:#6a9955;"># Save checkpoint every 200 steps</span>
+    save_total_limit=<span style="color:#ce9178;">2</span>,            <span style="color:#6a9955;"># Keep only last 2 checkpoints</span>
 
-    <span style="color:var(--tmut);"># Precision</span>
-    fp16=<span style="color:var(--green);">True</span>,                       <span style="color:var(--tmut);"># Mixed precision training (faster)</span>
+    <span style="color:#6a9955;"># Precision</span>
+    fp16=<span style="color:#569cd6;">True</span>,                       <span style="color:#6a9955;"># Mixed precision training (faster)</span>
 
-    <span style="color:var(--tmut);"># Evaluation</span>
-    eval_strategy=<span style="color:var(--amber);">"steps"</span>,
-    eval_steps=<span style="color:var(--amber);">200</span>,
+    <span style="color:#6a9955;"># Evaluation</span>
+    eval_strategy=<span style="color:#ce9178;">"steps"</span>,
+    eval_steps=<span style="color:#ce9178;">200</span>,
 )</div>
 
 <p>Every one of these is a <strong>hyperparameter</strong> you choose. Same as the lr=0.02 in our QAT animation — except now lr=0.0002 because we're doing real QLoRA.</p>
@@ -377,7 +379,7 @@ render:()=>`
 <div class="slide"><div class="card">
 <h2><span class="num">4.9</span> Train! — The Moment of Truth</h2>
 
-<div class="code-box"><span style="color:var(--green);">from</span> transformers <span style="color:var(--green);">import</span> Trainer
+<div class="code-box"><span style="color:#569cd6;">from</span> transformers <span style="color:#569cd6;">import</span> Trainer
 
 trainer = Trainer(
     model=model,
@@ -387,9 +389,9 @@ trainer = Trainer(
     tokenizer=tokenizer,
 )
 
-<span style="color:var(--tmut);"># This single line runs the entire training loop:</span>
-<span style="color:var(--tmut);"># Forward → Loss → Backward (STE) → Update → Repeat</span>
-<span style="color:var(--tmut);"># For ALL the steps in ALL the epochs</span>
+<span style="color:#6a9955;"># This single line runs the entire training loop:</span>
+<span style="color:#6a9955;"># Forward → Loss → Backward (STE) → Update → Repeat</span>
+<span style="color:#6a9955;"># For ALL the steps in ALL the epochs</span>
 trainer.train()</div>
 
 <div class="pipeline" style="margin:1rem 0;">
@@ -410,7 +412,7 @@ trainer.train()</div>
 {'loss': 1.672, 'grad_norm': 0.74, 'learning_rate': 1.2e-4, 'epoch': 1.5}
 {'loss': 1.543, 'grad_norm': 0.52, 'learning_rate': 0.8e-4, 'epoch': 2.0}
 ...
-<span style="color:var(--green);"># Training complete!</span></div>
+<span style="color:#569cd6;"># Training complete!</span></div>
 
 <p><strong>Loss drops</strong> as the model learns your domain language. Lower loss = model is getting better at predicting the next token in your domain.</p>
 </div></div>`},
@@ -420,26 +422,26 @@ render:()=>`
 <div class="slide"><div class="card">
 <h2><span class="num">4.10</span> Test — Give a Prompt, See Domain Knowledge</h2>
 
-<div class="code-box"><span style="color:var(--tmut);"># Save the adapter</span>
-model.save_pretrained(<span style="color:var(--amber);">"./medical_domain_adapter"</span>)
-tokenizer.save_pretrained(<span style="color:var(--amber);">"./medical_domain_adapter"</span>)
+<div class="code-box"><span style="color:#6a9955;"># Save the adapter</span>
+model.save_pretrained(<span style="color:#ce9178;">"./medical_domain_adapter"</span>)
+tokenizer.save_pretrained(<span style="color:#ce9178;">"./medical_domain_adapter"</span>)
 
-<span style="color:var(--tmut);"># Test: give a partial sentence, see what the model completes</span>
-<span style="color:var(--green);">from</span> transformers <span style="color:var(--green);">import</span> pipeline
+<span style="color:#6a9955;"># Test: give a partial sentence, see what the model completes</span>
+<span style="color:#569cd6;">from</span> transformers <span style="color:#569cd6;">import</span> pipeline
 
-pipe = pipeline(<span style="color:var(--amber);">"text-generation"</span>, model=model, tokenizer=tokenizer)
+pipe = pipeline(<span style="color:#ce9178;">"text-generation"</span>, model=model, tokenizer=tokenizer)
 
-prompt = <span style="color:var(--amber);">"The patient presented with acute"</span>
+prompt = <span style="color:#ce9178;">"The patient presented with acute"</span>
 
-<span style="color:var(--tmut);"># WITHOUT fine-tuning (original TinyLlama):</span>
-<span style="color:var(--tmut);"># → "The patient presented with acute pain in the..." (generic)</span>
+<span style="color:#6a9955;"># WITHOUT fine-tuning (original TinyLlama):</span>
+<span style="color:#6a9955;"># → "The patient presented with acute pain in the..." (generic)</span>
 
-<span style="color:var(--tmut);"># WITH fine-tuning (domain-adapted model):</span>
-result = pipe(prompt, max_new_tokens=<span style="color:var(--amber);">50</span>, temperature=<span style="color:var(--amber);">0.7</span>)
-print(result[0][<span style="color:var(--amber);">"generated_text"</span>])
-<span style="color:var(--tmut);"># → "The patient presented with acute myocardial infarction."</span>
-<span style="color:var(--tmut);">#    "ECG showed ST-segment elevation in leads II, III, and aVF."</span>
-<span style="color:var(--tmut);">#    "Troponin levels were elevated at 12.4 ng/mL..."</span></div>
+<span style="color:#6a9955;"># WITH fine-tuning (domain-adapted model):</span>
+result = pipe(prompt, max_new_tokens=<span style="color:#ce9178;">50</span>, temperature=<span style="color:#ce9178;">0.7</span>)
+print(result[0][<span style="color:#ce9178;">"generated_text"</span>])
+<span style="color:#6a9955;"># → "The patient presented with acute myocardial infarction."</span>
+<span style="color:#6a9955;">#    "ECG showed ST-segment elevation in leads II, III, and aVF."</span>
+<span style="color:#6a9955;">#    "Troponin levels were elevated at 12.4 ng/mL..."</span></div>
 
 <div class="callout">
   <strong>🎉 What just happened?</strong> The model learned from Metformin.pdf that "metformin" is followed by medical terms like "hyperglycemia," "HbA1c," and "gastrointestinal" — pharmaceutical terminology it never generated before. It absorbed the vocabulary, style, and knowledge of the medical/pharma domain. You didn't label anything. You didn't write Q&A pairs. You just fed it text and it learned.
@@ -484,13 +486,13 @@ render:()=>`
 <h2><span class="num">📓</span> Complete Colab Notebook — 10 Cells</h2>
 <p>Each <span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.65rem;font-weight:700;">CELL</span> = one Colab code cell. <strong>📋 Copy</strong> → paste → <strong>Ctrl+Enter</strong>.</p>
 
-<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 1</span> <span style="color:var(--tmut);">— Setup: Install + Download PDF</span>
+<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 1</span> <span style="color:#6a9955;">— Setup: Install + Download PDF</span>
 
 !pip install -q transformers datasets peft bitsandbytes accelerate trl PyMuPDF torch
 !wget "https://raw.githubusercontent.com/ashokmulchandani/Complete-LLM-Finetuning/main/LLM%20Fine-Tuning-14-Train-LLMs-on-Your-PDF-Text-Data%20-Domain-Specific-Fine-Tuning-with-HuggingFace/Metformin.pdf"
 print("✅ Setup complete")</div>
 
-<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 2</span> <span style="color:var(--tmut);">— Load PDF & Extract Text</span>
+<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 2</span> <span style="color:#6a9955;">— Load PDF & Extract Text</span>
 
 import fitz
 doc = fitz.open("Metformin.pdf")
@@ -498,7 +500,7 @@ full_text = ""
 for page in doc: full_text += page.get_text()
 print(f"Extracted {len(full_text)} chars from {len(doc)} pages")</div>
 
-<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 3</span> <span style="color:var(--tmut);">— Chunk Text</span>
+<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 3</span> <span style="color:#6a9955;">— Chunk Text</span>
 
 def chunk_text(text, max_chars=2000):
     paragraphs = text.split("\n\n")
@@ -512,7 +514,7 @@ def chunk_text(text, max_chars=2000):
 chunks = chunk_text(full_text)
 print(f"Created {len(chunks)} chunks")</div>
 
-<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 4</span> <span style="color:var(--tmut);">— Dataset + Tokenize + Labels</span>
+<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 4</span> <span style="color:#6a9955;">— Dataset + Tokenize + Labels</span>
 
 from datasets import Dataset
 from transformers import AutoTokenizer
@@ -533,7 +535,7 @@ tk_train = tk_train.map(add_labels, batched=True)
 tk_eval  = tk_eval.map(add_labels, batched=True)
 print(f"Train: {len(tk_train)}, Eval: {len(tk_eval)}")</div>
 
-<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 5</span> <span style="color:var(--tmut);">— Load Model (8-bit Quantized)</span>
+<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 5</span> <span style="color:#6a9955;">— Load Model (8-bit Quantized)</span>
 
 import torch
 from transformers import AutoModelForCausalLM, BitsAndBytesConfig
@@ -543,7 +545,7 @@ model = AutoModelForCausalLM.from_pretrained(model_name, quantization_config=bnb
 model.config.use_cache = False
 print(f"Model loaded: {sum(p.numel() for p in model.parameters())/1e9:.1f}B params")</div>
 
-<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 6</span> <span style="color:var(--tmut);">— Apply LoRA</span>
+<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 6</span> <span style="color:#6a9955;">— Apply LoRA</span>
 
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 
@@ -552,7 +554,7 @@ lora_config = LoraConfig(r=8, lora_alpha=16, lora_dropout=0.1, target_modules=["
 model = get_peft_model(model, lora_config)
 model.print_trainable_parameters()</div>
 
-<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 7</span> <span style="color:var(--tmut);">— Training Arguments</span>
+<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 7</span> <span style="color:#6a9955;">— Training Arguments</span>
 
 from transformers import TrainingArguments
 
@@ -564,7 +566,7 @@ training_args = TrainingArguments(
     fp16=True, eval_strategy="steps", eval_steps=200,
 )</div>
 
-<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 8</span> <span style="color:var(--tmut);">— Train! (15-25 min)</span>
+<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 8</span> <span style="color:#6a9955;">— Train! (15-25 min)</span>
 
 from transformers import Trainer
 
@@ -572,13 +574,13 @@ trainer = Trainer(model=model, args=training_args, train_dataset=tk_train, eval_
 trainer.train()
 print("✅ Training complete!")</div>
 
-<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 9</span> <span style="color:var(--tmut);">— Save Adapter</span>
+<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 9</span> <span style="color:#6a9955;">— Save Adapter</span>
 
 model.save_pretrained("./medical_domain_adapter")
 tokenizer.save_pretrained("./medical_domain_adapter")
 print("✅ Adapter saved!")</div>
 
-<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 10</span> <span style="color:var(--tmut);">— Test!</span>
+<div class="code-box"><span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 10</span> <span style="color:#6a9955;">— Test!</span>
 
 from transformers import pipeline
 
