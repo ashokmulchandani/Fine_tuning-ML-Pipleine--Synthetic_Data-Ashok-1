@@ -36,9 +36,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.75rem;margin-bottom:1rem;}
 .card h2{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;font-weight:600;margin-bottom:0.8rem;display:flex;align-items:center;gap:0.5rem;}
 .card h2 .num{font-size:0.7rem;color:var(--violet);background:var(--vbg);border-radius:6px;padding:0.2em 0.6em;font-weight:700;}
-.card p{color:var(--tdim);margin-bottom:0.7rem;font-size:0.93rem;}
+.card p{color:var(--tdim);margin-bottom:0.7rem;font-size:1rem;}
 
-.code-box{background:#1e1e1e;border:1px solid #333;border-left:3px solid var(--violet);border-radius:8px;padding:1rem 1.25rem;margin:0.75rem 0;font-family:'Space Grotesk',monospace;font-size:0.78rem;line-height:1.8;white-space:pre-wrap;overflow-x:auto;color:#d4d4d4;position:relative;}
+.code-box{background:#1e1e1e;border:1px solid #333;border-left:3px solid var(--violet);border-radius:8px;padding:1rem 1.25rem;margin:0.75rem 0;font-family:'Space Grotesk',monospace;font-size:0.9rem;line-height:1.8;white-space:pre-wrap;overflow-x:auto;color:#d4d4d4;position:relative;}
 
 .copy-btn{position:absolute;top:8px;right:8px;font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:600;padding:0.35em 0.8em;border:1px solid #555;border-radius:6px;background:#2d2d2d;color:#ccc;cursor:pointer;transition:0.15s;opacity:0;}
 .code-box:hover .copy-btn{opacity:1;}
@@ -52,7 +52,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 
 .fun-fact{background:linear-gradient(135deg,rgba(91,58,168,0.04),rgba(0,122,153,0.04));border:1px solid var(--border);border-radius:14px;padding:1rem 1.25rem;margin:1rem 0;display:flex;align-items:flex-start;gap:0.7rem;font-size:0.88rem;}
 
-.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.75rem 1rem;margin:0.75rem 0;font-size:0.82rem;line-height:1.7;}
+.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.75rem 1rem;margin:0.75rem 0;font-size:0.9rem;line-height:1.7;}
 
 .nav-row{display:flex;justify-content:space-between;margin:1.5rem 0 3rem;}
 .nav-btn{font-family:'Space Grotesk',sans-serif;font-size:0.72rem;font-weight:600;letter-spacing:0.06em;padding:0.65em 1.6em;border:1.5px solid var(--border);border-radius:100px;background:var(--bg);color:var(--text);cursor:pointer;transition:0.2s;display:flex;align-items:center;gap:0.4em;}
@@ -369,7 +369,7 @@ render:()=>`
 <h2><span class="num">5.9</span> Compare the Three Stages</h2>
 <p>Give the same prompt to all three versions. The difference shows what each stage learned.</p>
 
-<table style="width:100%;border-collapse:collapse;font-size:0.8rem;margin:1rem 0;">
+<table style="width:100%;border-collapse:collapse;font-size:0.9rem;margin:1rem 0;">
 <thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.4rem;">Model</th><th style="text-align:left;padding:0.4rem;">Prompt: "What is Metformin?"</th></tr></thead>
 <tbody>
 <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.5rem;color:var(--tmut);">Base TinyLlama</td><td style="padding:0.5rem;">"What is Metformin? What is Aspirin? What is Ibuprofen?..." <span style="color:var(--red);">← Pattern completion, not answering</span></td></tr>
