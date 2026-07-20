@@ -121,6 +121,22 @@ A complete fine-tuning learning plan covering theory, hands-on practice across m
 | 6.8 | Compare: instruction model vs preference-aligned model (tone, safety, helpfulness) | Colab |
 | 6.9 | Understand RLAIF — AI-generated feedback for scalability (Anthropic technique) | Theory |
 
+## Phase 6B: MLOps & Deployment
+
+> Track, version, deploy, and monitor your fine-tuned models — the operational side.
+
+| Step | Task | Platform |
+|------|------|----------|
+| 6B.1 | MLflow experiment tracking — log params, metrics, and artifacts for every run | Local/Cloud |
+| 6B.2 | Data versioning with DVC — track which dataset produced which model | Local |
+| 6B.3 | Model Registry — version models, promote through stages (Staging → Production) | MLflow |
+| 6B.4 | Compare runs — find the best hyperparameters across experiments | MLflow UI |
+| 6B.5 | CI/CD pipelines — auto-trigger retraining on new data (GitHub Actions) | Cloud |
+| 6B.6 | Deployment patterns — batch inference vs real-time API vs streaming | Theory |
+| 6B.7 | Production serving with vLLM — 10× faster than HuggingFace pipeline | Local/Cloud |
+| 6B.8 | Monitoring & drift detection — when to retrain | Production |
+| 6B.9 | Cost optimization — spot instances, quantization, caching, 20× cheaper | Cloud |
+
 ## Phase 7: Azure AI Foundry Fine-Tuning (Cloud - No Code)
 
 > Fine-tune GPT models on Azure without writing code.
@@ -205,6 +221,7 @@ A complete fine-tuning learning plan covering theory, hands-on practice across m
 | Session 5 | Phase 5: Instruction fine-tuning with SFT (5.1–5.10) | 3-4 hrs |
 | Session 6 | Phase 5b: Synthetic data generation — Gretel, Mostly AI, Tonic (5b.1–5b.10) | 2-3 hrs |
 | Session 7 | Phase 6: DPO preference alignment (6.1–6.9) | 3-4 hrs |
+| Session 7b | Phase 6B: MLOps — MLflow, DVC, vLLM, monitoring (6B.1–6B.9) | 2-3 hrs |
 | Session 8 | Phase 7: Azure AI Foundry fine-tuning (7.1–7.10) | 2-3 hrs |
 | Session 9 | Phase 8: AWS Bedrock fine-tuning (8.1–8.10) | 2-3 hrs |
 | Session 10 | Phase 9: AWS SageMaker fine-tuning (9.1–9.9) | 3-4 hrs |
@@ -343,8 +360,8 @@ Click any link to open the interactive HTML in your browser. (Hosted via GitHub 
 - ✅ Phase 5: Instruction Fine-Tuning (hands-on done!) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase5_instruction_finetune.html) | [Format Visual →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/instruction_format_visual.html) | [Loss Explained →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/training_loss_explained.html)
 - ✅ Phase 5b: Synthetic Data Generation (theory done)
 - 📖 Phase 6: Preference Alignment (DPO) (theory done) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6_dpo_preference.html) | [DPO Loss →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/dpo_loss_simplified.html) | [Colab →](https://colab.research.google.com/drive/1fOFcaipLxzf-vaLEC1QvsFmLo-CsD1FR)
+- ⬜ Phase 6B: MLOps & Deployment 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6b_mlops_deployment.html)
 - ⬜ Phase 7: Azure AI Foundry
 - ⬜ Phase 8: AWS Bedrock
 - ⬜ Phase 9: AWS SageMaker
 - ⬜ Phase 10: Advanced Techniques & Production
-- ⬜ Phase 6B: MLOps & Deployment (track, version, deploy, monitor) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6b_mlops_deployment.html)
