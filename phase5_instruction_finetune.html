@@ -94,6 +94,28 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 
 <script>
 const slides=[
+{id:'Setup',title:'Getting Started — New Colab + Install',
+fact:'Phase 5 needs a fresh Colab with T4 GPU. Total: 6 cells, ~10 minutes.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">Setup</span> Open Colab → Install → Copy 6 Cells</h2>
+
+<div style="font-size:0.95rem;color:var(--tdim);line-height:2;margin-bottom:1rem;">
+<strong>1.</strong> Open <a href="https://colab.research.google.com" target="_blank" style="color:var(--violet);">Colab</a> → New Notebook → Runtime → <strong>T4 GPU</strong> → Save<br>
+<strong>2.</strong> Copy CELL 1 below (📋 Copy) → paste into first cell → Run<br>
+<strong>3.</strong> Copy CELL 2–6 from the slides and the 📓 Notebook slide → paste each into its own cell → Run
+</div>
+
+<div class="code-box">
+<span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 1</span> <span style="color:#6a9955;">— Install Dependencies (~2 min)</span>
+
+!pip install -q transformers datasets peft bitsandbytes accelerate trl
+print("✅ All dependencies installed — ready to go!")</div>
+
+<div class="callout">
+<strong>📋 What's different from Phase 4?</strong> Phase 4 used Trainer (from transformers). Phase 5 uses <strong>SFTTrainer</strong> (from trl). SFTTrainer handles instruction formatting automatically. No PDF download needed — we write Q&A pairs directly in the code.
+</div>
+</div></div>`},
 {id:'5.1',title:'Instruction Data Formats — Alpaca vs ChatML',
 fact:'The Alpaca format was created by Stanford researchers who used GPT-3 to generate 52,000 instruction-following examples for just $500. It became the standard for open-source SFT.',
 render:()=>`
@@ -528,7 +550,7 @@ function render(i){
 
   // Map slides to their CELL numbers for consistent labels
   const cellMap={
-    '5.2':2, '5.3':3, '5.5':4, '5.7':5, '5.10':6,
+    'Setup':1, '5.2':2, '5.3':3, '5.5':4, '5.7':5, '5.10':6,
     'Notebook':null // Notebook slide has its own labels
   };
 
@@ -559,6 +581,7 @@ function render(i){
   // Add concept reference tags
   setTimeout(()=>{
     const concepts={
+      'Setup':'🧠 Phase 5 uses SFTTrainer from TRL library — same as Phase 4 Trainer but designed for instruction data. No PDF download needed. We write Q&A pairs directly.',
       '5.1':'🧠 Phase 4 vs Phase 5: Phase 4 data = {"text":"..."} (raw). Phase 5 data = {"instruction":"...","output":"..."} (Q&A). This is the instructional data type from Phase 1.6.',
       '5.2':'🧠 Phase 1.6: Instructional data format. Instead of raw text, each example has instruction+input+output. You can manually write Q&A or use GPT-4o (Phase 5b) to generate them.',
       '5.3':'🧠 Phase 1.2: Pre-training vs Fine-tuning. The model was pre-trained on raw text. Now we fine-tune on formatted Q&A. The ### markers are boundary tokens — like the 3-stage pipeline from Phase 1.1.',
