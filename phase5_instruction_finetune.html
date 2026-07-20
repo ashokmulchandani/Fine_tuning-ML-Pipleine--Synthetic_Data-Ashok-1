@@ -182,8 +182,23 @@ instruction_data = [
         <span style="color:#ce9178;">"input"</span>: <span style="color:#ce9178;">""</span>,
         <span style="color:#ce9178;">"output"</span>: <span style="color:#ce9178;">"It decreases hepatic glucose production and improves insulin sensitivity."</span>
     },
-    <span style="color:#6a9955;"># ... add more Q&A pairs</span>
+    {
+        <span style="color:#ce9178;">"instruction"</span>: <span style="color:#ce9178;">"What are common side effects?"</span>,
+        <span style="color:#ce9178;">"input"</span>: <span style="color:#ce9178;">""</span>,
+        <span style="color:#ce9178;">"output"</span>: <span style="color:#ce9178;">"Common side effects include nausea, vomiting, diarrhea, and abdominal discomfort."</span>
+    },
+    {
+        <span style="color:#ce9178;">"instruction"</span>: <span style="color:#ce9178;">"When is Metformin contraindicated?"</span>,
+        <span style="color:#ce9178;">"input"</span>: <span style="color:#ce9178;">""</span>,
+        <span style="color:#ce9178;">"output"</span>: <span style="color:#ce9178;">"Metformin is contraindicated in patients with severe renal impairment, acute metabolic acidosis, or hypersensitivity to the drug."</span>
+    },
+    {
+        <span style="color:#ce9178;">"instruction"</span>: <span style="color:#ce9178;">"What class of drug is Metformin?"</span>,
+        <span style="color:#ce9178;">"input"</span>: <span style="color:#ce9178;">""</span>,
+        <span style="color:#ce9178;">"output"</span>: <span style="color:#ce9178;">"Metformin belongs to the biguanide class of antihyperglycemic agents."</span>
+    },
 ]
+print(<span style="color:#ce9178;">f"✅ {len(instruction_data)} examples ready"</span>)
 
 <span style="color:#6a9955;"># Method 2: Auto-generate with GPT-4o (Phase 5b covers synthetic data)</span>
 <span style="color:#6a9955;"># Feed chunk → GPT-4o → "Generate 5 Q&A pairs from this text" → JSON output</span></div>
