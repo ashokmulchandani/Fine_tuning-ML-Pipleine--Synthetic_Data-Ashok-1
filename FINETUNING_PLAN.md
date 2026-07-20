@@ -310,6 +310,13 @@ Click any link to open the interactive HTML in your browser. (Hosted via GitHub 
 - [lora_adapters_per_layer.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/lora_adapters_per_layer.html) — Visual showing 32 layers × independent adapters per module
 - [model_memory_lora_calculator.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/model_memory_lora_calculator.html) — Interactive calculator: FP32→quantization→LoRA. Change rank, precision, target modules — everything updates live
 
+### 🤖 Phase 5b: Synthetic Data Generation
+- [phase5b_synthetic_data.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase5b_synthetic_data.html) — 10 slides: Gretel AI, Mostly AI, Tonic AI, synthetic → instruction format
+
+### ⚖️ Phase 6: Preference Alignment (DPO)
+- [phase6_dpo_preference.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6_dpo_preference.html) — 9 slides + 5-cell Colab notebook
+- [dpo_loss_simplified.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/dpo_loss_simplified.html) — DPO loss explained: teacher analogy + beta volume knob
+
 ### 💬 Phase 5: Instruction Fine-Tuning (SFT)
 - [phase5_instruction_finetune.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase5_instruction_finetune.html) — 10 interactive slides + Notebook with 6 Colab cells
 - [instruction_format_visual.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/instruction_format_visual.html) — Visual: how Q&A JSON becomes training strings
@@ -331,7 +338,7 @@ Click any link to open the interactive HTML in your browser. (Hosted via GitHub 
 - 📖 Phase 3: LoRA & QLoRA (theory done) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase3_lora_qlora.html)
 - ✅ Phase 4: Non-Instructional Fine-Tuning (hands-on done!) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase4_domain_finetune.html) | [Colab →](https://colab.research.google.com/drive/14X8AHciw9grj0BG4ojcFZMt7o87Pm9AM) | [Notebook →](Phase_4_Non_Instructional_Fine_Tuning.ipynb)
 - ✅ Phase 5: Instruction Fine-Tuning (hands-on done!) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase5_instruction_finetune.html) | [Format Visual →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/instruction_format_visual.html) | [Loss Explained →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/training_loss_explained.html)
-- ⬜ Phase 5b: Synthetic Data Generation (Gretel, Mostly AI, Tonic)
+- ✅ Phase 5b: Synthetic Data Generation (theory done)
 - 📖 Phase 6: Preference Alignment (DPO) (theory done) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6_dpo_preference.html) | [DPO Loss →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/dpo_loss_simplified.html)
 - ⬜ Phase 7: Azure AI Foundry
 - ⬜ Phase 8: AWS Bedrock
