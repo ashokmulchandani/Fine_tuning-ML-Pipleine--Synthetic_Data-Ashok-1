@@ -95,11 +95,8 @@ render:()=>`
 <h2><span class="num">6.1</span> RLHF — Reinforcement Learning from Human Feedback</h2>
 <p>The original method. Two models. One trains a reward function. The other optimizes against it. Complex and expensive.</p>
 
-<div class="flow" style="display:flex;align-items:center;gap:0.3rem;flex-wrap:wrap;justify-content:center;margin:1rem 0;font-family:'Space Grotesk',sans-serif;font-size:0.65rem;">
-  <div style="background:var(--raised);padding:0.5rem;border-radius:6px;">Human raters<br>compare responses</div><span>→</span>
-  <div style="background:var(--raised);padding:0.5rem;border-radius:6px;">Train<br>Reward Model</div><span>→</span>
-  <div style="background:var(--raised);padding:0.5rem;border-radius:6px;">PPO algorithm<br>optimizes LLM</div><span>→</span>
-  <div style="background:rgba(26,110,52,0.08);padding:0.5rem;border-radius:6px;border:1px solid var(--green);">Aligned<br>Model</div>
+<div style="display:flex;align-items:center;gap:0.3rem;flex-wrap:wrap;justify-content:center;margin:1rem 0;font-size:0.75rem;">
+  <span>Human raters → Train Reward Model → PPO optimizes LLM → <strong style="color:var(--green);">Aligned Model</strong></span>
 </div>
 
 <div class="compare">
