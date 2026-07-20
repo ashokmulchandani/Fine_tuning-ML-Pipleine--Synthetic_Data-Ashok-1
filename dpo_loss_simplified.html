@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DPO Loss — Simple Explanation</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--violet:#5b3aa8;--green:#1a6e34;--red:#c62828;--amber:#b87000;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;min-height:100vh;}
+.app{max-width:800px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:2rem 0 1.5rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.95rem;}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin:1.5rem 0;}
+.card h2{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;color:var(--violet);margin-bottom:0.75rem;}
+
+.teacher{display:flex;gap:1rem;margin:1rem 0;align-items:center;}
+.teacher .face{font-size:3rem;}
+.teacher .speech{background:var(--raised);border-radius:10px;padding:1rem;font-size:0.9rem;flex:1;}
+
+.demo{display:flex;flex-direction:column;gap:1rem;margin:1rem 0;}
+.demo-row{display:flex;align-items:center;gap:0.75rem;}
+.demo-label{min-width:80px;font-family:'Space Grotesk',sans-serif;font-size:0.7rem;font-weight:600;}
+.demo-bar-container{flex:1;height:32px;background:var(--raised);border-radius:6px;overflow:hidden;display:flex;}
+.demo-bar{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.7rem;font-family:'Space Grotesk',sans-serif;transition:width 0.5s;}
+.demo-bar.good{background:var(--green);}
+.demo-bar.bad{background:var(--red);}
+.demo-pct{min-width:50px;font-family:'Space Grotesk',sans-serif;font-size:0.75rem;text-align:right;font-weight:600;}
+
+.scenario{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin:1rem 0;}
+.scen-box{background:var(--raised);border-radius:10px;padding:1rem;text-align:center;}
+.scen-box.good{border:2px solid var(--green);}
+.scen-box.bad{border:2px solid var(--red);}
+.scen-box h4{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;margin-bottom:0.5rem;}
+
+.callout{background:rgba(0,122,153,0.05);border:1px solid rgba(0,122,153,0.2);border-radius:8px;padding:1rem;margin:1rem 0;font-size:0.85rem;}
+
+.formula{font-family:'Space Grotesk',monospace;font-size:0.8rem;background:var(--raised);padding:0.6rem;border-radius:6px;text-align:center;margin:0.5rem 0;}
+
+@media(max-width:768px){.scenario{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>DPO Loss — Like a Teacher Grading Papers</h1>
+  <p>Forget the math. Think of it as a teacher comparing two student answers.</p>
+</header>
+
+<!-- The Teacher Analogy -->
+<div class="card">
+  <h2>The Teacher Analogy</h2>
+  <div class="teacher">
+    <div class="face">👩‍🏫</div>
+    <div class="speech">
+      <strong>Teacher:</strong> "I'm showing you two answers. Answer A is the good one. Answer B is the bad one. Your job: learn to ALWAYS be more like A and less like B."
+    </div>
+  </div>
+  <p style="font-size:0.85rem;color:var(--tdim);margin-top:0.5rem;">
+    The teacher doesn't explain WHY A is better. They just say: "This one. Not that one." After seeing hundreds of pairs, you figure out the pattern: be thorough, be accurate, be helpful. Don't be lazy, don't be rude, don't be dismissive.
+  </p>
+</div>
+
+<!-- The Two Scenarios -->
+<div class="card">
+  <h2>Two Scenarios — Good Grad vs Bad Grad</h2>
+
+  <div class="scenario">
+    <div class="scen-box good">
+      <h4 style="color:var(--green);">✅ Scenario 1: Model Already Prefers Good</h4>
+      <div class="demo">
+        <div class="demo-row">
+          <div class="demo-label">Chosen (good)</div>
+          <div class="demo-bar-container"><div class="demo-bar good" style="width:75%">75%</div></div>
+        </div>
+        <div class="demo-row">
+          <div class="demo-label">Rejected (bad)</div>
+          <div class="demo-bar-container"><div class="demo-bar bad" style="width:25%">25%</div></div>
+        </div>
+      </div>
+      <p style="font-size:0.78rem;color:var(--green);margin-top:0.5rem;">
+        Model says: 75% chance the good answer is correct.<br>
+        25% chance the bad answer is correct.<br>
+        <strong>LOSS = LOW</strong> (model is already right!)
+      </p>
+    </div>
+    <div class="scen-box bad">
+      <h4 style="color:var(--red);">❌ Scenario 2: Model Prefers Bad</h4>
+      <div class="demo">
+        <div class="demo-row">
+          <div class="demo-label">Chosen (good)</div>
+          <div class="demo-bar-container"><div class="demo-bar good" style="width:20%">20%</div></div>
+        </div>
+        <div class="demo-row">
+          <div class="demo-label">Rejected (bad)</div>
+          <div class="demo-bar-container"><div class="demo-bar bad" style="width:80%">80%</div></div>
+        </div>
+      </div>
+      <p style="font-size:0.78rem;color:var(--red);margin-top:0.5rem;">
+        Model says: 80% chance the BAD answer is correct!<br>
+        Only 20% chance the good answer is correct.<br>
+        <strong>LOSS = HIGH</strong> (model is wrong — penalize hard!)
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- What the Formula Actually Says -->
+<div class="card">
+  <h2>What the Formula Actually Says</h2>
+  <div class="formula">
+Loss = -log( sigma( beta * (log P_model(chosen) - log P_model(rejected)) ) )
+  </div>
+
+  <table style="width:100%;border-collapse:collapse;font-size:0.82rem;margin:1rem 0;">
+    <tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.3rem;">Term</th><th style="text-align:left;padding:0.3rem;">In Plain English</th></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">log P(chosen)</td><td style="padding:0.3rem;">"How confident is the model that the good answer is... good?"</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">log P(rejected)</td><td style="padding:0.3rem;">"How confident is the model that the bad answer is... good?"</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">log P(chosen) - log P(rejected)</td><td style="padding:0.3rem;">"Does the model prefer good over bad?" (Positive = yes, Negative = no)</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">sigma(...)</td><td style="padding:0.3rem;">Squishes the number to between 0 and 1. "How certain are we?"</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">-log(...)</td><td style="padding:0.3rem;">Turns it into a loss. Close to 1 -> low loss. Close to 0 -> HIGH loss.</td></tr>
+    <tr><td style="padding:0.3rem;">beta</td><td style="padding:0.3rem;">"How strict is the teacher?" (0.1 = gentle, 0.5 = strict)</td></tr>
+  </table>
+
+  <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;margin:1.2rem 0 0.5rem;color:var(--violet);">Beta = The Volume Knob</h3>
+  <p style="font-size:0.85rem;color:var(--tdim);">Beta goes INSIDE the sigma(). It amplifies the difference between chosen and rejected.</p>
+
+  <div class="formula" style="font-size:0.9rem;margin:0.75rem 0;">
+loss = -log( sigma( <span style="color:var(--violet);font-weight:700;">beta</span> * (log P(chosen) - log P(rejected)) ) )
+                         <span style="color:var(--violet);">↑</span>
+                         <span style="color:var(--violet);">multiplier on the difference</span>
+  </div>
+
+  <div style="display:flex;gap:0.5rem;margin:1rem 0;align-items:center;">
+    <span style="font-family:'Space Grotesk',sans-serif;font-size:0.65rem;">Gentle<br>0.1</span>
+    <input type="range" min="1" max="5" value="1" id="betaSlider" style="flex:1;" oninput="updateBeta()">
+    <span style="font-family:'Space Grotesk',sans-serif;font-size:0.65rem;">Strict<br>0.5</span>
+  </div>
+
+  <div class="demo" style="margin:0.75rem 0;" id="betaDemo">
+    <div class="demo-row">
+      <div class="demo-label">Chosen</div>
+      <div class="demo-bar-container"><div class="demo-bar good" id="chosenBar" style="width:55%">55%</div></div>
+    </div>
+    <div class="demo-row">
+      <div class="demo-label">Rejected</div>
+      <div class="demo-bar-container"><div class="demo-bar bad" id="rejectedBar" style="width:45%">45%</div></div>
+    </div>
+  </div>
+  <div style="text-align:center;font-size:0.8rem;margin:0.5rem 0;">
+    Raw difference: <strong>55% - 45% = 10%</strong> &nbsp;→&nbsp;
+    Beta amplifies to: <strong style="color:var(--violet);" id="betaResult">0.1 × 10% = 1% effective signal</strong><br>
+    <span style="color:var(--tmut);font-size:0.7rem;">Small beta = "this small difference is fine, don't push too hard"</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:1rem 0;">
+    <div style="background:rgba(26,110,52,0.05);border:1px solid rgba(26,110,52,0.2);border-radius:8px;padding:0.75rem;text-align:center;">
+      <strong style="color:var(--green);">Beta = 0.1 (Gentle)</strong>
+      <p style="font-size:0.75rem;color:var(--tdim);margin-top:0.3rem;">"A small preference for good is enough."<br>Model changes slowly.<br>Good for: large, noisy datasets.</p>
+    </div>
+    <div style="background:rgba(198,40,40,0.05);border:1px solid rgba(198,40,40,0.2);border-radius:8px;padding:0.75rem;text-align:center;">
+      <strong style="color:var(--red);">Beta = 0.5 (Strict)</strong>
+      <p style="font-size:0.75rem;color:var(--tdim);margin-top:0.3rem;">"You must STRONGLY prefer good over bad."<br>Model changes faster.<br>Good for: clean, curated datasets.</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>🧠 The intuition:</strong> Imagine the model slightly prefers good (55%) over bad (45%). With beta=0.1, that's treated as a weak preference — low loss, barely any update. With beta=0.5, that SAME 10% gap is amplified 5× — treated as a much stronger signal — the model gets pushed harder to widen the gap. Beta is just a multiplier on "how much do we care about this difference?"
+  </div>
+</div>
+
+<script>
+function updateBeta(){
+  const slider=document.getElementById('betaSlider');
+  const beta=[0.1,0.2,0.3,0.4,0.5][slider.value-1];
+  const rawDiff=0.10;
+  const amplified=beta*rawDiff;
+  document.getElementById('betaResult').textContent=beta.toFixed(1)+' × 10% = '+(amplified*100).toFixed(0)+'% effective signal';
+  document.getElementById('betaResult').style.color=beta>0.3?'var(--red)':'var(--green)';
+}
+</script>
+
+</div>
+
+<!-- One sentence -->
+<div class="card" style="text-align:center;">
+  <h2>In One Sentence</h2>
+  <p style="font-size:1.1rem;">
+    <strong>DPO Loss = "How badly does my model need to be corrected?"</strong><br>
+    <span style="font-size:0.85rem;color:var(--tdim);">
+      If the model already prefers good over bad → loss is small → barely move.<br>
+      If the model prefers bad over good → loss is HUGE → push hard to fix it.
+    </span>
+  </p>
+</div>
+
+</div>
+</body>
+</html>
