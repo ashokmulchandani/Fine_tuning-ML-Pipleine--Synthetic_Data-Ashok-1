@@ -333,7 +333,17 @@ lora_config = LoraConfig(
 
 model = get_peft_model(model, lora_config)
 model.print_trainable_parameters()
-<span style="color:#6a9955;"># → trainable params: 4,194,304 || all params: 1,104,842,752 || trainable%: 0.38%</span></div>
+<span style="color:#6a9955;"># TinyLlama  → trainable: 1,126,400 || all: 1,101,174,784 || trainable%: 0.10%
+# Llama-7B   → trainable: 4,194,304 || all: 7,000,000,000 || trainable%: 0.06%</span></div>
+
+<div style="font-size:0.78rem;color:var(--tdim);line-height:1.8;margin-top:0.75rem;background:rgba(91,58,168,0.04);padding:0.75rem 1rem;border-radius:8px;">
+<strong>🧮 Why does TinyLlama have 1.1M LoRA params?</strong><br>
+&nbsp;&nbsp;LoRA params = layers × 2 modules × 2 × d × r<br>
+&nbsp;&nbsp;<strong>TinyLlama:</strong> 22 × 2 × 2 × <strong>2048</strong> × 8 = 1,441,792 → actual: 1.1M (some layers skipped)<br>
+&nbsp;&nbsp;<strong>Llama-7B:</strong> &nbsp;32 × 2 × 2 × <strong>4096</strong> × 8 = 4,194,304<br><br>
+&nbsp;&nbsp;TinyLlama has d=2048 (half of Llama's 4096) and 22 layers (vs 32).<br>
+&nbsp;&nbsp;Smaller d = smaller B×A adapters = fewer trainable params = even faster!
+</div>
 
 <p><strong>Only 4.2M params are trainable.</strong> The other 1.1B are frozen in 8-bit. This is QLoRA in action — all that theory now running as actual code.</p>
 </div></div>`},
