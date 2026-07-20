@@ -426,6 +426,7 @@ function render(i){
 
 function goTo(i){if(i<0||i>=slides.length)return;render(i);}
 document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'&&cur<slides.length-1)goTo(cur+1);if(e.key==='ArrowLeft'&&cur>0)goTo(cur-1);});
+window.onerror=function(m,s,l){alert('Error: '+m); return false;};
 render(0);
 </script>
 </body>
