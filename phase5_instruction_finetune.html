@@ -526,14 +526,23 @@ function render(i){
   if(i===slides.length-1){nb.textContent='✓ Complete';nb.style.background='var(--green)';}
   else{nb.textContent='Next →';nb.style.background='var(--violet)';nb.style.color='#fff';}
 
+  // Map slides to their CELL numbers for consistent labels
+  const cellMap={
+    '5.2':2, '5.3':3, '5.5':4, '5.7':5, '5.10':6,
+    'Notebook':null // Notebook slide has its own labels
+  };
+
   // Add concept tags + copy buttons
   setTimeout(()=>{
-    let n=1;
-    document.querySelectorAll('.code-box').forEach(box=>{
+    const currentSlide=slides[cur];
+    const cellStart=cellMap[currentSlide.id]||0;
+
+    document.querySelectorAll('.code-box').forEach((box,idx)=>{
       if(!box.querySelector('.cell-num')){
         const num=document.createElement('div');
         num.style.cssText='font-family:"Space Grotesk",sans-serif;font-size:0.6rem;font-weight:700;color:#fff;background:var(--violet);display:inline-block;padding:0.2em 0.7em;border-radius:4px 4px 0 0;margin-bottom:-1px;letter-spacing:0.06em;';
-        num.textContent=`📋 Code ${n++}`;
+        const cellNum=cellStart>0?`CELL ${cellStart}`:`📋 Code ${idx+1}`;
+        num.textContent=cellNum+' — Copy into Colab';
         box.insertBefore(num,box.firstChild);
       }
       if(!box.parentElement.querySelector('.copy-btn')&&!box.querySelector('.copy-btn')){
