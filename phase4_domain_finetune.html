@@ -338,11 +338,23 @@ model.print_trainable_parameters()
 
 <div style="font-size:0.78rem;color:var(--tdim);line-height:1.8;margin-top:0.75rem;background:rgba(91,58,168,0.04);padding:0.75rem 1rem;border-radius:8px;">
 <strong>🧮 Why does TinyLlama have 1.1M LoRA params?</strong><br>
-&nbsp;&nbsp;LoRA params = layers × 2 modules × 2 × d × r<br>
-&nbsp;&nbsp;<strong>TinyLlama:</strong> 22 × 2 × 2 × <strong>2048</strong> × 8 = 1,441,792 → actual: 1.1M (some layers skipped)<br>
-&nbsp;&nbsp;<strong>Llama-7B:</strong> &nbsp;32 × 2 × 2 × <strong>4096</strong> × 8 = 4,194,304<br><br>
-&nbsp;&nbsp;TinyLlama has d=2048 (half of Llama's 4096) and 22 layers (vs 32).<br>
-&nbsp;&nbsp;Smaller d = smaller B×A adapters = fewer trainable params = even faster!
+&nbsp;&nbsp;<strong>LoRA params = layers × modules × (B+A) × d × r</strong><br><br>
+&nbsp;&nbsp;<strong>TinyLlama:</strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;22 <span style="color:#6a9955;">← layers (transformer blocks)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;× 2 <span style="color:#6a9955;">← target_modules (q_proj + v_proj)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;× 2 <span style="color:#6a9955;">← 2 matrices per adapter (B and A)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;× <strong>2048</strong> <span style="color:#6a9955;">← d (hidden size — smaller model)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;× 8 <span style="color:#6a9955;">← r (rank)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;= 1,441,792 → actual: 1.1M (not all layers targeted)<br><br>
+&nbsp;&nbsp;<strong>Llama-7B:</strong><br>
+&nbsp;&nbsp;&nbsp;&nbsp;32 <span style="color:#6a9955;">← layers (more blocks)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;× 2 <span style="color:#6a9955;">← target_modules (q_proj + v_proj)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;× 2 <span style="color:#6a9955;">← 2 matrices per adapter (B and A)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;× <strong>4096</strong> <span style="color:#6a9955;">← d (hidden size — 2× larger!)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;× 8 <span style="color:#6a9955;">← r (rank)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;= 4,194,304<br><br>
+&nbsp;&nbsp;<strong>Key difference:</strong> TinyLlama's d=2048 and 22 layers vs Llama's d=4096 and 32 layers.<br>
+&nbsp;&nbsp;Smaller d + fewer layers = smaller B×A = fewer params = faster training!
 </div>
 
 <p><strong>Only 4.2M params are trainable.</strong> The other 1.1B are frozen in 8-bit. This is QLoRA in action — all that theory now running as actual code.</p>
