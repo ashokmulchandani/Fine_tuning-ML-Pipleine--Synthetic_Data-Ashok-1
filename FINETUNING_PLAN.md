@@ -344,3 +344,4 @@ Click any link to open the interactive HTML in your browser. (Hosted via GitHub 
 - ⬜ Phase 8: AWS Bedrock
 - ⬜ Phase 9: AWS SageMaker
 - ⬜ Phase 10: Advanced Techniques & Production
+- ⬜ Phase 11: MLOps & Deployment (track, version, deploy, monitor) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase11_mlops_deployment.html)
