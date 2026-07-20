@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deploy Your Fine-Tuned Model</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--violet:#5b3aa8;--green:#1a6e34;--amber:#b87000;--cyan:#007a99;--magenta:#9e2a6b;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;min-height:100vh;}
+.app{max-width:950px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:2rem 0 1.5rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.95rem;margin-top:0.3rem;}
+
+.level{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin:1.5rem 0;position:relative;}
+.level .lv-num{position:absolute;top:-14px;left:20px;background:var(--violet);color:#fff;font-family:'Space Grotesk',sans-serif;font-size:0.65rem;font-weight:700;padding:0.3em 1em;border-radius:100px;letter-spacing:0.08em;}
+.level h2{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;margin:0.5rem 0 0.75rem;color:var(--violet);}
+.level p{color:var(--tdim);font-size:0.88rem;margin-bottom:0.6rem;}
+
+.code-box{background:#1e1e1e;border:1px solid #333;border-left:3px solid var(--violet);border-radius:8px;padding:1rem 1.25rem;margin:0.75rem 0;font-family:'Space Grotesk',monospace;font-size:0.78rem;line-height:1.8;white-space:pre-wrap;overflow-x:auto;color:#d4d4d4;position:relative;}
+
+.copy-btn{position:absolute;top:8px;right:8px;font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:600;padding:0.35em 0.8em;border:1px solid #555;border-radius:6px;background:#2d2d2d;color:#ccc;cursor:pointer;transition:0.15s;opacity:0;}
+.code-box:hover .copy-btn{opacity:1;}
+.copy-btn:hover{background:#333;color:#c586c0;border-color:#c586c0;}
+.copy-btn.copied{background:#2d2d2d;color:#4ec9b0;border-color:#4ec9b0;}
+
+.compare{display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;margin:0.75rem 0;}
+.compare-item{text-align:center;padding:0.75rem 0.5rem;background:var(--raised);border-radius:8px;font-size:0.7rem;}
+.compare-item .ico{font-size:1.3rem;}
+.compare-item .val{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.8rem;margin:0.2rem 0;}
+.compare-item .lbl{color:var(--tmut);font-size:0.6rem;}
+
+.flow{display:flex;align-items:center;gap:0.3rem;flex-wrap:wrap;justify-content:center;margin:0.75rem 0;font-size:0.65rem;font-family:'Space Grotesk',sans-serif;}
+.flow-step{background:var(--raised);border:1px solid var(--border);border-radius:6px;padding:0.4rem 0.7rem;}
+.flow-arrow{color:var(--violet);}
+
+.callout{background:rgba(91,58,168,0.04);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.75rem 1rem;margin:0.75rem 0;font-size:0.8rem;}
+
+@media(max-width:768px){.compare{grid-template-columns:repeat(2,1fr);}.app{padding:0.75rem;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>Deploy Your Fine-Tuned Model</h1>
+  <p>From Colab to production — 4 levels, from local testing to public API</p>
+</header>
+
+<!-- What you have -->
+<div class="callout" style="margin-bottom:2rem;text-align:center;">
+  <strong>You already have:</strong> <code>./medical_domain_adapter/</code> with <code>adapter_model.safetensors</code> (4.5 MB) + <code>tokenizer.json</code> + <code>adapter_config.json</code>
+</div>
+
+<!-- Level 1 -->
+<div class="level">
+  <div class="lv-num">Level 1</div>
+  <h2>🔧 Load Adapter — Use Locally</h2>
+  <p>Load base model + adapter separately. No merging needed. Good for testing.</p>
+  <div class="code-box">
+<span style="color:#6a9955;"># Load base model + your trained adapter</span>
+<span style="color:#569cd6;">from</span> transformers <span style="color:#569cd6;">import</span> AutoModelForCausalLM, AutoTokenizer, pipeline
+<span style="color:#569cd6;">from</span> peft <span style="color:#569cd6;">import</span> PeftModel
+
+base = AutoModelForCausalLM.from_pretrained(
+    <span style="color:#ce9178;">"TinyLlama/TinyLlama-1.1B-Chat-v1.0"</span>,
+    device_map=<span style="color:#ce9178;">"auto"</span>
+)
+model = PeftModel.from_pretrained(base, <span style="color:#ce9178;">"./medical_domain_adapter"</span>)
+tokenizer = AutoTokenizer.from_pretrained(<span style="color:#ce9178;">"./medical_domain_adapter"</span>)
+
+pipe = pipeline(<span style="color:#ce9178;">"text-generation"</span>, model=model, tokenizer=tokenizer)
+pipe(<span style="color:#ce9178;">"Metformin is used to treat"</span>)</div>
+</div>
+
+<!-- Level 2 -->
+<div class="level">
+  <div class="lv-num">Level 2</div>
+  <h2>🧬 Merge — One Normal Model (Phase 3.10!)</h2>
+  <p>Bake B×A INTO the base weights. Adapter disappears. No LoRA needed at inference.</p>
+  <div class="flow" style="margin:1rem 0;">
+    <div class="flow-step">Base (2.2 GB)</div><span class="flow-arrow">+</span>
+    <div class="flow-step">Adapter (4.5 MB)</div><span class="flow-arrow">→ merge →</span>
+    <div class="flow-step" style="border-color:var(--green);background:rgba(26,110,52,0.06);">Merged Model (2.2 GB)</div>
+  </div>
+  <div class="code-box">
+<span style="color:#6a9955;"># Merge adapter INTO base weights (one-time operation)</span>
+model = model.merge_and_unload()
+model.save_pretrained(<span style="color:#ce9178;">"./merged_medical_model"</span>)
+tokenizer.save_pretrained(<span style="color:#ce9178;">"./merged_medical_model"</span>)
+
+<span style="color:#6a9955;"># Now use it WITHOUT peft — it's a normal transformers model!</span>
+model = AutoModelForCausalLM.from_pretrained(<span style="color:#ce9178;">"./merged_medical_model"</span>)
+pipe = pipeline(<span style="color:#ce9178;">"text-generation"</span>, model=model, tokenizer=tokenizer)
+<span style="color:#6a9955;"># No PeftModel. No adapter_config. Just a normal model.</span></div>
+</div>
+
+<!-- Level 3 -->
+<div class="level">
+  <div class="lv-num">Level 3</div>
+  <h2>🌐 FastAPI — Turn Into an API</h2>
+  <p>Create a REST API your app/website can call. 10 lines of code.</p>
+  <div class="code-box">
+<span style="color:#6a9955;"># File: app.py</span>
+<span style="color:#569cd6;">from</span> fastapi <span style="color:#569cd6;">import</span> FastAPI
+<span style="color:#569cd6;">from</span> pydantic <span style="color:#569cd6;">import</span> BaseModel
+<span style="color:#569cd6;">from</span> transformers <span style="color:#569cd6;">import</span> pipeline
+
+app = FastAPI()
+pipe = pipeline(<span style="color:#ce9178;">"text-generation"</span>, model=<span style="color:#ce9178;">"./merged_medical_model"</span>)
+
+<span style="color:#569cd6;">class</span> <span style="color:#4ec9b0;">Request</span>(BaseModel):
+    prompt: <span style="color:#4ec9b0;">str</span>
+
+@app.post(<span style="color:#ce9178;">"/generate"</span>)
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">generate</span>(req: Request):
+    result = pipe(req.prompt, max_new_tokens=<span style="color:#ce9178;">100</span>)
+    <span style="color:#569cd6;">return</span> {<span style="color:#ce9178;">"output"</span>: result[0][<span style="color:#ce9178;">"generated_text"</span>]}
+
+<span style="color:#6a9955;"># Run: uvicorn app:app --reload</span>
+<span style="color:#6a9955;"># API at: http://localhost:8000/generate</span>
+<span style="color:#6a9955;"># Test:  curl -X POST http://localhost:8000/generate -d '{"prompt":"Hello"}'</span></div>
+</div>
+
+<!-- Level 4 -->
+<div class="level">
+  <div class="lv-num">Level 4</div>
+  <h2>🚀 Push to HuggingFace — Share with the World</h2>
+  <p>Upload to HF Hub. Anyone can download. Free inference API included.</p>
+  <div class="code-box">
+<span style="color:#6a9955;"># Login (one-time)</span>
+<span style="color:#569cd6;">from</span> huggingface_hub <span style="color:#569cd6;">import</span> login
+login()  <span style="color:#6a9955;"># Enter your HF token (from huggingface.co/settings/tokens)</span>
+
+<span style="color:#6a9955;"># Push merged model</span>
+model.push_to_hub(<span style="color:#ce9178;">"ashokmulchandani/tinyllama-medical"</span>)
+tokenizer.push_to_hub(<span style="color:#ce9178;">"ashokmulchandani/tinyllama-medical"</span>)
+
+<span style="color:#6a9955;"># Now ANYONE can use it:</span>
+<span style="color:#6a9955;"># model = AutoModelForCausalLM.from_pretrained("ashokmulchandani/tinyllama-medical")</span>
+<span style="color:#6a9955;"># Or via free HF API: https://api-inference.huggingface.co/models/ashokmulchandani/tinyllama-medical</span></div>
+</div>
+
+<!-- Comparison -->
+<div class="level" style="margin-top:2rem;">
+  <div class="lv-num">Compare</div>
+  <h2>Which Level Should You Use?</h2>
+  <div class="compare">
+    <div class="compare-item"><div class="ico">🔧</div><div class="val">Load Adapter</div><div class="lbl">Testing<br>0 min setup<br>Local only</div></div>
+    <div class="compare-item"><div class="ico">🧬</div><div class="val">Merge</div><div class="lbl">Local apps<br>1 min<br>Portable model</div></div>
+    <div class="compare-item"><div class="ico">🌐</div><div class="val">API</div><div class="lbl">Backend<br>5 min<br>Any client</div></div>
+    <div class="compare-item"><div class="ico">🚀</div><div class="val">HF Hub</div><div class="lbl">Production<br>2 min push<br>Auto-scaling</div></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+setTimeout(()=>{
+  document.querySelectorAll('.code-box').forEach(box=>{
+    const wrapper=document.createElement('div');
+    wrapper.style.position='relative';
+    box.parentNode.insertBefore(wrapper,box);
+    wrapper.appendChild(box);
+    const btn=document.createElement('button');
+    btn.className='copy-btn';btn.textContent='📋 Copy';
+    btn.onclick=function(){
+      const clone=box.cloneNode(true);clone.querySelectorAll('.copy-btn').forEach(b=>b.remove());
+      const text=clone.textContent||clone.innerText||'';
+      navigator.clipboard.writeText(text).then(()=>{btn.textContent='✓ Copied!';btn.classList.add('copied');setTimeout(()=>{btn.textContent='📋 Copy';btn.classList.remove('copied');},2000);});
+    };
+    wrapper.appendChild(btn);
+  });
+},50);
+</script>
+</body>
+</html>
