@@ -402,6 +402,113 @@ tokenizer.push_to_hub(<span style="color:#ce9178;">"ashokmulchandani/tinyllama-m
 <div class="callout">
 <strong>🎉 Phase 5 Complete!</strong> You now have a model that: (1) knows medical language (Phase 4) AND (2) can answer questions about it (Phase 5). Next: Phase 6 — align it with human preferences using DPO.
 </div>
+</div></div>`},
+{id:'Notebook',title:'Colab Notebook — 6 Cells for Phase 5',
+fact:'Copy each cell into a fresh Colab, enable T4 GPU, run in order. Total: ~10 minutes.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">📓</span> Phase 5 Colab — Cell by Cell</h2>
+<p>Each <span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL</span> = one Colab code cell. <strong>Use 📋 Copy button</strong> → paste → Ctrl+Enter.</p>
+
+<div class="code-box">
+<span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 1</span> <span style="color:#6a9955;">— Install</span>
+
+!pip install -q transformers datasets peft bitsandbytes accelerate trl
+print("✅ Installed")</div>
+
+<div class="code-box">
+<span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 2</span> <span style="color:#6a9955;">— Instruction Data (5 Q&A pairs)</span>
+
+instruction_data = [
+    {"instruction": "What is Metformin?", "input": "", "output": "Metformin is a biguanide antihyperglycemic agent used to treat type 2 diabetes mellitus."},
+    {"instruction": "How does Metformin work?", "input": "", "output": "It decreases hepatic glucose production and improves insulin sensitivity."},
+    {"instruction": "What are common side effects?", "input": "", "output": "Common side effects include nausea, vomiting, diarrhea, and abdominal discomfort."},
+    {"instruction": "When is Metformin contraindicated?", "input": "", "output": "Metformin is contraindicated in patients with severe renal impairment, acute metabolic acidosis, or hypersensitivity to the drug."},
+    {"instruction": "What class of drug is Metformin?", "input": "", "output": "Metformin belongs to the biguanide class of antihyperglycemic agents."},
+]
+print(f"✅ {len(instruction_data)} instruction examples ready")</div>
+
+<div class="code-box">
+<span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 3</span> <span style="color:#6a9955;">— Format Function + Tokenize</span>
+
+from datasets import Dataset
+from transformers import AutoTokenizer
+
+model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+tokenizer.pad_token = tokenizer.eos_token
+
+def format_instruction(example):
+    if example["input"]:
+        text = f"Below is an instruction and input. Write a response.\n\n### Instruction:\n{example['instruction']}\n\n### Input:\n{example['input']}\n\n### Response:\n{example['output']}"
+    else:
+        text = f"Below is an instruction. Write a response.\n\n### Instruction:\n{example['instruction']}\n\n### Response:\n{example['output']}"
+    return {"text": text}
+
+dataset = Dataset.from_list(instruction_data)
+dataset = dataset.map(format_instruction)
+
+def tokenize(ex):
+    return tokenizer(ex["text"], truncation=True, padding="max_length", max_length=512)
+
+dataset = dataset.map(tokenize, batched=True)
+print(f"✅ Dataset ready: {len(dataset)} examples")</div>
+
+<div class="code-box">
+<span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 4</span> <span style="color:#6a9955;">— Load Model + Apply LoRA</span>
+
+import torch
+from transformers import AutoModelForCausalLM, BitsAndBytesConfig
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+
+bnb_config = BitsAndBytesConfig(load_in_8bit=True)
+model = AutoModelForCausalLM.from_pretrained(model_name, quantization_config=bnb_config, device_map="auto", torch_dtype=torch.float16)
+model.config.use_cache = False
+
+<span style="color:#6a9955;"># Optional: If you uploaded Phase 4 adapter, add:
+# from peft import PeftModel
+# model = PeftModel.from_pretrained(model, "./medical_domain_adapter")
+# model = model.merge_and_unload()  # Golden rule! Phase 3.10</span>
+
+model = prepare_model_for_kbit_training(model)
+lora_config = LoraConfig(r=8, lora_alpha=16, lora_dropout=0.1, target_modules=["q_proj","v_proj"], bias="none", task_type="CAUSAL_LM")
+model = get_peft_model(model, lora_config)
+model.print_trainable_parameters()</div>
+
+<div class="code-box">
+<span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 5</span> <span style="color:#6a9955;">— SFTTrainer (10 epochs)</span>
+
+from transformers import TrainingArguments
+from trl import SFTTrainer
+
+training_args = TrainingArguments(
+    output_dir="./instruction_tuned", num_train_epochs=10,
+    per_device_train_batch_size=4, learning_rate=2e-4,
+    fp16=True, logging_steps=5,
+)
+
+trainer = SFTTrainer(
+    model=model, train_dataset=dataset, tokenizer=tokenizer,
+    max_seq_length=512, formatting_func=format_instruction,
+    args=training_args,
+)
+
+trainer.train()
+print("✅ Training complete!")</div>
+
+<div class="code-box">
+<span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 6</span> <span style="color:#6a9955;">— Test!</span>
+
+from transformers import pipeline
+
+pipe = pipeline("text-generation", model=model, tokenizer=tokenizer)
+prompt = "### Instruction:\nWhat is Metformin?\n\n### Response:\n"
+result = pipe(prompt, max_new_tokens=80, temperature=0.7)
+print(result[0]["generated_text"])</div>
+
+<div class="callout" style="margin-top:1rem;">
+<strong>📋 6 cells total.</strong> ⬆ Copy each → paste into Colab → Ctrl+Enter. 10 epochs because you have only 5 examples — each needs many repetitions. With 100+ examples, 3 epochs would be enough.
+</div>
 </div></div>`}
 ];
 
