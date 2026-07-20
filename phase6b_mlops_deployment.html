@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Phase 11: MLOps & Deployment</title>
+<title>Phase 6B: MLOps & Deployment</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--cyan:#007a99;--magenta:#9e2a6b;--red:#c62828;}
@@ -63,7 +63,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 <body>
 
 <nav class="topbar">
-  <span class="logo">Phase 11</span>
+  <span class="logo">Phase 6B</span>
   <div class="dots" id="dots"></div>
   <span class="step-label" id="stepLabel">1/9</span>
 </nav>
@@ -89,11 +89,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 
 <script>
 const slides=[
-{id:'11.1',title:'MLflow — Track Every Experiment',
+{id:'6B.1',title:'MLflow — Track Every Experiment',
 fact:'MLflow was created by Databricks in 2018 and is now the de-facto standard for ML experiment tracking. It is used by OpenAI, Microsoft, and thousands of ML teams.',
 render:()=>`
 <div class="slide"><div class="card">
-<h2><span class="num">11.1</span> MLflow — Git for Model Experiments</h2>
+<h2><span class="num">6B.1</span> MLflow — Git for Model Experiments</h2>
 <p>Every time you fine-tune, MLflow logs: <strong>what parameters</strong> you used, <strong>what metrics</strong> you got, and <strong>what model</strong> you produced.</p>
 
 <div class="code-box">
@@ -145,11 +145,11 @@ mlflow.log_param(<span style="color:#ce9178;">"data_hash"</span>, <span style="c
 
 <div class="callout"><strong>🧠 The 3 things that must be versioned together:</strong> Code (Git) + Data (DVC) + Model (MLflow). If you change the data and retrain, you know exactly which data produced which model. Without data versioning, you're guessing.</div>
 </div></div>`},
-{id:'11.2',title:'Model Registry — Version & Stage',
+{id:'6B.2',title:'Model Registry — Version & Stage',
 fact:'The MLflow Model Registry lets you manage model versions like Git branches. Each version has a stage: Staging (testing) -> Production (live) -> Archived (retired).',
 render:()=>`
 <div class="slide"><div class="card">
-<h2><span class="num">11.2</span> Model Registry — Which Version Is in Production?</h2>
+<h2><span class="num">6B.2</span> Model Registry — Which Version Is in Production?</h2>
 <p>After running 20 experiments, you have 20 adapters. Which one is deployed? Which one is being tested? The registry tracks this.</p>
 
 <div class="code-box">
@@ -186,11 +186,11 @@ model = mlflow.pyfunc.load_model(<span style="color:#ce9178;">"models:/metformin
   <div class="flow-step" style="border-color:var(--tmut);">Archived<br>(retired)</div>
 </div>
 </div></div>`},
-{id:'11.3',title:'Comparing Runs — Find the Best Config',
+{id:'6B.3',title:'Comparing Runs — Find the Best Config',
 fact:'MLflow UI shows all your runs in a table. Sort by loss, filter by hyperparams. Found the best config in 10 seconds instead of scrolling through notebooks.',
 render:()=>`
 <div class="slide"><div class="card">
-<h2><span class="num">11.3</span> Compare Runs Side by Side</h2>
+<h2><span class="num">6B.3</span> Compare Runs Side by Side</h2>
 <p>You ran 5 experiments with different learning rates. Which was best? MLflow answers instantly.</p>
 
 <table style="width:100%;border-collapse:collapse;font-size:0.82rem;margin:1rem 0;">
@@ -206,11 +206,11 @@ render:()=>`
 
 <div class="callout">Run <code>mlflow ui</code> in terminal → open localhost:5000 → scatter plot of lr vs loss → click best point → register as Production. Done in 30 seconds.</div>
 </div></div>`},
-{id:'11.4',title:'CI/CD for Fine-Tuning',
+{id:'6B.4',title:'CI/CD for Fine-Tuning',
 fact:'Netflix retrains 500+ models weekly via automated CI/CD pipelines. New data arrives -> pipeline triggers -> model trained -> evaluated -> if better than current, auto-deployed.',
 render:()=>`
 <div class="slide"><div class="card">
-<h2><span class="num">11.4</span> Automated Retraining Pipelines</h2>
+<h2><span class="num">6B.4</span> Automated Retraining Pipelines</h2>
 <p>Fine-tuning isn't one-and-done. New data arrives. Model drifts. You need automated retraining.</p>
 
 <div class="flow" style="margin:1rem 0;">
@@ -236,11 +236,11 @@ render:()=>`
       - <span style="color:#569cd6;">run</span>: <span style="color:#ce9178;">python train.py --data new_pdfs/</span>
       - <span style="color:#569cd6;">run</span>: <span style="color:#ce9178;">python evaluate.py --promote-if-better</span></div>
 </div></div>`},
-{id:'11.5',title:'Deployment Patterns',
+{id:'6B.5',title:'Deployment Patterns',
 fact:'There are 3 ways to serve an LLM: batch (offline, cheap), real-time API (online, responsive), streaming (token by token). Each has different cost/latency tradeoffs.',
 render:()=>`
 <div class="slide"><div class="card">
-<h2><span class="num">11.5</span> Three Ways to Serve Your Fine-Tuned Model</h2>
+<h2><span class="num">6B.5</span> Three Ways to Serve Your Fine-Tuned Model</h2>
 
 <div class="compare">
   <div class="cmp-card">
@@ -256,11 +256,11 @@ render:()=>`
   <span>Batch: slow & cheap</span><span style="width:100px;height:4px;background:linear-gradient(90deg,var(--green),var(--red));border-radius:2px;"></span><span>Real-time: fast & expensive</span>
 </div>
 </div></div>`},
-{id:'11.6',title:'vLLM — Production-Grade Serving',
+{id:'6B.6',title:'vLLM — Production-Grade Serving',
 fact:'vLLM serves Llama-7B at 5000 tokens/second on a single A100 — 10× faster than HuggingFace pipeline. Used by LMSYS (Chatbot Arena) to serve 100+ models simultaneously.',
 render:()=>`
 <div class="slide"><div class="card">
-<h2><span class="num">11.6</span> vLLM — 10× Faster Than pipeline()</h2>
+<h2><span class="num">6B.6</span> vLLM — 10× Faster Than pipeline()</h2>
 <p>The <code>pipeline()</code> we used in Colab is for development. vLLM is for production.</p>
 
 <div class="code-box">
@@ -288,11 +288,11 @@ outputs = llm.generate(
 <tr><td style="padding:0.3rem;">TGI (Text Gen Inference)</td><td style="padding:0.3rem;">~4000 tokens/sec</td><td style="color:var(--green);">Alternative to vLLM</td></tr>
 </table>
 </div></div>`},
-{id:'11.7',title:'Monitoring — When to Retrain',
+{id:'6B.7',title:'Monitoring — When to Retrain',
 fact:'Model drift detection: if your model\'s accuracy drops 5% below baseline, trigger automatic retraining. Standard practice at Uber, Netflix, and Stripe.',
 render:()=>`
 <div class="slide"><div class="card">
-<h2><span class="num">11.7</span> Monitoring — Is Your Model Still Good?</h2>
+<h2><span class="num">6B.7</span> Monitoring — Is Your Model Still Good?</h2>
 <p>Models degrade over time. New medical terms appear. Writing styles change. You need to know WHEN to retrain.</p>
 
 <div class="compare">
@@ -310,11 +310,11 @@ baseline_loss = mlflow.get_run(<span style="color:#ce9178;">"production-run-id"<
 <span style="color:#569cd6;">if</span> current_loss > baseline_loss * <span style="color:#ce9178;">1.05</span>:  <span style="color:#6a9955;"># 5% worse than baseline</span>
     trigger_retraining()  <span style="color:#6a9955;"># Automatically retrain on latest data</span></div>
 </div></div>`},
-{id:'11.8',title:'Cost Optimization',
+{id:'6B.8',title:'Cost Optimization',
 fact:'Serving a fine-tuned Llama-7B on a dedicated GPU costs ~$730/month. With quantization + spot instances + caching, you can get it under $100/month.',
 render:()=>`
 <div class="slide"><div class="card">
-<h2><span class="num">11.8</span> Cost Optimization — Serve for Less</h2>
+<h2><span class="num">6B.8</span> Cost Optimization — Serve for Less</h2>
 
 <table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin:1rem 0;">
 <thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.3rem;">Technique</th><th style="text-align:left;padding:0.3rem;">Saves</th><th style="text-align:left;padding:0.3rem;">Tradeoff</th></tr></thead>
@@ -330,11 +330,11 @@ render:()=>`
 
 <div class="callout"><strong>Typical savings:</strong> Dedicated A100 ($3/hr) -> spot A100 ($0.90/hr) -> INT4 on spot T4 ($0.15/hr). Same model, 20× cheaper.</div>
 </div></div>`},
-{id:'11.9',title:'End-to-End Pipeline',
+{id:'6B.9',title:'End-to-End Pipeline',
 fact:'The full MLOps pipeline: data -> train -> track -> register -> deploy -> monitor -> retrain. Every step automated. No human needed after initial setup.',
 render:()=>`
 <div class="slide"><div class="card">
-<h2><span class="num">11.9</span> The Full Picture — End to End</h2>
+<h2><span class="num">6B.9</span> The Full Picture — End to End</h2>
 
 <div class="flow" style="margin:1.5rem 0;">
   <div class="flow-step">📄 New Data<br>(PDFs, CSVs)</div><span class="flow-arrow">→</span>
@@ -352,7 +352,7 @@ render:()=>`
 </div>
 
 <div class="callout" style="text-align:center;">
-  <strong>This is what MLOps gives you.</strong> Without it, you have adapters scattered across folders with no record of what worked. With it, you have a self-healing pipeline that improves over time. Phases 1-10 taught you <strong>how to fine-tune</strong>. Phase 11 teaches you <strong>how to own it in production</strong>.
+  <strong>This is what MLOps gives you.</strong> Without it, you have adapters scattered across folders with no record of what worked. With it, you have a self-healing pipeline that improves over time. Phases 1-10 taught you <strong>how to fine-tune</strong>. Phase 6B teaches you <strong>how to own it in production</strong>.
 </div>
 </div></div>`}
 ];

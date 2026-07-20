@@ -313,6 +313,9 @@ Click any link to open the interactive HTML in your browser. (Hosted via GitHub 
 ### 🤖 Phase 5b: Synthetic Data Generation
 - [phase5b_synthetic_data.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase5b_synthetic_data.html) — 10 slides: Gretel AI, Mostly AI, Tonic AI, synthetic → instruction format
 
+### 🔧 Phase 6B: MLOps & Deployment
+- [phase6b_mlops_deployment.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6b_mlops_deployment.html) — 9 slides: MLflow, DVC, model registry, CI/CD, vLLM, monitoring, cost optimization
+
 ### ⚖️ Phase 6: Preference Alignment (DPO)
 - [phase6_dpo_preference.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6_dpo_preference.html) — 9 slides + 5-cell Colab notebook
 - [dpo_loss_simplified.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/dpo_loss_simplified.html) — DPO loss explained: teacher analogy + beta volume knob
@@ -344,4 +347,4 @@ Click any link to open the interactive HTML in your browser. (Hosted via GitHub 
 - ⬜ Phase 8: AWS Bedrock
 - ⬜ Phase 9: AWS SageMaker
 - ⬜ Phase 10: Advanced Techniques & Production
-- ⬜ Phase 11: MLOps & Deployment (track, version, deploy, monitor) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase11_mlops_deployment.html)
+- ⬜ Phase 6B: MLOps & Deployment (track, version, deploy, monitor) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6b_mlops_deployment.html)
