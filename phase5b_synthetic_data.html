@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase 5b: Synthetic Data Generation</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--cyan:#007a99;--magenta:#9e2a6b;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;min-height:100vh;}
+.app{max-width:1000px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:2rem 0 1rem;}
+.header .badge{display:inline-block;font-family:'Space Grotesk',sans-serif;font-size:0.7rem;letter-spacing:0.12em;color:var(--cyan);border:1.5px solid rgba(0,122,153,0.3);background:rgba(0,122,153,0.06);border-radius:100px;padding:0.3em 1.2em;margin-bottom:0.75rem;font-weight:600;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.95rem;}
+
+.topbar{position:sticky;top:0;z-index:100;background:rgba(250,251,252,0.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0.5rem 1.5rem;display:flex;align-items:center;gap:0.8rem;}
+.topbar .logo{font-family:'Space Grotesk',sans-serif;font-size:0.65rem;letter-spacing:0.12em;color:var(--violet);white-space:nowrap;font-weight:600;}
+.topbar .dots{display:flex;gap:0.3rem;flex:1;justify-content:center;}
+.topbar .dot{width:22px;height:3px;border-radius:2px;background:var(--border);transition:0.3s;cursor:pointer;}
+.topbar .dot.done{background:var(--green);}
+.topbar .dot.active{background:var(--violet);box-shadow:0 0 6px rgba(91,58,168,0.3);}
+.topbar .step-label{font-family:'Space Grotesk',monospace;font-size:0.6rem;color:var(--tmut);}
+
+.chips{display:flex;flex-wrap:wrap;gap:0.4rem;justify-content:center;margin:1rem 0;}
+.chip{font-family:'Space Grotesk',sans-serif;font-size:0.6rem;padding:0.4em 1em;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--tmut);cursor:pointer;transition:0.2s;}
+.chip:hover{border-color:var(--tmut);}
+.chip.visited{border-color:var(--green);color:var(--green);background:rgba(26,110,52,0.06);}
+.chip.current{border-color:var(--violet);color:var(--violet);background:var(--vbg);}
+
+.slide{opacity:0;transform:translateY(20px);animation:fadeIn 0.45s ease forwards;}
+@keyframes fadeIn{to{opacity:1;transform:translateY(0);}}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.75rem;margin-bottom:1rem;}
+.card h2{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;font-weight:600;margin-bottom:0.8rem;display:flex;align-items:center;gap:0.5rem;}
+.card h2 .num{font-size:0.7rem;color:var(--violet);background:var(--vbg);border-radius:6px;padding:0.2em 0.6em;font-weight:700;}
+.card p{color:var(--tdim);margin-bottom:0.7rem;font-size:0.95rem;}
+
+.code-box{background:#1e1e1e;border:1px solid #333;border-left:3px solid var(--violet);border-radius:8px;padding:1rem 1.25rem;margin:0.75rem 0;font-family:'Space Grotesk',monospace;font-size:0.85rem;line-height:1.8;white-space:pre-wrap;overflow-x:auto;color:#d4d4d4;}
+
+.compare{display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin:1rem 0;}
+.cmp-box{background:var(--raised);border:1px solid var(--border);border-radius:10px;padding:1.25rem;text-align:center;}
+.cmp-box h4{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;margin-bottom:0.5rem;}
+.cmp-box .ico{font-size:1.5rem;margin-bottom:0.3rem;}
+.cmp-box p{font-size:0.78rem;color:var(--tdim);}
+
+.flow{display:flex;align-items:center;gap:0.3rem;flex-wrap:wrap;justify-content:center;margin:1rem 0;font-family:'Space Grotesk',sans-serif;font-size:0.65rem;}
+.flow-step{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.8rem;text-align:center;}
+.flow-arrow{color:var(--violet);font-size:1.2rem;}
+
+.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.75rem 1rem;margin:0.75rem 0;font-size:0.88rem;line-height:1.7;}
+
+.fun-fact{background:linear-gradient(135deg,rgba(91,58,168,0.04),rgba(0,122,153,0.04));border:1px solid var(--border);border-radius:14px;padding:1rem 1.25rem;margin:1rem 0;display:flex;align-items:flex-start;gap:0.7rem;font-size:0.88rem;}
+
+.nav-row{display:flex;justify-content:space-between;margin:1.5rem 0 3rem;}
+.nav-btn{font-family:'Space Grotesk',sans-serif;font-size:0.72rem;font-weight:600;letter-spacing:0.06em;padding:0.65em 1.6em;border:1.5px solid var(--border);border-radius:100px;background:var(--bg);color:var(--text);cursor:pointer;transition:0.2s;}
+.nav-btn:hover{border-color:var(--violet);color:var(--violet);}
+.nav-btn:disabled{opacity:0.3;cursor:not-allowed;}
+.nav-btn.primary{background:var(--violet);border-color:var(--violet);color:#fff;}
+
+@media(max-width:768px){.app{padding:0.75rem;}.compare{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <span class="logo">Phase 5b</span>
+  <div class="dots" id="dots"></div>
+  <span class="step-label" id="stepLabel">1/10</span>
+</nav>
+
+<div class="app">
+
+<header class="header">
+  <div class="badge">⬜ NEXT</div>
+  <h1>Synthetic Data Generation</h1>
+  <p>Privacy-safe training data — generate realistic but FAKE data for fine-tuning</p>
+</header>
+
+<div class="chips" id="chips"></div>
+<div class="fun-fact" id="funFact"><span style="font-size:1.3rem;">💡</span><span id="funFactText"></span></div>
+<div id="slideContainer"></div>
+
+<div class="nav-row">
+  <button class="nav-btn" id="prevBtn" onclick="goTo(cur-1)">← Previous</button>
+  <button class="nav-btn primary" id="nextBtn" onclick="goTo(cur+1)">Next →</button>
+</div>
+
+</div>
+
+<script>
+const slides=[
+{id:'5b.1',title:'Why Synthetic Data?',
+fact:'Synthetic data generation is a $1.8B market in 2025 — driven by GDPR, HIPAA, and privacy regulations. Companies can\'t use real customer data for training, so they generate fake data that behaves the same.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">5b.1</span> Why Generate Fake Data?</h2>
+<p>You can't use real customer data to train AI. <strong>GDPR, HIPAA, Privacy Act</strong> — all say: no real customer data in training sets. But you NEED data to fine-tune.</p>
+
+<div class="compare">
+  <div class="cmp-box"><div class="ico">🔒</div><h4>Real Data Problem</h4><p>Contains PII (names, emails, medical records). Illegal to use for training without consent.</p></div>
+  <div class="cmp-box"><div class="ico">🤖</div><h4>Synthetic Data Solution</h4><p>AI-generated fake data. Same statistical patterns. Zero real PII. Legal to use anywhere.</p></div>
+  <div class="cmp-box"><div class="ico">📊</div><h4>The Result</h4><p>Train on fake data → model learns the patterns → works on real data. Privacy preserved.</p></div>
+</div>
+
+<div class="callout">
+<strong>🧠 Example:</strong> A hospital can't share patient records for AI training. But they CAN generate synthetic patient records — same age distribution, same symptom clusters, same drug responses — with NO real patients. Train on the fake data, deploy on real patients.
+</div>
+</div></div>`},
+{id:'5b.2',title:'Gretel AI — Synthetic Text & Tabular Data',
+fact:'Gretel AI was founded by ex-Netflix engineers who built it to solve the problem of sharing viewer data without violating privacy. Now used by Google, HSBC, and the US Department of Defense.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">5b.2</span> Gretel AI — Privacy-Safe Data Generation</h2>
+<p>Gretel generates synthetic versions of your data — both tabular (CSV) and text (transcripts, documents). The synthetic data preserves statistical patterns without containing any real PII.</p>
+
+<div class="flow" style="margin:1rem 0;">
+  <div class="flow-step">Real Data<br>(with PII)</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--violet);">Gretel Model<br>(learns patterns)</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--green);">Synthetic Data<br>(no PII!)</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--green);">Fine-tune<br>LLM</div>
+</div>
+
+<div class="code-box">
+<span style="color:#6a9955;"># Gretel AI — Generate synthetic call transcripts for fine-tuning</span>
+<span style="color:#569cd6;">from</span> gretel_client <span style="color:#569cd6;">import</span> Gretel
+
+<span style="color:#6a9955;"># 1. Connect</span>
+gretel = Gretel(api_key=<span style="color:#ce9178;">"your_api_key"</span>)
+
+<span style="color:#6a9955;"># 2. Load real data (call transcripts with PII redacted)</span>
+real_data = pd.read_csv(<span style="color:#ce9178;">"call_transcripts.csv"</span>)  <span style="color:#6a9955;"># Can't use this!</span>
+
+<span style="color:#6a9955;"># 3. Generate synthetic version</span>
+synthetic = gretel.generate_synthetic(
+    data=real_data,
+    model=<span style="color:#ce9178;">"actgan"</span>,           <span style="color:#6a9955;"># GAN-based generator</span>
+    num_records=<span style="color:#ce9178;">10000</span>        <span style="color:#6a9955;"># Generate 10K fake records</span>
+)
+
+<span style="color:#6a9955;"># 4. Evaluate quality — SQS (Statistical Quality Score)</span>
+gretel.evaluate(synthetic, real_data)
+<span style="color:#6a9955;"># → SQS: 95/100 — synthetic data closely matches real patterns!</span>
+
+<span style="color:#6a9955;"># 5. Convert to instruction format</span>
+instruction_data = []
+<span style="color:#569cd6;">for</span> _, row <span style="color:#569cd6;">in</span> synthetic.iterrows():
+    instruction_data.append({
+        <span style="color:#ce9178;">"instruction"</span>: <span style="color:#ce9178;">"Summarize this call transcript"</span>,
+        <span style="color:#ce9178;">"input"</span>: row[<span style="color:#ce9178;">"transcript"</span>],
+        <span style="color:#ce9178;">"output"</span>: row[<span style="color:#ce9178;">"summary"</span>]
+    })
+
+<span style="color:#6a9955;"># Now fine-tune your LLM on synthetic_data — legally!</span>
+synthetic.to_csv(<span style="color:#ce9178;">"synthetic_transcripts.csv"</span>)</div>
+</div></div>`},
+{id:'5b.3',title:'Gretel — Quality Evaluation',
+fact:'Gretel\'s SQS (Statistical Quality Score) measures how well synthetic data matches real data distributions. Score > 90 = excellent. Score < 70 = don\'t use it.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">5b.3</span> Is the Synthetic Data Good Enough?</h2>
+<p>Gretel measures quality with SQS — Statistical Quality Score. It compares distributions, correlations, and patterns between real and synthetic data.</p>
+
+<div class="compare">
+  <div class="cmp-box"><div class="ico">📊</div><h4>SQS Score</h4><p>0-100 score. >90 = excellent match. Compares column distributions.</p></div>
+  <div class="cmp-box"><div class="ico">🔗</div><h4>Correlation Heatmaps</h4><p>Do columns relate to each other the same way? Age should still correlate with income.</p></div>
+  <div class="cmp-box"><div class="ico">🔍</div><h4>Privacy Check</h4><p>Does any synthetic row exactly match a real row? If yes → privacy leak → regenerate.</p></div>
+</div>
+
+<div class="code-box">
+<span style="color:#6a9955;"># Gretel quality evaluation</span>
+<span style="color:#569cd6;">from</span> gretel_client <span style="color:#569cd6;">import</span> evaluate
+
+report = evaluate(
+    synthetic_data=synthetic,
+    reference_data=real_data,
+    report_type=<span style="color:#ce9178;">"sqs"</span>
+)
+
+print(<span style="color:#ce9178;">f"SQS Score: {report.sqs_score}/100"</span>)
+<span style="color:#6a9955;"># → SQS Score: 95/100</span>
+
+<span style="color:#6a9955;"># View correlation heatmaps</span>
+report.display_correlation_matrix()
+<span style="color:#6a9955;"># Shows side-by-side: real correlations vs synthetic correlations</span></div>
+
+<div class="callout">
+  <strong>🔑 Key check:</strong> If synthetic data has SQS > 85 and no privacy leaks, it's safe to use for fine-tuning. The model will learn the same patterns it would from real data — without any privacy risk.
+</div>
+</div></div>`},
+{id:'5b.4',title:'Gretel — Synthetic Text for LLMs',
+fact:'Gretel can generate synthetic call transcripts, support tickets, and medical notes — complete with realistic typos, slang, and formatting. Perfect for training customer service LLMs.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">5b.4</span> Generate Synthetic Text Data for LLM Fine-Tuning</h2>
+<p>Beyond tabular data, Gretel generates realistic <strong>text</strong> — call center transcripts, support tickets, clinical notes. Train your LLM on fake conversations that sound real.</p>
+
+<div class="code-box">
+<span style="color:#6a9955;"># Generate synthetic call transcripts</span>
+<span style="color:#569cd6;">from</span> gretel_client <span style="color:#569cd6;">import</span> Gretel
+
+gretel = Gretel(api_key=<span style="color:#ce9178;">"your_api_key"</span>)
+
+<span style="color:#6a9955;"># Your real transcripts (few examples — can't use for training)</span>
+real_transcripts = [
+    {<span style="color:#ce9178;">"caller"</span>: <span style="color:#ce9178;">"My internet is down, can you help?"</span>,
+     <span style="color:#ce9178;">"agent"</span>: <span style="color:#ce9178;">"Let me check your connection. When did this start?"</span>},
+    ...
+]
+
+<span style="color:#6a9955;"># Generate 10,000 synthetic conversations</span>
+synthetic_transcripts = gretel.generate_text(
+    examples=real_transcripts,
+    num_samples=<span style="color:#ce9178;">10000</span>,
+    style=<span style="color:#ce9178;">"call_center"</span>
+)
+
+<span style="color:#6a9955;"># Convert to instruction format</span>
+instruction_data = []
+<span style="color:#569cd6;">for</span> t <span style="color:#569cd6;">in</span> synthetic_transcripts:
+    instruction_data.append({
+        <span style="color:#ce9178;">"instruction"</span>: <span style="color:#ce9178;">"Respond as a customer service agent"</span>,
+        <span style="color:#ce9178;">"input"</span>: t[<span style="color:#ce9178;">"caller"</span>],
+        <span style="color:#ce9178;">"output"</span>: t[<span style="color:#ce9178;">"agent"</span>]
+    })
+
+<span style="color:#6a9955;"># Now fine-tune your LLM on 10K examples — legally and safely</span></div>
+
+</div></div>`},
+{id:'5b.5',title:'Mostly AI — Statistical Twin of Your Data',
+fact:'Mostly AI was rated #1 by Gartner for synthetic data. It creates a "statistical twin" — a synthetic dataset that has the EXACT same statistical properties as your original, down to rare outliers.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">5b.5</span> Mostly AI — Statistically Faithful Tabular Data</h2>
+<p>Mostly AI specializes in tabular data — perfect for generating synthetic versions of databases, CRM records, or financial transactions.</p>
+
+<div class="flow" style="margin:1rem 0;">
+  <div class="flow-step">Your Database<br>(Postgres/Supabase)</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--violet);">Mostly AI<br>learns distributions</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--green);">Synthetic DB<br>same stats!</div>
+</div>
+
+<div class="code-box">
+<span style="color:#6a9955;"># Mostly AI — Generate synthetic tabular data</span>
+<span style="color:#569cd6;">import</span> mostlyai
+
+<span style="color:#6a9955;"># 1. Connect to your data</span>
+generator = mostlyai.Generator(
+    data_source=<span style="color:#ce9178;">"customer_transactions.csv"</span>,
+    privacy_config={<span style="color:#ce9178;">"rare_category_protection"</span>: <span style="color:#569cd6;">True</span>}
+)
+
+<span style="color:#6a9955;"># 2. Generate synthetic version</span>
+synthetic = generator.generate(num_rows=<span style="color:#ce9178;">50000</span>)
+
+<span style="color:#6a9955;"># 3. Compare real vs synthetic distributions</span>
+mostlyai.compare(
+    real=<span style="color:#ce9178;">"customer_transactions.csv"</span>,
+    synthetic=synthetic,
+    metrics=[<span style="color:#ce9178;">"histogram"</span>, <span style="color:#ce9178;">"correlation"</span>, <span style="color:#ce9178;">"privacy_score"</span>]
+)
+<span style="color:#6a9955;"># Shows: side-by-side histograms, correlation matrices, privacy report</span></div>
+
+</div></div>`},
+{id:'5b.6',title:'Mostly AI — Quality Comparison',
+fact:'Mostly AI preserves rare events better than any other tool. If only 0.1% of your customers filed complaints, your synthetic data will also have ~0.1% complaints — no rare event erasure.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">5b.6</span> Real vs Synthetic — Side by Side</h2>
+<p>Mostly AI generates side-by-side comparison reports — histograms, correlation matrices, and distribution tests.</p>
+
+<div class="compare">
+  <div class="cmp-box"><div class="ico">📊</div><h4>Histograms</h4><p>Age distribution: real = synthetic. Income distribution: real = synthetic. Every column matches.</p></div>
+  <div class="cmp-box"><div class="ico">🔗</div><h4>Correlations</h4><p>If age correlates with income in real data (0.6), it should also be ~0.6 in synthetic data.</p></div>
+  <div class="cmp-box"><div class="ico">⚠️</div><h4>Rare Events</h4><p>If fraud is 0.1% in real data, it must be ~0.1% in synthetic. Not 0%. Not 5%.</p></div>
+</div>
+
+<div class="callout">
+<strong>🧠 Key takeaway:</strong> Good synthetic data is NOT "similar" data — it's <strong>statistically indistinguishable</strong> from the real thing. A model trained on good synthetic data performs almost identically to one trained on real data. That's the promise of tools like Mostly AI.
+</div>
+</div></div>`},
+{id:'5b.7',title:'Tonic AI — Clone Your Production DB',
+fact:'Tonic AI was founded by former Palantir engineers. It can clone a 100GB Postgres database with full referential integrity in under 10 minutes. Used by eBay, PwC, and the NFL.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">5b.7</span> Tonic AI — Production Database Cloning</h2>
+<p>Tonic AI specializes in cloning entire databases — preserving foreign keys, relationships, and referential integrity. Your dev team gets a database that works exactly like production.</p>
+
+<div class="flow" style="margin:1rem 0;">
+  <div class="flow-step">Production DB<br>(Postgres/SQL Server)</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--violet);">Tonic AI<br>(schema + relationships)</div>
+  <span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--green);">Dev/Test DB<br>(full integrity, no real data)</div>
+</div>
+
+<div class="code-box">
+<span style="color:#6a9955;"># Tonic AI — Connect to Postgres, generate synthetic clone</span>
+<span style="color:#569cd6;">from</span> tonic <span style="color:#569cd6;">import</span> TonicClient
+
+tonic = TonicClient(api_key=<span style="color:#ce9178;">"your_api_key"</span>)
+
+<span style="color:#6a9955;"># 1. Connect to your production database</span>
+source = tonic.connect_database(
+    connection_string=<span style="color:#ce9178;">"postgres://prod-db:5432/ecommerce"</span>
+)
+
+<span style="color:#6a9955;"># 2. Generate synthetic clone with referential integrity</span>
+synthetic_db = tonic.generate_clone(
+    source=source,
+    mode=<span style="color:#ce9178;">"subset_and_synthesize"</span>,  <span style="color:#6a9955;"># Smaller but structurally identical</span>
+    target_size_gb=<span style="color:#ce9178;">10</span>                <span style="color:#6a9955;"># 100GB prod → 10GB dev</span>
+)
+
+<span style="color:#6a9955;"># 3. Export as instruction dataset for fine-tuning</span>
+synthetic_db.to_instruction_format(
+    output=<span style="color:#ce9178;">"synthetic_ecommerce_qa.jsonl"</span>,
+    schema_mapping={
+        <span style="color:#ce9178;">"orders"</span>: <span style="color:#ce9178;">"Generate an order summary"</span>,
+        <span style="color:#ce9178;">"customers"</span>: <span style="color:#ce9178;">"Describe this customer profile"</span>
+    }
+)</div>
+</div></div>`},
+{id:'5b.8',title:'Convert Synthetic → Instruction Format',
+fact:'A single synthetic dataset of 10,000 rows × 3 columns = 30,000 Q&A pairs. With 5 tools each generating 10K rows, you can create 150K instruction examples in a day — with zero human labeling.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">5b.8</span> From Synthetic Data to Training Examples</h2>
+<p>This is the bridge between synthetic data and fine-tuning. Every row of synthetic data becomes an instruction-output pair.</p>
+
+<div class="code-box">
+<span style="color:#6a9955;"># Convert synthetic tabular data → instruction format</span>
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">row_to_instruction</span>(row, template):
+    <span style="color:#ce9178;">"""Convert one row of synthetic data to a Q&A pair."""</span>
+    <span style="color:#569cd6;">return</span> {
+        <span style="color:#ce9178;">"instruction"</span>: template[<span style="color:#ce9178;">"question"</span>],
+        <span style="color:#ce9178;">"input"</span>: format_input(row, template[<span style="color:#ce9178;">"columns"</span>]),
+        <span style="color:#ce9178;">"output"</span>: format_output(row, template[<span style="color:#ce9178;">"answer_cols"</span>])
+    }
+
+<span style="color:#6a9955;"># Define templates for different use cases</span>
+templates = {
+    <span style="color:#ce9178;">"support"</span>: {
+        <span style="color:#ce9178;">"question"</span>: <span style="color:#ce9178;">"Resolve this customer issue"</span>,
+        <span style="color:#ce9178;">"columns"</span>: [<span style="color:#ce9178;">"customer_name"</span>, <span style="color:#ce9178;">"issue_type"</span>, <span style="color:#ce9178;">"product"</span>],
+        <span style="color:#ce9178;">"answer_cols"</span>: [<span style="color:#ce9178;">"resolution"</span>, <span style="color:#ce9178;">"followup_needed"</span>]
+    },
+    <span style="color:#ce9178;">"finance"</span>: {
+        <span style="color:#ce9178;">"question"</span>: <span style="color:#ce9178;">"Analyze this transaction"</span>,
+        <span style="color:#ce9178;">"columns"</span>: [<span style="color:#ce9178;">"amount"</span>, <span style="color:#ce9178;">"merchant"</span>, <span style="color:#ce9178;">"date"</span>],
+        <span style="color:#ce9178;">"answer_cols"</span>: [<span style="color:#ce9178;">"category"</span>, <span style="color:#ce9178;">"fraud_risk"</span>]
+    }
+}
+
+<span style="color:#6a9955;"># 10,000 synthetic rows × 3 templates = 30,000 instruction examples!</span>
+<span style="color:#6a9955;"># All legally safe, zero real PII, ready for SFTTrainer</span></div>
+
+</div></div>`},
+{id:'5b.9',title:'Compare: Real vs Synthetic Fine-Tuning',
+fact:'Studies show that models fine-tuned on high-quality synthetic data achieve 95-98% of the accuracy of models trained on real data. The 2-5% gap is the "privacy tax" — small price for legal compliance.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">5b.9</span> Real Data vs Synthetic Data — Loss Curves</h2>
+<p>Fine-tune the same model twice — once on real data, once on synthetic. Compare the results.</p>
+
+<div class="compare">
+  <div class="cmp-box"><div class="ico">📈</div><h4>Real Data Training</h4><p>Loss: 0.42<br>Accuracy: 87%<br>But: Contains real PII — illegal to use</p></div>
+  <div class="cmp-box"><div class="ico">🤖</div><h4>Synthetic Data Training</h4><p>Loss: 0.48<br>Accuracy: 84%<br>Legal, safe, privacy-preserving</p></div>
+  <div class="cmp-box"><div class="ico">🎯</div><h4>The Gap</h4><p>~3% accuracy loss<br>"Privacy tax"<br>Worth it for compliance</p></div>
+</div>
+
+<div class="callout">
+<strong>🧠 Bottom line:</strong> Synthetic data isn't perfect — you lose 2-5% accuracy compared to real data. But real data is often ILLEGAL to use. Synthetic data is ALWAYS legal. The 3% gap is a small price to pay for not getting sued.
+</div>
+</div></div>`},
+{id:'5b.10',title:'Use Case: 10K Synthetic Calls → Fine-Tune LLM',
+fact:'A telecom company used Gretel to generate 50,000 synthetic support calls. Fine-tuned Llama-2-7B. Result: 73% of calls handled without human escalation. Previously: 12%. ROI: $2.3M/year.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">5b.10</span> Real-World Example: Call Center LLM</h2>
+<p>The full pipeline from Phase 5b — synthetic data → instruction format → fine-tuned LLM.</p>
+
+<div class="flow" style="margin:1rem 0;flex-wrap:wrap;">
+  <div class="flow-step">100 real calls<br>(can't use)</div><span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--violet);">Gretel</div><span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--green);">10K synthetic<br>calls (legal!)</div><span class="flow-arrow">→</span>
+  <div class="flow-step">Convert to<br>instruction format</div><span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--violet);">Fine-tune<br>with SFTTrainer</div><span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--green);">Deploy!<br>Handles 73% of calls</div>
+</div>
+
+<div class="callout" style="margin-top:1.5rem;">
+<strong>🎉 This is the full picture:</strong> Synthetic data bridges the gap between "we have data but can't use it" and "we have a fine-tuned model." Phase 5b isn't just a tool — it's the legal foundation that makes enterprise LLM fine-tuning possible.
+</div>
+</div></div>`}
+];
+
+let cur=0; const visited=new Set([0]);
+
+function render(i){
+  cur=i;visited.add(i);
+  document.getElementById('slideContainer').innerHTML=slides[i].render();
+  document.getElementById('stepLabel').textContent=`${i+1}/${slides.length}`;
+  document.getElementById('funFactText').innerHTML=`<strong>${slides[i].id}:</strong> ${slides[i].fact}`;
+  document.getElementById('dots').innerHTML=slides.map((_,j)=>`<div class="dot ${j===cur?'active':visited.has(j)?'done':''}" onclick="goTo(${j})"></div>`).join('');
+  document.getElementById('chips').innerHTML=slides.map((s,j)=>`<span class="chip ${j===cur?'current':visited.has(j)?'visited':''}" onclick="goTo(${j})">${s.id}</span>`).join('');
+  document.getElementById('prevBtn').disabled=i===0;
+  const nb=document.getElementById('nextBtn');
+  if(i===slides.length-1){nb.textContent='✓ Complete';nb.style.background='var(--green)';}
+  else{nb.textContent='Next →';nb.style.background='var(--violet)';nb.style.color='#fff';}
+  document.getElementById('slideContainer').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function goTo(i){if(i<0||i>=slides.length)return;render(i);}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'&&cur<slides.length-1)goTo(cur+1);if(e.key==='ArrowLeft'&&cur>0)goTo(cur-1);});
+render(0);
+</script>
+</body>
+</html>
