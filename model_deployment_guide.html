@@ -160,7 +160,7 @@ tokenizer.push_to_hub(<span style="color:#ce9178;">"ashokmulchandani/tinyllama-m
 </div>
 
 <script>
-setTimeout(()=>{
+document.addEventListener('DOMContentLoaded',function(){
   document.querySelectorAll('.code-box').forEach(box=>{
     const wrapper=document.createElement('div');
     wrapper.style.position='relative';
@@ -169,13 +169,14 @@ setTimeout(()=>{
     const btn=document.createElement('button');
     btn.className='copy-btn';btn.textContent='📋 Copy';
     btn.onclick=function(){
-      const clone=box.cloneNode(true);clone.querySelectorAll('.copy-btn').forEach(b=>b.remove());
-      const text=clone.textContent||clone.innerText||'';
-      navigator.clipboard.writeText(text).then(()=>{btn.textContent='✓ Copied!';btn.classList.add('copied');setTimeout(()=>{btn.textContent='📋 Copy';btn.classList.remove('copied');},2000);});
+      navigator.clipboard.writeText(box.textContent||box.innerText||'').then(()=>{
+        btn.textContent='✓ Copied!';btn.classList.add('copied');
+        setTimeout(()=>{btn.textContent='📋 Copy';btn.classList.remove('copied');},2000);
+      });
     };
     wrapper.appendChild(btn);
   });
-},50);
+});
 </script>
 </body>
 </html>
