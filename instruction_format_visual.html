@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How Instruction Formatting Works</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--violet:#5b3aa8;--green:#1a6e34;--amber:#b87000;--magenta:#9e2a6b;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;min-height:100vh;}
+.app{max-width:900px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:2rem 0 1.5rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.95rem;margin-top:0.3rem;}
+
+.step{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin:1.5rem 0;}
+.step h2{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;margin-bottom:0.75rem;color:var(--violet);}
+.step h3{font-family:'Space Grotesk',sans-serif;font-size:0.8rem;font-weight:600;margin:1rem 0 0.5rem;color:var(--tdim);}
+
+.json-box{background:#1e1e1e;color:#d4d4d4;font-family:'Space Grotesk',monospace;font-size:0.85rem;padding:1rem 1.25rem;border-radius:8px;line-height:1.8;margin:0.5rem 0;}
+.string-box{background:#1e1e1e;color:#d4d4d4;font-family:'Space Grotesk',monospace;font-size:0.85rem;padding:1rem 1.25rem;border-radius:8px;line-height:1.9;margin:0.5rem 0;}
+
+.arrow-down{text-align:center;font-size:2rem;color:var(--violet);margin:0.5rem 0;}
+
+.split{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0;}
+.split-box{background:var(--raised);border-radius:10px;padding:1rem;text-align:center;}
+.split-box.wrong{border:2px solid var(--red);}
+.split-box.right{border:2px solid var(--green);}
+.split-box h4{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;margin-bottom:0.5rem;}
+
+.highlight{background:rgba(91,58,168,0.15);padding:1px 3px;border-radius:2px;font-weight:600;}
+
+.callout{background:rgba(0,122,153,0.05);border:1px solid rgba(0,122,153,0.2);border-radius:8px;padding:1rem;margin:1rem 0;font-size:0.85rem;line-height:1.7;}
+
+@media(max-width:768px){.split{grid-template-columns:1fr;}.app{padding:0.75rem;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>How Q&A Pairs Become Training Strings</h1>
+  <p>Models don't read JSON. They read one long string. Here's the conversion.</p>
+</header>
+
+<!-- STEP 1: The JSON -->
+<div class="step">
+  <h2>Step 1: You Write Q&A as JSON (Easy for Humans)</h2>
+  <div class="json-box">
+{<br>
+&nbsp;&nbsp;<span style="color:#ce9178;">"instruction"</span>: <span style="color:#ce9178;">"What is Metformin?"</span>,<br>
+&nbsp;&nbsp;<span style="color:#ce9178;">"input"</span>: <span style="color:#ce9178;">""</span>,<br>
+&nbsp;&nbsp;<span style="color:#ce9178;">"output"</span>: <span style="color:#ce9178;">"Metformin is a biguanide used to treat type 2 diabetes."</span><br>
+}
+  </div>
+  <p style="font-size:0.85rem;color:var(--tdim);margin-top:0.5rem;">This is how YOU write it. Clean. Structured. Three fields.</p>
+</div>
+
+<div class="arrow-down">↓</div>
+
+<!-- STEP 2: Convert to string -->
+<div class="step">
+  <h2>Step 2: The Model Sees ONE String (Easy for Machines)</h2>
+  <div class="string-box">
+<span style="color:#6a9955;">Below is an instruction. Write a response.</span><br><br>
+<span style="color:#569cd6;">### Instruction:</span><br>
+<span style="color:#ce9178;">What is Metformin?</span><br><br>
+<span style="color:#569cd6;">### Response:</span><br>
+<span style="color:#ce9178;">Metformin is a biguanide used to treat type 2 diabetes.</span>
+  </div>
+  <p style="font-size:0.85rem;color:var(--tdim);margin-top:0.5rem;">This is what the MODEL reads. One big string. The <span style="color:#569cd6;">###</span> markers separate the question from the answer.</p>
+</div>
+
+<!-- STEP 3: How the model learns -->
+<div class="step">
+  <h2>Step 3: During Training — The Model Predicts the Answer</h2>
+
+  <div class="split">
+    <div class="split-box right">
+      <h4 style="color:var(--green);">✅ What the Model SEES (Input)</h4>
+      <div class="string-box" style="font-size:0.78rem;padding:0.75rem;">
+<span style="color:#6a9955;">Below is an instruction...</span><br><br>
+<span style="color:#569cd6;">### Instruction:</span><br>
+<span style="color:#ce9178;">What is Metformin?</span><br><br>
+<span style="color:#569cd6;">### Response:</span><br>
+      </div>
+      <p style="font-size:0.7rem;color:var(--tdim);margin-top:0.3rem;">Everything BEFORE the answer</p>
+    </div>
+    <div class="split-box right">
+      <h4 style="color:var(--green);">🎯 What It Must PREDICT (Label)</h4>
+      <div class="string-box" style="font-size:0.78rem;padding:0.75rem;">
+<span style="color:#ce9178;">Metformin is a biguanide used to treat type 2 diabetes.</span>
+      </div>
+      <p style="font-size:0.7rem;color:var(--tdim);margin-top:0.3rem;">ONLY the answer part</p>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top:1rem;">
+    <strong>🧠 The ### markers are the secret.</strong> During training, the model learns: <em>"When I see '### Response:', whatever comes next is what I should generate."</em> After training, you give it a new instruction ending with '### Response:' — and it auto-completes the answer.
+  </div>
+</div>
+
+<!-- Why this works -->
+<div class="step">
+  <h2>Why Not Just Feed JSON to the Model?</h2>
+
+  <div class="split">
+    <div class="split-box wrong">
+      <h4 style="color:var(--red);">❌ If you fed JSON</h4>
+      <div class="json-box" style="font-size:0.75rem;">
+{"instruction": "What is Metformin?", "output": "Metformin is..."}
+      </div>
+      <p style="font-size:0.7rem;color:var(--tdim);margin-top:0.3rem;">Model would learn to generate... more JSON. Not answers. It would become a "JSON generator" not a "question answerer."</p>
+    </div>
+    <div class="split-box right">
+      <h4 style="color:var(--green);">✅ With Alpaca template</h4>
+      <div class="string-box" style="font-size:0.75rem;">
+### Instruction:
+What is Metformin?
+
+### Response:
+Metformin is...
+      </div>
+      <p style="font-size:0.7rem;color:var(--tdim);margin-top:0.3rem;">Model learns to generate the ANSWER. The template tells it "question ends here, answer starts here."</p>
+    </div>
+  </div>
+</div>
+
+<!-- Your 5 examples -->
+<div class="step">
+  <h2>Your 5 Q&A Pairs → 5 Training Strings</h2>
+  <p style="font-size:0.85rem;color:var(--tdim);margin-bottom:1rem;">Each one becomes its own training example. Same pattern, different content.</p>
+
+  <div class="string-box" style="font-size:0.78rem;">
+<span style="color:#6a9955;">Example 1:</span>
+### Instruction: What is Metformin?
+### Response: Metformin is a biguanide...
+
+<span style="color:#6a9955;">Example 2:</span>
+### Instruction: How does Metformin work?
+### Response: It decreases hepatic glucose...
+
+<span style="color:#6a9955;">Example 3:</span>
+### Instruction: What are common side effects?
+### Response: Common side effects include nausea...
+
+<span style="color:#6a9955;">...and so on for all 5 examples.</span>
+  </div>
+  <p style="font-size:0.85rem;color:var(--tdim);margin-top:0.5rem;">After training on these 5 strings, the model learns: "When someone asks about Metformin in the ### Instruction: format, I should answer in the ### Response: format."</p>
+</div>
+
+</div>
+</body>
+</html>

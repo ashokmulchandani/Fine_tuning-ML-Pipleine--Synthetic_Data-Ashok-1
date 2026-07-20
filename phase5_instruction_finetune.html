@@ -575,12 +575,13 @@ function render(i){
     const cellStart=cellMap[currentSlide.id]||0;
 
     document.querySelectorAll('.code-box').forEach((box,idx)=>{
-      if(!box.querySelector('.cell-num')){
+      if(!box.parentElement.querySelector('.cell-num')){
         const num=document.createElement('div');
+        num.className='cell-num';
         num.style.cssText='font-family:"Space Grotesk",sans-serif;font-size:0.6rem;font-weight:700;color:#fff;background:var(--violet);display:inline-block;padding:0.2em 0.7em;border-radius:4px 4px 0 0;margin-bottom:-1px;letter-spacing:0.06em;';
         const cellNum=cellStart>0?`CELL ${cellStart}`:`📋 Code ${idx+1}`;
         num.textContent=cellNum+' — Copy into Colab';
-        box.insertBefore(num,box.firstChild);
+        box.parentNode.insertBefore(num,box);
       }
       if(!box.parentElement.querySelector('.copy-btn')&&!box.querySelector('.copy-btn')){
         const btn=document.createElement('button');btn.className='copy-btn';btn.textContent='📋 Copy';
