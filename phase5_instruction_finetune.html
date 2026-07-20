@@ -440,6 +440,31 @@ function render(i){
     });
   },50);
 
+  // Add concept reference tags
+  setTimeout(()=>{
+    const concepts={
+      '5.1':'🧠 Phase 4 vs Phase 5: Phase 4 data = {"text":"..."} (raw). Phase 5 data = {"instruction":"...","output":"..."} (Q&A). This is the instructional data type from Phase 1.6.',
+      '5.2':'🧠 Phase 1.6: Instructional data format. Instead of raw text, each example has instruction+input+output. You can manually write Q&A or use GPT-4o (Phase 5b) to generate them.',
+      '5.3':'🧠 Phase 1.2: Pre-training vs Fine-tuning. The model was pre-trained on raw text. Now we fine-tune on formatted Q&A. The ### markers are boundary tokens — like the 3-stage pipeline from Phase 1.1.',
+      '5.4':'🧠 Phase 5b preview: Synthetic data generation. GPT-4o reads your PDF chunks and generates Q&A pairs. Same concept: AI generates training data for AI. Covered in detail in Phase 5b.',
+      '5.5':'🧠 Phase 3.10: The Golden Rule! Merge domain adapter BEFORE starting instruction tuning. If you skip this, the instruction LoRA learns to fix domain LoRA errors — not base model errors. Catastrophic drift.',
+      '5.6':'🧠 Phase 3.10 in action: merge_and_unload() between stages. Same pattern: apply LoRA → train → merge → save. Each stage starts from a CLEAN merged model. Phase 6 (DPO) will follow the same pattern.',
+      '5.7':'🧠 Phase 4.8-4.9: SFTTrainer = Trainer + instruction formatting. Same TrainingArguments (lr, epochs, batch size). Same forward→loss→backward→update loop. Same Adam optimizer. New: formatting_func for Alpaca template.',
+      '5.8':'🧠 Phase 4.5 connection: labels = input_ids.copy(). Phase 4: ALL tokens are labels. Phase 5: ONLY response tokens are labels (instruction tokens get -100 = ignored). Same self-supervised idea, more focused.',
+      '5.9':'🧠 Phase 1.1-1.2 connection: Base model = pre-training (pattern completion). Domain model = domain adaptation (knows the words). Instruction model = SFT (answers questions). Three stages, three behaviors.',
+      '5.10':'🧠 Level 4 Deployment Guide: push_to_hub() shares your adapter. Merged model = no LoRA dependency. Anyone can download and use. Same pattern as Phase 4.10 but now for instruction-tuned model.'
+    };
+    document.querySelectorAll('.card').forEach(card=>{
+      const h2=card.querySelector('h2');if(!h2)return;
+      const numEl=h2.querySelector('.num');if(!numEl||card.querySelector('.concept-tag'))return;
+      const stepId=numEl.textContent.trim();
+      if(concepts[stepId]){
+        const tag=document.createElement('div');tag.className='concept-tag';
+        tag.innerHTML=concepts[stepId];card.appendChild(tag);
+      }
+    });
+  },60);
+
   document.getElementById('slideContainer').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
