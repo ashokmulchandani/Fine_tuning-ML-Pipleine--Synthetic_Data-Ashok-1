@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Training Loss — What It Means</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--violet:#5b3aa8;--green:#1a6e34;--red:#c62828;--amber:#b87000;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;min-height:100vh;}
+.app{max-width:800px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:2rem 0 1.5rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.95rem;}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin:1.5rem 0;}
+.card h2{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;color:var(--violet);margin-bottom:0.75rem;}
+
+/* Loss curve */
+.loss-curve{display:flex;align-items:flex-end;gap:2rem;height:180px;padding:0 1rem;margin:1rem 0;border-bottom:2px solid var(--border);}
+.loss-bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:0.3rem;}
+.loss-bar .bar{width:50px;border-radius:6px 6px 0 0;transition:height 0.5s;}
+.loss-bar .val{font-family:'Space Grotesk',sans-serif;font-size:0.75rem;font-weight:700;}
+.loss-bar .step{font-family:'Space Grotesk',sans-serif;font-size:0.55rem;color:var(--tmut);}
+
+/* Analogy */
+.analogy{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin:1rem 0;}
+.a-box{background:var(--raised);border-radius:8px;padding:1rem;text-align:center;}
+.a-box .emoji{font-size:2rem;margin-bottom:0.3rem;}
+.a-box .lbl{font-size:0.7rem;color:var(--tmut);margin-top:0.3rem;}
+
+.callout{background:rgba(0,122,153,0.05);border:1px solid rgba(0,122,153,0.2);border-radius:8px;padding:1rem;margin:1rem 0;font-size:0.85rem;}
+
+@media(max-width:768px){.loss-curve{gap:1rem;}.loss-bar .bar{width:30px;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>What "Training Loss" Means</h1>
+  <p>Your Phase 5 training output: 3.26 → 1.26 → 0.57 → 0.43</p>
+</header>
+
+<!-- The numbers -->
+<div class="card">
+  <h2>Your Actual Loss Curve</h2>
+  <div class="loss-curve">
+    <div class="loss-bar">
+      <div class="val" style="color:var(--red);">3.26</div>
+      <div class="bar" style="height:163px;background:var(--red);"></div>
+      <div class="step">Step 5</div>
+    </div>
+    <div class="loss-bar">
+      <div class="val" style="color:var(--amber);">1.26</div>
+      <div class="bar" style="height:63px;background:var(--amber);"></div>
+      <div class="step">Step 10</div>
+    </div>
+    <div class="loss-bar">
+      <div class="val" style="color:var(--green);">0.57</div>
+      <div class="bar" style="height:28px;background:var(--green);"></div>
+      <div class="step">Step 15</div>
+    </div>
+    <div class="loss-bar">
+      <div class="val" style="color:var(--green);">0.43</div>
+      <div class="bar" style="height:21px;background:var(--green);"></div>
+      <div class="step">Step 20</div>
+    </div>
+  </div>
+  <p style="font-size:0.8rem;color:var(--tmut);text-align:center;">Loss going DOWN = Model getting BETTER</p>
+</div>
+
+<!-- Simple explanation -->
+<div class="card">
+  <h2>In the Simplest Possible Words</h2>
+
+  <p style="font-size:0.9rem;color:var(--tdim);margin-bottom:1rem;">
+  <strong>Loss = "How wrong was the model?"</strong> At each step, the model tries to predict the next word. Loss measures how far off it was.
+  </p>
+
+  <div class="analogy">
+    <div class="a-box">
+      <div class="emoji">🎯</div>
+      <strong>Loss = 3.26</strong>
+      <div class="lbl">Like throwing darts blindfolded.<br>Nowhere near the target.</div>
+    </div>
+    <div class="a-box">
+      <div class="emoji">🎯</div>
+      <strong>Loss = 1.26</strong>
+      <div class="lbl">You can see the target now.<br>Getting closer.</div>
+    </div>
+    <div class="a-box">
+      <div class="emoji">🎯</div>
+      <strong>Loss = 0.43</strong>
+      <div class="lbl">You're hitting near the bullseye.<br>Model is fairly accurate.</div>
+    </div>
+  </div>
+</div>
+
+<!-- What it actually computes -->
+<div class="card">
+  <h2>What the Model Is "Wrong" About</h2>
+  <p style="font-size:0.9rem;color:var(--tdim);">For instruction fine-tuning, the model sees:</p>
+  <div style="font-family:'Space Grotesk',monospace;font-size:0.8rem;background:var(--raised);padding:0.75rem;border-radius:8px;margin:0.5rem 0;line-height:2;">
+    <strong>Input:</strong> "### Instruction: What is Metformin? ### Response:"<br>
+    <strong>Expected:</strong> "Metformin is a biguanide..."<br>
+    <strong>Model guesses:</strong> "The Metrics..." ← WRONG! Loss is HIGH<br><br>
+    After training...<br>
+    <strong>Model guesses:</strong> "Metformin is a biguanide..." ← CLOSE! Loss is LOW
+  </div>
+  <p style="font-size:0.85rem;color:var(--tdim);">At EVERY position of EVERY word, the model predicts what comes next. Loss = average of how wrong it was across all positions.</p>
+</div>
+
+<!-- Good vs bad -->
+<div class="card">
+  <h2>What Loss Numbers Mean</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+    <tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.4rem;">Loss</th><th style="text-align:left;padding:0.4rem;">What It Means</th></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem;color:var(--red);font-weight:700;">4-8</td><td style="padding:0.4rem;">Random guessing. Model knows nothing.</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem;color:var(--amber);font-weight:700;">2-3</td><td style="padding:0.4rem;">Starting to learn. Some patterns emerging.</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem;color:var(--amber);font-weight:700;">1-2</td><td style="padding:0.4rem;">Learning well. Getting accurate.</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem;color:var(--green);font-weight:700;">0.5-1</td><td style="padding:0.4rem;">Good fit. Model is reliable.</td></tr>
+    <tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem;color:var(--red);font-weight:700;">&lt;0.1</td><td style="padding:0.4rem;">⚠️ Too low! Probably memorizing, not learning.</td></tr>
+  </table>
+  <div class="callout" style="margin-top:1rem;">
+    <strong>🧠 Your 0.43 is actually good for 5 examples!</strong> It means the model learned the patterns from those 5 Q&A pairs. With more examples (50+), it would generalize better and generate proper answers instead of just "Metrics."
+  </div>
+</div>
+
+</div>
+</body>
+</html>

@@ -284,7 +284,7 @@ render:()=>`
 <p>Load the domain-adapted TinyLlama + your Metformin adapter. Then apply a FRESH LoRA for instruction tuning.</p>
 
 <div class="code-box">
-<span style="color:#6a9955;"># Step 1: Load base + Phase 4 domain adapter</span>
+<span style="color:#6a9955;"># Imports + Load base model + Apply LoRA</span>
 <span style="color:#569cd6;">from</span> peft <span style="color:#569cd6;">import</span> PeftModel
 
 base = AutoModelForCausalLM.from_pretrained(

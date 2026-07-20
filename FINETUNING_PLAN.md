@@ -310,6 +310,11 @@ Click any link to open the interactive HTML in your browser. (Hosted via GitHub 
 - [lora_adapters_per_layer.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/lora_adapters_per_layer.html) — Visual showing 32 layers × independent adapters per module
 - [model_memory_lora_calculator.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/model_memory_lora_calculator.html) — Interactive calculator: FP32→quantization→LoRA. Change rank, precision, target modules — everything updates live
 
+### 💬 Phase 5: Instruction Fine-Tuning (SFT)
+- [phase5_instruction_finetune.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase5_instruction_finetune.html) — 10 interactive slides + Notebook with 6 Colab cells
+- [instruction_format_visual.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/instruction_format_visual.html) — Visual: how Q&A JSON becomes training strings
+- [training_loss_explained.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/training_loss_explained.html) — What training loss means (with loss curve)
+
 ### 🔬 QAT Deep Dives
 - [qat_visual_guide.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/qat_visual_guide.html) — 9-step beginner walkthrough of QAT using 6 concrete weights
 - [qat_weight_nudge_animation.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/qat_weight_nudge_animation.html) — Live animation: watch one weight (W=−2.30) get nudged toward INT4 bucket (−2.40) via gradient descent
@@ -325,7 +330,7 @@ Click any link to open the interactive HTML in your browser. (Hosted via GitHub 
 - ✅ Phase 2: Quantization (theory done) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase2_quantization.html) | [QAT Deep Dives →](#-qat-deep-dives)
 - 📖 Phase 3: LoRA & QLoRA (theory done) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase3_lora_qlora.html)
 - ✅ Phase 4: Non-Instructional Fine-Tuning (hands-on done!) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase4_domain_finetune.html) | [Colab →](https://colab.research.google.com/drive/14X8AHciw9grj0BG4ojcFZMt7o87Pm9AM) | [Notebook →](Phase_4_Non_Instructional_Fine_Tuning.ipynb)
-- ⬜ Phase 5: Instruction Fine-Tuning
+- ✅ Phase 5: Instruction Fine-Tuning (hands-on done!) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase5_instruction_finetune.html) | [Format Visual →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/instruction_format_visual.html) | [Loss Explained →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/training_loss_explained.html)
 - ⬜ Phase 5b: Synthetic Data Generation (Gretel, Mostly AI, Tonic)
 - ⬜ Phase 6: Preference Alignment (DPO)
 - ⬜ Phase 7: Azure AI Foundry
