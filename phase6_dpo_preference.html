@@ -94,461 +94,191 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 
 <script>
 const slides=[
-{id:'Setup',title:'Getting Started — New Colab + Install',
-fact:'Phase 5 needs a fresh Colab with T4 GPU. Total: 6 cells, ~10 minutes.',
+{id:'6.1',title:'RLHF — The Original (Complex) Way',
+fact:'RLHF was invented at OpenAI in 2017 and used to create ChatGPT. It requires training a SEPARATE reward model.',
 render:()=>`
 <div class="slide"><div class="card">
-<h2><span class="num">Setup</span> Open Colab → Install → Copy 6 Cells</h2>
-
-<div style="font-size:0.95rem;color:var(--tdim);line-height:2;margin-bottom:1rem;">
-<strong>1.</strong> Open <a href="https://colab.research.google.com" target="_blank" style="color:var(--violet);">Colab</a> → New Notebook → Runtime → <strong>T4 GPU</strong> → Save<br>
-<strong>2.</strong> Copy CELL 1 below (📋 Copy) → paste into first cell → Run<br>
-<strong>3.</strong> Copy CELL 2–6 from the slides and the 📓 Notebook slide → paste each into its own cell → Run
-</div>
-
-<div class="code-box">
-<span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 1</span> <span style="color:#6a9955;">— Install Dependencies (~2 min)</span>
-
-!pip install -q transformers datasets peft bitsandbytes accelerate trl
-print("✅ All dependencies installed — ready to go!")</div>
-
-<div class="callout">
-<strong>📋 What's different from Phase 4?</strong> Phase 4 used Trainer (from transformers). Phase 5 uses <strong>SFTTrainer</strong> (from trl). SFTTrainer handles instruction formatting automatically. No PDF download needed — we write Q&A pairs directly in the code.
-</div>
-</div></div>`},
-{id:'5.1',title:'Instruction Data Formats — Alpaca vs ChatML',
-fact:'The Alpaca format was created by Stanford researchers who used GPT-3 to generate 52,000 instruction-following examples for just $500. It became the standard for open-source SFT.',
-render:()=>`
-<div class="slide"><div class="card">
-<h2><span class="num">5.1</span> Instruction vs Non-Instructional — What Changes</h2>
-<p>Phase 4 taught the model your <strong>domain language</strong> (what words go together). Phase 5 teaches it to <strong>follow instructions</strong> (how to answer questions).</p>
-
+<h2><span class="num">6.1</span> RLHF — Reinforcement Learning from Human Feedback</h2>
+<p>The original method. Two models: a reward model that learns human preferences, and an LLM that optimizes against it.</p>
 <div class="compare">
-  <div class="cmp-card left"><h4>Phase 4 — Non-Instructional</h4>
-    <div style="font-family:'Space Grotesk',monospace;font-size:0.7rem;line-height:1.8;background:#1e1e1e;color:#d4d4d4;padding:0.6rem;border-radius:6px;">
-    {<span style="color:#ce9178;">"text"</span>: <span style="color:#ce9178;">"Metformin is a biguanide..."</span>}
-    </div>
-    <p style="font-size:0.75rem;margin-top:0.5rem;">Just raw text. Model learns "what words come next."</p>
-  </div>
-  <div class="cmp-card right"><h4>Phase 5 — Instructional (Alpaca)</h4>
-    <div style="font-family:'Space Grotesk',monospace;font-size:0.7rem;line-height:1.8;background:#1e1e1e;color:#d4d4d4;padding:0.6rem;border-radius:6px;">
-{<br>
-&nbsp;&nbsp;<span style="color:#ce9178;">"instruction"</span>: <span style="color:#ce9178;">"What is Metformin?"</span>,<br>
-&nbsp;&nbsp;<span style="color:#ce9178;">"input"</span>: <span style="color:#ce9178;">""</span>,<br>
-&nbsp;&nbsp;<span style="color:#ce9178;">"output"</span>: <span style="color:#ce9178;">"Metformin is an oral diabetes medicine..."</span><br>
-}
-    </div>
-    <p style="font-size:0.75rem;margin-top:0.5rem;">Q&A pairs. Model learns "how to answer questions."</p>
-  </div>
-</div>
-
-<div class="compare" style="margin-top:1rem;">
-  <div class="cmp-card left"><h4 style="color:var(--amber);">Alpaca Format</h4>
-    <div style="font-family:'Space Grotesk',monospace;font-size:0.7rem;line-height:1.8;background:#1e1e1e;color:#d4d4d4;padding:0.6rem;border-radius:6px;">
-### Instruction:<br>
-What is Metformin used for?<br><br>
-### Response:<br>
-Metformin is used to treat type 2 diabetes...
-    </div>
-    <p style="font-size:0.72rem;margin-top:0.3rem;">Simple. 3 fields: instruction + input + output.</p>
-  </div>
-  <div class="cmp-card right"><h4 style="color:var(--green);">ChatML Format</h4>
-    <div style="font-family:'Space Grotesk',monospace;font-size:0.7rem;line-height:1.8;background:#1e1e1e;color:#d4d4d4;padding:0.6rem;border-radius:6px;">
-&lt;|system|&gt;<br>You are a medical assistant.<br>
-&lt;|user|&gt;<br>What is Metformin?<br>
-&lt;|assistant|&gt;<br>Metformin is a biguanide...
-    </div>
-    <p style="font-size:0.72rem;margin-top:0.3rem;">Multi-turn. system + user + assistant roles.</p>
-  </div>
-</div>
-</div></div>`},
-{id:'5.2',title:'Prepare Instruction Dataset from Domain PDFs',
-fact:'You can use GPT-4o (or any LLM) to generate Q&A pairs from your domain PDFs. Feed it a chunk of text, ask it to generate 5 questions — instant instruction dataset.',
+  <div class="cmp-card left"><h4 style="color:var(--red);">RLHF Problems</h4><p>Needs separate reward model (2x GPU). PPO is unstable. Reward model can be "gamed."</p></div>
+  <div class="cmp-card right"><h4 style="color:var(--green);">DPO Solution (2023)</h4><p>No reward model. Single model. Directly learns from preference pairs. Simpler, faster, more stable.</p></div>
+</div></div></div>`},
+{id:'6.2',title:'DPO — Direct Preference Optimization',
+fact:'DPO was invented at Stanford in 2023. The paper has 2000+ citations. It replaced RLHF as the standard.',
 render:()=>`
 <div class="slide"><div class="card">
-<h2><span class="num">5.2</span> Create Instruction Dataset from Your PDF Text</h2>
-<p>Turn your Metformin chunks into Q&A pairs. Either manually (for small datasets) or use an LLM to auto-generate them.</p>
-
-<div class="code-box">
-<span style="color:#6a9955;"># Method 1: Manual (for small datasets)</span>
-instruction_data = [
-    {
-        <span style="color:#ce9178;">"instruction"</span>: <span style="color:#ce9178;">"What is Metformin?"</span>,
-        <span style="color:#ce9178;">"input"</span>: <span style="color:#ce9178;">""</span>,
-        <span style="color:#ce9178;">"output"</span>: <span style="color:#ce9178;">"Metformin is a biguanide antihyperglycemic agent used to treat type 2 diabetes."</span>
-    },
-    {
-        <span style="color:#ce9178;">"instruction"</span>: <span style="color:#ce9178;">"How does Metformin work?"</span>,
-        <span style="color:#ce9178;">"input"</span>: <span style="color:#ce9178;">""</span>,
-        <span style="color:#ce9178;">"output"</span>: <span style="color:#ce9178;">"It decreases hepatic glucose production and improves insulin sensitivity."</span>
-    },
-    {
-        <span style="color:#ce9178;">"instruction"</span>: <span style="color:#ce9178;">"What are common side effects?"</span>,
-        <span style="color:#ce9178;">"input"</span>: <span style="color:#ce9178;">""</span>,
-        <span style="color:#ce9178;">"output"</span>: <span style="color:#ce9178;">"Common side effects include nausea, vomiting, diarrhea, and abdominal discomfort."</span>
-    },
-    {
-        <span style="color:#ce9178;">"instruction"</span>: <span style="color:#ce9178;">"When is Metformin contraindicated?"</span>,
-        <span style="color:#ce9178;">"input"</span>: <span style="color:#ce9178;">""</span>,
-        <span style="color:#ce9178;">"output"</span>: <span style="color:#ce9178;">"Metformin is contraindicated in patients with severe renal impairment, acute metabolic acidosis, or hypersensitivity to the drug."</span>
-    },
-    {
-        <span style="color:#ce9178;">"instruction"</span>: <span style="color:#ce9178;">"What class of drug is Metformin?"</span>,
-        <span style="color:#ce9178;">"input"</span>: <span style="color:#ce9178;">""</span>,
-        <span style="color:#ce9178;">"output"</span>: <span style="color:#ce9178;">"Metformin belongs to the biguanide class of antihyperglycemic agents."</span>
-    },
-]
-print(<span style="color:#ce9178;">f"✅ {len(instruction_data)} examples ready"</span>)
-
-<span style="color:#6a9955;"># Method 2: Auto-generate with GPT-4o (Phase 5b covers synthetic data)</span>
-<span style="color:#6a9955;"># Feed chunk → GPT-4o → "Generate 5 Q&A pairs from this text" → JSON output</span></div>
-
-<div class="callout">
-<strong>🧠 Key difference from Phase 4:</strong> Phase 4 data was just <code>{"text": "..."}</code>. Phase 5 data has <strong>three fields</strong>: instruction (the question), input (optional context), output (the correct answer). The model learns to map instruction → output.
-</div>
-</div></div>`},
-{id:'5.3',title:'Format as Prompt — The Alpaca Template',
-fact:'The model doesn\'t see JSON. It sees one string: "### Instruction: What is Metformin? ### Response: Metformin is a biguanide..." The ### markers help the model distinguish questions from answers.',
-render:()=>`
-<div class="slide"><div class="card">
-<h2><span class="num">5.3</span> Format Q&A Pairs into Training Strings</h2>
-<p>The model sees ONE string, not a JSON object. We format each Q&A pair using the Alpaca template.</p>
-
-<div class="code-box">
-<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">format_instruction</span>(example):
-    <span style="color:#ce9178;">"""Convert a Q&A pair into a single training string."""</span>
-    <span style="color:#569cd6;">if</span> example[<span style="color:#ce9178;">"input"</span>]:
-        text = <span style="color:#ce9178;">f"""Below is an instruction and input. Write a response.
-
-### Instruction:
-{example['instruction']}
-
-### Input:
-{example['input']}
-
-### Response:
-{example['output']}"""</span>
-    <span style="color:#569cd6;">else</span>:
-        text = <span style="color:#ce9178;">f"""Below is an instruction. Write a response.
-
-### Instruction:
-{example['instruction']}
-
-### Response:
-{example['output']}"""</span>
-    <span style="color:#569cd6;">return</span> {<span style="color:#ce9178;">"text"</span>: text}
-
-<span style="color:#6a9955;"># Example: {"instruction": "What is Metformin?", "input": "", "output": "Metformin is..."}</span>
-<span style="color:#6a9955;"># Becomes:</span>
-<span style="color:#6a9955;"># "Below is an instruction. Write a response.\n\n### Instruction:\nWhat is Metformin?\n\n### Response:\nMetformin is..."</span></div>
-
-<p><strong>The ### markers</strong> are boundary tokens — they tell the model "instruction ends here, response starts here." During training, the model learns to generate text AFTER "### Response:" based on what came before it.</p>
-</div></div>`},
-{id:'5.4',title:'Synthetic Data Generation — GPT-4o Creates Q&A',
-fact:'A single research paper (~10 pages) can generate 50–100 high-quality Q&A pairs when fed through GPT-4o. Cost: ~$1-2. This is Phase 5b in detail.',
-render:()=>`
-<div class="slide"><div class="card">
-<h2><span class="num">5.4</span> Use GPT-4o to Generate Q&A from Your PDFs</h2>
-<p>Feed a chunk of domain text to GPT-4o, ask it to create instruction-output pairs. You get a labeled dataset for the cost of API calls.</p>
-
-<div class="code-box">
-<span style="color:#6a9955;"># Feed each chunk to GPT-4o</span>
-<span style="color:#569cd6;">import</span> openai
-
-<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">generate_qa_pairs</span>(chunk_text):
-    prompt = <span style="color:#ce9178;">f"""Given this medical text, generate 5 question-answer pairs
-in JSON format. Questions should test understanding of the content.
-
-Text: {chunk_text}
-
-Output as JSON list: [{{"instruction": "...", "output": "..."}}]"""</span>
-
-    response = openai.chat.completions.create(
-        model=<span style="color:#ce9178;">"gpt-4o"</span>,
-        messages=[{<span style="color:#ce9178;">"role"</span>: <span style="color:#ce9178;">"user"</span>, <span style="color:#ce9178;">"content"</span>: prompt}]
-    )
-    <span style="color:#569cd6;">return</span> json.loads(response.choices[0].message.content)
-
-<span style="color:#6a9955;"># 10 chunks × 5 Q&A each = 50 training examples</span>
-<span style="color:#6a9955;"># Cost: ~$0.50 total</span></div>
-
-<div class="callout">
-<strong>⚠️ This is Phase 5b content.</strong> We'll cover synthetic data generation (Gretel, Mostly AI, Tonic) in detail later. For now, you can manually write 5–10 Q&A pairs from Metformin.pdf to test the pipeline.
-</div>
-</div></div>`},
-{id:'5.5',title:'Load Domain-Adapted Model from Phase 4',
-fact:'The key insight: Phase 5 starts from the Phase 4 model, not from scratch. The domain-adapted model already knows medical language. Instruction tuning teaches it to answer questions about that language.',
-render:()=>`
-<div class="slide"><div class="card">
-<h2><span class="num">5.5</span> Start from Your Phase 4 Model — Not from Scratch</h2>
-<p>Load the domain-adapted TinyLlama + your Metformin adapter. Then apply a FRESH LoRA for instruction tuning.</p>
-
-<div class="code-box">
-<span style="color:#6a9955;"># Imports + Load base model + Apply LoRA</span>
-<span style="color:#569cd6;">from</span> peft <span style="color:#569cd6;">import</span> PeftModel
-
-base = AutoModelForCausalLM.from_pretrained(
-    <span style="color:#ce9178;">"TinyLlama/TinyLlama-1.1B-Chat-v1.0"</span>,
-    load_in_8bit=<span style="color:#569cd6;">True</span>, device_map=<span style="color:#ce9178;">"auto"</span>
-)
-model = PeftModel.from_pretrained(base, <span style="color:#ce9178;">"./medical_domain_adapter"</span>)
-
-<span style="color:#6a9955;"># Step 2: MERGE domain adapter BEFORE instruction tuning!</span>
-<span style="color:#6a9955;"># (Phase 3.10 Golden Rule — merge before next stage)</span>
-model = model.merge_and_unload()
-
-<span style="color:#6a9955;"># Step 3: Apply FRESH LoRA for instruction tuning</span>
-model = prepare_model_for_kbit_training(model)
-lora_config = LoraConfig(r=<span style="color:#ce9178;">8</span>, lora_alpha=<span style="color:#ce9178;">16</span>, target_modules=[<span style="color:#ce9178;">"q_proj"</span>,<span style="color:#ce9178;">"v_proj"</span>])
-model = get_peft_model(model, lora_config)
-<span style="color:#6a9955;"># Now model = domain-adapted base + fresh instruction LoRA</span></div>
-
-<div class="callout">
-<strong>🧠 Phase 3.10 in action:</strong> You MUST merge the domain adapter before instruction tuning. Otherwise the instruction LoRA learns to fix errors from the domain LoRA — not from the base model. This is the "merge, never stack" rule.
-</div>
-</div></div>`},
-{id:'5.6',title:'Apply LoRA Correctly — Merge Then New LoRA',
-fact:'If you forget to merge, the instruction adapter learns to compensate for the domain adapter\'s errors. Over 3 stages (domain → instruction → DPO), this creates catastrophic drift — same as Phase 3.10.',
-render:()=>`
-<div class="slide"><div class="card">
-<h2><span class="num">5.6</span> The Merge-Before-Next-Stage Pattern</h2>
-<p>This is the most common mistake in multi-stage fine-tuning. Here's the correct pattern:</p>
-
-<div class="code-box">
-<span style="color:#6a9955;"># ✅ CORRECT — Every stage follows this pattern:</span>
-
-<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">train_stage</span>(model, data, stage_name):
-    <span style="color:#ce9178;">"""Train one LoRA stage, then merge."""</span>
-
-    <span style="color:#6a9955;"># 1. Apply fresh LoRA</span>
-    lora = LoraConfig(r=<span style="color:#ce9178;">8</span>, alpha=<span style="color:#ce9178;">16</span>, ...)
-    model = get_peft_model(model, lora)
-
-    <span style="color:#6a9955;"># 2. Train this stage</span>
-    trainer = Trainer(model=model, train_dataset=data, ...)
-    trainer.train()
-
-    <span style="color:#6a9955;"># 3. MERGE — bake adapter into weights</span>
-    model = model.merge_and_unload()
-
-    <span style="color:#6a9955;"># 4. Save the merged checkpoint</span>
-    model.save_pretrained(<span style="color:#ce9178;">f"./checkpoint_{stage_name}"</span>)
-
-    <span style="color:#569cd6;">return</span> model  <span style="color:#6a9955;"># Clean model, ready for next stage</span>
-
-<span style="color:#6a9955;"># Pipeline:</span>
-<span style="color:#6a9955;"># Base → train_stage(domain) → merge → train_stage(instr) → merge → train_stage(dpo)</span></div>
-
-</div></div>`},
-{id:'5.7',title:'Train with SFTTrainer (from TRL)',
-fact:'SFTTrainer is built on top of HuggingFace Trainer. It handles the instruction formatting, response-only loss masking, and dataset preparation automatically.',
-render:()=>`
-<div class="slide"><div class="card">
-<h2><span class="num">5.7</span> SFTTrainer — Purpose-Built for Instruction Tuning</h2>
-<p>SFTTrainer from the TRL library handles instruction formatting and training in one shot.</p>
-
-<div class="code-box">
-<span style="color:#569cd6;">from</span> trl <span style="color:#569cd6;">import</span> SFTTrainer
-<span style="color:#569cd6;">from</span> datasets <span style="color:#569cd6;">import</span> Dataset
-
-<span style="color:#6a9955;"># Prepare instruction data as a Dataset</span>
-dataset = Dataset.from_list(instruction_data)
-
-trainer = SFTTrainer(
-    model=model,
-    train_dataset=dataset,
-    tokenizer=tokenizer,
-    max_seq_length=<span style="color:#ce9178;">512</span>,
-
-    <span style="color:#6a9955;"># SFTTrainer automatically formats using the template below</span>
-    formatting_func=format_instruction,  <span style="color:#6a9955;"># Our function from 5.3</span>
-
-    args=TrainingArguments(
-        output_dir=<span style="color:#ce9178;">"./instruction_tuned"</span>,
-        num_train_epochs=<span style="color:#ce9178;">3</span>,
-        per_device_train_batch_size=<span style="color:#ce9178;">4</span>,
-        learning_rate=<span style="color:#ce9178;">2e-4</span>,
-        fp16=<span style="color:#569cd6;">True</span>,
-        logging_steps=<span style="color:#ce9178;">10</span>,
-    )
-)
-
-trainer.train()
-<span style="color:#6a9955;"># SFTTrainer internally: formats → tokenizes → adds labels → trains</span></div>
-
-</div></div>`},
-{id:'5.8',title:'Optional: Mask Labels Before Response',
-fact:'Without masking, the model learns to predict ALL tokens including "### Instruction: What is Metformin?" — wasting capacity. Masking makes it focus ONLY on generating the response.',
-render:()=>`
-<div class="slide"><div class="card">
-<h2><span class="num">5.8</span> Response-Only Training — Mask the Instruction Part</h2>
-<p>By default, the model tries to predict EVERY token — including the instruction. We want it to learn ONLY the response.</p>
-
-<div class="code-box">
-<span style="color:#6a9955;"># Without masking: model learns to predict everything</span>
-<span style="color:#ce9178;">"### Instruction: What is Metformin? ### Response: Metformin is..."</span>
-<span style="color:#6a9955;">#                                              ↑ model learns from here too (waste)</span>
-
-<span style="color:#6a9955;"># With masking: model ONLY learns the response part</span>
-<span style="color:#ce9178;">"### Instruction: What is Metformin? ### Response: Metformin is..."</span>
-<span style="color:#6a9955;">#                                               └────────── ONLY THIS ──────────┘</span>
-<span style="color:#6a9955;">#                              labels = [-100,..., -100, token1, token2, ...]</span>
-<span style="color:#6a9955;">#                              -100 = "ignore this position, don't compute loss"</span></div>
-
-<div class="callout">
-  <strong>🤔 Why mask?</strong> You don't want the model to get good at writing "### Instruction:" — you want it to get good at writing the ANSWER. Masking focuses 100% of the learning signal on the response tokens. SFTTrainer does this automatically when you use <code>formatting_func</code>.
-</div>
-</div></div>`},
-{id:'5.9',title:'Compare: Base vs Domain vs Instruction-Tuned',
-fact:'A base model given "What is Metformin?" might respond "What is Aspirin? What is Ibuprofen?" — completing the pattern, not answering. Instruction tuning teaches it that questions deserve answers.',
-render:()=>`
-<div class="slide"><div class="card">
-<h2><span class="num">5.9</span> Compare the Three Stages</h2>
-<p>Give the same prompt to all three versions. The difference shows what each stage learned.</p>
-
-<table style="width:100%;border-collapse:collapse;font-size:0.9rem;margin:1rem 0;">
-<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.4rem;">Model</th><th style="text-align:left;padding:0.4rem;">Prompt: "What is Metformin?"</th></tr></thead>
+<h2><span class="num">6.2</span> How DPO Works — Pairs of Responses</h2>
+<p>DPO learns from <strong>pairs</strong> — one preferred response, one rejected.</p>
+<table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin:1rem 0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.4rem;">Prompt</th><th style="text-align:left;padding:0.4rem;color:var(--green);">Chosen</th><th style="text-align:left;padding:0.4rem;color:var(--red);">Rejected</th></tr></thead>
 <tbody>
-<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.5rem;color:var(--tmut);">Base TinyLlama</td><td style="padding:0.5rem;">"What is Metformin? What is Aspirin? What is Ibuprofen?..." <span style="color:var(--red);">← Pattern completion, not answering</span></td></tr>
-<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.5rem;color:var(--amber);">Domain-Adapted (Phase 4)</td><td style="padding:0.5rem;">"Metformin is a biguanide antihyperglycemic agent used in the treatment of type 2 diabetes mellitus..." <span style="color:var(--amber);">← Knows the domain but doesn't "answer" — just continues text</span></td></tr>
-<tr><td style="padding:0.5rem;color:var(--green);">Instruction-Tuned (Phase 5)</td><td style="padding:0.5rem;">"Metformin is an oral medication used to treat type 2 diabetes. It works by reducing glucose production in the liver and improving insulin sensitivity." <span style="color:var(--green);">← Answers the question concisely!</span></td></tr>
-</tbody>
-</table>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem;">What is Metformin?</td><td style="padding:0.4rem;">Metformin is an oral medication used to treat type 2 diabetes. It belongs to the biguanide class...</td><td style="padding:0.4rem;">Metformin is a drug. You take it. It helps with sugar.</td></tr>
+</tbody></table>
+<div class="callout"><strong>What DPO learns:</strong> "Be thorough, accurate, helpful. Not dismissive, lazy, or rude."</div>
 </div></div>`},
-{id:'5.10',title:'Push to HuggingFace Hub',
-fact:'Your instruction-tuned adapter is ~4 MB. You can share it on HuggingFace Hub and anyone with TinyLlama can load it. This is how the open-source LLM ecosystem works.',
+{id:'6.3',title:'DPO Loss — Simplified',
+fact:'The DPO loss is elegant: cross-entropy between chosen and rejected probabilities.',
 render:()=>`
 <div class="slide"><div class="card">
-<h2><span class="num">5.10</span> Save & Share Your Instruction-Tuned Model</h2>
-
+<h2><span class="num">6.3</span> What DPO Actually Optimizes</h2>
 <div class="code-box">
-<span style="color:#6a9955;"># Save adapter locally</span>
-model.save_pretrained(<span style="color:#ce9178;">"./instruction_tuned_adapter"</span>)
-tokenizer.save_pretrained(<span style="color:#ce9178;">"./instruction_tuned_adapter"</span>)
+<span style="color:#6a9955;">DPO Loss (simplified):</span>
+Loss = -log( sigma( beta * (log P(chosen) - log P(rejected)) ) )
 
-<span style="color:#6a9955;"># Optional: Push to HuggingFace Hub</span>
-<span style="color:#569cd6;">from</span> huggingface_hub <span style="color:#569cd6;">import</span> login
-login()  <span style="color:#6a9955;"># Your HF token</span>
+<span style="color:#6a9955;">In plain English:</span>
+  "If model prefers BAD over GOOD -> HIGH penalty.
+   If model prefers GOOD over BAD -> LOW penalty."
 
-model.push_to_hub(<span style="color:#ce9178;">"ashokmulchandani/tinyllama-medical-instruct"</span>)
-tokenizer.push_to_hub(<span style="color:#ce9178;">"ashokmulchandani/tinyllama-medical-instruct"</span>)
-
-<span style="color:#6a9955;"># Now anyone can use it:</span>
-<span style="color:#6a9955;"># model = AutoModelForCausalLM.from_pretrained("ashokmulchandani/tinyllama-medical-instruct")</span></div>
-
-<div class="callout">
-<strong>🎉 Phase 5 Complete!</strong> You now have a model that: (1) knows medical language (Phase 4) AND (2) can answer questions about it (Phase 5). Next: Phase 6 — align it with human preferences using DPO.
-</div>
+<span style="color:#6a9955;">beta = temperature (0.1-0.5)</span>
+  Low beta (0.1): mild preference, slow change
+  High beta (0.5): strong preference, faster change</div>
 </div></div>`},
-{id:'Notebook',title:'Colab Notebook — 6 Cells for Phase 5',
-fact:'Copy each cell into a fresh Colab, enable T4 GPU, run in order. Total: ~10 minutes.',
+{id:'6.4',title:'Preference Data Format',
+fact:'A DPO dataset has 10K-50K pairs. Each pair = one prompt, two responses, one judgment.',
 render:()=>`
 <div class="slide"><div class="card">
-<h2><span class="num">📓</span> Phase 5 Colab — Cell by Cell</h2>
-<p>Each <span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL</span> = one Colab code cell. <strong>Use 📋 Copy button</strong> → paste → Ctrl+Enter.</p>
-
+<h2><span class="num">6.4</span> Prepare Preference Data</h2>
+<p>Three keys: <strong>prompt</strong>, <strong>chosen</strong> (good answer), <strong>rejected</strong> (bad answer).</p>
 <div class="code-box">
-<span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 1</span> <span style="color:#6a9955;">— Install</span>
-
-!pip install -q transformers datasets peft bitsandbytes accelerate trl
-print("✅ Installed")</div>
-
+<span style="color:#6a9955;">DPO data format:</span>
+preference_data = [
+    {"prompt": "What is Metformin?",
+     "chosen": "Metformin is an oral medication used to treat type 2 diabetes...",
+     "rejected": "Metformin is a diabetes drug. It helps with sugar."},
+    # ... 50-100 pairs
+]</div>
+</div></div>`},
+{id:'6.5',title:'Load Model + Merge + Fresh LoRA',
+fact:'Phase 3.10 applies again! Merge instruction adapter BEFORE DPO training.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6.5</span> Start from Instruction-Tuned Model</h2>
 <div class="code-box">
-<span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 2</span> <span style="color:#6a9955;">— Instruction Data (5 Q&A pairs)</span>
-
-instruction_data = [
-    {"instruction": "What is Metformin?", "input": "", "output": "Metformin is a biguanide antihyperglycemic agent used to treat type 2 diabetes mellitus."},
-    {"instruction": "How does Metformin work?", "input": "", "output": "It decreases hepatic glucose production and improves insulin sensitivity."},
-    {"instruction": "What are common side effects?", "input": "", "output": "Common side effects include nausea, vomiting, diarrhea, and abdominal discomfort."},
-    {"instruction": "When is Metformin contraindicated?", "input": "", "output": "Metformin is contraindicated in patients with severe renal impairment, acute metabolic acidosis, or hypersensitivity to the drug."},
-    {"instruction": "What class of drug is Metformin?", "input": "", "output": "Metformin belongs to the biguanide class of antihyperglycemic agents."},
-]
-print(f"✅ {len(instruction_data)} instruction examples ready")</div>
-
-<div class="code-box">
-<span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 3</span> <span style="color:#6a9955;">— Format Function + Tokenize</span>
-
-from datasets import Dataset
-from transformers import AutoTokenizer
-
-model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-tokenizer.pad_token = tokenizer.eos_token
-
-def format_instruction(example):
-    if example["input"]:
-        text = f"Below is an instruction and input. Write a response.\n\n### Instruction:\n{example['instruction']}\n\n### Input:\n{example['input']}\n\n### Response:\n{example['output']}"
-    else:
-        text = f"Below is an instruction. Write a response.\n\n### Instruction:\n{example['instruction']}\n\n### Response:\n{example['output']}"
-    return {"text": text}
-
-dataset = Dataset.from_list(instruction_data)
-dataset = dataset.map(format_instruction)
-
-def tokenize(ex):
-    return tokenizer(ex["text"], truncation=True, padding="max_length", max_length=512)
-
-dataset = dataset.map(tokenize, batched=True)
-print(f"✅ Dataset ready: {len(dataset)} examples")</div>
-
-<div class="code-box">
-<span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 4</span> <span style="color:#6a9955;">— Load Model + Apply LoRA</span>
-
+<span style="color:#6a9955;">Load base + Phase 5 adapter + merge + fresh LoRA</span>
 import torch
 from transformers import AutoModelForCausalLM, BitsAndBytesConfig
-from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+from peft import PeftModel, LoraConfig, get_peft_model, prepare_model_for_kbit_training
 
 bnb_config = BitsAndBytesConfig(load_in_8bit=True)
-model = AutoModelForCausalLM.from_pretrained(model_name, quantization_config=bnb_config, device_map="auto", torch_dtype=torch.float16)
-model.config.use_cache = False
-
-<span style="color:#6a9955;"># Optional: If you uploaded Phase 4 adapter, add:
-# from peft import PeftModel
-# model = PeftModel.from_pretrained(model, "./medical_domain_adapter")
-# model = model.merge_and_unload()  # Golden rule! Phase 3.10</span>
-
+base = AutoModelForCausalLM.from_pretrained(
+    "TinyLlama/TinyLlama-1.1B-Chat-v1.0",
+    quantization_config=bnb_config, device_map="auto", torch_dtype=torch.float16
+)
+model = PeftModel.from_pretrained(base, "./instruction_tuned_adapter")
+model = model.merge_and_unload()  # Phase 3.10!
 model = prepare_model_for_kbit_training(model)
-lora_config = LoraConfig(r=8, lora_alpha=16, lora_dropout=0.1, target_modules=["q_proj","v_proj"], bias="none", task_type="CAUSAL_LM")
+lora_config = LoraConfig(r=8, lora_alpha=16, target_modules=["q_proj","v_proj"])
+model = get_peft_model(model, lora_config)</div>
+</div></div>`},
+{id:'6.6',title:'DPOTrainer from TRL',
+fact:'DPOTrainer is from TRL — same API as SFTTrainer. Same .train() call.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6.6</span> DPOTrainer — Configure and Train</h2>
+<div class="code-box">
+from trl import DPOTrainer
+from transformers import TrainingArguments
+from datasets import Dataset
+
+dataset = Dataset.from_list(preference_data)
+training_args = TrainingArguments(
+    output_dir="./dpo_aligned", num_train_epochs=3,
+    per_device_train_batch_size=4, learning_rate=5e-5, logging_steps=10,
+)
+trainer = DPOTrainer(
+    model=model, train_dataset=dataset,
+    tokenizer=tokenizer, args=training_args, beta=0.1,
+)
+trainer.train()</div>
+<div class="callout"><strong>lr=5e-5:</strong> Smaller than SFT (2e-4). DPO adjusts preferences, not teaches new knowledge.</div>
+</div></div>`},
+{id:'6.7',title:'DPO vs SFT — What Changes',
+fact:'SFT teaches WHAT to say. DPO teaches HOW to say it. Same content, different delivery.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6.7</span> SFT vs DPO Output Comparison</h2>
+<table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin:1rem 0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.4rem;">Prompt</th><th style="text-align:left;padding:0.4rem;color:var(--amber);">After SFT</th><th style="text-align:left;padding:0.4rem;color:var(--green);">After DPO</th></tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem;">What is Metformin?</td><td style="padding:0.4rem;">"Metformin is a biguanide used to treat type 2 diabetes."<br><span style="color:var(--amber);">Correct but brief</span></td><td style="padding:0.4rem;">"Metformin is an oral medication belonging to the biguanide class. It treats type 2 diabetes by reducing hepatic glucose production and improving insulin sensitivity."<br><span style="color:var(--green);">Thorough + accurate</span></td></tr>
+</tbody></table>
+<p>Same information. <strong>Better delivery.</strong></p>
+</div></div>`},
+{id:'6.8',title:'RLAIF — AI Feedback (No Humans)',
+fact:'Anthropic uses RLAIF to train Claude. AI judges responses. $0.001/pair vs $1-5 for humans.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6.8</span> RLAIF — AI Feedback at Scale</h2>
+<div class="compare">
+  <div class="cmp-card left"><h4 style="color:var(--amber);">RLHF (Human)</h4><p>$1-5/pair. Days. Does not scale.</p></div>
+  <div class="cmp-card right"><h4 style="color:var(--green);">RLAIF (AI)</h4><p>$0.001/pair. Minutes. GPT-4o judges. Nearly as good.</p></div>
+</div>
+<div class="code-box">
+<span style="color:#6a9955;">GPT-4o as judge:</span>
+def ai_preference(prompt, a, b):
+    result = openai.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role":"user","content":f"Which is better? {prompt} A:{a} B:{b}"}]
+    )
+    return "A" if "A" in result.choices[0].message.content else "B"</div>
+</div></div>`},
+{id:'Notebook',title:'Colab Notebook — 5 Cells for Phase 6',
+fact:'DPO training is fast — 50-100 preference pairs train in under 5 minutes on T4 GPU.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">Notebook</span> Phase 6 Colab — 5 Cells</h2>
+<p>Each CELL = one Colab code cell.</p>
+<div class="code-box">
+<span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 1</span> — Install + Data
+
+!pip install -q transformers datasets peft bitsandbytes accelerate trl
+
+preference_data = [
+    {"prompt": "What is Metformin?", "chosen": "Metformin is an oral medication used to treat type 2 diabetes. It belongs to the biguanide class and works by reducing hepatic glucose production.", "rejected": "Metformin is a diabetes drug. It helps with sugar."},
+    {"prompt": "How does Metformin work?", "chosen": "Metformin decreases hepatic glucose production and improves peripheral insulin sensitivity.", "rejected": "It just works."},
+    {"prompt": "What are side effects?", "chosen": "Common side effects include nausea, vomiting, and diarrhea. These usually subside after 1-2 weeks.", "rejected": "It might make your stomach hurt."},
+    {"prompt": "When is it contraindicated?", "chosen": "Metformin is contraindicated in patients with severe renal impairment (eGFR < 30) or acute metabolic acidosis.", "rejected": "Don't take it if your kidneys are bad."},
+    {"prompt": "What class is Metformin?", "chosen": "Metformin belongs to the biguanide class. It is the only biguanide available for clinical use.", "rejected": "It's a biguanide. That's it."},
+]</div>
+<div class="code-box">
+<span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 2</span> — Load Model
+
+import torch
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+model_name = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+tokenizer = AutoTokenizer.from_pretrained(model_name); tokenizer.pad_token = tokenizer.eos_token
+bnb_config = BitsAndBytesConfig(load_in_8bit=True)
+model = AutoModelForCausalLM.from_pretrained(model_name, quantization_config=bnb_config, device_map="auto", torch_dtype=torch.float16)
+model.config.use_cache = False</div>
+<div class="code-box">
+<span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 3</span> — Apply LoRA
+
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+model = prepare_model_for_kbit_training(model)
+lora_config = LoraConfig(r=8, lora_alpha=16, lora_dropout=0.1, target_modules=["q_proj","v_proj"])
 model = get_peft_model(model, lora_config)
 model.print_trainable_parameters()</div>
-
 <div class="code-box">
-<span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 5</span> <span style="color:#6a9955;">— SFTTrainer (10 epochs)</span>
+<span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 4</span> — DPOTrainer
 
 from transformers import TrainingArguments
-from trl import SFTTrainer
-
-training_args = TrainingArguments(
-    output_dir="./instruction_tuned", num_train_epochs=10,
-    per_device_train_batch_size=4, learning_rate=2e-4,
-    fp16=True, logging_steps=5,
-)
-
-trainer = SFTTrainer(
-    model=model, train_dataset=dataset, tokenizer=tokenizer,
-    max_seq_length=512, formatting_func=format_instruction,
-    args=training_args,
-)
-
-trainer.train()
-print("✅ Training complete!")</div>
-
+from trl import DPOTrainer
+from datasets import Dataset
+dataset = Dataset.from_list(preference_data)
+training_args = TrainingArguments(output_dir="./dpo_aligned", num_train_epochs=3, per_device_train_batch_size=4, learning_rate=5e-5, logging_steps=5)
+trainer = DPOTrainer(model=model, train_dataset=dataset, tokenizer=tokenizer, args=training_args, beta=0.1)
+trainer.train()</div>
 <div class="code-box">
-<span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 6</span> <span style="color:#6a9955;">— Test!</span>
+<span style="background:var(--violet);color:#fff;padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:700;">CELL 5</span> — Test!
 
 from transformers import pipeline
-
 pipe = pipeline("text-generation", model=model, tokenizer=tokenizer)
-prompt = "### Instruction:\nWhat is Metformin?\n\n### Response:\n"
-result = pipe(prompt, max_new_tokens=80, temperature=0.7)
+result = pipe("### Instruction:\nWhat is Metformin?\n\n### Response:\n", max_new_tokens=100)
 print(result[0]["generated_text"])</div>
-
-<div class="callout" style="margin-top:1rem;">
-<strong>📋 6 cells total.</strong> ⬆ Copy each → paste into Colab → Ctrl+Enter. 10 epochs because you have only 5 examples — each needs many repetitions. With 100+ examples, 3 epochs would be enough.
-</div>
+<div class="callout"><strong>5 cells.</strong> DPO is simpler than SFT — no formatting function. Just pairs of good vs bad responses.</div>
 </div></div>`}
 ];
-
 let cur=0; const visited=new Set([0]);
 
 function render(i){
