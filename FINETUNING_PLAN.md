@@ -339,7 +339,7 @@ Click any link to open the interactive HTML in your browser. (Hosted via GitHub 
 - ✅ Phase 4: Non-Instructional Fine-Tuning (hands-on done!) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase4_domain_finetune.html) | [Colab →](https://colab.research.google.com/drive/14X8AHciw9grj0BG4ojcFZMt7o87Pm9AM) | [Notebook →](Phase_4_Non_Instructional_Fine_Tuning.ipynb)
 - ✅ Phase 5: Instruction Fine-Tuning (hands-on done!) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase5_instruction_finetune.html) | [Format Visual →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/instruction_format_visual.html) | [Loss Explained →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/training_loss_explained.html)
 - ✅ Phase 5b: Synthetic Data Generation (theory done)
-- 📖 Phase 6: Preference Alignment (DPO) (theory done) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6_dpo_preference.html) | [DPO Loss →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/dpo_loss_simplified.html)
+- 📖 Phase 6: Preference Alignment (DPO) (theory done) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6_dpo_preference.html) | [DPO Loss →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/dpo_loss_simplified.html) | [Colab →](https://colab.research.google.com/drive/1fOFcaipLxzf-vaLEC1QvsFmLo-CsD1FR)
 - ⬜ Phase 7: Azure AI Foundry
 - ⬜ Phase 8: AWS Bedrock
 - ⬜ Phase 9: AWS SageMaker
