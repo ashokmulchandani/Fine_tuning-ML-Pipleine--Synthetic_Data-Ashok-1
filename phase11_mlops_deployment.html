@@ -119,6 +119,31 @@ render:()=>`
     mlflow.log_artifact(<span style="color:#ce9178;">"./instruction_tuned_adapter"</span>)
 
 <span style="color:#6a9955;"># View all runs: mlflow ui -> localhost:5000</span></div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1rem 0 0.5rem;">📁 Data Versioning — What Data Was This Trained On?</h3>
+<p style="font-size:0.9rem;color:var(--tdim);">Models are useless without knowing which data version produced them. DVC (Data Version Control) solves this — like Git for datasets.</p>
+
+<div class="code-box">
+<span style="color:#6a9955;"># DVC tracks your training data alongside your code</span>
+<span style="color:#6a9955;"># Install: pip install dvc</span>
+
+<span style="color:#6a9955;"># Initialize DVC in your project</span>
+dvc init
+
+<span style="color:#6a9955;"># Track your dataset (like git add, but for large files)</span>
+dvc add data/instruction_data.json
+git add data/instruction_data.json.dvc .gitignore
+git commit -m <span style="color:#ce9178;">"Add metformin instruction dataset v1"</span>
+
+<span style="color:#6a9955;"># Push data to remote storage (S3, GCS, etc.)</span>
+dvc remote add -d storage s3://my-bucket/datasets
+dvc push
+
+<span style="color:#6a9955;"># Now in MLflow, log which data version was used:</span>
+mlflow.log_param(<span style="color:#ce9178;">"data_version"</span>, <span style="color:#ce9178;">"v1"</span>)
+mlflow.log_param(<span style="color:#ce9178;">"data_hash"</span>, <span style="color:#ce9178;">"a1b2c3"</span>)  <span style="color:#6a9955;"># Git commit hash of .dvc file</span></div>
+
+<div class="callout"><strong>🧠 The 3 things that must be versioned together:</strong> Code (Git) + Data (DVC) + Model (MLflow). If you change the data and retrain, you know exactly which data produced which model. Without data versioning, you're guessing.</div>
 </div></div>`},
 {id:'11.2',title:'Model Registry — Version & Stage',
 fact:'The MLflow Model Registry lets you manage model versions like Git branches. Each version has a stage: Staging (testing) -> Production (live) -> Archived (retired).',
