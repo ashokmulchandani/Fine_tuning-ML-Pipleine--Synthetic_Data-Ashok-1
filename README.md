@@ -67,6 +67,11 @@ Click any link to open the interactive module. All hosted via GitHub Pages.
 | [phase6_dpo_preference.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6_dpo_preference.html) | 9 slides + 5-cell Colab notebook — DPO, beta, preference pairs |
 | [dpo_loss_simplified.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/dpo_loss_simplified.html) | DPO loss — teacher analogy, beta volume knob, visual demo |
 
+### 🧪 Phase 6A: AI Testing & QA
+| Module | Description |
+|--------|-------------|
+| [phase6a_ai_testing.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6a_ai_testing.html) | 10 slides — 4 testing layers, behavioral tests, CI/CD pipeline |
+
 ### 🔧 Phase 6B: MLOps & Deployment
 | Module | Description |
 |--------|-------------|
@@ -85,6 +90,7 @@ Click any link to open the interactive module. All hosted via GitHub Pages.
 | 5 | Instruction Fine-Tuning (SFT) | ✅ |
 | 5b | Synthetic Data Generation (Gretel, Mostly AI, Tonic) | ✅ |
 | 6 | Preference Alignment (DPO) | 📖 |
+| 6A | AI Testing & QA (4-layer testing, CI/CD) | ⬜ |
 | 6B | MLOps & Deployment (MLflow, DVC, vLLM) | ⬜ |
 | 7 | Azure AI Foundry Fine-Tuning | ⬜ |
 | 8 | AWS Bedrock Fine-Tuning | ⬜ |
