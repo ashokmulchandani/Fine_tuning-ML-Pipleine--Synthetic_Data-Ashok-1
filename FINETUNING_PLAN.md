@@ -121,6 +121,23 @@ A complete fine-tuning learning plan covering theory, hands-on practice across m
 | 6.8 | Compare: instruction model vs preference-aligned model (tone, safety, helpfulness) | Colab |
 | 6.9 | Understand RLAIF — AI-generated feedback for scalability (Anthropic technique) | Theory |
 
+## Phase 6A: AI Testing & QA for Fine-Tuning
+
+> "Review like you're the person getting paged at 3am when this breaks."
+
+| Step | Task | Platform |
+|------|------|----------|
+| 6A.1 | Why testing AI is different — non-deterministic, data-as-code, degrades over time | Theory |
+| 6A.2 | 3-Pass PR Review — Works? → Readable? → Safe? | Process |
+| 6A.3 | Test Cases: Happy Path, Edge Cases, Failure Modes — for fine-tuned models | pytest |
+| 6A.4 | AI Testing 4 Layers: Data → Model → Pipeline → Production | Theory |
+| 6A.5 | Layer 1: Data Testing — schema validation, nulls, empty fields (Pandera) | pytest |
+| 6A.6 | Layer 2: Model Testing — MFT, INV, DIR behavioral tests | pytest |
+| 6A.7 | Layer 3: Pipeline Testing — smoke test, save/load, E2E | pytest |
+| 6A.8 | Layer 4: Production Monitoring — drift detection (Evidently AI) | Production |
+| 6A.9 | 10-Point Checklist — before every training run and deployment | Reference |
+| 6A.10 | CI/CD Pipeline — automated testing on every PR (GitHub Actions) | CI/CD |
+
 ## Phase 6B: MLOps & Deployment
 
 > Track, version, deploy, and monitor your fine-tuned models — the operational side.
@@ -221,6 +238,7 @@ A complete fine-tuning learning plan covering theory, hands-on practice across m
 | Session 5 | Phase 5: Instruction fine-tuning with SFT (5.1–5.10) | 3-4 hrs |
 | Session 6 | Phase 5b: Synthetic data generation — Gretel, Mostly AI, Tonic (5b.1–5b.10) | 2-3 hrs |
 | Session 7 | Phase 6: DPO preference alignment (6.1–6.9) | 3-4 hrs |
+| Session 7a | Phase 6A: AI Testing — 4 layers, behavioral tests, CI/CD (6A.1–6A.10) | 2-3 hrs |
 | Session 7b | Phase 6B: MLOps — MLflow, DVC, vLLM, monitoring (6B.1–6B.9) | 2-3 hrs |
 | Session 8 | Phase 7: Azure AI Foundry fine-tuning (7.1–7.10) | 2-3 hrs |
 | Session 9 | Phase 8: AWS Bedrock fine-tuning (8.1–8.10) | 2-3 hrs |
@@ -330,6 +348,9 @@ Click any link to open the interactive HTML in your browser. (Hosted via GitHub 
 ### 🤖 Phase 5b: Synthetic Data Generation
 - [phase5b_synthetic_data.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase5b_synthetic_data.html) — 10 slides: Gretel AI, Mostly AI, Tonic AI, synthetic → instruction format
 
+### 🧪 Phase 6A: AI Testing & QA
+- [phase6a_ai_testing.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6a_ai_testing.html) — 10 slides: 4 testing layers, behavioral tests, CI/CD pipeline
+
 ### 🔧 Phase 6B: MLOps & Deployment
 - [phase6b_mlops_deployment.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6b_mlops_deployment.html) — 9 slides: MLflow, DVC, model registry, CI/CD, vLLM, monitoring, cost optimization
 
@@ -360,6 +381,7 @@ Click any link to open the interactive HTML in your browser. (Hosted via GitHub 
 - ✅ Phase 5: Instruction Fine-Tuning (hands-on done!) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase5_instruction_finetune.html) | [Format Visual →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/instruction_format_visual.html) | [Loss Explained →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/training_loss_explained.html)
 - ✅ Phase 5b: Synthetic Data Generation (theory done)
 - 📖 Phase 6: Preference Alignment (DPO) (theory done) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6_dpo_preference.html) | [DPO Loss →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/dpo_loss_simplified.html) | [Colab →](https://colab.research.google.com/drive/1fOFcaipLxzf-vaLEC1QvsFmLo-CsD1FR)
+- ⬜ Phase 6A: AI Testing & QA 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6a_ai_testing.html)
 - ⬜ Phase 6B: MLOps & Deployment 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6b_mlops_deployment.html)
 - ⬜ Phase 7: Azure AI Foundry
 - ⬜ Phase 8: AWS Bedrock

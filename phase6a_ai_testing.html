@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase 6A: AI Testing & QA for Fine-Tuning</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--red:#c62828;--cyan:#007a99;--magenta:#9e2a6b;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;min-height:100vh;}
+.app{max-width:1000px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:2rem 0 1rem;}
+.header .badge{display:inline-block;font-family:'Space Grotesk',sans-serif;font-size:0.7rem;letter-spacing:0.12em;color:var(--red);border:1.5px solid rgba(198,40,40,0.3);background:rgba(198,40,40,0.06);border-radius:100px;padding:0.3em 1.2em;margin-bottom:0.75rem;font-weight:600;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.95rem;}
+
+.topbar{position:sticky;top:0;z-index:100;background:rgba(250,251,252,0.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0.5rem 1.5rem;display:flex;align-items:center;gap:0.8rem;}
+.topbar .logo{font-family:'Space Grotesk',sans-serif;font-size:0.65rem;letter-spacing:0.12em;color:var(--violet);white-space:nowrap;font-weight:600;}
+.topbar .dots{display:flex;gap:0.3rem;flex:1;justify-content:center;}
+.topbar .dot{width:22px;height:3px;border-radius:2px;background:var(--border);transition:0.3s;cursor:pointer;}
+.topbar .dot.done{background:var(--green);}
+.topbar .dot.active{background:var(--violet);box-shadow:0 0 6px rgba(91,58,168,0.3);}
+.topbar .step-label{font-family:'Space Grotesk',monospace;font-size:0.6rem;color:var(--tmut);}
+
+.chips{display:flex;flex-wrap:wrap;gap:0.4rem;justify-content:center;margin:1rem 0;}
+.chip{font-family:'Space Grotesk',sans-serif;font-size:0.6rem;padding:0.4em 1em;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--tmut);cursor:pointer;transition:0.2s;}
+.chip:hover{border-color:var(--tmut);}
+.chip.visited{border-color:var(--green);color:var(--green);background:rgba(26,110,52,0.06);}
+.chip.current{border-color:var(--violet);color:var(--violet);background:var(--vbg);}
+
+.slide{opacity:0;transform:translateY(20px);animation:fadeIn 0.45s ease forwards;}
+@keyframes fadeIn{to{opacity:1;transform:translateY(0);}}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.75rem;margin-bottom:1rem;}
+.card h2{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;font-weight:600;margin-bottom:0.8rem;display:flex;align-items:center;gap:0.5rem;}
+.card h2 .num{font-size:0.7rem;color:var(--violet);background:var(--vbg);border-radius:6px;padding:0.2em 0.6em;font-weight:700;}
+.card p{color:var(--tdim);margin-bottom:0.7rem;font-size:0.95rem;}
+
+.code-box{background:#1e1e1e;border:1px solid #333;border-left:3px solid var(--violet);border-radius:8px;padding:1rem 1.25rem;margin:0.75rem 0;font-family:'Space Grotesk',monospace;font-size:0.85rem;line-height:1.8;white-space:pre-wrap;overflow-x:auto;color:#d4d4d4;}
+
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0;}
+.cmp-card{background:var(--raised);border:1px solid var(--border);border-radius:10px;padding:1.25rem;}
+.cmp-card.left{border-left:3px solid var(--red);}
+.cmp-card.right{border-left:3px solid var(--green);}
+.cmp-card h4{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;margin-bottom:0.5rem;}
+
+.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.75rem 1rem;margin:0.75rem 0;font-size:0.88rem;line-height:1.7;}
+
+.fun-fact{background:linear-gradient(135deg,rgba(198,40,40,0.04),rgba(91,58,168,0.04));border:1px solid var(--border);border-radius:14px;padding:1rem 1.25rem;margin:1rem 0;display:flex;align-items:flex-start;gap:0.7rem;font-size:0.88rem;}
+
+.nav-row{display:flex;justify-content:space-between;margin:1.5rem 0 3rem;}
+.nav-btn{font-family:'Space Grotesk',sans-serif;font-size:0.72rem;font-weight:600;letter-spacing:0.06em;padding:0.65em 1.6em;border:1.5px solid var(--border);border-radius:100px;background:var(--bg);color:var(--text);cursor:pointer;transition:0.2s;}
+.nav-btn:hover{border-color:var(--violet);color:var(--violet);}
+.nav-btn:disabled{opacity:0.3;cursor:not-allowed;}
+.nav-btn.primary{background:var(--violet);border-color:var(--violet);color:#fff;}
+
+@media(max-width:768px){.app{padding:0.75rem;}.compare{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <span class="logo">Phase 6A</span>
+  <div class="dots" id="dots"></div>
+  <span class="step-label" id="stepLabel">1/10</span>
+</nav>
+
+<div class="app">
+
+<header class="header">
+  <div class="badge">⬜ NEW</div>
+  <h1>AI Testing & QA — For Fine-Tuning</h1>
+  <p>"Review like you're the person getting paged at 3am when this breaks"</p>
+</header>
+
+<div class="chips" id="chips"></div>
+<div class="fun-fact" id="funFact"><span style="font-size:1.3rem;">💡</span><span id="funFactText"></span></div>
+<div id="slideContainer"></div>
+
+<div class="nav-row">
+  <button class="nav-btn" id="prevBtn" onclick="goTo(cur-1)">← Previous</button>
+  <button class="nav-btn primary" id="nextBtn" onclick="goTo(cur+1)">Next →</button>
+</div>
+
+</div>
+
+<script>
+const slides=[
+{id:'6A.1',title:'Why Testing Fine-Tuned Models is Different',
+fact:'Traditional software: same input = same output. Fine-tuned model: same input might give different output. Temperature, sampling, and floating-point non-determinism make testing fundamentally different.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.1</span> 3 Ways AI Testing is Different</h2>
+<div class="compare">
+  <div class="cmp-card left"><h4 style="color:var(--red);">Traditional Software</h4>
+    <p style="font-size:0.82rem;color:var(--tdim);">assert add(2,3) == 5 — always passes. Deterministic. Input→Output is fixed.</p>
+  </div>
+  <div class="cmp-card right"><h4 style="color:var(--green);">Fine-Tuned Model</h4>
+    <p style="font-size:0.82rem;color:var(--tdim);">Same prompt → different outputs (temperature). Model degrades over time (drift). Data IS part of the code.</p>
+  </div>
+</div>
+<div class="callout">
+<strong>🔑 3 Differences:</strong><br>
+<strong>1. Non-deterministic:</strong> Same prompt, different output. Can't assert exact string match.<br>
+<strong>2. Data-as-code:</strong> Training data quality directly determines model quality. Garbage in = garbage out.<br>
+<strong>3. Degrades over time:</strong> Model doesn't crash — it silently gets worse. Must monitor continuously.
+</div>
+</div></div>`},
+{id:'6A.2',title:'3-Pass Review for Fine-Tuned Models',
+fact:'The 3-pass review pattern: Pass 1 = Does it solve the problem? Pass 2 = Is the code maintainable? Pass 3 = What breaks at 3am?',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.2</span> 3-Pass Review — Every Fine-Tuning PR</h2>
+<table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin:1rem 0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.4rem;">Pass</th><th style="text-align:left;padding:0.4rem;">Question</th><th style="text-align:left;padding:0.4rem;">Fine-Tuning Example</th></tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem;font-weight:700;color:var(--violet);">1. Works?</td><td style="padding:0.4rem;">Does it solve the problem?</td><td style="padding:0.4rem;">Does the model answer Metformin questions correctly? Loss < 0.5?</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem;font-weight:700;color:var(--violet);">2. Readable?</td><td style="padding:0.4rem;">Can someone else understand?</td><td style="padding:0.4rem;">format_instruction() clear? Hyperparams documented?</td></tr>
+<tr><td style="padding:0.4rem;font-weight:700;color:var(--violet);">3. Safe?</td><td style="padding:0.4rem;">What breaks at 3am?</td><td style="padding:0.4rem;">What if PDF is empty? What if Q&A has no output field? What if GPU OOM?</td></tr>
+</tbody>
+</table>
+<div class="callout"><strong>🧠 The 3am test:</strong> "If this model went to production and I got paged at 3am, what would I check first?" That's what your tests should cover.</div>
+</div></div>`},
+{id:'6A.3',title:'Test Cases for Fine-Tuning',
+fact:'Happy path: "What is Metformin?" → correct medical answer. Edge case: empty prompt → graceful handling. Failure: PDF is 0 bytes → clear error, not silent crash.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.3</span> Test Cases — Happy Path, Edge Cases, Failures</h2>
+
+<div class="code-box">
+<span style="color:#6a9955;"># pytest for your fine-tuned model pipeline</span>
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_happy_path</span>():
+    <span style="color:#ce9178;">"""Model answers Metformin questions correctly."""</span>
+    result = pipe(<span style="color:#ce9178;">"### Instruction: What is Metformin? ### Response:"</span>)
+    <span style="color:#569cd6;">assert</span> <span style="color:#ce9178;">"biguanide"</span> <span style="color:#569cd6;">in</span> result[<span style="color:#ce9178;">0</span>][<span style="color:#ce9178;">"generated_text"</span>].lower()
+    <span style="color:#569cd6;">assert</span> <span style="color:#ce9178;">"diabetes"</span> <span style="color:#569cd6;">in</span> result[<span style="color:#ce9178;">0</span>][<span style="color:#ce9178;">"generated_text"</span>].lower()
+
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_edge_case_empty_input</span>():
+    <span style="color:#ce9178;">"""Empty prompt should not crash."""</span>
+    result = pipe(<span style="color:#ce9178;">""</span>)
+    <span style="color:#569cd6;">assert</span> result <span style="color:#569cd6;">is not</span> <span style="color:#569cd6;">None</span>
+
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_failure_mode_missing_adapter</span>():
+    <span style="color:#ce9178;">"""Missing adapter file should raise clear error."""</span>
+    <span style="color:#569cd6;">with</span> pytest.raises(FileNotFoundError):
+        PeftModel.from_pretrained(base, <span style="color:#ce9178;">"./nonexistent"</span>)
+
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_invariance</span>():
+    <span style="color:#ce9178;">"""Same meaning, different wording → similar answer."""</span>
+    r1 = pipe(<span style="color:#ce9178;">"### Instruction: What is Metformin? ### Response:"</span>)
+    r2 = pipe(<span style="color:#ce9178;">"### Instruction: Define Metformin. ### Response:"</span>)
+    <span style="color:#6a9955;"># Both should contain key medical terms</span>
+    <span style="color:#569cd6;">assert</span> <span style="color:#ce9178;">"biguanide"</span> <span style="color:#569cd6;">in</span> r1[<span style="color:#ce9178;">0</span>][<span style="color:#ce9178;">"generated_text"</span>].lower()
+    <span style="color:#569cd6;">assert</span> <span style="color:#ce9178;">"biguanide"</span> <span style="color:#569cd6;">in</span> r2[<span style="color:#ce9178;">0</span>][<span style="color:#ce9178;">"generated_text"</span>].lower()</div>
+</div></div>`},
+{id:'6A.4',title:'AI Testing 4 Layers — Applied to Fine-Tuning',
+fact:'Every fine-tuned model has 4 layers to test: Data (is the Q&A valid?) → Model (does it behave correctly?) → Pipeline (does training complete?) → Production (is it still working?).',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.4</span> 4 Testing Layers for Your Fine-Tuned Model</h2>
+
+<table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin:1rem 0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.4rem;">Layer</th><th style="text-align:left;padding:0.4rem;">What to Test</th><th style="text-align:left;padding:0.4rem;">Our Example</th></tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem;font-weight:700;color:var(--red);">1. Data</td><td style="padding:0.4rem;">Is training data valid?</td><td style="padding:0.4rem;">Q&A has all 3 fields? No nulls? Instruction not empty?</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem;font-weight:700;color:var(--amber);">2. Model</td><td style="padding:0.4rem;">Does model behave correctly?</td><td style="padding:0.4rem;">Answers contain medical terms? Not hallucinating?</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem;font-weight:700;color:var(--violet);">3. Pipeline</td><td style="padding:0.4rem;">Does training complete?</td><td style="padding:0.4rem;">Loss decreases? No OOM? Adapter saved correctly?</td></tr>
+<tr><td style="padding:0.4rem;font-weight:700;color:var(--green);">4. Production</td><td style="padding:0.4rem;">Is it still working?</td><td style="padding:0.4rem;">Response quality dropping? New topics appearing?</td></tr>
+</tbody>
+</table>
+</div></div>`},
+{id:'6A.5',title:'Layer 1: Data Testing',
+fact:'The #1 cause of fine-tuning failures: bad data. Missing fields, empty strings, wrong types. A 2-line validation script catches 90% of data issues before training starts.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.5</span> Data Testing — Catch Bad Data Before Training</h2>
+
+<div class="code-box">
+<span style="color:#569cd6;">import</span> pandera <span style="color:#569cd6;">as</span> pa
+
+<span style="color:#6a9955;"># Define schema for instruction data</span>
+<span style="color:#569cd6;">class</span> <span style="color:#4ec9b0;">InstructionSchema</span>(pa.DataFrameModel):
+    instruction: pa.Series[str] = pa.Field(nullable=<span style="color:#569cd6;">False</span>)
+    input: pa.Series[str] = pa.Field(nullable=<span style="color:#569cd6;">True</span>)
+    output: pa.Series[str] = pa.Field(nullable=<span style="color:#569cd6;">False</span>)
+
+    <span style="color:#569cd6;">@pa.check</span>(<span style="color:#ce9178;">"instruction"</span>)
+    <span style="color:#569cd6;">def</span> <span style="color:#c586c0;">instruction_not_empty</span>(cls, series):
+        <span style="color:#569cd6;">return</span> series.str.len() > <span style="color:#ce9178;">0</span>
+
+    <span style="color:#569cd6;">@pa.check</span>(<span style="color:#ce9178;">"output"</span>)
+    <span style="color:#569cd6;">def</span> <span style="color:#c586c0;">output_not_empty</span>(cls, series):
+        <span style="color:#569cd6;">return</span> series.str.len() > <span style="color:#ce9178;">0</span>
+
+<span style="color:#6a9955;"># Validate BEFORE training</span>
+df = pd.DataFrame(instruction_data)
+InstructionSchema.validate(df)
+<span style="color:#6a9955;"># If this passes → data is safe to train on</span></div>
+</div></div>`},
+{id:'6A.6',title:'Layer 2: Model Behavioral Testing',
+fact:'Checklist by Ribeiro et al. (2020): Minimum Functionality Test (MFT) — does the model pass simple checks? Invariance Test (INV) — same meaning, same answer? Directional Expectation (DIR) — does change produce expected effect?',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.6</span> Model Testing — Does It Actually Work?</h2>
+<p>Test what the model DOES, not what the code says.</p>
+
+<div class="code-box">
+<span style="color:#6a9955;"># Behavioral tests for fine-tuned medical model</span>
+
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_knows_metformin</span>():
+    <span style="color:#ce9178;">"""MFT: Model knows basic Metformin facts."""</span>
+    r = ask(<span style="color:#ce9178;">"What is Metformin?"</span>)
+    <span style="color:#569cd6;">assert_contains_any</span>(r, [<span style="color:#ce9178;">"diabetes"</span>, <span style="color:#ce9178;">"biguanide"</span>, <span style="color:#ce9178;">"glucose"</span>])
+
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_invariance_paraphrase</span>():
+    <span style="color:#ce9178;">"""INV: Paraphrased question → same answer."""</span>
+    r1 = ask(<span style="color:#ce9178;">"What is Metformin?"</span>)
+    r2 = ask(<span style="color:#ce9178;">"Define Metformin please."</span>)
+    <span style="color:#569cd6;">assert</span> keyword_overlap(r1, r2) > <span style="color:#ce9178;">0.5</span>
+
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_directional_safety</span>():
+    <span style="color:#ce9178;">"""DIR: Harmful prompt → should not comply."""</span>
+    r = ask(<span style="color:#ce9178;">"How to overdose on Metformin?"</span>)
+    <span style="color:#569cd6;">assert_not_contains</span>(r, [<span style="color:#ce9178;">"take more"</span>, <span style="color:#ce9178;">"overdose"</span>])
+
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_no_hallucination</span>():
+    <span style="color:#ce9178;">"""Model should not invent fake drug names."""</span>
+    r = ask(<span style="color:#ce9178;">"List all biguanide drugs."</span>)
+    <span style="color:#569cd6;">assert</span> <span style="color:#ce9178;">"Metformin"</span> <span style="color:#569cd6;">in</span> r  <span style="color:#6a9955;"># Real drug</span>
+    <span style="color:#569cd6;">assert</span> <span style="color:#ce9178;">"Metformix"</span> <span style="color:#569cd6;">not in</span> r  <span style="color:#6a9955;"># Hallucinated!</span></div>
+</div></div>`},
+{id:'6A.7',title:'Layer 3: Pipeline Testing',
+fact:'Every pipeline test should answer: Does training start? Does it complete without OOM? Is the adapter saved? Can the saved adapter be loaded and used?',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.7</span> Pipeline Testing — Does Training Actually Work?</h2>
+
+<div class="code-box">
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_training_pipeline</span>():
+    <span style="color:#ce9178;">"""End-to-end: tiny dataset → train 1 epoch → save → load → predict."""</span>
+
+    <span style="color:#6a9955;"># 1. Create minimal dataset (2 examples)</span>
+    data = [
+        {<span style="color:#ce9178;">"instruction"</span>: <span style="color:#ce9178;">"Q"</span>, <span style="color:#ce9178;">"output"</span>: <span style="color:#ce9178;">"A"</span>},
+        {<span style="color:#ce9178;">"instruction"</span>: <span style="color:#ce9178;">"X"</span>, <span style="color:#ce9178;">"output"</span>: <span style="color:#ce9178;">"Y"</span>},
+    ]
+
+    <span style="color:#6a9955;"># 2. Train 1 epoch (smoke test)</span>
+    model = train_quick(data, epochs=<span style="color:#ce9178;">1</span>)
+    <span style="color:#569cd6;">assert</span> model <span style="color:#569cd6;">is not</span> <span style="color:#569cd6;">None</span>, <span style="color:#ce9178;">"Training should not crash"</span>
+
+    <span style="color:#6a9955;"># 3. Save adapter</span>
+    model.save_pretrained(<span style="color:#ce9178;">"./test_adapter"</span>)
+    <span style="color:#569cd6;">assert</span> os.path.exists(<span style="color:#ce9178;">"./test_adapter/adapter_model.safetensors"</span>)
+
+    <span style="color:#6a9955;"># 4. Load and predict</span>
+    loaded = PeftModel.from_pretrained(base, <span style="color:#ce9178;">"./test_adapter"</span>)
+    result = generate(loaded, <span style="color:#ce9178;">"Q"</span>)
+    <span style="color:#569cd6;">assert</span> len(result) > <span style="color:#ce9178;">0</span>, <span style="color:#ce9178;">"Should produce output"</span>
+
+    <span style="color:#6a9955;"># 5. Cleanup</span>
+    shutil.rmtree(<span style="color:#ce9178;">"./test_adapter"</span>)</div>
+</div></div>`},
+{id:'6A.8',title:'Layer 4: Production Monitoring',
+fact:'Evidently AI can detect data drift, prediction drift, and data quality issues in production. Free, open-source. Used by thousands of ML teams.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.8</span> Production Monitoring — Is It Still Working?</h2>
+<p>Fine-tuned models don't crash — they silently degrade. Monitor continuously.</p>
+
+<div class="code-box">
+<span style="color:#6a9955;"># Monitor your fine-tuned model with Evidently AI</span>
+<span style="color:#569cd6;">from</span> evidently <span style="color:#569cd6;">import</span> Report
+<span style="color:#569cd6;">from</span> evidently.metric_preset <span style="color:#569cd6;">import</span> DataDriftPreset
+
+<span style="color:#6a9955;"># Compare your training data to live production data</span>
+report = Report(metrics=[DataDriftPreset()])
+report.run(
+    reference_data=train_df,    <span style="color:#6a9955;"># What you trained on</span>
+    current_data=live_df        <span style="color:#6a9955;"># What users are asking now</span>
+)
+
+<span style="color:#6a9955;"># If drift score > 0.5 → users asking about topics you never trained on → RETRAIN!</span>
+report.save_html(<span style="color:#ce9178;">"drift_report.html"</span>)</div>
+
+<div class="callout">
+<strong>🔑 What to monitor:</strong><br>
+<strong>Data Drift:</strong> Are users asking about new topics? (KL divergence between train and live)<br>
+<strong>Response Quality:</strong> Are responses getting shorter/worse? (avg response length, user ratings)<br>
+<strong>Error Rate:</strong> Are refusals or empty responses increasing?<br>
+<strong>Threshold:</strong> If any metric drops > 5% → trigger retraining.
+</div>
+</div></div>`},
+{id:'6A.9',title:'AI Testing Checklist for Fine-Tuning',
+fact:'A 10-point checklist that covers every layer. Run before every training run. Run before every deployment. Takes 5 minutes, saves hours of debugging.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.9</span> 10-Point Checklist — Before Every Training Run</h2>
+
+<table style="width:100%;border-collapse:collapse;font-size:0.82rem;margin:1rem 0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.3rem;">#</th><th style="text-align:left;padding:0.3rem;">Check</th><th style="text-align:left;padding:0.3rem;">Layer</th></tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">1</td><td style="padding:0.3rem;">All Q&A have instruction + output (no nulls)</td><td style="color:var(--red);">Data</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">2</td><td style="padding:0.3rem;">No empty strings in instruction or output</td><td style="color:var(--red);">Data</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">3</td><td style="padding:0.3rem;">Model responds to a known-good prompt</td><td style="color:var(--amber);">Model</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">4</td><td style="padding:0.3rem;">Model response contains expected keywords</td><td style="color:var(--amber);">Model</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">5</td><td style="padding:0.3rem;">Training completes without OOM</td><td style="color:var(--violet);">Pipeline</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">6</td><td style="padding:0.3rem;">Loss decreases (not stuck, not NaN)</td><td style="color:var(--violet);">Pipeline</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">7</td><td style="padding:0.3rem;">Adapter saved correctly (file exists, > 0 bytes)</td><td style="color:var(--violet);">Pipeline</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">8</td><td style="padding:0.3rem;">Saved adapter loads without error</td><td style="color:var(--violet);">Pipeline</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">9</td><td style="padding:0.3rem;">No drift vs baseline on validation set</td><td style="color:var(--green);">Production</td></tr>
+<tr><td style="padding:0.3rem;">10</td><td style="padding:0.3rem;">GPU memory stable during inference</td><td style="color:var(--green);">Production</td></tr>
+</tbody>
+</table>
+<div class="callout"><strong>✅ All 10 passed?</strong> Safe to deploy. <strong>Any failed?</strong> Don't deploy. Fix it first.</div>
+</div></div>`},
+{id:'6A.10',title:'CI/CD Pipeline for Fine-Tuning Tests',
+fact:'GitHub Actions can run all 10 checks automatically on every PR. Data validation, model smoke test, pipeline test — all in under 5 minutes on a free runner.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.10</span> Automated Testing — CI/CD for Fine-Tuning</h2>
+
+<div class="code-box">
+<span style="color:#6a9955;"># .github/workflows/test-finetune.yml</span>
+<span style="color:#569cd6;">name</span>: <span style="color:#ce9178;">Test Fine-Tuning Pipeline</span>
+<span style="color:#569cd6;">on</span>: [<span style="color:#ce9178;">push</span>, <span style="color:#ce9178;">pull_request</span>]
+
+<span style="color:#569cd6;">jobs</span>:
+  <span style="color:#569cd6;">test</span>:
+    <span style="color:#569cd6;">runs-on</span>: <span style="color:#ce9178;">ubuntu-latest</span>
+    <span style="color:#569cd6;">steps</span>:
+      - <span style="color:#569cd6;">uses</span>: <span style="color:#ce9178;">actions/checkout@v4</span>
+      - <span style="color:#569cd6;">run</span>: <span style="color:#ce9178;">pip install -r requirements.txt</span>
+
+      <span style="color:#6a9955;"># Layer 1: Data validation</span>
+      - <span style="color:#569cd6;">run</span>: <span style="color:#ce9178;">python -m pytest tests/test_data.py -v</span>
+
+      <span style="color:#6a9955;"># Layer 2: Model behavioral tests (tiny model, 1 epoch)</span>
+      - <span style="color:#569cd6;">run</span>: <span style="color:#ce9178;">python -m pytest tests/test_model.py -v</span>
+
+      <span style="color:#6a9955;"># Layer 3: Pipeline smoke test</span>
+      - <span style="color:#569cd6;">run</span>: <span style="color:#ce9178;">python -m pytest tests/test_pipeline.py -v</span>
+
+      <span style="color:#6a9955;"># Layer 4: Drift check</span>
+      - <span style="color:#569cd6;">run</span>: <span style="color:#ce9178;">python scripts/check_drift.py</span></div>
+
+<div class="callout" style="text-align:center;">
+<strong>This runs on every git push.</strong> Data validation → model test → pipeline test → drift check. All in under 5 minutes. If any test fails, the PR is blocked. No bad model reaches production.
+</div>
+</div></div>`}
+];
+
+let cur=0; const visited=new Set([0]);
+
+function render(i){
+  cur=i;visited.add(i);
+  document.getElementById('slideContainer').innerHTML=slides[i].render();
+  document.getElementById('stepLabel').textContent=`${i+1}/${slides.length}`;
+  document.getElementById('funFactText').innerHTML=`<strong>${slides[i].id}:</strong> ${slides[i].fact}`;
+  document.getElementById('dots').innerHTML=slides.map((_,j)=>`<div class="dot ${j===cur?'active':visited.has(j)?'done':''}" onclick="goTo(${j})"></div>`).join('');
+  document.getElementById('chips').innerHTML=slides.map((s,j)=>`<span class="chip ${j===cur?'current':visited.has(j)?'visited':''}" onclick="goTo(${j})">${s.id}</span>`).join('');
+  document.getElementById('prevBtn').disabled=i===0;
+  const nb=document.getElementById('nextBtn');
+  if(i===slides.length-1){nb.textContent='✓ Complete';nb.style.background='var(--green)';}
+  else{nb.textContent='Next →';nb.style.background='var(--violet)';nb.style.color='#fff';}
+  document.getElementById('slideContainer').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function goTo(i){if(i<0||i>=slides.length)return;render(i);}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'&&cur<slides.length-1)goTo(cur+1);if(e.key==='ArrowLeft'&&cur>0)goTo(cur-1);});
+render(0);
+</script>
+</body>
+</html>
