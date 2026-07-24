@@ -248,6 +248,27 @@ A complete fine-tuning learning plan covering theory, hands-on practice across m
 
 ---
 
+## Training Method per Phase
+
+| Phase | Training Method | Trainer Used | Data Format | Labels |
+|-------|----------------|--------------|-------------|--------|
+| **4** | Non-Instructional (Self-Supervised) | `Trainer` (HuggingFace) | `{"text": "..."}` | labels = input_ids (next-token prediction) |
+| **5** | Supervised Fine-Tuning (SFT) | `SFTTrainer` (TRL) | `{"instruction": "...", "output": "..."}` | Response tokens only (instruction masked) |
+| **6** | Direct Preference Optimization (DPO) | `DPOTrainer` (TRL) | `{"prompt": "...", "chosen": "...", "rejected": "..."}` | Chosen vs rejected probability |
+| **7** | Azure AI Foundry (no-code) | Azure Portal | JSONL (messages: system/user/assistant) | Azure handles |
+| **8** | AWS Bedrock (console) | AWS Console | JSONL (system/user/assistant) | AWS handles |
+| **9** | QLoRA + Spectrum (SageMaker) | HuggingFace Estimator | Messages format | Training recipe defines |
+| **10** | Advanced PEFT (DoRA, IA3) + Vision | Trainer / SFTTrainer | Varies by task | Varies by task |
+
+| Method | What It Teaches | Example |
+|--------|----------------|---------|
+| **Non-Instructional** | Domain language (vocabulary, style) | "Metformin is a biguanide..." |
+| **SFT (Instruction)** | How to follow instructions | Q: "What is Metformin?" → A: "Metformin is..." |
+| **DPO (Preference)** | How to deliver answers properly | Chosen: thorough answer, Rejected: lazy answer |
+| **RLHF (Legacy)** | Human-aligned behavior (used by ChatGPT) | Reward model + PPO (replaced by DPO) |
+
+---
+
 ## Transcript Coverage Map
 
 | Transcript | Covers |
