@@ -269,6 +269,22 @@ A complete fine-tuning learning plan covering theory, hands-on practice across m
 
 ---
 
+## Fine-Tuning by Data Type
+
+| | Text FT | Tabular/Numerical FT | Image FT | Vision-Language FT |
+|---|---|---|---|---|
+| **Input** | Q&A text | Rows as sentences | Images with labels | Images + questions |
+| **Example** | "What is Metformin?" | "Age 45, BP 140 → Diabetic?" | Detect chicken disease | "What does this X-ray show?" |
+| **Model** | TinyLlama, Llama | Same LLM | YOLOv8, ResNet | LLaVA, GPT-4V |
+| **LoRA?** | ✅ Yes | ✅ Yes | ⚠️ Not standard | ✅ Yes |
+| **Training Method** | SFT / DPO | SFT | Transfer Learning | SFT / DPO |
+| **Trainer** | SFTTrainer / DPOTrainer | SFTTrainer | `model.train()` | SFTTrainer / DPOTrainer |
+| **Phase** | 4–6 | Can do now | 10 | 10 (advanced) |
+
+> **The pattern is identical across all data types:** Pre-trained model → freeze → LoRA/adapter → train on YOUR data. Text, tables, images — same principle, different input format.
+
+---
+
 ## Transcript Coverage Map
 
 | Transcript | Covers |
