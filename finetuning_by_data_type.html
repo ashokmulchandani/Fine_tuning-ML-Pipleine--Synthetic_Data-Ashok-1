@@ -58,6 +58,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 .substep .ss-title{font-weight:600;font-size:0.75rem;margin:0.2rem 0;}
 .substep .ss-code{font-family:'Space Grotesk',monospace;font-size:0.6rem;color:var(--tdim);background:rgba(0,0,0,0.03);padding:0.3rem 0.5rem;border-radius:4px;margin-top:0.3rem;white-space:pre-wrap;}
 .substep .ss-tag{display:inline-block;font-size:0.5rem;padding:1px 6px;border-radius:100px;margin-top:0.3rem;}
+.substep .ss-viz{display:flex;align-items:center;gap:0.3rem;margin:0.4rem 0;font-size:0.65rem;flex-wrap:wrap;}
+.ss-viz .vz-box{background:var(--card);border:1.5px solid var(--border);border-radius:6px;padding:0.25rem 0.5rem;font-weight:600;font-family:'Space Grotesk',sans-serif;font-size:0.55rem;display:flex;align-items:center;gap:0.2rem;}
+.ss-viz .vz-arrow{color:var(--violet);font-weight:700;}
+.ss-viz .vz-input{border-color:var(--amber);background:rgba(184,112,0,0.04);}
+.ss-viz .vz-process{border-color:var(--violet);background:var(--vbg);}
+.ss-viz .vz-output{border-color:var(--green);background:rgba(26,110,52,0.04);}
 .ss-tag.lora{background:var(--vbg);color:var(--violet);}
 .ss-tag.sft{background:rgba(184,112,0,0.1);color:var(--amber);}
 .ss-tag.dpo{background:rgba(158,42,107,0.1);color:var(--magenta);}
@@ -137,24 +143,24 @@ const tabs=[
   stages:[
     {emoji:'📋',name:'PREPROCESS',time:'~2 min',desc:'Q&A → Alpaca template',
      substeps:[
-       {n:1,title:'Write Q&A Pairs',tag:'data',code:'data = [{"instruction": "What is Metformin?","output": "Metformin is a biguanide..."}]'},
-       {n:2,title:'Format as Alpaca',tag:'sft',code:'"### Instruction:\\nWhat is Metformin?\\n\\n### Response:\\nMetformin is..."'},
-       {n:3,title:'Tokenize',tag:'data',code:'tokenizer(ex["text"], truncation=True, padding="max_length", max_length=512)'},
-       {n:4,title:'Set Labels',tag:'data',code:'ex["labels"] = ex["input_ids"].copy()  # Self-supervised!'},
+       {n:1,title:'Write Q&A Pairs',tag:'data',viz:'<span class="vz-box vz-input">📝 Questions</span><span class="vz-arrow">+</span><span class="vz-box vz-input">✅ Answers</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📋 Q&A List</span>',code:'data = [{"instruction": "What is Metformin?","output": "Metformin is a biguanide..."}]'},
+       {n:2,title:'Format as Alpaca',tag:'sft',viz:'<span class="vz-box vz-input">📋 JSON</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔤 format_instruction()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📄 One String</span>',code:'"### Instruction:\\nWhat is Metformin?\\n\\n### Response:\\nMetformin is..."'},
+       {n:3,title:'Tokenize',tag:'data',viz:'<span class="vz-box vz-input">📄 Text</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔢 Tokenizer</span><span class="vz-arrow">→</span><span class="vz-box vz-output">[464, 8522, 318...]</span>',code:'tokenizer(ex["text"], truncation=True, padding="max_length", max_length=512)'},
+       {n:4,title:'Set Labels',tag:'data',viz:'<span class="vz-box vz-input">🔢 Input IDs</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📋 .copy()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🎯 Labels = Same!</span>',code:'ex["labels"] = ex["input_ids"].copy()  # Self-supervised!'},
      ]},
     {emoji:'🧠',name:'TRAIN',time:'~3 min',desc:'LoRA → SFT → DPO',
      substeps:[
-       {n:1,title:'Quantize Base Model',tag:'lora',code:'BitsAndBytesConfig(load_in_8bit=True)'},
-       {n:2,title:'Apply LoRA (r=8)',tag:'lora',code:'LoraConfig(r=8, alpha=16, target_modules=["q_proj","v_proj"])'},
-       {n:3,title:'SFT — Teach WHAT to say',tag:'sft',code:'SFTTrainer(model, dataset, formatting_func).train()'},
-       {n:4,title:'DPO — Teach HOW to say it',tag:'dpo',code:'DPOTrainer(model, pref_data, beta=0.1).train()'},
+       {n:1,title:'Quantize Base Model',tag:'lora',viz:'<span class="vz-box vz-input">🧠 FP16 (2.2GB)</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⬇ 8-bit</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🧠 INT8 (1.1GB)</span>',code:'BitsAndBytesConfig(load_in_8bit=True)'},
+       {n:2,title:'Apply LoRA (r=8)',tag:'lora',viz:'<span class="vz-box vz-input">🔒 Frozen W₀</span><span class="vz-arrow">+</span><span class="vz-box vz-process">🆕 B×A (4MB)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ LoRA Model</span>',code:'LoraConfig(r=8, alpha=16, target_modules=["q_proj","v_proj"])'},
+       {n:3,title:'SFT — Teach WHAT to say',tag:'sft',viz:'<span class="vz-box vz-input">📋 Q&A</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🎓 SFTTrainer</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🤖 Instruction Model</span>',code:'SFTTrainer(model, dataset, formatting_func).train()'},
+       {n:4,title:'DPO — Teach HOW to say it',tag:'dpo',viz:'<span class="vz-box vz-input">👍 Chosen vs 👎 Rejected</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚖️ DPOTrainer</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🤖 Aligned Model</span>',code:'DPOTrainer(model, pref_data, beta=0.1).train()'},
      ]},
     {emoji:'🚀',name:'DEPLOY',time:'~1 min',desc:'Save → Merge → Serve',
      substeps:[
-       {n:1,title:'Save Adapter (4 MB)',tag:'lora',code:'model.save_pretrained("./my_adapter")'},
-       {n:2,title:'Merge for Production',tag:'lora',code:'model = model.merge_and_unload()'},
-       {n:3,title:'Serve with vLLM',tag:'dpo',code:'vllm serve ./merged_model --port 8000'},
-       {n:4,title:'Monitor & Retrain',tag:'sft',code:'Evidently AI drift check → auto-retrain trigger'},
+       {n:1,title:'Save Adapter (4 MB)',tag:'lora',viz:'<span class="vz-box vz-input">🧠 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">💾 save_pretrained()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📁 adapter (4MB)</span>',code:'model.save_pretrained("./my_adapter")'},
+       {n:2,title:'Merge for Production',tag:'lora',viz:'<span class="vz-box vz-input">W₀ + B×A</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔀 merge_and_unload()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🧠 One Model</span>',code:'model = model.merge_and_unload()'},
+       {n:3,title:'Serve with vLLM',tag:'dpo',viz:'<span class="vz-box vz-input">🧠 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ vLLM (5000 tok/s)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌐 API :8000</span>',code:'vllm serve ./merged_model --port 8000'},
+       {n:4,title:'Monitor & Retrain',tag:'sft',viz:'<span class="vz-box vz-input">📊 Metrics</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔍 Evidently AI</span><span class="vz-arrow">→</span><span class="vz-box vz-output">⚠️ Drift? → Retrain!</span>',code:'Evidently AI drift check → auto-retrain trigger'},
      ]},
   ]
 },
@@ -175,10 +181,10 @@ const tabs=[
   stages:[
     {emoji:'📋',name:'PREPROCESS',time:'~1 min',desc:'CSV → Sentences',
      substeps:[
-       {n:1,title:'Load CSV',tag:'data',code:'df = pd.read_csv("medical_records.csv")'},
-       {n:2,title:'Row → Sentence',tag:'data',code:'input = f"Age: {row.age}, BP: {row.bp}, Glucose: {row.glucose}"'},
-       {n:3,title:'Create Q&A Format',tag:'sft',code:'{"instruction": "Diagnose", "input": input, "output": row.diagnosis}'},
-       {n:4,title:'Tokenize + Labels',tag:'data',code:'tokenizer(ex["text"], truncation=True, max_length=512)'},
+       {n:1,title:'Load CSV',tag:'data',viz:'<span class="vz-box vz-input">📊 CSV File</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🐼 pd.read_csv()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📋 DataFrame</span>',code:'df = pd.read_csv("medical_records.csv")'},
+       {n:2,title:'Row → Sentence',tag:'data',viz:'<span class="vz-box vz-input">📊 Row</span><span class="vz-arrow">→</span><span class="vz-box vz-process">✍️ f-string</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 "Age: 45, BP: 140..."</span>',code:'input = f"Age: {row.age}, BP: {row.bp}, Glucose: {row.glucose}"'},
+       {n:3,title:'Create Q&A Format',tag:'sft',viz:'<span class="vz-box vz-input">📝 Sentence</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📋 JSON</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Q&A Pair</span>',code:'{"instruction": "Diagnose", "input": input, "output": row.diagnosis}'},
+       {n:4,title:'Tokenize + Labels',tag:'data',viz:'<span class="vz-box vz-input">📝 Text</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔢 Tokenizer</span><span class="vz-arrow">→</span><span class="vz-box vz-output">[464, 8522...]</span>',code:'tokenizer(ex["text"], truncation=True, max_length=512)'},
      ]},
     {emoji:'🧠',name:'TRAIN',time:'~3 min',desc:'LoRA → SFTTrainer',
      substeps:[
@@ -213,24 +219,24 @@ const tabs=[
   stages:[
     {emoji:'📋',name:'PREPROCESS',time:'~5 min',desc:'Labels + Augmentation',
      substeps:[
-       {n:1,title:'Label Images',tag:'data',code:'YOLO format: images/train/ + labels/train/ with bounding boxes'},
-       {n:2,title:'Data Augmentation',tag:'data',code:'Mosaic, flip, rotate, HSV — built into YOLO'},
-       {n:3,title:'Create data.yaml',tag:'data',code:'train: ./images/train, val: ./images/val, nc: 4, names: [...]'},
-       {n:4,title:'Load Pre-trained',tag:'data',code:'model = YOLO("yolov8n.pt")  # Pre-trained on COCO'},
+       {n:1,title:'Label Images',tag:'data',viz:'<span class="vz-box vz-input">🖼️ Raw Images</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🏷️ Annotate</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📁 images/ + labels/</span>',code:'YOLO format: images/train/ + labels/train/ with bounding boxes'},
+       {n:2,title:'Data Augmentation',tag:'data',viz:'<span class="vz-box vz-input">🖼️ 1 Image</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔄 Flip+Rotate+HSV</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🖼️🖼️🖼️ 8 Variations</span>',code:'Mosaic, flip, rotate, HSV — built into YOLO'},
+       {n:3,title:'Create data.yaml',tag:'data',viz:'<span class="vz-box vz-input">📁 Paths</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📝 YAML Config</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Ready to Train</span>',code:'train: ./images/train, val: ./images/val, nc: 4, names: [...]'},
+       {n:4,title:'Load Pre-trained',tag:'data',viz:'<span class="vz-box vz-input">🌐 COCO Dataset</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🧠 YOLOv8n.pt</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Model Ready</span>',code:'model = YOLO("yolov8n.pt")  # Pre-trained on COCO'},
      ]},
     {emoji:'🧠',name:'TRAIN',time:'~30 min',desc:'Freeze backbone → New head',
      substeps:[
-       {n:1,title:'Freeze Backbone',tag:'lora',code:'Backbone frozen — same idea as W₀ in LoRA!'},
-       {n:2,title:'New Detection Head',tag:'lora',code:'Head trained from scratch — like B×A in LoRA'},
-       {n:3,title:'Train',tag:'sft',code:'model.train(data="custom.yaml", epochs=50, lr=0.001)'},
-       {n:4,title:'Evaluate',tag:'sft',code:'model.val() → mAP@0.5, precision, recall'},
+       {n:1,title:'Freeze Backbone',tag:'lora',viz:'<span class="vz-box vz-input">🧠 Full Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔒 Freeze (like W₀)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Frozen Backbone</span>',code:'Backbone frozen — same idea as W₀ in LoRA!'},
+       {n:2,title:'New Detection Head',tag:'lora',viz:'<span class="vz-box vz-input">🔒 Frozen Backbone</span><span class="vz-arrow">+</span><span class="vz-box vz-process">🆕 New Head (like B×A)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Custom Detector</span>',code:'Head trained from scratch — like B×A in LoRA'},
+       {n:3,title:'Train',tag:'sft',viz:'<span class="vz-box vz-input">🖼️ Your Images</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🏋️ model.train()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📉 Loss ↓ mAP ↑</span>',code:'model.train(data="custom.yaml", epochs=50, lr=0.001)'},
+       {n:4,title:'Evaluate',tag:'sft',viz:'<span class="vz-box vz-input">🧠 Trained Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📊 model.val()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📈 mAP, P, R</span>',code:'model.val() → mAP@0.5, precision, recall'},
      ]},
     {emoji:'🚀',name:'DEPLOY',time:'~1 min',desc:'Export → TensorRT',
      substeps:[
-       {n:1,title:'Export ONNX',tag:'lora',code:'model.export(format="onnx")'},
-       {n:2,title:'TensorRT Engine',tag:'lora',code:'model.export(format="engine")  # Fastest'},
-       {n:3,title:'Deploy',tag:'dpo',code:'Docker + Triton Inference Server'},
-       {n:4,title:'Monitor',tag:'sft',code:'Prometheus metrics + drift detection'},
+       {n:1,title:'Export ONNX',tag:'lora',viz:'<span class="vz-box vz-input">🧠 PyTorch</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📦 export()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📄 model.onnx</span>',code:'model.export(format="onnx")'},
+       {n:2,title:'TensorRT Engine',tag:'lora',viz:'<span class="vz-box vz-input">📄 ONNX</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ TensorRT</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🚀 .engine (Fastest)</span>',code:'model.export(format="engine")  # Fastest'},
+       {n:3,title:'Deploy',tag:'dpo',viz:'<span class="vz-box vz-input">🚀 Engine</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🐳 Docker + Triton</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌐 Production API</span>',code:'Docker + Triton Inference Server'},
+       {n:4,title:'Monitor',tag:'sft',viz:'<span class="vz-box vz-input">📊 Metrics</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📈 Prometheus</span><span class="vz-arrow">→</span><span class="vz-box vz-output">⚠️ Alert if drift</span>',code:'Prometheus metrics + drift detection'},
      ]},
   ]
 },
@@ -251,24 +257,24 @@ const tabs=[
   stages:[
     {emoji:'📋',name:'PREPROCESS',time:'~2 min',desc:'Image+Q → Text',
      substeps:[
-       {n:1,title:'Create Pairs',tag:'data',code:'{"image": "xray_001.jpg", "instruction": "What does this show?", "output": "Pneumonia"}'},
-       {n:2,title:'Image = Path',tag:'data',code:'Same as fitz.open("pdf") — Image.open(example["image"])'},
-       {n:3,title:'Format as Text',tag:'sft',code:'SAME format_instruction() as text FT!'},
-       {n:4,title:'Tokenize',tag:'data',code:'Tokenizer handles text + vision tokens together'},
+       {n:1,title:'Create Pairs',tag:'data',viz:'<span class="vz-box vz-input">🖼️ Image</span><span class="vz-arrow">+</span><span class="vz-box vz-input">📝 Question</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📋 Q&A Pair</span>',code:'{"image": "xray_001.jpg", "instruction": "What does this show?", "output": "Pneumonia"}'},
+       {n:2,title:'Image = Path',tag:'data',viz:'<span class="vz-box vz-input">📁 "xray_001.jpg"</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🖼️ Image.open()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🖼️ Loaded Image</span>',code:'Same as fitz.open("pdf") — Image.open(example["image"])'},
+       {n:3,title:'Format as Text',tag:'sft',viz:'<span class="vz-box vz-input">📋 JSON</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔤 format_instruction()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📄 One String</span>',code:'SAME format_instruction() as text FT!'},
+       {n:4,title:'Tokenize',tag:'data',viz:'<span class="vz-box vz-input">🖼️📝 Image+Text</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔢 Vision Tokenizer</span><span class="vz-arrow">→</span><span class="vz-box vz-output">[img tokens, text tokens]</span>',code:'Tokenizer handles text + vision tokens together'},
      ]},
     {emoji:'🧠',name:'TRAIN',time:'~5 min',desc:'LoRA → SFTTrainer',
      substeps:[
-       {n:1,title:'Quantize + LoRA',tag:'lora',code:'BitsAndBytesConfig + LoraConfig(r=8) — IDENTICAL'},
-       {n:2,title:'SFTTrainer',tag:'sft',code:'SFTTrainer(model, dataset, formatting_func).train()  — SAME 3 LINES'},
-       {n:3,title:'Vision Encoder',tag:'lora',code:'Vision transformer processes image → embeddings'},
-       {n:4,title:'LLM Decoder',tag:'sft',code:'LLM combines vision + text → generates answer'},
+       {n:1,title:'Quantize + LoRA',tag:'lora',viz:'<span class="vz-box vz-input">🧠 VL Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⬇ 8-bit + LoRA</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Ready</span>',code:'BitsAndBytesConfig + LoraConfig(r=8) — IDENTICAL'},
+       {n:2,title:'SFTTrainer',tag:'sft',viz:'<span class="vz-box vz-input">📋 Image+Q Pairs</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🎓 SFTTrainer</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🤖 Medical VLM</span>',code:'SFTTrainer(model, dataset, formatting_func).train()  — SAME 3 LINES'},
+       {n:3,title:'Vision Encoder',tag:'lora',viz:'<span class="vz-box vz-input">🖼️ Image</span><span class="vz-arrow">→</span><span class="vz-box vz-process">👁️ ViT Encoder</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🔢 Embeddings</span>',code:'Vision transformer processes image → embeddings'},
+       {n:4,title:'LLM Decoder',tag:'sft',viz:'<span class="vz-box vz-input">🔢 Embeddings + 📝 Text</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🧠 LLM</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 Answer</span>',code:'LLM combines vision + text → generates answer'},
      ]},
     {emoji:'🚀',name:'DEPLOY',time:'~1 min',desc:'Save → HF Hub → Serve',
      substeps:[
-       {n:1,title:'Save Adapter (4 MB)',tag:'lora',code:'model.save_pretrained("./medical_vlm")'},
-       {n:2,title:'Push to HF Hub',tag:'lora',code:'model.push_to_hub("username/medical-xray-vlm")'},
-       {n:3,title:'Serve',tag:'dpo',code:'vLLM or HuggingFace TGI'},
-       {n:4,title:'Query',tag:'sft',code:'pipe("xray_002.jpg", "Any abnormality?") → "No acute finding."'},
+       {n:1,title:'Save Adapter',tag:'lora',viz:'<span class="vz-box vz-input">🧠 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">💾 save_pretrained()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📁 adapter (4MB)</span>',code:'model.save_pretrained("./medical_vlm")'},
+       {n:2,title:'Push to HF Hub',tag:'lora',viz:'<span class="vz-box vz-input">📁 Local</span><span class="vz-arrow">→</span><span class="vz-box vz-process">☁️ push_to_hub()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌐 HF Hub</span>',code:'model.push_to_hub("username/medical-xray-vlm")'},
+       {n:3,title:'Serve',tag:'dpo',viz:'<span class="vz-box vz-input">🧠 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ vLLM / TGI</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌐 API Ready</span>',code:'vLLM or HuggingFace TGI'},
+       {n:4,title:'Query',tag:'sft',viz:'<span class="vz-box vz-input">🖼️ New X-ray</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🤖 Medical VLM</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 "No acute finding."</span>',code:'pipe("xray_002.jpg", "Any abnormality?") → "No acute finding."'},
      ]},
   ]
 },
@@ -290,24 +296,24 @@ const tabs=[
   stages:[
     {emoji:'📦',name:'BUILD',time:'Phases 4-6',desc:'Quant → LoRA → Data → Train',
      substeps:[
-       {n:1,title:'Quantize Model',tag:'lora',code:'BitsAndBytesConfig(load_in_8bit=True)'},
-       {n:2,title:'Apply LoRA',tag:'lora',code:'LoraConfig(r=8, target_modules=["q_proj","v_proj"])'},
-       {n:3,title:'Prepare Data',tag:'data',code:'PDF → chunks → Dataset → tokenize → labels'},
-       {n:4,title:'Train',tag:'sft',code:'SFTTrainer / DPOTrainer → train()'},
+       {n:1,title:'Quantize Model',tag:'lora',viz:'<span class="vz-box vz-input">🧠 FP16</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⬇ INT8/4</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Smaller</span>',code:'BitsAndBytesConfig(load_in_8bit=True)'},
+       {n:2,title:'Apply LoRA',tag:'lora',viz:'<span class="vz-box vz-input">🔒 W₀</span><span class="vz-arrow">+</span><span class="vz-box vz-process">🆕 B×A</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ 0.4% trainable</span>',code:'LoraConfig(r=8, target_modules=["q_proj","v_proj"])'},
+       {n:3,title:'Prepare Data',tag:'data',viz:'<span class="vz-box vz-input">📄 PDF</span><span class="vz-arrow">→</span><span class="vz-box vz-process">✂️ Chunks</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔢 Tokenize</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📊 Dataset</span>',code:'PDF → chunks → Dataset → tokenize → labels'},
+       {n:4,title:'Train',tag:'sft',viz:'<span class="vz-box vz-input">📊 Data</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🎓 SFT / ⚖️ DPO</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🤖 Fine-Tuned</span>',code:'SFTTrainer / DPOTrainer → train()'},
      ]},
     {emoji:'🧪',name:'TEST',time:'Phase 6A',desc:'4 Testing Layers',
      substeps:[
-       {n:1,title:'Layer 1: Data',tag:'data',code:'Pandera schema — instruction + output not null'},
-       {n:2,title:'Layer 2: Model',tag:'sft',code:'pytest — MFT, INV, DIR behavioral tests'},
-       {n:3,title:'Layer 3: Pipeline',tag:'lora',code:'Smoke test — train 1 epoch → save → load → predict'},
-       {n:4,title:'Layer 4: Production',tag:'dpo',code:'Evidently AI — drift detection, response quality'},
+       {n:1,title:'Layer 1: Data',tag:'data',viz:'<span class="vz-box vz-input">📊 Dataset</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔍 Pandera</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Valid</span>',code:'Pandera schema — instruction + output not null'},
+       {n:2,title:'Layer 2: Model',tag:'sft',viz:'<span class="vz-box vz-input">🤖 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🧪 pytest MFT/INV/DIR</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Pass</span>',code:'pytest — MFT, INV, DIR behavioral tests'},
+       {n:3,title:'Layer 3: Pipeline',tag:'lora',viz:'<span class="vz-box vz-input">🔄 Pipeline</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🚂 Smoke Test</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Train→Save→Load</span>',code:'Smoke test — train 1 epoch → save → load → predict'},
+       {n:4,title:'Layer 4: Production',tag:'dpo',viz:'<span class="vz-box vz-input">📊 Live Data</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔍 Evidently AI</span><span class="vz-arrow">→</span><span class="vz-box vz-output">⚠️ Drift? → Retrain</span>',code:'Evidently AI — drift detection, response quality'},
      ]},
     {emoji:'🚀',name:'DEPLOY',time:'Phase 6B',desc:'MLflow → vLLM → API',
      substeps:[
-       {n:1,title:'Register Model',tag:'lora',code:'mlflow.register_model("runs:/abc123/adapter")'},
-       {n:2,title:'Stage: Production',tag:'lora',code:'client.transition_model_version_stage(stage="Production")'},
-       {n:3,title:'Serve with vLLM',tag:'dpo',code:'vllm serve ./merged_model --port 8000'},
-       {n:4,title:'CI/CD Auto-retrain',tag:'sft',code:'GitHub Actions → new data → auto-trigger retraining'},
+       {n:1,title:'Register Model',tag:'lora',viz:'<span class="vz-box vz-input">📊 MLflow Run</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📦 register_model()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🏷️ Version 1</span>',code:'mlflow.register_model("runs:/abc123/adapter")'},
+       {n:2,title:'Stage: Production',tag:'lora',viz:'<span class="vz-box vz-input">🧪 Staging</span><span class="vz-arrow">→</span><span class="vz-box vz-process">✅ Tests Pass</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🚀 Production</span>',code:'client.transition_model_version_stage(stage="Production")'},
+       {n:3,title:'Serve with vLLM',tag:'dpo',viz:'<span class="vz-box vz-input">🧠 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ vLLM (5000 tok/s)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌐 API :8000</span>',code:'vllm serve ./merged_model --port 8000'},
+       {n:4,title:'CI/CD Auto-retrain',tag:'sft',viz:'<span class="vz-box vz-input">📄 New Data</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔄 GitHub Actions</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🤖 Auto-retrain → Deploy</span>',code:'GitHub Actions → new data → auto-trigger retraining'},
      ]},
   ]
 }
@@ -370,6 +376,7 @@ function render(){
             <div class="substep">
               <span class="ss-num">Step ${ss.n}</span>
               <div class="ss-title">${ss.title}</div>
+              ${ss.viz?`<div class="ss-viz">${ss.viz}</div>`:''}
               <div class="ss-code">${ss.code}</div>
               <span class="ss-tag ${ss.tag==='lora'?'lora':ss.tag==='sft'?'sft':'dpo'}">${ss.tag==='lora'?'LoRA/Quant':ss.tag==='sft'?'SFT':'DPO/Deploy'}</span>
             </div>
