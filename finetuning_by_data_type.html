@@ -3,59 +3,76 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fine-Tuning by Data Type</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<title>Fine-Tuning Pipeline — By Data Type</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--red:#c62828;--cyan:#007a99;--magenta:#9e2a6b;}
+:root{--bg:#f8f9fc;--card:#fff;--raised:#eef0f5;--border:#dde0e6;--text:#1a1d23;--tdim:#4a4f5b;--tmut:#8b909b;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--red:#c62828;--cyan:#007a99;--magenta:#9e2a6b;--blue:#1565c0;--orange:#e65100;}
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;min-height:100vh;}
-.app{max-width:1100px;margin:0 auto;padding:1.5rem;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;overflow-x:hidden;}
+.app{max-width:1050px;margin:0 auto;padding:1.5rem;}
 
-.header{text-align:center;padding:2rem 0 1.5rem;}
-.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--violet);}
-.header p{color:var(--tdim);font-size:0.95rem;margin-top:0.3rem;}
+/* Header */
+.header{text-align:center;padding:2rem 0 1rem;}
+.header .mega-emoji{font-size:4rem;display:block;margin-bottom:0.5rem;animation:float 3s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.8rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:1rem;margin-top:0.3rem;}
 
-/* Type cards */
-.type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin:1.5rem 0;}
-.type-card{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:1.5rem;text-align:center;cursor:pointer;transition:0.2s;position:relative;overflow:hidden;}
-.type-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.06);}
-.type-card.selected{border-color:var(--violet);box-shadow:0 0 0 4px var(--vbg);}
-.type-card .ico{font-size:2.5rem;margin-bottom:0.5rem;}
-.type-card h3{font-family:'Space Grotesk',sans-serif;font-size:0.8rem;font-weight:600;margin-bottom:0.3rem;}
-.type-card .badge{display:inline-block;font-size:0.55rem;padding:2px 8px;border-radius:100px;font-weight:600;}
-.type-card .badge.lora{background:var(--vbg);color:var(--violet);}
-.type-card .badge.nolora{background:rgba(198,40,40,0.08);color:var(--red);}
+/* Tabs */
+.tabs{display:flex;gap:0.3rem;justify-content:center;margin:1.5rem 0;flex-wrap:wrap;}
+.tab{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;font-weight:600;padding:0.6em 1.4em;border:2px solid var(--border);border-radius:100px;background:var(--card);color:var(--tmut);cursor:pointer;transition:0.15s;display:flex;align-items:center;gap:0.4em;}
+.tab:hover{border-color:var(--violet);color:var(--violet);}
+.tab.active{background:var(--violet);border-color:var(--violet);color:#fff;}
+.tab .tb-emoji{font-size:1rem;}
 
-/* Detail panel */
-.detail{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin:1rem 0;display:none;}
-.detail.show{display:block;animation:fadeIn 0.3s ease;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
-.detail h2{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;color:var(--violet);margin-bottom:1rem;}
+/* Pipeline */
+.pipeline-section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin:1rem 0;}
+.pipeline-title{font-family:'Space Grotesk',sans-serif;font-size:0.85rem;font-weight:600;color:var(--violet);margin-bottom:1.25rem;text-align:center;}
 
-/* Flow */
-.flow{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;justify-content:center;margin:1rem 0;font-family:'Space Grotesk',sans-serif;font-size:0.65rem;}
-.flow-step{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.8rem;text-align:center;}
-.flow-arrow{color:var(--violet);font-size:1.2rem;}
+.pipeline{display:flex;align-items:center;gap:0;justify-content:center;flex-wrap:wrap;}
+.pipe-stage{text-align:center;padding:0.8rem 1rem;border-radius:12px;cursor:pointer;transition:0.2s;min-width:100px;max-width:150px;position:relative;border:2px solid transparent;}
+.pipe-stage:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,0.08);}
+.pipe-stage.active-stage{border-color:var(--violet);box-shadow:0 0 0 4px var(--vbg);}
+.pipe-stage .st-emoji{font-size:1.8rem;display:block;margin-bottom:0.3rem;}
+.pipe-stage .st-name{font-family:'Space Grotesk',sans-serif;font-size:0.65rem;font-weight:700;letter-spacing:0.04em;}
+.pipe-stage .st-sub{font-size:0.55rem;color:var(--tmut);margin-top:0.1rem;}
+.pipe-arrow{font-size:1.5rem;color:var(--violet);margin:0 0.2rem;animation:pulse 1.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:0.4;}50%{opacity:1;}}
 
-.code-box{background:#1e1e1e;border:1px solid #333;border-left:3px solid var(--violet);border-radius:8px;padding:0.8rem 1rem;margin:0.5rem 0;font-family:'Space Grotesk',monospace;font-size:0.78rem;line-height:1.8;white-space:pre-wrap;overflow-x:auto;color:#d4d4d4;}
+/* Stage detail */
+.stage-detail{background:var(--vbg);border:1px solid var(--violet);border-radius:12px;padding:1.25rem;margin:1.25rem 0 0;display:none;}
+.stage-detail.show{display:block;animation:slideDown 0.3s ease;}
+@keyframes slideDown{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
+.stage-detail h4{font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin-bottom:0.75rem;}
 
-/* Info grid */
-.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:0.75rem 0;}
-.info-box{background:var(--raised);border:1px solid var(--border);border-radius:10px;padding:1rem;}
-.info-box h4{font-family:'Space Grotesk',sans-serif;font-size:0.65rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);margin-bottom:0.5rem;}
-.info-box .val{font-weight:600;font-size:0.9rem;}
+.code-box{background:#1e1e1e;border:1px solid #333;border-radius:8px;padding:0.75rem 1rem;margin:0.5rem 0;font-family:'Space Grotesk',monospace;font-size:0.72rem;line-height:1.7;white-space:pre-wrap;overflow-x:auto;color:#d4d4d4;}
+
+/* Metrics row */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin:0.75rem 0;}
+.metric{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center;}
+.metric .val{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;}
+.metric .lbl{font-size:0.65rem;color:var(--tmut);margin-top:0.2rem;}
+
+/* Nav */
+.nav-row{display:flex;justify-content:center;gap:0.5rem;margin:1rem 0;}
+.nav-btn{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;font-weight:600;padding:0.5em 1.2em;border:2px solid var(--border);border-radius:100px;background:var(--card);color:var(--text);cursor:pointer;transition:0.15s;}
+.nav-btn:hover{border-color:var(--violet);color:var(--violet);}
+.nav-btn:disabled{opacity:0.3;cursor:not-allowed;}
+.nav-btn.primary{background:var(--violet);border-color:var(--violet);color:#fff;}
 
 /* Comparison table */
-.tbl{width:100%;border-collapse:collapse;font-size:0.78rem;margin:0.75rem 0;}
-.tbl th{font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);padding:0.4rem 0.5rem;border-bottom:2px solid var(--border);text-align:left;}
-.tbl td{padding:0.4rem 0.5rem;border-bottom:1px solid var(--border);}
-.tbl .yes{color:var(--green);font-weight:600;}
+.comparison{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin:1.5rem 0;}
+.comparison h3{font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin-bottom:1rem;text-align:center;}
+.tbl{width:100%;border-collapse:collapse;font-size:0.75rem;}
+.tbl th{font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);padding:0.4rem;border-bottom:2px solid var(--border);text-align:center;}
+.tbl td{padding:0.4rem;border-bottom:1px solid var(--border);text-align:center;}
+.tbl td:first-child{text-align:left;font-weight:600;font-size:0.7rem;}
+.tbl .yes{color:var(--green);font-weight:700;}
 .tbl .no{color:var(--red);}
-.tbl tr:hover{background:rgba(91,58,168,0.02);}
 
-.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.75rem 1rem;margin:0.75rem 0;font-size:0.85rem;text-align:center;}
+.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.75rem 1rem;margin:1rem 0;font-size:0.82rem;text-align:center;}
 
-@media(max-width:768px){.type-grid{grid-template-columns:1fr 1fr;}.info-grid{grid-template-columns:1fr;}.app{padding:0.75rem;}}
+@media(max-width:768px){.pipeline{flex-direction:column;}.pipe-arrow{transform:rotate(90deg);}.metrics{grid-template-columns:1fr 1fr;}.tabs{overflow-x:auto;flex-wrap:nowrap;}}
 </style>
 </head>
 <body>
@@ -63,162 +80,202 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 <div class="app">
 
 <header class="header">
-  <h1>Fine-Tuning — Works on Anything</h1>
-  <p>Same pattern across Text, Tabular, Image, and Vision-Language. Click a card to see the pipeline.</p>
+  <span class="mega-emoji">🔄</span>
+  <h1>Fine-Tuning Works on ANY Data</h1>
+  <p>Same pattern: Pre-trained model → Freeze → LoRA → Train on YOUR data</p>
 </header>
 
-<!-- 4 type cards -->
-<div class="type-grid">
-  <div class="type-card selected" onclick="showDetail('text')" id="card-text">
-    <div class="ico">📝</div>
-    <h3>Text</h3>
-    <span class="badge lora">LoRA ✅</span>
-    <p style="font-size:0.7rem;color:var(--tdim);margin-top:0.3rem;">Q&A, documents</p>
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('text')"><span class="tb-emoji">📝</span> Text</button>
+  <button class="tab" onclick="switchTab('tabular')"><span class="tb-emoji">📊</span> Tabular</button>
+  <button class="tab" onclick="switchTab('image')"><span class="tb-emoji">🖼️</span> Image</button>
+  <button class="tab" onclick="switchTab('visionlang')"><span class="tb-emoji">🖼️+📝</span> Vision-Language</button>
+</div>
+
+<!-- Pipeline section -->
+<div class="pipeline-section" id="pipelineSection"></div>
+
+<!-- Stage detail -->
+<div class="stage-detail show" id="stageDetail"></div>
+
+<!-- Nav -->
+<div class="nav-row" id="navRow"></div>
+
+<!-- Comparison -->
+<div class="comparison">
+  <h3>📊 All 4 Types — Side by Side</h3>
+  <div style="overflow-x:auto;">
+  <table class="tbl">
+  <thead><tr><th></th><th>📝 Text</th><th>📊 Tabular</th><th>🖼️ Image</th><th>🖼️+📝 Vision-Lang</th></tr></thead>
+  <tbody>
+  <tr><td>Input</td><td>Q&A text</td><td>Rows → sentences</td><td>Images + labels</td><td>Images + questions</td></tr>
+  <tr><td>Model</td><td>TinyLlama, Llama</td><td>Same LLM</td><td>YOLOv8, ResNet</td><td>LLaVA, GPT-4V</td></tr>
+  <tr><td>LoRA?</td><td class="yes">✅ Yes</td><td class="yes">✅ Yes</td><td class="no">⚠️ Not standard</td><td class="yes">✅ Yes</td></tr>
+  <tr><td>Training</td><td>SFT + DPO</td><td>SFT</td><td>Transfer Learning</td><td>SFT + DPO</td></tr>
+  <tr><td>Trainer</td><td>SFTTrainer / DPOTrainer</td><td>SFTTrainer</td><td>model.train()</td><td>SFTTrainer / DPOTrainer</td></tr>
+  <tr><td>Phase</td><td>4–6</td><td>Now</td><td>10</td><td>10</td></tr>
+  </tbody>
+  </table>
   </div>
-  <div class="type-card" onclick="showDetail('tabular')" id="card-tabular">
-    <div class="ico">📊</div>
-    <h3>Tabular / Numerical</h3>
-    <span class="badge lora">LoRA ✅</span>
-    <p style="font-size:0.7rem;color:var(--tdim);margin-top:0.3rem;">CSV rows, diagnoses</p>
-  </div>
-  <div class="type-card" onclick="showDetail('image')" id="card-image">
-    <div class="ico">🖼️</div>
-    <h3>Image</h3>
-    <span class="badge nolora">LoRA ⚠️</span>
-    <p style="font-size:0.7rem;color:var(--tdim);margin-top:0.3rem;">Object detection, classification</p>
-  </div>
-  <div class="type-card" onclick="showDetail('visionlang')" id="card-visionlang">
-    <div class="ico">🖼️+📝</div>
-    <h3>Vision-Language</h3>
-    <span class="badge lora">LoRA ✅</span>
-    <p style="font-size:0.7rem;color:var(--tdim);margin-top:0.3rem;">X-ray reports, image Q&A</p>
-  </div>
 </div>
 
-<!-- Detail panel -->
-<div class="detail show" id="detail-text">
-<h2>📝 Text Fine-Tuning (Phases 4–6)</h2>
-<div class="flow">
-  <div class="flow-step">Q&A Pairs<br>"What is Metformin?"</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--violet);">format_instruction()<br>Alpaca template</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--violet);">LoRA<br>r=8, Q+V</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--amber);">SFTTrainer<br>(Phase 5)</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--magenta);">DPOTrainer<br>(Phase 6)</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--green);">Deploy</div>
-</div>
-<div class="info-grid">
-  <div class="info-box"><h4>Training Method</h4><div class="val" style="color:var(--amber);">SFT (Phase 5)</div></div>
-  <div class="info-box"><h4>Preference Tuning</h4><div class="val" style="color:var(--magenta);">DPO (Phase 6)</div></div>
-  <div class="info-box"><h4>Trainer</h4><div class="val">SFTTrainer / DPOTrainer</div></div>
-  <div class="info-box"><h4>Model</h4><div class="val">TinyLlama, Llama, Mistral</div></div>
-</div>
-<div class="code-box">
-<span style="color:#6a9955;"># Text FT — you've already done this!</span>
-data = [{"instruction": "What is Metformin?", "output": "Metformin is a biguanide..."}]
-dataset = Dataset.from_list(data)
-trainer = SFTTrainer(model=model, train_dataset=dataset, formatting_func=format_instruction)
-trainer.train()</div>
-</div>
-
-<div class="detail" id="detail-tabular">
-<h2>📊 Tabular / Numerical Fine-Tuning</h2>
-<div class="flow">
-  <div class="flow-step">CSV Row<br>"Age 45, BP 140..."</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--violet);">Row → Sentence<br>f"Age: {row.age}..."</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--violet);">LoRA<br>r=8, Q+V</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--amber);">SFTTrainer</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--green);">Diagnosis model</div>
-</div>
-<div class="info-grid">
-  <div class="info-box"><h4>Training Method</h4><div class="val" style="color:var(--amber);">SFT</div></div>
-  <div class="info-box"><h4>Trainer</h4><div class="val">SFTTrainer</div></div>
-  <div class="info-box"><h4>Key Trick</h4><div class="val">Convert each row → text sentence</div></div>
-  <div class="info-box"><h4>LoRA?</h4><div class="val" style="color:var(--green);">✅ Yes</div></div>
-</div>
-<div class="code-box">
-<span style="color:#6a9955;"># Row → sentence → same SFT pipeline!</span>
-row = {"age": 45, "bp": 140, "glucose": 110, "diagnosis": "Diabetic"}
-data = [{
-    "instruction": "Diagnose this patient",
-    "input": f"Age: {row['age']}, BP: {row['bp']}, Glucose: {row['glucose']}",
-    "output": row['diagnosis']
-}]
-<span style="color:#6a9955;"># Then: Dataset → tokenize → SFTTrainer → train() — identical to text!</span></div>
-</div>
-
-<div class="detail" id="detail-image">
-<h2>🖼️ Image Fine-Tuning (Phase 10)</h2>
-<div class="flow">
-  <div class="flow-step">Labeled Images<br>cats/dogs/disease</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--cyan);">Transfer Learning<br>Freeze backbone</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--cyan);">Replace head<br>New classifier</div><span class="flow-arrow">→</span>
-  <div class="flow-step">model.train()</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--green);">Custom detector</div>
-</div>
-<div class="info-grid">
-  <div class="info-box"><h4>Training Method</h4><div class="val" style="color:var(--cyan);">Transfer Learning</div></div>
-  <div class="info-box"><h4>Trainer</h4><div class="val">model.train() (PyTorch/Ultralytics)</div></div>
-  <div class="info-box"><h4>LoRA?</h4><div class="val" style="color:var(--red);">⚠️ Not standard for vision models</div></div>
-  <div class="info-box"><h4>Model</h4><div class="val">YOLOv8, ResNet, ViT</div></div>
-</div>
-<div class="code-box">
-<span style="color:#6a9955;"># Image fine-tuning — different library, same idea</span>
-from ultralytics import YOLO
-model = YOLO("yolov8n.pt")  <span style="color:#6a9955;"># Pre-trained</span>
-model.train(data="chicken_disease.yaml", epochs=50)  <span style="color:#6a9955;"># Train on YOUR images</span>
-<span style="color:#6a9955;"># Freeze backbone → train new head — same pattern as LoRA!</span></div>
-</div>
-
-<div class="detail" id="detail-visionlang">
-<h2>🖼️+📝 Vision-Language Fine-Tuning (Phase 10 Advanced)</h2>
-<div class="flow">
-  <div class="flow-step">Image + Question<br>"What does X-ray show?"</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--violet);">LoRA<br>r=8, Q+V</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--amber);">SFTTrainer</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--green);">Medical VLM</div>
-</div>
-<div class="info-grid">
-  <div class="info-box"><h4>Training Method</h4><div class="val" style="color:var(--amber);">SFT / DPO</div></div>
-  <div class="info-box"><h4>Trainer</h4><div class="val">SFTTrainer / DPOTrainer</div></div>
-  <div class="info-box"><h4>LoRA?</h4><div class="val" style="color:var(--green);">✅ Yes</div></div>
-  <div class="info-box"><h4>Model</h4><div class="val">LLaVA, GPT-4V</div></div>
-</div>
-<div class="code-box">
-<span style="color:#6a9955;"># Vision-language — same as text, just add image paths!</span>
-data = [{
-    "image": "chest_xray_001.jpg",  <span style="color:#6a9955;"># Path to image file</span>
-    "instruction": "What does this X-ray show?",
-    "output": "Pneumonia in the right lower lobe."
-}]
-<span style="color:#6a9955;"># Then: Dataset → LoRA → SFTTrainer → train() — EXACT same pipeline!</span></div>
-</div>
-
-<!-- Summary table -->
-<h2 style="font-family:'Space Grotesk',sans-serif;font-size:1rem;color:var(--violet);margin:1.5rem 0 0.75rem;">All 4 Types — Side by Side</h2>
-<table class="tbl">
-<thead><tr><th></th><th>📝 Text</th><th>📊 Tabular</th><th>🖼️ Image</th><th>🖼️+📝 Vision-Lang</th></tr></thead>
-<tbody>
-<tr><td><strong>Input</strong></td><td>Q&A text</td><td>Rows → sentences</td><td>Images + labels</td><td>Images + questions</td></tr>
-<tr><td><strong>Example</strong></td><td>"What is Metformin?"</td><td>"Age 45 → Diabetic?"</td><td>Detect disease</td><td>"What does X-ray show?"</td></tr>
-<tr><td><strong>Model</strong></td><td>TinyLlama, Llama</td><td>Same LLM</td><td>YOLOv8, ResNet</td><td>LLaVA, GPT-4V</td></tr>
-<tr><td><strong>LoRA?</strong></td><td class="yes">✅ Yes</td><td class="yes">✅ Yes</td><td class="no">⚠️ Not standard</td><td class="yes">✅ Yes</td></tr>
-<tr><td><strong>Training Method</strong></td><td><span style="color:var(--amber);">SFT</span> + <span style="color:var(--magenta);">DPO</span></td><td><span style="color:var(--amber);">SFT</span></td><td>Transfer Learning</td><td><span style="color:var(--amber);">SFT</span> + <span style="color:var(--magenta);">DPO</span></td></tr>
-<tr><td><strong>Trainer</strong></td><td>SFTTrainer / DPOTrainer</td><td>SFTTrainer</td><td>model.train()</td><td>SFTTrainer / DPOTrainer</td></tr>
-<tr><td><strong>Phase</strong></td><td>4–6</td><td>Can do now</td><td>10</td><td>10</td></tr>
-</tbody>
-</table>
-
-<div class="callout"><strong>🧠 The pattern is identical:</strong> Pre-trained model → freeze → adapter/LoRA → train on YOUR data. Text, rows, images, or combinations — same workflow, different input format.</div>
+<div class="callout"><strong>🧠 The pattern is identical across all types.</strong> Pre-trained model → freeze → adapter/LoRA → train on YOUR data. Text, rows, images — same workflow.</div>
 
 </div>
 
 <script>
-function showDetail(type){
-  document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));
-  document.getElementById('card-'+type).classList.add('selected');
-  document.querySelectorAll('.detail').forEach(d=>d.classList.remove('show'));
-  document.getElementById('detail-'+type).classList.add('show');
+// ── DATA ──
+const pipelines={
+  text:{
+    emoji:'📝', title:'Text Fine-Tuning — Q&A Pairs',
+    metrics:[
+      {val:'SFT + DPO',lbl:'Training Method',color:'var(--amber)'},
+      {val:'SFTTrainer',lbl:'Phase 5 Trainer',color:'var(--violet)'},
+      {val:'DPOTrainer',lbl:'Phase 6 Trainer',color:'var(--magenta)'},
+      {val:'LoRA ✅',lbl:'r=8, Q+V',color:'var(--green)'},
+    ],
+    stages:[
+      {emoji:'📋',name:'Q&A Data',sub:'instruction + output',detail:'<h4>📋 Step 1: Prepare Q&A Pairs</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Write instruction-output pairs. Alpaca format: instruction + input + output.</p><div class="code-box">instruction_data = [\n    {"instruction": "What is Metformin?",\n     "input": "",\n     "output": "Metformin is a biguanide..."},\n    {"instruction": "How does it work?",\n     "input": "",\n     "output": "It decreases hepatic glucose..."},\n]</div>'},
+      {emoji:'🔤',name:'Format',sub:'Alpaca template',detail:'<h4>🔤 Step 2: Format as Training String</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Convert each JSON pair into a single string with ### markers.</p><div class="code-box">def format_instruction(ex):\n    text = "Below is an instruction. Write a response.\\n\\n"\n    text += "### Instruction:\\n" + ex["instruction"] + "\\n\\n"\n    text += "### Response:\\n" + ex["output"]\n    return {"text": text}</div>'},
+      {emoji:'🧬',name:'LoRA',sub:'r=8, alpha=16',detail:'<h4>🧬 Step 3: Apply LoRA Adapters</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Freeze the base model. Add tiny B×A adapters to Q and V.</p><div class="code-box">lora_config = LoraConfig(\n    r=8, lora_alpha=16, lora_dropout=0.1,\n    target_modules=["q_proj","v_proj"]\n)\nmodel = get_peft_model(model, lora_config)\n# trainable: 0.38% of all params</div>'},
+      {emoji:'🎓',name:'SFTTrainer',sub:'Phase 5: Learn WHAT',detail:'<h4>🎓 Step 4: Train with SFTTrainer</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">SFT teaches the model WHAT to say. Response-only masking.</p><div class="code-box">trainer = SFTTrainer(\n    model=model, train_dataset=dataset,\n    formatting_func=format_instruction,\n    args=TrainingArguments(learning_rate=2e-4, epochs=10)\n)\ntrainer.train()</div>'},
+      {emoji:'⚖️',name:'DPOTrainer',sub:'Phase 6: Learn HOW',detail:'<h4>⚖️ Step 5 (Optional): Align with DPO</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">DPO teaches the model HOW to deliver. Be thorough, not lazy.</p><div class="code-box">trainer = DPOTrainer(\n    model=model, train_dataset=pref_data,\n    beta=0.1, args=TrainingArguments(learning_rate=5e-5)\n)\ntrainer.train()</div>'},
+      {emoji:'🚀',name:'Deploy',sub:'Adapter or merge',detail:'<h4>🚀 Step 6: Save & Deploy</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Save the 4MB adapter. Anyone with TinyLlama can use it.</p><div class="code-box">model.save_pretrained("./my_adapter")\n# Optional: merge for production\nmodel = model.merge_and_unload()\nmodel.push_to_hub("username/my-model")</div>'},
+    ]
+  },
+  tabular:{
+    emoji:'📊', title:'Tabular Fine-Tuning — Rows as Sentences',
+    metrics:[
+      {val:'SFT',lbl:'Training Method',color:'var(--amber)'},
+      {val:'SFTTrainer',lbl:'Same as Text',color:'var(--violet)'},
+      {val:'Row→Text',lbl:'Key Trick',color:'var(--cyan)'},
+      {val:'LoRA ✅',lbl:'r=8, Q+V',color:'var(--green)'},
+    ],
+    stages:[
+      {emoji:'📊',name:'CSV Data',sub:'Rows of numbers',detail:'<h4>📊 Step 1: Load Tabular Data</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Any CSV with features + label column. Same as your Q&A data, just different source.</p><div class="code-box">import pandas as pd\ndf = pd.read_csv("medical_records.csv")\n# Columns: age, bp, glucose, diagnosis\nprint(df.head())</div>'},
+      {emoji:'✍️',name:'Row→Sentence',sub:'Convert to text',detail:'<h4>✍️ Step 2: Convert Each Row to a Sentence</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">This is the ONLY difference from text FT. Express the row as natural language.</p><div class="code-box">for _, row in df.iterrows():\n    instruction_data.append({\n        "instruction": "Diagnose this patient",\n        "input": f"Age: {row[\'age\']}, BP: {row[\'bp\']}, "\n                f"Glucose: {row[\'glucose\']}",\n        "output": row[\'diagnosis\']\n    })</div>'},
+      {emoji:'🔤',name:'Format',sub:'Alpaca template',detail:'<h4>🔤 Step 3: Format — Identical to Text!</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Same format_instruction() function. No changes needed.</p><div class="code-box"># EXACT same function from text FT\ndef format_instruction(ex):\n    text = "### Instruction:\\n" + ex["instruction"] + "\\n\\n"\n    text += "### Input:\\n" + ex["input"] + "\\n\\n"\n    text += "### Response:\\n" + ex["output"]\n    return {"text": text}</div>'},
+      {emoji:'🧬',name:'LoRA',sub:'r=8, Q+V',detail:'<h4>🧬 Step 4: LoRA — Same Config</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Identical LoRA setup. No changes for tabular data.</p><div class="code-box">lora_config = LoraConfig(r=8, lora_alpha=16,\n    target_modules=["q_proj","v_proj"])\nmodel = get_peft_model(model, lora_config)</div>'},
+      {emoji:'🎓',name:'SFTTrainer',sub:'Same Trainer!',detail:'<h4>🎓 Step 5: Train — Identical Pipeline</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Same SFTTrainer, same TrainingArguments, same everything.</p><div class="code-box">trainer = SFTTrainer(\n    model=model, train_dataset=dataset,\n    formatting_func=format_instruction,\n    args=TrainingArguments(learning_rate=2e-4)\n)\ntrainer.train()\n# Now the model can diagnose patients!</div>'},
+      {emoji:'🚀',name:'Deploy',sub:'Diagnosis model',detail:'<h4>🚀 Step 6: Use Your Diagnosis Model</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">The model now answers medical questions based on patient data.</p><div class="code-box">pipe = pipeline("text-generation", model=model)\nprompt = "### Instruction: Diagnose\\n### Input: Age: 45, BP: 140\\n### Response:"\npipe(prompt)  # → "Diabetic"</div>'},
+    ]
+  },
+  image:{
+    emoji:'🖼️', title:'Image Fine-Tuning — Transfer Learning',
+    metrics:[
+      {val:'Transfer Learning',lbl:'Training Method',color:'var(--cyan)'},
+      {val:'model.train()',lbl:'Ultralytics / PyTorch',color:'var(--violet)'},
+      {val:'ResNet/YOLO',lbl:'Pre-trained Backbone',color:'var(--amber)'},
+      {val:'LoRA ⚠️',lbl:'Not Standard',color:'var(--red)'},
+    ],
+    stages:[
+      {emoji:'🏷️',name:'Label Images',sub:'Annotate your data',detail:'<h4>🏷️ Step 1: Prepare Labeled Images</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Each image needs a label. For YOLO: bounding boxes + class. For classification: image → label.</p><div class="code-box"># YOLO format: images/ + labels/\n# dataset.yaml\ntrain: ./images/train\nval: ./images/val\nnames: [\'healthy\', \'cocci\', \'salmo\', \'ncd\']</div>'},
+      {emoji:'🧠',name:'Load Model',sub:'Pre-trained backbone',detail:'<h4>🧠 Step 2: Load Pre-Trained Vision Model</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Same idea as TinyLlama — start from a model trained on millions of images (ImageNet, COCO).</p><div class="code-box">from ultralytics import YOLO\nmodel = YOLO("yolov8n.pt")  # Pre-trained on COCO\n# Backbone already knows edges, shapes, textures</div>'},
+      {emoji:'🔒',name:'Freeze',sub:'Lock backbone',detail:'<h4>🔒 Step 3: Freeze Backbone — Same as LoRA!</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">The backbone already knows general features. Only train the NEW head for your specific task.</p><div class="code-box"># YOLO handles this automatically\n# Backbone = frozen (like base model in LoRA)\n# Detection head = trained (like B×A in LoRA)\n# Same pattern, different implementation!</div>'},
+      {emoji:'🎯',name:'New Head',sub:'Replace classifier',detail:'<h4>🎯 Step 4: Add New Classification Head</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Replace the 1000-class ImageNet head with YOUR classes (4 disease types).</p><div class="code-box"># YOLO auto-creates the head from your data.yaml\n# nc: 4  → 4 output classes\n# The head is like B×A — tiny, trained from scratch\n# The backbone is like W₀ — frozen, pre-trained</div>'},
+      {emoji:'🏋️',name:'Train',sub:'model.train()',detail:'<h4>🏋️ Step 5: Train!</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Different library, same idea. Freeze + train new head.</p><div class="code-box">model.train(\n    data="chicken_disease.yaml",\n    epochs=50, imgsz=640, batch=16,\n    lr=0.001\n)\n# Loss drops → mAP rises → model detects your objects!</div>'},
+      {emoji:'🚀',name:'Export',sub:'TensorRT / ONNX',detail:'<h4>🚀 Step 6: Export for Deployment</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Export to optimized format for production inference.</p><div class="code-box">model.export(format="onnx")  # Cross-platform\nmodel.export(format="engine") # TensorRT, fastest\n# Now deploy on edge devices, cloud, or mobile</div>'},
+    ]
+  },
+  visionlang:{
+    emoji:'🖼️+📝', title:'Vision-Language Fine-Tuning — Images + Text',
+    metrics:[
+      {val:'SFT',lbl:'Training Method',color:'var(--amber)'},
+      {val:'SFTTrainer',lbl:'Same as Text FT',color:'var(--violet)'},
+      {val:'LLaVA/GPT-4V',lbl:'Model',color:'var(--cyan)'},
+      {val:'LoRA ✅',lbl:'r=8, Q+V',color:'var(--green)'},
+    ],
+    stages:[
+      {emoji:'🏥',name:'Image+Q',sub:'X-ray + question',detail:'<h4>🏥 Step 1: Prepare Image-Question Pairs</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Each example = image file + question + expert answer. Same format as text, just add image path.</p><div class="code-box">data = [{\n    "image": "chest_xray_001.jpg",  # Path to image\n    "instruction": "What does this X-ray show?",\n    "output": "Bilateral pneumonia in the right lower lobe."\n}]</div>'},
+      {emoji:'📷',name:'Image Path',sub:'File or URL',detail:'<h4>📷 The image field is a PATH — just like "Metformin.pdf"</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Same as Phase 4. Instead of fitz.open("pdf"), it\'s Image.open("path").</p><div class="code-box"># Local file:\n"image": "/content/xrays/patient_001.jpg"\n\n# URL:\n"image": "https://example.com/scans/mri_001.png"\n\n# The training code loads it:\nfrom PIL import Image\nimg = Image.open(example["image"])</div>'},
+      {emoji:'🧬',name:'LoRA',sub:'r=8, Q+V',detail:'<h4>🧬 Step 3: LoRA — Same Config as Text FT</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Identical LoRA setup. The vision encoder and LLM both get adapters.</p><div class="code-box">lora_config = LoraConfig(\n    r=8, lora_alpha=16,\n    target_modules=["q_proj","v_proj"]\n)\nmodel = get_peft_model(model, lora_config)</div>'},
+      {emoji:'🎓',name:'SFTTrainer',sub:'Same trainer!',detail:'<h4>🎓 Step 4: SFTTrainer — Identical to Text!</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">This is the key insight. SAME SFTTrainer. SAME code. Just different data.</p><div class="code-box">trainer = SFTTrainer(\n    model=model, train_dataset=dataset,\n    formatting_func=format_instruction,\n    args=TrainingArguments(learning_rate=2e-4)\n)\ntrainer.train()\n# That\'s it. Same 3 lines as text FT.</div>'},
+      {emoji:'🔬',name:'Result',sub:'Medical VLM',detail:'<h4>🔬 Step 5: Your Model Now "Sees" Images</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Ask about any medical image — the model answers using visual + textual understanding.</p><div class="code-box">pipe = pipeline("image-text-to-text", model=model)\npipe("chest_xray_002.jpg",\n     "Is there any abnormality?")\n# → "No acute cardiopulmonary abnormality is seen."</div>'},
+      {emoji:'🚀',name:'Deploy',sub:'Same as others',detail:'<h4>🚀 Step 6: Deploy</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Same deployment options as text models. HF Hub, FastAPI, or vLLM.</p><div class="code-box">model.save_pretrained("./medical_vlm_adapter")\n# 4 MB adapter — anyone with LLaVA can use it\nmodel.push_to_hub("username/medical-xray-vlm")</div>'},
+    ]
+  }
+};
+
+let currentTab='text';
+let currentStage=0;
+
+function switchTab(tab){
+  currentTab=tab; currentStage=0;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector(`.tab:has(.tb-emoji)`)?.[0]?.classList?.add?.('active');
+  // Find by matching onclick content
+  document.querySelectorAll('.tab').forEach(t=>{
+    if(t.onclick.toString().includes(`'${tab}'`)) t.classList.add('active');
+  });
+  renderPipeline();
 }
+
+function renderPipeline(){
+  const p=pipelines[currentTab];
+
+  // Pipeline HTML
+  let html=`
+    <div class="pipeline-title">${p.emoji} ${p.title}</div>
+    <div class="metrics">${p.metrics.map(m=>`
+      <div class="metric"><div class="val" style="color:${m.color};">${m.val}</div><div class="lbl">${m.lbl}</div></div>
+    `).join('')}</div>
+    <div class="pipeline">`;
+
+  p.stages.forEach((s,i)=>{
+    const active=i===currentStage?' active-stage':'';
+    html+=`
+      <div class="pipe-stage${active}" onclick="selectStage(${i})" id="stage${i}">
+        <span class="st-emoji">${s.emoji}</span>
+        <span class="st-name">${s.name}</span>
+        <span class="st-sub">${s.sub}</span>
+      </div>`;
+    if(i<p.stages.length-1) html+='<span class="pipe-arrow">→</span>';
+  });
+
+  html+=`</div>`;
+  document.getElementById('pipelineSection').innerHTML=html;
+  document.getElementById('stageDetail').innerHTML=p.stages[currentStage].detail;
+  document.getElementById('stageDetail').classList.add('show');
+
+  // Nav
+  document.getElementById('navRow').innerHTML=`
+    <button class="nav-btn" onclick="selectStage(${currentStage-1})" ${currentStage===0?'disabled':''}>◀ Prev</button>
+    <span style="font-size:0.7rem;color:var(--tmut);padding:0.5rem 1rem;">Step ${currentStage+1} / ${p.stages.length}</span>
+    <button class="nav-btn primary" onclick="selectStage(${currentStage+1})" ${currentStage===p.stages.length-1?'disabled':''}>Next ▶</button>
+    <button class="nav-btn" onclick="selectStage(0)" style="margin-left:0.5rem;">↺ Reset</button>
+  `;
+}
+
+function selectStage(i){
+  const p=pipelines[currentTab];
+  if(i<0||i>=p.stages.length) return;
+  currentStage=i;
+  document.getElementById('stageDetail').innerHTML=p.stages[i].detail;
+  document.getElementById('stageDetail').classList.add('show');
+
+  // Update active stage
+  document.querySelectorAll('.pipe-stage').forEach((el,j)=>{
+    el.classList.toggle('active-stage', j===i);
+  });
+
+  // Update nav
+  document.getElementById('navRow').innerHTML=`
+    <button class="nav-btn" onclick="selectStage(${i-1})" ${i===0?'disabled':''}>◀ Prev</button>
+    <span style="font-size:0.7rem;color:var(--tmut);padding:0.5rem 1rem;">Step ${i+1} / ${p.stages.length}</span>
+    <button class="nav-btn primary" onclick="selectStage(${i+1})" ${i===p.stages.length-1?'disabled':''}>Next ▶</button>
+    <button class="nav-btn" onclick="selectStage(0)" style="margin-left:0.5rem;">↺ Reset</button>
+  `;
+}
+
+// Keyboard navigation
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight') selectStage(currentStage+1);
+  if(e.key==='ArrowLeft') selectStage(currentStage-1);
+});
+
+// Init
+renderPipeline();
 </script>
 </body>
 </html>
