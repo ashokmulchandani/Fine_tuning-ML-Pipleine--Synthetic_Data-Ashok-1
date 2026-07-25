@@ -10,6 +10,7 @@ Click any link to open the interactive module. All hosted via GitHub Pages.
 | Module | Description |
 |--------|-------------|
 | [finetuning_plan_dashboard.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/finetuning_plan_dashboard.html) | Full dashboard — all phases, progress bar, formulas, timeline |
+| [finetuning_by_data_type.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/finetuning_by_data_type.html) | Fine-tuning works on anything — Text, Tabular, Image, Vision-Language |
 | [model_memory_lora_calculator.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/model_memory_lora_calculator.html) | Interactive calculator — FP32→Quant→LoRA, change any param |
 | [model_deployment_guide.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/model_deployment_guide.html) | 4 levels of deployment — local → API → HuggingFace Hub |
 | [training_loss_explained.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/training_loss_explained.html) | What training loss means — visual curve |

@@ -269,7 +269,9 @@ A complete fine-tuning learning plan covering theory, hands-on practice across m
 
 ---
 
-## Fine-Tuning by Data Type
+## Fine-Tuning by Data Type 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/finetuning_by_data_type.html)
+
+
 
 | | Text FT | Tabular/Numerical FT | Image FT | Vision-Language FT |
 |---|---|---|---|---|

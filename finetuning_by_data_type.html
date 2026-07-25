@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fine-Tuning by Data Type</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--red:#c62828;--cyan:#007a99;--magenta:#9e2a6b;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;min-height:100vh;}
+.app{max-width:1100px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:2rem 0 1.5rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.95rem;margin-top:0.3rem;}
+
+/* Type cards */
+.type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin:1.5rem 0;}
+.type-card{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:1.5rem;text-align:center;cursor:pointer;transition:0.2s;position:relative;overflow:hidden;}
+.type-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.06);}
+.type-card.selected{border-color:var(--violet);box-shadow:0 0 0 4px var(--vbg);}
+.type-card .ico{font-size:2.5rem;margin-bottom:0.5rem;}
+.type-card h3{font-family:'Space Grotesk',sans-serif;font-size:0.8rem;font-weight:600;margin-bottom:0.3rem;}
+.type-card .badge{display:inline-block;font-size:0.55rem;padding:2px 8px;border-radius:100px;font-weight:600;}
+.type-card .badge.lora{background:var(--vbg);color:var(--violet);}
+.type-card .badge.nolora{background:rgba(198,40,40,0.08);color:var(--red);}
+
+/* Detail panel */
+.detail{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin:1rem 0;display:none;}
+.detail.show{display:block;animation:fadeIn 0.3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.detail h2{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;color:var(--violet);margin-bottom:1rem;}
+
+/* Flow */
+.flow{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;justify-content:center;margin:1rem 0;font-family:'Space Grotesk',sans-serif;font-size:0.65rem;}
+.flow-step{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.8rem;text-align:center;}
+.flow-arrow{color:var(--violet);font-size:1.2rem;}
+
+.code-box{background:#1e1e1e;border:1px solid #333;border-left:3px solid var(--violet);border-radius:8px;padding:0.8rem 1rem;margin:0.5rem 0;font-family:'Space Grotesk',monospace;font-size:0.78rem;line-height:1.8;white-space:pre-wrap;overflow-x:auto;color:#d4d4d4;}
+
+/* Info grid */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:0.75rem 0;}
+.info-box{background:var(--raised);border:1px solid var(--border);border-radius:10px;padding:1rem;}
+.info-box h4{font-family:'Space Grotesk',sans-serif;font-size:0.65rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);margin-bottom:0.5rem;}
+.info-box .val{font-weight:600;font-size:0.9rem;}
+
+/* Comparison table */
+.tbl{width:100%;border-collapse:collapse;font-size:0.78rem;margin:0.75rem 0;}
+.tbl th{font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);padding:0.4rem 0.5rem;border-bottom:2px solid var(--border);text-align:left;}
+.tbl td{padding:0.4rem 0.5rem;border-bottom:1px solid var(--border);}
+.tbl .yes{color:var(--green);font-weight:600;}
+.tbl .no{color:var(--red);}
+.tbl tr:hover{background:rgba(91,58,168,0.02);}
+
+.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.75rem 1rem;margin:0.75rem 0;font-size:0.85rem;text-align:center;}
+
+@media(max-width:768px){.type-grid{grid-template-columns:1fr 1fr;}.info-grid{grid-template-columns:1fr;}.app{padding:0.75rem;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>Fine-Tuning — Works on Anything</h1>
+  <p>Same pattern across Text, Tabular, Image, and Vision-Language. Click a card to see the pipeline.</p>
+</header>
+
+<!-- 4 type cards -->
+<div class="type-grid">
+  <div class="type-card selected" onclick="showDetail('text')" id="card-text">
+    <div class="ico">📝</div>
+    <h3>Text</h3>
+    <span class="badge lora">LoRA ✅</span>
+    <p style="font-size:0.7rem;color:var(--tdim);margin-top:0.3rem;">Q&A, documents</p>
+  </div>
+  <div class="type-card" onclick="showDetail('tabular')" id="card-tabular">
+    <div class="ico">📊</div>
+    <h3>Tabular / Numerical</h3>
+    <span class="badge lora">LoRA ✅</span>
+    <p style="font-size:0.7rem;color:var(--tdim);margin-top:0.3rem;">CSV rows, diagnoses</p>
+  </div>
+  <div class="type-card" onclick="showDetail('image')" id="card-image">
+    <div class="ico">🖼️</div>
+    <h3>Image</h3>
+    <span class="badge nolora">LoRA ⚠️</span>
+    <p style="font-size:0.7rem;color:var(--tdim);margin-top:0.3rem;">Object detection, classification</p>
+  </div>
+  <div class="type-card" onclick="showDetail('visionlang')" id="card-visionlang">
+    <div class="ico">🖼️+📝</div>
+    <h3>Vision-Language</h3>
+    <span class="badge lora">LoRA ✅</span>
+    <p style="font-size:0.7rem;color:var(--tdim);margin-top:0.3rem;">X-ray reports, image Q&A</p>
+  </div>
+</div>
+
+<!-- Detail panel -->
+<div class="detail show" id="detail-text">
+<h2>📝 Text Fine-Tuning (Phases 4–6)</h2>
+<div class="flow">
+  <div class="flow-step">Q&A Pairs<br>"What is Metformin?"</div><span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--violet);">format_instruction()<br>Alpaca template</div><span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--violet);">LoRA<br>r=8, Q+V</div><span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--amber);">SFTTrainer<br>(Phase 5)</div><span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--magenta);">DPOTrainer<br>(Phase 6)</div><span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--green);">Deploy</div>
+</div>
+<div class="info-grid">
+  <div class="info-box"><h4>Training Method</h4><div class="val" style="color:var(--amber);">SFT (Phase 5)</div></div>
+  <div class="info-box"><h4>Preference Tuning</h4><div class="val" style="color:var(--magenta);">DPO (Phase 6)</div></div>
+  <div class="info-box"><h4>Trainer</h4><div class="val">SFTTrainer / DPOTrainer</div></div>
+  <div class="info-box"><h4>Model</h4><div class="val">TinyLlama, Llama, Mistral</div></div>
+</div>
+<div class="code-box">
+<span style="color:#6a9955;"># Text FT — you've already done this!</span>
+data = [{"instruction": "What is Metformin?", "output": "Metformin is a biguanide..."}]
+dataset = Dataset.from_list(data)
+trainer = SFTTrainer(model=model, train_dataset=dataset, formatting_func=format_instruction)
+trainer.train()</div>
+</div>
+
+<div class="detail" id="detail-tabular">
+<h2>📊 Tabular / Numerical Fine-Tuning</h2>
+<div class="flow">
+  <div class="flow-step">CSV Row<br>"Age 45, BP 140..."</div><span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--violet);">Row → Sentence<br>f"Age: {row.age}..."</div><span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--violet);">LoRA<br>r=8, Q+V</div><span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--amber);">SFTTrainer</div><span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--green);">Diagnosis model</div>
+</div>
+<div class="info-grid">
+  <div class="info-box"><h4>Training Method</h4><div class="val" style="color:var(--amber);">SFT</div></div>
+  <div class="info-box"><h4>Trainer</h4><div class="val">SFTTrainer</div></div>
+  <div class="info-box"><h4>Key Trick</h4><div class="val">Convert each row → text sentence</div></div>
+  <div class="info-box"><h4>LoRA?</h4><div class="val" style="color:var(--green);">✅ Yes</div></div>
+</div>
+<div class="code-box">
+<span style="color:#6a9955;"># Row → sentence → same SFT pipeline!</span>
+row = {"age": 45, "bp": 140, "glucose": 110, "diagnosis": "Diabetic"}
+data = [{
+    "instruction": "Diagnose this patient",
+    "input": f"Age: {row['age']}, BP: {row['bp']}, Glucose: {row['glucose']}",
+    "output": row['diagnosis']
+}]
+<span style="color:#6a9955;"># Then: Dataset → tokenize → SFTTrainer → train() — identical to text!</span></div>
+</div>
+
+<div class="detail" id="detail-image">
+<h2>🖼️ Image Fine-Tuning (Phase 10)</h2>
+<div class="flow">
+  <div class="flow-step">Labeled Images<br>cats/dogs/disease</div><span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--cyan);">Transfer Learning<br>Freeze backbone</div><span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--cyan);">Replace head<br>New classifier</div><span class="flow-arrow">→</span>
+  <div class="flow-step">model.train()</div><span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--green);">Custom detector</div>
+</div>
+<div class="info-grid">
+  <div class="info-box"><h4>Training Method</h4><div class="val" style="color:var(--cyan);">Transfer Learning</div></div>
+  <div class="info-box"><h4>Trainer</h4><div class="val">model.train() (PyTorch/Ultralytics)</div></div>
+  <div class="info-box"><h4>LoRA?</h4><div class="val" style="color:var(--red);">⚠️ Not standard for vision models</div></div>
+  <div class="info-box"><h4>Model</h4><div class="val">YOLOv8, ResNet, ViT</div></div>
+</div>
+<div class="code-box">
+<span style="color:#6a9955;"># Image fine-tuning — different library, same idea</span>
+from ultralytics import YOLO
+model = YOLO("yolov8n.pt")  <span style="color:#6a9955;"># Pre-trained</span>
+model.train(data="chicken_disease.yaml", epochs=50)  <span style="color:#6a9955;"># Train on YOUR images</span>
+<span style="color:#6a9955;"># Freeze backbone → train new head — same pattern as LoRA!</span></div>
+</div>
+
+<div class="detail" id="detail-visionlang">
+<h2>🖼️+📝 Vision-Language Fine-Tuning (Phase 10 Advanced)</h2>
+<div class="flow">
+  <div class="flow-step">Image + Question<br>"What does X-ray show?"</div><span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--violet);">LoRA<br>r=8, Q+V</div><span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--amber);">SFTTrainer</div><span class="flow-arrow">→</span>
+  <div class="flow-step" style="border-color:var(--green);">Medical VLM</div>
+</div>
+<div class="info-grid">
+  <div class="info-box"><h4>Training Method</h4><div class="val" style="color:var(--amber);">SFT / DPO</div></div>
+  <div class="info-box"><h4>Trainer</h4><div class="val">SFTTrainer / DPOTrainer</div></div>
+  <div class="info-box"><h4>LoRA?</h4><div class="val" style="color:var(--green);">✅ Yes</div></div>
+  <div class="info-box"><h4>Model</h4><div class="val">LLaVA, GPT-4V</div></div>
+</div>
+<div class="code-box">
+<span style="color:#6a9955;"># Vision-language — same as text, just add image paths!</span>
+data = [{
+    "image": "chest_xray_001.jpg",  <span style="color:#6a9955;"># Path to image file</span>
+    "instruction": "What does this X-ray show?",
+    "output": "Pneumonia in the right lower lobe."
+}]
+<span style="color:#6a9955;"># Then: Dataset → LoRA → SFTTrainer → train() — EXACT same pipeline!</span></div>
+</div>
+
+<!-- Summary table -->
+<h2 style="font-family:'Space Grotesk',sans-serif;font-size:1rem;color:var(--violet);margin:1.5rem 0 0.75rem;">All 4 Types — Side by Side</h2>
+<table class="tbl">
+<thead><tr><th></th><th>📝 Text</th><th>📊 Tabular</th><th>🖼️ Image</th><th>🖼️+📝 Vision-Lang</th></tr></thead>
+<tbody>
+<tr><td><strong>Input</strong></td><td>Q&A text</td><td>Rows → sentences</td><td>Images + labels</td><td>Images + questions</td></tr>
+<tr><td><strong>Example</strong></td><td>"What is Metformin?"</td><td>"Age 45 → Diabetic?"</td><td>Detect disease</td><td>"What does X-ray show?"</td></tr>
+<tr><td><strong>Model</strong></td><td>TinyLlama, Llama</td><td>Same LLM</td><td>YOLOv8, ResNet</td><td>LLaVA, GPT-4V</td></tr>
+<tr><td><strong>LoRA?</strong></td><td class="yes">✅ Yes</td><td class="yes">✅ Yes</td><td class="no">⚠️ Not standard</td><td class="yes">✅ Yes</td></tr>
+<tr><td><strong>Training Method</strong></td><td><span style="color:var(--amber);">SFT</span> + <span style="color:var(--magenta);">DPO</span></td><td><span style="color:var(--amber);">SFT</span></td><td>Transfer Learning</td><td><span style="color:var(--amber);">SFT</span> + <span style="color:var(--magenta);">DPO</span></td></tr>
+<tr><td><strong>Trainer</strong></td><td>SFTTrainer / DPOTrainer</td><td>SFTTrainer</td><td>model.train()</td><td>SFTTrainer / DPOTrainer</td></tr>
+<tr><td><strong>Phase</strong></td><td>4–6</td><td>Can do now</td><td>10</td><td>10</td></tr>
+</tbody>
+</table>
+
+<div class="callout"><strong>🧠 The pattern is identical:</strong> Pre-trained model → freeze → adapter/LoRA → train on YOUR data. Text, rows, images, or combinations — same workflow, different input format.</div>
+
+</div>
+
+<script>
+function showDetail(type){
+  document.querySelectorAll('.type-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('card-'+type).classList.add('selected');
+  document.querySelectorAll('.detail').forEach(d=>d.classList.remove('show'));
+  document.getElementById('detail-'+type).classList.add('show');
+}
+</script>
+</body>
+</html>
