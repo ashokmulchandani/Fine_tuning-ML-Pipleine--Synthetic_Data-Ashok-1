@@ -91,6 +91,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
   <button class="tab" onclick="switchTab('tabular')"><span class="tb-emoji">📊</span> Tabular</button>
   <button class="tab" onclick="switchTab('image')"><span class="tb-emoji">🖼️</span> Image</button>
   <button class="tab" onclick="switchTab('visionlang')"><span class="tb-emoji">🖼️+📝</span> Vision-Language</button>
+  <button class="tab" onclick="switchTab('lifecycle')"><span class="tb-emoji">🔄</span> Lifecycle</button>
 </div>
 
 <!-- Pipeline section -->
@@ -176,6 +177,83 @@ const pipelines={
       {emoji:'🎯',name:'New Head',sub:'Replace classifier',detail:'<h4>🎯 Step 4: Add New Classification Head</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Replace the 1000-class ImageNet head with YOUR classes (4 disease types).</p><div class="code-box"># YOLO auto-creates the head from your data.yaml\n# nc: 4  → 4 output classes\n# The head is like B×A — tiny, trained from scratch\n# The backbone is like W₀ — frozen, pre-trained</div>'},
       {emoji:'🏋️',name:'Train',sub:'model.train()',detail:'<h4>🏋️ Step 5: Train!</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Different library, same idea. Freeze + train new head.</p><div class="code-box">model.train(\n    data="chicken_disease.yaml",\n    epochs=50, imgsz=640, batch=16,\n    lr=0.001\n)\n# Loss drops → mAP rises → model detects your objects!</div>'},
       {emoji:'🚀',name:'Export',sub:'TensorRT / ONNX',detail:'<h4>🚀 Step 6: Export for Deployment</h4><p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Export to optimized format for production inference.</p><div class="code-box">model.export(format="onnx")  # Cross-platform\nmodel.export(format="engine") # TensorRT, fastest\n# Now deploy on edge devices, cloud, or mobile</div>'},
+    ]
+  },
+  lifecycle:{
+    emoji:'🔄', title:'Fine-Tuning Lifecycle — BUILD → TEST → DEPLOY → RUN → MONITOR',
+    metrics:[
+      {val:'5 Phases',lbl:'Universal Pattern',color:'var(--violet)'},
+      {val:'10 Steps',lbl:'Our Fine-Tuning Plan',color:'var(--amber)'},
+      {val:'Same Pattern',lbl:'Text, Image, Tabular',color:'var(--cyan)'},
+      {val:'Phase 6AB',lbl:'Testing + MLOps',color:'var(--green)'},
+    ],
+    stages:[
+      {emoji:'📦',name:'BUILD',sub:'Quant + LoRA + Data',detail:`<h4>📦 Phase 1: BUILD — Prepare Model & Data</h4>
+        <table class="tbl" style="margin:0.75rem 0;">
+        <thead><tr><th>Step</th><th>What</th><th>Tool / Code</th></tr></thead>
+        <tbody>
+        <tr><td>1</td><td>Quantize model</td><td style="font-family:monospace;font-size:0.7rem;">BitsAndBytesConfig(load_in_8bit=True)</td></tr>
+        <tr><td>2</td><td>Apply LoRA</td><td style="font-family:monospace;font-size:0.7rem;">LoraConfig(r=8, target_modules=["q_proj","v_proj"])</td></tr>
+        <tr><td>3</td><td>Prepare data</td><td style="font-family:monospace;font-size:0.7rem;">Dataset.from_list(Q&A pairs) → tokenize → labels</td></tr>
+        <tr><td>4</td><td>Configure training</td><td style="font-family:monospace;font-size:0.7rem;">TrainingArguments(lr=2e-4, epochs=3)</td></tr>
+        </tbody></table>
+        <div class="callout"><strong>🔑 This is Phases 4-6:</strong> PDF → chunks → LoRA → SFTTrainer/DPOTrainer. Same BUILD pattern for text, tabular, or images.</div>`},
+      {emoji:'🧪',name:'TEST',sub:'Data + Model + Pipeline',detail:`<h4>🧪 Phase 2: TEST — 4 Layers of Testing</h4>
+        <table class="tbl" style="margin:0.75rem 0;">
+        <thead><tr><th>Layer</th><th>Test</th><th>Tool</th></tr></thead>
+        <tbody>
+        <tr><td>1. Data</td><td>Schema: instruction + output not null</td><td style="font-family:monospace;font-size:0.7rem;">Pandera / Pydantic</td></tr>
+        <tr><td>2. Model</td><td>Behavioral: MFT, INV, DIR tests</td><td style="font-family:monospace;font-size:0.7rem;">pytest + pipeline()</td></tr>
+        <tr><td>3. Pipeline</td><td>Smoke test: train 1 epoch → save → load</td><td style="font-family:monospace;font-size:0.7rem;">pytest + GitHub Actions</td></tr>
+        <tr><td>4. Production</td><td>Drift detection, response quality</td><td style="font-family:monospace;font-size:0.7rem;">Evidently AI</td></tr>
+        </tbody></table>
+        <div class="callout"><strong>🧪 From Phase 6A:</strong> "Review like you're the person getting paged at 3am when this breaks."</div>`},
+      {emoji:'🚀',name:'DEPLOY',sub:'MLflow → SageMaker → vLLM',detail:`<h4>🚀 Phase 3: DEPLOY — Register, Stage, Serve</h4>
+        <table class="tbl" style="margin:0.75rem 0;">
+        <thead><tr><th>Step</th><th>What</th><th>Tool / Code</th></tr></thead>
+        <tbody>
+        <tr><td>1</td><td>Register model</td><td style="font-family:monospace;font-size:0.7rem;">mlflow.register_model("runs:/abc123/adapter")</td></tr>
+        <tr><td>2</td><td>Stage: Staging → Production</td><td style="font-family:monospace;font-size:0.7rem;">client.transition_model_version_stage()</td></tr>
+        <tr><td>3</td><td>Azure/SageMaker deploy</td><td style="font-family:monospace;font-size:0.7rem;">Azure AI Foundry / SageMaker endpoint</td></tr>
+        <tr><td>4</td><td>vLLM serving</td><td style="font-family:monospace;font-size:0.7rem;">vllm serve ./merged_model --port 8000</td></tr>
+        </tbody></table>
+        <div class="callout"><strong>🚀 From Phase 6B:</strong> MLflow registry → promote to Production → vLLM serves at 5000 tok/s.</div>`},
+      {emoji:'⚡',name:'RUN',sub:'vLLM → Generation',detail:`<h4>⚡ Phase 4: RUN — Inference at Scale</h4>
+        <table class="tbl" style="margin:0.75rem 0;">
+        <thead><tr><th>Mode</th><th>Use Case</th><th>Speed</th></tr></thead>
+        <tbody>
+        <tr><td>Batch</td><td>Process 10K prompts overnight</td><td>Cheapest ($0.01/1K tok)</td></tr>
+        <tr><td>Real-time API</td><td>Chatbot, customer support</td><td>FastAPI + vLLM</td></tr>
+        <tr><td>Streaming</td><td>Token-by-token output</td><td>SSE / WebSocket</td></tr>
+        </tbody></table>
+        <div class="code-box" style="margin-top:0.5rem;">
+# vLLM serves your fine-tuned model
+python -m vllm.entrypoints.openai.api_server \\
+    --model ./merged_medical_model --port 8000
+
+# Any OpenAI client can now call it:
+# curl http://localhost:8000/v1/chat/completions</div>`},
+      {emoji:'📊',name:'MONITOR',sub:'Drift + Retrain',detail:`<h4>📊 Phase 5: MONITOR — Is It Still Working?</h4>
+        <table class="tbl" style="margin:0.75rem 0;">
+        <thead><tr><th>Metric</th><th>What It Tracks</th><th>Tool</th></tr></thead>
+        <tbody>
+        <tr><td>Data Drift</td><td>Are users asking new topics?</td><td style="font-family:monospace;font-size:0.7rem;">Evidently AI — KL divergence</td></tr>
+        <tr><td>Response Quality</td><td>Responses getting shorter/worse?</td><td style="font-family:monospace;font-size:0.7rem;">Avg length, thumbs up/down</td></tr>
+        <tr><td>Error Rate</td><td>Refusals increasing?</td><td style="font-family:monospace;font-size:0.7rem;">Empty response %</td></tr>
+        <tr><td>Retrain Trigger</td><td>Any metric drops > 5%</td><td style="font-family:monospace;font-size:0.7rem;">GitHub Actions auto-retrain</td></tr>
+        </tbody></table>
+        <div class="callout"><strong>📊 From Phase 6B:</strong> Monitor → drift detected → auto-trigger retraining → new model → deploy. The cycle repeats.</div>`},
+      {emoji:'🔁',name:'Full Cycle',sub:'BUILD→TEST→DEPLOY→RUN→MONITOR',detail:`<h4>🔁 The Universal Formula — Same Across ALL ML Projects</h4>
+        <table class="tbl" style="margin:0.75rem 0;">
+        <thead><tr><th>Phase</th><th>Fine-Tuning</th><th>CUDA YOLO</th><th>MLOps</th></tr></thead>
+        <tbody>
+        <tr><td>📦 BUILD</td><td>Quantize → LoRA → Data</td><td>PyTorch → ONNX → TRT</td><td>Decision doc → Features</td></tr>
+        <tr><td>🧪 TEST</td><td>pytest (4 layers)</td><td>pytest (4 layers)</td><td>Pandera schema</td></tr>
+        <tr><td>🚀 DEPLOY</td><td>SageMaker/Azure + vLLM</td><td>Docker → K8s → Triton</td><td>ZenML → MLflow</td></tr>
+        <tr><td>⚡ RUN</td><td>vLLM → generation</td><td>NVDEC → Pre → TRT → NMS</td><td>FastAPI → sklearn</td></tr>
+        <tr><td>📊 MONITOR</td><td>MLflow + Evidently</td><td>Prometheus + Evidently</td><td>Evidently + KS tests</td></tr>
+        </tbody></table>
+        <div class="callout"><strong>🧠 Tools change. Phases never change.</strong> BUILD → TEST → DEPLOY → RUN → MONITOR applies to every ML project — whether it's fine-tuning, CUDA, MLOps, or AI agents.</div>`},
     ]
   },
   visionlang:{
