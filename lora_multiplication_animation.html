@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LoRA Multiplication — Animated Step by Step</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8f9fc;--card:#fff;--border:#dde0e6;--text:#1a1d23;--tdim:#4a4f5b;--tmut:#8b909b;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--red:#c62828;--cyan:#007a99;--frozen:#8899a6;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;overflow-x:hidden;}
+.app{max-width:960px;margin:0 auto;padding:1rem;}
+
+.header{text-align:center;padding:1rem 0 0.5rem;}
+.header .badge{display:inline-block;font-family:'Space Grotesk',sans-serif;font-size:0.6rem;letter-spacing:0.1em;color:var(--violet);border:1.5px solid var(--vbg);background:var(--vbg);border-radius:100px;padding:0.3em 1em;margin-bottom:0.4rem;font-weight:600;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.85rem;margin-top:0.2rem;}
+
+/* Stage indicator */
+.stages{display:flex;gap:0.3rem;justify-content:center;margin:0.75rem 0;flex-wrap:wrap;}
+.stage-tag{font-family:'Space Grotesk',sans-serif;font-size:0.55rem;font-weight:600;padding:0.3em 0.8em;border-radius:100px;border:2px solid var(--border);color:var(--tmut);}
+.stage-tag.active{border-color:var(--violet);background:var(--vbg);color:var(--violet);}
+.stage-tag.done{border-color:var(--green);color:var(--green);}
+
+/* Canvas */
+.canvas-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:0.5rem;margin:0.5rem 0;}
+canvas{display:block;width:100%;height:auto;border-radius:8px;}
+
+/* Controls */
+.controls{display:flex;align-items:center;gap:0.5rem;justify-content:center;margin:0.5rem 0;flex-wrap:wrap;}
+.ctrl-btn{font-family:'Space Grotesk',sans-serif;font-size:0.65rem;font-weight:600;padding:0.4em 1em;border:2px solid var(--border);border-radius:100px;background:var(--card);color:var(--text);cursor:pointer;transition:0.15s;}
+.ctrl-btn:hover{border-color:var(--violet);color:var(--violet);}
+.ctrl-btn:disabled{opacity:0.25;cursor:not-allowed;}
+.ctrl-btn.play{background:var(--violet);border-color:var(--violet);color:#fff;}
+.ctrl-btn.play:hover{color:#fff;opacity:0.88;}
+
+/* Metrics */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:0.4rem;margin:0.5rem 0;}
+.metric{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0.6rem;text-align:center;}
+.metric .val{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:700;}
+.metric .lbl{font-size:0.55rem;color:var(--tmut);margin-top:0.1rem;text-transform:uppercase;letter-spacing:0.05em;}
+
+/* Explanation */
+.explain{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0.75rem 1rem;margin:0.5rem 0;font-size:0.78rem;color:var(--tdim);text-align:center;line-height:1.7;}
+
+@media(max-width:768px){.metrics{grid-template-columns:1fr 1fr;}.app{padding:0.5rem;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <div class="badge">LoRA FORWARD PASS</div>
+  <h1>How B×A×x Actually Computes</h1>
+  <p>Step-by-step: A·x first (cheap) → B·(A·x) cheap → add to W·x (frozen)</p>
+</header>
+
+<!-- Stage indicator -->
+<div class="stages" id="stages">
+  <span class="stage-tag active" id="st1">1. A_q · x</span>
+  <span class="stage-tag" id="st2">2. B_q · (A_q·x)</span>
+  <span class="stage-tag" id="st3">3. W_q · x (frozen)</span>
+  <span class="stage-tag" id="st4">4. Add → Q_output</span>
+</div>
+
+<!-- Metrics -->
+<div class="metrics">
+  <div class="metric"><div class="val" style="color:var(--violet);" id="opLora">32,768</div><div class="lbl">A·x Operations</div></div>
+  <div class="metric"><div class="val" style="color:var(--violet);" id="opLora2">32,768</div><div class="lbl">B·(A·x) Operations</div></div>
+  <div class="metric"><div class="val" style="color:var(--frozen);" id="opFrozen">16,777,216</div><div class="lbl">W·x Operations (FROZEN)</div></div>
+  <div class="metric"><div class="val" style="color:var(--green);" id="opOverhead">0.39%</div><div class="lbl">LoRA Overhead</div></div>
+</div>
+
+<!-- Canvas -->
+<div class="canvas-card">
+  <canvas id="c" width="940" height="420"></canvas>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <button class="ctrl-btn" onclick="prev()">◀ Prev</button>
+  <button class="ctrl-btn play" id="playBtn" onclick="togglePlay()">▶ Play</button>
+  <button class="ctrl-btn" onclick="next()">Next ▶</button>
+  <button class="ctrl-btn" onclick="reset()">↺ Reset</button>
+  <span style="font-size:0.6rem;color:var(--tmut);">Speed:</span>
+  <select id="speed" onchange="speed=parseInt(this.value)" style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;padding:0.2em;">
+    <option value="2000">Slow</option>
+    <option value="1200" selected>Normal</option>
+    <option value="600">Fast</option>
+  </select>
+  <span style="font-size:0.6rem;color:var(--tmut);">Step <span id="stepNum">0</span>/3</span>
+</div>
+
+<!-- Explanation -->
+<div class="explain" id="explain">
+  <strong>Ready.</strong> Press ▶ Play or Next ▶ to see how LoRA computes Q_output = W_q·x + B_q·(A_q·x)
+</div>
+
+</div>
+
+<script>
+// ── DIMENSIONS ──
+const d=4096, r=8;
+let step=0, totalSteps=3;
+let playing=false, speed=1200, timer=null;
+
+// For visualization we use tiny dims: d_vis=6, r_vis=2
+const dV=6, rV=2;
+
+// Example values
+const x=[0.8,-0.3,0.5,0.1,-0.6,0.4];
+const Wq=[[0.5,-0.2,0.3,0.1,-0.4,0.2],[-0.1,0.6,-0.3,0.2,0.5,-0.1],[0.2,-0.5,0.4,-0.3,0.1,0.6],[-0.4,0.1,-0.2,0.5,-0.3,0.2],[0.3,0.4,-0.1,-0.5,0.2,0.3],[-0.2,0.3,0.5,0.1,-0.6,0.4]];
+const Aq=[[0.5,0.1,-0.3,0.2,0.0,-0.1],[-0.2,0.3,0.1,-0.4,0.2,0.0]];
+const Bq=[[0.1,-0.2],[-0.3,0.1],[0.2,0.0],[-0.1,0.3],[0.0,-0.2],[0.3,0.1]];
+
+// Pre-compute results
+const Aqx=[];
+for(let i=0;i<rV;i++){let s=0;for(let j=0;j<dV;j++)s+=Aq[i][j]*x[j];Aqx.push(s);}
+const BAqx=[];
+for(let i=0;i<dV;i++){let s=0;for(let j=0;j<rV;j++)s+=Bq[i][j]*Aqx[j];BAqx.push(s);}
+const Wqx=[];
+for(let i=0;i<dV;i++){let s=0;for(let j=0;j<dV;j++)s+=Wq[i][j]*x[j];Wqx.push(s);}
+const Qout=Wqx.map((v,i)=>v+BAqx[i]);
+
+// ── CANVAS ──
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let cx,cy,animP=0;
+
+function draw(){
+  const W=940,H=420;ctx.clearRect(0,0,W,H);ctx.fillStyle='#f8f9fc';ctx.fillRect(0,0,W,H);
+
+  // Grid
+  ctx.strokeStyle='rgba(0,0,0,0.03)';ctx.lineWidth=1;
+  for(let x=20;x<W;x+=20){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=20;y<H;y+=20){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  // Layout
+  const xX=20, xY=180, cellW=36, cellH=28;
+  const aX=xX+cellW+90, aY=xY-40;
+  const bX=aX+cellW*6+30, bY=aY-80;
+  const wX=aX, wY=aY+70;
+  const outX=bX+10, outY=280;
+  const arrowY=200;
+
+  // ── Input vector x ──
+  ctx.fillStyle='var(--text)';ctx.font='600 12px "Inter"';ctx.textAlign='left';
+  ctx.fillText('x (input)',xX,xY-10);
+  for(let i=0;i<dV;i++){
+    ctx.fillStyle='rgba(0,122,153,0.1)';ctx.strokeStyle='var(--cyan)';
+    ctx.beginPath();ctx.roundRect(xX,xY+i*cellH,cellW,cellH,4);ctx.fill();ctx.stroke();
+    ctx.fillStyle='var(--cyan)';ctx.font='600 14px "Space Grotesk"';
+    ctx.textAlign='center';ctx.fillText(x[i].toFixed(1),xX+cellW/2,xY+i*cellH+20);
+  }
+  ctx.fillStyle='var(--tmut)';ctx.font='10px "Inter"';ctx.textAlign='center';
+  ctx.fillText('4096×1',xX+cellW/2,xY+dV*cellH+15);
+  ctx.fillText('(shown: 6)',xX+cellW/2,xY+dV*cellH+28);
+
+  // ── Step 1: A_q × x ──
+  if(step>=0){
+    // A matrix
+    ctx.fillStyle='var(--text)';ctx.font='600 12px "Inter"';ctx.textAlign='left';
+    ctx.fillText('A_q (8×4096)',aX,aY-10);
+    for(let i=0;i<rV;i++){
+      for(let j=0;j<dV;j++){
+        const val=Aq[i][j];
+        ctx.fillStyle=val>=0?`rgba(91,58,168,${0.1+Math.abs(val)*0.4})`:`rgba(198,40,40,${0.1+Math.abs(val)*0.4})`;
+        ctx.strokeStyle='var(--violet)';
+        ctx.beginPath();ctx.roundRect(aX+j*cellW,aY+i*cellH,cellW,cellH,4);ctx.fill();ctx.stroke();
+        ctx.fillStyle=val>=0?'var(--violet)':'var(--red)';
+        ctx.font='600 12px "Space Grotesk"';ctx.textAlign='center';
+        ctx.fillText(val.toFixed(1),aX+j*cellW+cellW/2,aY+i*cellH+20);
+      }
+    }
+    // Highlight row being multiplied
+    if(step===0){
+      const hlRow=animP%rV;
+      ctx.strokeStyle='var(--violet)';ctx.lineWidth=3;
+      ctx.beginPath();ctx.roundRect(aX-2,aY+hlRow*cellH-2,cellW*dV+4,cellH+4,6);ctx.stroke();
+      ctx.lineWidth=1;
+    }
+
+    // A·x result
+    const aResX=aX+cellW*dV+15;
+    ctx.fillStyle='var(--text)';ctx.font='600 11px "Inter"';ctx.textAlign='left';
+    ctx.fillText('=',aResX+5,aY+rV*cellH/2-5);
+    for(let i=0;i<rV;i++){
+      ctx.fillStyle=step===0&&i===animP%rV?`rgba(91,58,168,0.2)`:'rgba(91,58,168,0.08)';
+      ctx.strokeStyle='var(--violet)';
+      ctx.beginPath();ctx.roundRect(aResX+20,aY+i*cellH,cellW,cellH,4);ctx.fill();ctx.stroke();
+      ctx.fillStyle='var(--violet)';ctx.font='700 13px "Space Grotesk"';ctx.textAlign='center';
+      ctx.fillText(Aqx[i].toFixed(2),aResX+20+cellW/2,aY+i*cellH+20);
+    }
+    ctx.fillStyle='var(--tmut)';ctx.font='9px "Inter"';ctx.textAlign='center';
+    ctx.fillText('8 numbers',aResX+20+cellW/2,aY+rV*cellH+14);
+  }
+
+  // ── Step 2: B_q × (A_q·x) ──
+  if(step>=1){
+    // B matrix
+    ctx.fillStyle='var(--text)';ctx.font='600 12px "Inter"';ctx.textAlign='left';
+    ctx.fillText('B_q (4096×8)',bX,bY-10);
+    for(let i=0;i<dV;i++){
+      for(let j=0;j<rV;j++){
+        const val=Bq[i][j];
+        ctx.fillStyle=val>=0?`rgba(91,58,168,${0.1+Math.abs(val)*0.4})`:`rgba(198,40,40,${0.1+Math.abs(val)*0.4})`;
+        ctx.strokeStyle='var(--violet)';
+        ctx.beginPath();ctx.roundRect(bX+j*cellW,bY+i*cellH,cellW,cellH,4);ctx.fill();ctx.stroke();
+        ctx.fillStyle=val>=0?'var(--violet)':'var(--red)';
+        ctx.font='600 12px "Space Grotesk"';ctx.textAlign='center';
+        ctx.fillText(val.toFixed(1),bX+j*cellW+cellW/2,bY+i*cellH+20);
+      }
+    }
+    // B·(A·x) result
+    const bResX=bX+rV*cellW+15;
+    ctx.fillStyle='var(--text)';ctx.font='600 11px "Inter"';ctx.textAlign='left';
+    ctx.fillText('→',bResX-8,bY+dV*cellH/2);
+    for(let i=0;i<dV;i++){
+      ctx.fillStyle='rgba(91,58,168,0.12)';ctx.strokeStyle='var(--violet)';
+      ctx.beginPath();ctx.roundRect(bResX,bY+i*cellH,cellW,cellH,4);ctx.fill();ctx.stroke();
+      ctx.fillStyle='var(--violet)';ctx.font='700 13px "Space Grotesk"';ctx.textAlign='center';
+      ctx.fillText(BAqx[i].toFixed(2),bResX+cellW/2,bY+i*cellH+20);
+    }
+    ctx.fillStyle='var(--tmut)';ctx.font='9px "Inter"';ctx.textAlign='center';
+    ctx.fillText('ΔW (B×A output)',bResX+cellW/2,bY+dV*cellH+14);
+  }
+
+  // ── Step 3: W_q · x ──
+  if(step>=2){
+    ctx.fillStyle='var(--text)';ctx.font='600 12px "Inter"';ctx.textAlign='left';
+    ctx.fillText('W_q (4096×4096, FROZEN)',wX,wY-10);
+    for(let i=0;i<dV;i++){
+      for(let j=0;j<dV;j++){
+        const val=Wq[i][j];
+        ctx.fillStyle='rgba(136,153,166,0.1)';ctx.strokeStyle='var(--frozen)';
+        ctx.beginPath();ctx.roundRect(wX+j*cellW,wY+i*cellH,cellW,cellH,4);ctx.fill();ctx.stroke();
+        ctx.fillStyle='var(--frozen)';ctx.font='600 12px "Space Grotesk"';ctx.textAlign='center';
+        ctx.fillText(val.toFixed(1),wX+j*cellW+cellW/2,wY+i*cellH+20);
+      }
+    }
+    const wResX=wX+dV*cellW+15;
+    ctx.fillStyle='var(--text)';ctx.font='600 11px "Inter"';ctx.textAlign='left';
+    ctx.fillText('→',wResX-8,wY+dV*cellH/2);
+    for(let i=0;i<dV;i++){
+      ctx.fillStyle='rgba(136,153,166,0.08)';ctx.strokeStyle='var(--frozen)';
+      ctx.beginPath();ctx.roundRect(wResX,wY+i*cellH,cellW,cellH,4);ctx.fill();ctx.stroke();
+      ctx.fillStyle='var(--frozen)';ctx.font='700 13px "Space Grotesk"';ctx.textAlign='center';
+      ctx.fillText(Wqx[i].toFixed(2),wResX+cellW/2,wY+i*cellH+20);
+    }
+  }
+
+  // ── Step 4: Add → Q_output ──
+  const qX=outX, qY=outY;
+  ctx.fillStyle='var(--text)';ctx.font='700 13px "Inter"';ctx.textAlign='center';
+  ctx.fillText('Q_output',qX+cellW*1.5,qY-10);
+
+  if(step>=2){
+    // B×A result column
+    for(let i=0;i<dV;i++){
+      ctx.fillStyle='rgba(91,58,168,0.12)';ctx.strokeStyle='var(--violet)';
+      ctx.beginPath();ctx.roundRect(qX,qY+i*cellH,cellW,cellH,4);ctx.fill();ctx.stroke();
+      ctx.fillStyle='var(--violet)';ctx.font='700 13px "Space Grotesk"';ctx.textAlign='center';
+      ctx.fillText(BAqx[i].toFixed(2),qX+cellW/2,qY+i*cellH+20);
+    }
+    ctx.fillText('B×A',qX+cellW/2,qY+dV*cellH+14);
+
+    // + sign
+    ctx.fillStyle='var(--text)';ctx.font='700 18px "Space Grotesk"';ctx.textAlign='center';
+    ctx.fillText('+',qX+cellW+15,qY+dV*cellH/2);
+
+    // W·x column
+    for(let i=0;i<dV;i++){
+      ctx.fillStyle='rgba(136,153,166,0.08)';ctx.strokeStyle='var(--frozen)';
+      ctx.beginPath();ctx.roundRect(qX+cellW+30,qY+i*cellH,cellW,cellH,4);ctx.fill();ctx.stroke();
+      ctx.fillStyle='var(--frozen)';ctx.font='700 13px "Space Grotesk"';ctx.textAlign='center';
+      ctx.fillText(Wqx[i].toFixed(2),qX+cellW+30+cellW/2,qY+i*cellH+20);
+    }
+    ctx.fillText('W·x',qX+cellW+30+cellW/2,qY+dV*cellH+14);
+
+    // = sign
+    ctx.fillStyle='var(--text)';ctx.font='700 18px "Space Grotesk"';ctx.textAlign='center';
+    ctx.fillText('=',qX+cellW*2+40,qY+dV*cellH/2);
+
+    // Result
+    for(let i=0;i<dV;i++){
+      ctx.fillStyle='rgba(26,110,52,0.12)';ctx.strokeStyle='var(--green)';
+      ctx.beginPath();ctx.roundRect(qX+cellW*2+55,qY+i*cellH,cellW,cellH,4);ctx.fill();ctx.stroke();
+      ctx.fillStyle='var(--green)';ctx.font='700 13px "Space Grotesk"';ctx.textAlign='center';
+      ctx.fillText(Qout[i].toFixed(2),qX+cellW*2+55+cellW/2,qY+i*cellH+20);
+    }
+  }
+}
+
+// ── Animation ──
+function updateExplain(){
+  const msgs=[
+    `<strong>Step 1: A_q · x</strong> — Multiply A (8×4096) with input x (4096×1). Result: 8 numbers. Cost: <span style="color:var(--violet);">32,768 multiplications</span>. This is the FIRST cheap step. x has 4096 dims; shown as 6 for visualization.`,
+    `<strong>Step 2: B_q · (A_q·x)</strong> — Multiply B (4096×8) with the 8 numbers from Step 1. Result: 4096 numbers (ΔW). Cost: <span style="color:var(--violet);">32,768 multiplications</span>. NEVER computed as full 4096×4096! Two cheap steps = 65K total ops.`,
+    `<strong>Step 3: W_q · x</strong> — The frozen weight. <span style="color:var(--frozen);">4096² = 16,777,216</span> multiplications. This is the HEAVY computation. But it's the SAME as without LoRA — no extra cost here.`,
+    `<strong>Step 4: ADD</strong> — Q_output = W_q·x + B_q·(A_q·x). LoRA adds just <span style="color:var(--violet);">65K ops</span> to the <span style="color:var(--frozen);">16.8M ops</span> of frozen W_q. Overhead: <span style="color:var(--green);">0.39%</span>. At inference, B×A can be merged into W_q (merge_and_unload) → ZERO overhead.`,
+  ];
+  document.getElementById('explain').innerHTML=msgs[step];
+}
+
+function updateStages(){
+  ['st1','st2','st3','st4'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    el.classList.remove('active','done');
+    if(i<step) el.classList.add('done');
+    if(i===step) el.classList.add('active');
+  });
+}
+
+function updateUI(){
+  document.getElementById('stepNum').textContent=step;
+  document.getElementById('opLora').textContent=step>=0?'32,768':'-';
+  document.getElementById('opLora2').textContent=step>=1?'32,768':'-';
+  document.getElementById('opFrozen').textContent=step>=2?'16,777,216':'-';
+  document.getElementById('opOverhead').textContent=step>=2?'0.39%':step>=1?'0.19%':'-';
+  updateExplain();updateStages();draw();
+}
+
+// ── Controls ──
+function next(){if(step<totalSteps){step++;updateUI();}else{pause();}}
+function prev(){if(step>0){step--;updateUI();}}
+function reset(){pause();step=0;updateUI();}
+function togglePlay(){playing?pause():play();}
+function play(){
+  if(step>=totalSteps) reset();
+  playing=true;
+  document.getElementById('playBtn').textContent='⏸ Pause';
+  runLoop();
+}
+function pause(){
+  playing=false;clearTimeout(timer);
+  document.getElementById('playBtn').textContent='▶ Play';
+}
+function runLoop(){
+  if(!playing) return;
+  if(step>=totalSteps){pause();return;}
+  next();
+  timer=setTimeout(runLoop,speed);
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight') next();
+  if(e.key==='ArrowLeft') prev();
+  if(e.key===' ') {e.preventDefault();togglePlay();}
+  if(e.key==='r') reset();
+});
+
+// Anim loop for highlighting
+let animFrame;
+function animLoop(){
+  animP++;
+  if(step===0) draw(); // redraw for highlight
+  animFrame=requestAnimationFrame(animLoop);
+}
+
+updateUI();animLoop();
+</script>
+</body>
+</html>
