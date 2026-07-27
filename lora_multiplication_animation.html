@@ -169,7 +169,10 @@ const slides=[
         <div class="num-grid" style="grid-template-columns:repeat(1,1fr);">${renderCell(Ax,'pos')}</div>
       </div>
     </div>
-    <p style="font-size:0.7rem;color:var(--tmut);margin-top:0.75rem;">r×d = 3 multiplications → <strong>1 number</strong>. Real: 8×4096 = 32,768 ops.</p>
+    <p style="font-size:0.7rem;color:var(--tmut);margin-top:0.75rem;">r×d = 3 multiplications → <strong>1 number</strong>. Real: 8×4096 = 32,768 ops. <strong style="color:var(--red);">A MUST go first — A·x compresses 4096→8.</strong></p>
+    <div style="background:rgba(198,40,28,0.04);border:1px solid rgba(198,40,28,0.2);border-radius:8px;padding:0.5rem 0.75rem;margin-top:0.5rem;font-size:0.72rem;color:var(--tdim);text-align:center;">
+      <strong>❌ Why NOT B·x?</strong> B is d×r (4096×8). x is d×1 (4096×1). <strong>Dimensions don't match!</strong> 8 ≠ 4096. You can't multiply [4096×8] × [4096×1]. A must go FIRST because A is r×d (8×4096) — it CAN multiply with x (4096×1) → compresses to 8 numbers. Then B (4096×8) multiplies with the 8 numbers → expands back to 4096. <strong>B and A are two halves of one operation. Order is not optional.</strong>
+    </div>
     </div>`
 },
 { // Step 2: B·(A·x)
@@ -191,6 +194,11 @@ const slides=[
       </div>
     </div>
     <p style="font-size:0.7rem;color:var(--tmut);margin-top:0.75rem;">d×r = 3 multiplications → <strong>3 numbers = ΔW</strong>. Real: 4096×8 = 32,768 ops. <strong>B×A NEVER computed as full 4096×4096!</strong></p>
+    <div style="background:rgba(91,58,168,0.04);border:1px solid rgba(91,58,168,0.12);border-radius:8px;padding:0.5rem 0.75rem;margin-top:0.5rem;font-size:0.72rem;color:var(--tdim);text-align:center;">
+      <strong>🔍 The Funnel — Why Order Matters:</strong><br>
+      x (4096) → <span style="color:var(--violet);">A (8×4096)</span> → squeeze to 8 → <span style="color:var(--violet);">B (4096×8)</span> → expand to 4096 = ΔW<br>
+      B and A are two halves of one matrix. Like a zipper — compress through A, expand through B. <strong>Can't skip either step.</strong>
+    </div>
     </div>`
 },
 { // Step 3: W·x
