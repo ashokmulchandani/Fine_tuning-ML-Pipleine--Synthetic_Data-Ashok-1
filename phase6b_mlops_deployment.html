@@ -4,80 +4,88 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Phase 6B: MLOps Pipeline — Visual Explorer</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#06090f;--card:#0d1117;--raised:#161b22;--border:#21262d;--text:#e6edf3;--tdim:#8b949e;--tmut:#484f58;--cyan:#39d2ff;--cyan-bg:#39d2ff15;--amber:#ffb347;--amber-bg:#ffb34715;--green:#3fb950;--green-bg:#3fb95015;--red:#f85149;--red-bg:#f8514920;--violet:#a371f7;--vbg:#a371f715;--magenta:#ff6ec7}
-body.light{--bg:#f6f8fa;--card:#fff;--raised:#e8ecf0;--border:#d0d7de;--text:#1f2328;--tdim:#656d76;--tmut:#8b949e;--cyan:#0969da;--cyan-bg:#ddf4ff;--amber:#9a6700;--amber-bg:#fff8c5;--green:#1a7f37;--green-bg:#dafbe1;--red:#cf222e;--red-bg:#ffebe9;--violet:#8250df;--vbg:#f3effc;--magenta:#bf3989}
+:root{--bg:#f8f9fc;--card:#fff;--raised:#eef0f5;--border:#dde0e6;--text:#1a1d23;--tdim:#4a4f5b;--tmut:#8b909b;--violet:#5b3aa8;--vbg:#f3effc;--cyan:#007a99;--cyan-bg:#e6f4f7;--amber:#b87000;--amber-bg:#fff6e5;--green:#1a6e34;--green-bg:#e6f4ea;--red:#c62828;--red-bg:#ffebe9;--magenta:#9e2a6b;--magenta-bg:#fdf0f7}
+body.dark{--bg:#06090f;--card:#0d1117;--raised:#161b22;--border:#21262d;--text:#e6edf3;--tdim:#8b949e;--tmut:#484f58;--violet:#a371f7;--vbg:#a371f710;--cyan:#39d2ff;--cyan-bg:#39d2ff10;--amber:#ffb347;--amber-bg:#ffb34710;--green:#3fb950;--green-bg:#3fb95010;--red:#f85149;--red-bg:#f8514910;--magenta:#ff6ec7;--magenta-bg:#ff6ec710}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:0.3s;overflow-x:hidden}
-.theme-btn{position:fixed;top:1rem;right:1rem;z-index:10;background:var(--raised);border:1px solid var(--border);color:var(--text);padding:0.4rem 0.8rem;border-radius:6px;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:0.8rem;transition:0.2s}
-.theme-btn:hover{border-color:var(--cyan);color:var(--cyan)}
-.container{max-width:950px;margin:0 auto;padding:0.8rem;text-align:center}
-h1{font-family:'Orbitron',sans-serif;font-size:1.1rem;background:linear-gradient(135deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:0.2rem}
-.subtitle{color:var(--tdim);font-size:0.65rem;margin-bottom:0.5rem}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background 0.3s,color 0.3s;overflow-x:hidden}
+.theme-btn{position:fixed;top:1rem;right:1rem;z-index:10;background:var(--raised);border:1px solid var(--border);color:var(--text);padding:0.5rem 0.9rem;border-radius:8px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:0.75rem;font-weight:600;transition:0.2s}
+.theme-btn:hover{border-color:var(--violet);color:var(--violet)}
+.container{max-width:900px;margin:0 auto;padding:1rem;text-align:center}
 
-/* Pipeline stages */
-.pipe-header{display:flex;gap:0.4rem;justify-content:center;align-items:center;flex-wrap:wrap;margin:0.4rem 0}
-.pipe-step{background:var(--card);border:2px solid var(--border);border-radius:10px;padding:0.5rem 0.8rem;text-align:center;transition:0.3s;cursor:pointer;min-width:120px}
-.pipe-step:hover{border-color:var(--cyan);transform:translateY(-2px)}
-.pipe-step.active{border-color:var(--cyan);box-shadow:0 0 14px rgba(57,210,255,0.2);background:var(--cyan-bg)}
+/* Header */
+h1{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;color:var(--violet);margin-bottom:0.2rem}
+.subtitle{color:var(--tdim);font-size:0.82rem;margin-bottom:0.6rem}
+
+/* Pipeline */
+.pipe-header{display:flex;gap:0.5rem;justify-content:center;align-items:center;flex-wrap:wrap;margin:0.8rem 0}
+.pipe-step{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:0.8rem 1rem;text-align:center;transition:0.3s;cursor:pointer;min-width:130px}
+.pipe-step:hover{border-color:var(--violet);transform:translateY(-3px);box-shadow:0 6px 20px rgba(91,58,168,0.1)}
+.pipe-step.active{border-color:var(--violet);background:var(--vbg);box-shadow:0 0 0 4px rgba(91,58,168,0.06)}
 .pipe-step.done{border-color:var(--green);background:var(--green-bg)}
-.pipe-step .icon{font-size:1.3rem}.pipe-step .title{font-family:'Orbitron',sans-serif;font-size:0.5rem;color:var(--tdim);margin-top:0.1rem}.pipe-step .stat{font-family:'Orbitron',sans-serif;font-size:0.65rem;font-weight:700;color:var(--cyan)}
-.pipe-arrow{font-size:1rem;color:var(--cyan)}
+.pipe-step .icon{font-size:1.8rem;display:block;margin-bottom:0.2rem}
+.pipe-step .title{font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:600;color:var(--tmut);text-transform:uppercase;letter-spacing:0.08em}
+.pipe-step .stat{font-family:'Space Grotesk',sans-serif;font-size:0.8rem;font-weight:700;color:var(--violet)}
+.pipe-arrow{font-size:1.3rem;color:var(--violet)}
 
 /* Stats */
-.stats-row{display:flex;gap:0.3rem;justify-content:center;flex-wrap:wrap;margin:0.3rem 0}
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:0.35rem 0.6rem;text-align:center;min-width:90px}
-.stat-card .val{font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:700}.stat-card .lbl{font-family:'JetBrains Mono',monospace;font-size:0.38rem;color:var(--tmut);margin-top:0.1rem}
+.stats-row{display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;margin:0.6rem 0}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0.6rem 0.9rem;text-align:center;min-width:100px}
+.stat-card .val{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:700}
+.stat-card .lbl{font-family:'Inter',sans-serif;font-size:0.6rem;color:var(--tmut);margin-top:0.15rem;text-transform:uppercase;letter-spacing:0.05em}
 
 /* Substeps */
-.substeps{display:flex;gap:0.35rem;justify-content:center;flex-wrap:wrap;margin:0.4rem 0}
-.substep{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:0.4rem 0.6rem;text-align:center;font-family:'JetBrains Mono',monospace;font-size:0.47rem;color:var(--tdim);min-width:90px;transition:0.3s;cursor:pointer}
-.substep:hover{border-color:var(--cyan)}
-.substep.current{border-color:var(--cyan);background:var(--cyan-bg);color:var(--cyan);font-weight:700}
-.substep.done{border-color:var(--green);color:var(--green)}
+.substeps{display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;margin:0.6rem 0}
+.substep{background:var(--card);border:2px solid var(--border);border-radius:10px;padding:0.6rem 0.9rem;text-align:center;font-family:'Inter',sans-serif;font-size:0.72rem;color:var(--tdim);min-width:110px;transition:0.3s;cursor:pointer;font-weight:500}
+.substep:hover{border-color:var(--violet)}
+.substep.current{border-color:var(--violet);background:var(--vbg);color:var(--violet);font-weight:700}
+.substep.done{border-color:var(--green);color:var(--green);background:var(--green-bg)}
 
 /* Visual */
-.visual{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0.8rem;margin:0.4rem 0;min-height:240px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.visual{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.2rem;margin:0.6rem 0;min-height:200px;display:flex;align-items:center;justify-content:center}
+.visual .vz-title{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;color:var(--tmut);margin-bottom:0.6rem;text-transform:uppercase;letter-spacing:0.08em}
+.visual .vz-box{background:var(--raised);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.8rem;text-align:center;min-width:80px}
+.visual .vz-arrow{color:var(--violet);font-size:1.1rem}
+.visual .vz-tag{font-family:'Space Grotesk',sans-serif;font-size:0.55rem;font-weight:600;padding:0.2em 0.6em;border-radius:100px;display:inline-block}
+.vz-tag.p{background:var(--vbg);color:var(--violet);border:1px solid var(--violet)}
+.vz-tag.m{background:var(--green-bg);color:var(--green);border:1px solid var(--green)}
+.vz-tag.a{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber)}
+.visual .vz-label{font-family:'Inter',sans-serif;font-size:0.65rem;color:var(--tdim);margin-top:0.2rem}
 
 /* Code */
-.code{background:#1e1e1e;border:1px solid #333;border-left:3px solid var(--violet);border-radius:8px;padding:0.5rem 0.7rem;margin:0.4rem auto;max-width:750px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:0.5rem;line-height:1.7;color:#d4d4d4;overflow-x:auto}
+.code{background:var(--raised);border:1px solid var(--border);border-left:4px solid var(--violet);border-radius:10px;padding:0.8rem 1rem;margin:0.6rem auto;max-width:750px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:0.7rem;line-height:1.8;color:var(--text);overflow-x:auto;white-space:pre-wrap}
 
 /* Controls */
-.ctrls{display:flex;gap:0.35rem;justify-content:center;flex-wrap:wrap;margin:0.3rem 0}
-.btn{font-family:'JetBrains Mono',monospace;font-size:0.55rem;padding:0.35rem 0.7rem;border-radius:100px;border:1px solid var(--border);background:var(--raised);color:var(--tdim);cursor:pointer;transition:0.2s}
-.btn:hover{border-color:var(--cyan);color:var(--cyan)}.btn.primary{background:var(--cyan-bg);border-color:var(--cyan);color:var(--cyan)}.btn:disabled{opacity:0.3;cursor:not-allowed}
+.ctrls{display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;margin:0.6rem 0}
+.btn{font-family:'Space Grotesk',sans-serif;font-size:0.68rem;font-weight:600;padding:0.5rem 1.1rem;border-radius:100px;border:2px solid var(--border);background:var(--card);color:var(--tdim);cursor:pointer;transition:0.2s}
+.btn:hover{border-color:var(--violet);color:var(--violet)}
+.btn.primary{background:var(--violet);border-color:var(--violet);color:#fff}
+.btn.primary:hover{opacity:0.85;color:#fff}
+.btn:disabled{opacity:0.3;cursor:not-allowed}
 
-/* Flow diagram */
-.flow-row{display:flex;align-items:center;gap:0.2rem;justify-content:center;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:0.45rem;color:var(--tdim)}
-.flow-box{background:var(--raised);border:1px solid var(--border);border-radius:5px;padding:0.3rem 0.5rem;text-align:center}
-.flow-box.hl{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-bg)}.flow-box.dvc{border-color:var(--amber);color:var(--amber)}.flow-box.ml{border-color:var(--violet);color:var(--violet)}.flow-box.ev{border-color:var(--green);color:var(--green)}.flow-box.dep{border-color:var(--magenta);color:var(--magenta)}
-.flow-arrow{color:var(--tdim)}
+/* File tree */
+.file-tree{text-align:left;font-family:'JetBrains Mono',monospace;font-size:0.68rem;line-height:1.7;color:var(--tdim);background:var(--raised);border:1px solid var(--border);border-radius:8px;padding:0.8rem 1rem;display:inline-block;min-width:200px}
+.file-tree .dir{color:var(--violet)}.file-tree .added{color:var(--green)}.file-tree .tracked{color:var(--amber)}
 
-/* Memory / file layout */
-.file-tree{text-align:left;font-family:'JetBrains Mono',monospace;font-size:0.5rem;line-height:1.7;color:var(--tdim);background:var(--raised);border:1px solid var(--border);border-radius:8px;padding:0.6rem;display:inline-block}
-.file-tree .dir{color:var(--cyan)}.file-tree .file{color:var(--tdim)}.file-tree .added{color:var(--green)}.file-tree .tracked{color:var(--amber)}
+.tag{font-family:'Space Grotesk',sans-serif;font-size:0.55rem;font-weight:600;padding:0.2em 0.7em;border-radius:100px;display:inline-block}
+.tag.git{background:var(--red-bg);color:var(--red)}.tag.dvc{background:var(--amber-bg);color:var(--amber)}
+.tag.ml{background:var(--vbg);color:var(--violet)}.tag.ev{background:var(--green-bg);color:var(--green)}
 
-/* Progress bar */
-.bar-track{width:100%;max-width:400px;height:6px;background:var(--raised);border-radius:3px;margin:0.5rem auto;overflow:hidden}
-.bar-fill{height:100%;background:linear-gradient(90deg,var(--violet),var(--cyan));border-radius:3px;transition:width 0.5s}
+.link-row{display:flex;gap:0.4rem;justify-content:center;flex-wrap:wrap;margin:0.5rem 0}
+.link-btn{font-family:'Inter',sans-serif;font-size:0.65rem;font-weight:600;color:var(--violet);cursor:pointer;text-decoration:underline;border:none;background:none;transition:0.2s}
+.link-btn:hover{color:var(--cyan)}
 
-/* Tags */
-.tag{font-family:'JetBrains Mono',monospace;font-size:0.42rem;padding:0.15em 0.5em;border-radius:100px;display:inline-block}
-.tag.git{background:rgba(248,81,73,0.15);color:var(--red);border:1px solid rgba(248,81,73,0.3)}
-.tag.dvc{background:rgba(255,179,71,0.15);color:var(--amber);border:1px solid rgba(255,179,71,0.3)}
-.tag.ml{background:rgba(163,113,247,0.15);color:var(--violet);border:1px solid rgba(163,113,247,0.3)}
-.tag.ev{background:rgba(63,185,80,0.15);color:var(--green);border:1px solid rgba(63,185,80,0.3)}
+.params-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.5rem;width:100%;max-width:700px}
+.param-card{background:var(--raised);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;text-align:left}
+.param-card .p-title{font-family:'Space Grotesk',sans-serif;font-size:0.6rem;color:var(--violet);font-weight:600;text-transform:uppercase;margin-bottom:0.4rem}
+.param-card .p-row{font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--tdim);line-height:2}
 
-.link-row{display:flex;gap:0.3rem;justify-content:center;flex-wrap:wrap;margin:0.3rem 0}
-.link-btn{font-family:'JetBrains Mono',monospace;font-size:0.42rem;color:var(--cyan);cursor:pointer;text-decoration:underline;border:none;background:none;transition:0.2s}
-.link-btn:hover{color:var(--violet)}
-
-@media(max-width:768px){.pipe-step{min-width:80px}.stat-card{min-width:60px}.visual{min-height:180px}}
+@media(max-width:768px){.pipe-step{min-width:100px}.stat-card{min-width:70px}.visual{min-height:160px}.params-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<button class="theme-btn" onclick="toggleTheme()">☀️</button>
+<button class="theme-btn" onclick="toggleTheme()">🌙 Dark</button>
 <div class="container">
   <h1>MLOps Pipeline — 4 Stages Visual Explorer</h1>
   <p class="subtitle">Click a stage, then step through. <strong>One command (dvc repro) runs all 4 stages — track → version → monitor → deploy.</strong></p>
@@ -93,10 +101,10 @@ h1{font-family:'Orbitron',sans-serif;font-size:1.1rem;background:linear-gradient
   </div>
 
   <div class="stats-row">
-    <div class="stat-card" style="border-top:2px solid var(--violet);"><div class="val" style="color:var(--violet);" id="stat1">0.32</div><div class="lbl">Final Loss</div></div>
-    <div class="stat-card" style="border-top:2px solid var(--amber);"><div class="val" style="color:var(--amber);" id="stat2">5 versions</div><div class="lbl">Data Snapshots</div></div>
-    <div class="stat-card" style="border-top:2px solid var(--green);"><div class="val" style="color:var(--green);" id="stat3">0.15</div><div class="lbl">Drift Score</div></div>
-    <div class="stat-card" style="border-top:2px solid var(--cyan);"><div class="val" style="color:var(--cyan);" id="stat4">$387/mo</div><div class="lbl">Serving Cost (T4)</div></div>
+    <div class="stat-card" style="border-top:3px solid var(--violet)"><div class="val" style="color:var(--violet)" id="stat1">0.32</div><div class="lbl">Final Loss</div></div>
+    <div class="stat-card" style="border-top:3px solid var(--amber)"><div class="val" style="color:var(--amber)" id="stat2">5 versions</div><div class="lbl">Data Snapshots</div></div>
+    <div class="stat-card" style="border-top:3px solid var(--green)"><div class="val" style="color:var(--green)" id="stat3">0.15</div><div class="lbl">Drift Score</div></div>
+    <div class="stat-card" style="border-top:3px solid var(--cyan)"><div class="val" style="color:var(--cyan)" id="stat4">$387/mo</div><div class="lbl">Serving Cost (T4)</div></div>
   </div>
 
   <div class="substeps" id="substeps"></div>
@@ -108,44 +116,43 @@ h1{font-family:'Orbitron',sans-serif;font-size:1.1rem;background:linear-gradient
     <button class="btn" onclick="resetAll()">↺ Reset</button>
   </div>
   <div class="link-row">
-    <button class="link-btn" onclick="window.open('https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/dvc.yaml')">📄 dvc.yaml</button>
-    <button class="link-btn" onclick="window.open('https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/scripts/mlflow_tracking.py')">📄 mlflow_tracking.py</button>
-    <button class="link-btn" onclick="window.open('https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/scripts/check_drift.py')">📄 check_drift.py</button>
-    <button class="link-btn" onclick="window.open('https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/scripts/serve_vllm.py')">📄 serve_vllm.py</button>
+    <button class="link-btn" onclick="window.open('dvc.yaml')">📄 dvc.yaml</button>
+    <button class="link-btn" onclick="window.open('scripts/mlflow_tracking.py')">📄 mlflow_tracking.py</button>
+    <button class="link-btn" onclick="window.open('scripts/check_drift.py')">📄 check_drift.py</button>
+    <button class="link-btn" onclick="window.open('scripts/serve_vllm.py')">📄 serve_vllm.py</button>
   </div>
 </div>
 
 <script>
-function toggleTheme(){document.body.classList.toggle('light');document.querySelector('.theme-btn').textContent=document.body.classList.contains('light')?'🌙':'☀️';localStorage.setItem('p6b-theme',document.body.classList.contains('light')?'light':'dark')}
-if(localStorage.getItem('p6b-theme')==='light'){document.body.classList.add('light');document.querySelector('.theme-btn').textContent='🌙'}
+function toggleTheme(){document.body.classList.toggle('dark');document.querySelector('.theme-btn').textContent=document.body.classList.contains('dark')?'☀️ Light':'🌙 Dark';localStorage.setItem('p6b-theme',document.body.classList.contains('dark')?'dark':'light')}
+if(localStorage.getItem('p6b-theme')==='dark'){document.body.classList.add('dark');document.querySelector('.theme-btn').textContent='☀️ Light'}
 
 const stages=[
   {name:'TRACK',icon:'🔬',tool:'MLflow',stat1:'0.32',stat2:'8 runs',stat3:'0.15',stat4:'v7 (Production)',subs:[
-    {name:'1. Start Run',desc:'with TrackRun() as run:',detail:'The TrackRun context manager opens an MLflow run. It records the start time, Python version, and GPU info automatically. Every training session gets a unique run ID like a1b2c3d4.'},
+    {name:'1. Start Run',desc:'TrackRun() context manager',detail:'Opens an MLflow run. Records start time, Python version, and GPU info automatically. Every training session gets a unique run ID like a1b2c3d4.'},
     {name:'2. Log Everything',desc:'Params + Metrics + Adapter',detail:'Log all hyperparameters (r, alpha, lr, epochs), every loss value during training, and the final adapter as an artifact. MLflow stores it in mlruns.db — a single SQLite file.'},
-    {name:'3. Registry',desc:'Promote: None→Staging→Production',detail:'After training, the best adapter is registered in the Model Registry. A human reviews it in Staging, then promotes it to Production. Previous Production model is auto-archived. Rollback is one command.'}
+    {name:'3. Registry',desc:'None→Staging→Production',detail:'The best adapter is registered in the Model Registry. A human reviews it in Staging, then promotes it to Production. Previous Production model is auto-archived. Rollback is one command.'}
   ]},
   {name:'VERSION',icon:'📦',tool:'DVC',stat1:'500 rows',stat2:'5 versions',stat3:'0.15',stat4:'instruction_data.csv',subs:[
-    {name:'1. Track Data',desc:'dvc add → Git tracks pointer',detail:'DVC hashes your CSV file (MD5). It stores the file in .dvc/cache and writes a small .dvc pointer file. You commit the pointer to Git — the actual data goes to S3/GDrive. Git: "this hash = this dataset".'},
-    {name:'2. Pipeline',desc:'dvc.yaml: 3 stages cached',detail:'The DVC pipeline has 3 stages: prepare_data → train → evaluate. Each stage lists its dependencies. DVC hashes every dependency. If nothing changed → CACHED (skipped). Saves GPU time.'},
-    {name:'3. Reproduce',desc:'dvc repro = one command',detail:'dvc repro walks the pipeline DAG. It checks hashes bottom-up. If instruction_data.csv changed → prepare_data re-runs → train re-runs → evaluate re-runs. Everything else uses cache. One command reproduces the entire pipeline.'}
+    {name:'1. Track Data',desc:'dvc add → Git tracks pointer',detail:'DVC hashes your CSV file. It stores the file in .dvc/cache and writes a small .dvc pointer file. You commit the pointer to Git — the actual data goes to S3/GDrive.'},
+    {name:'2. Pipeline',desc:'dvc.yaml: 3 stages cached',detail:'The DVC pipeline has 3 stages: prepare_data → train → evaluate. Each stage lists its dependencies. DVC hashes every dependency. If nothing changed → CACHED. Saves GPU time.'},
+    {name:'3. Reproduce',desc:'dvc repro = one command',detail:'dvc repro walks the pipeline DAG. If instruction_data.csv changed → prepare_data re-runs → train re-runs → evaluate re-runs. Everything else uses cache. One command reproduces the entire pipeline.'}
   ]},
   {name:'MONITOR',icon:'📈',tool:'Evidently AI',stat1:'500 rows',stat2:'0.15',stat3:'0.15',stat4:'Daily (6am UTC)',subs:[
-    {name:'1. Compare',desc:'Training vs Live data',detail:'Evidently loads reference data (what you trained on) and current data (what users are asking). It computes drift for each column using statistical tests — KL divergence for text, Wasserstein distance for numeric.'},
+    {name:'1. Compare',desc:'Training vs Live data',detail:'Evidently loads reference data (what you trained on) and current data (what users are asking). It computes drift for each column using statistical tests.'},
     {name:'2. Detect Drift',desc:'Score > 0.5 = RETRAIN',detail:'If the drift score exceeds 0.5, users are asking about topics you never trained on. The model is silently failing — it responds, but the answers are wrong. The daily GitHub Actions job catches this within 24 hours.'},
-    {name:'3. Act',desc:'Collect new data → dvc repro',detail:'Drift detected → human reviews what changed → appends new Q&A to instruction_data.csv → dvc add + dvc push → dvc repro → MLflow logs the new run → evaluate confirms drift resolved → promote to Production.'}
+    {name:'3. Act',desc:'Collect new data → dvc repro',detail:'Drift detected → human reviews → appends new Q&A to instruction_data.csv → dvc add + dvc push → dvc repro → MLflow logs new run → promote to Production.'}
   ]},
   {name:'DEPLOY',icon:'🚀',tool:'vLLM',stat1:'5000 tok/s',stat2:'50ms',stat3:'$0.50/hr',stat4:'OpenAI-compatible',subs:[
-    {name:'1. Merge',desc:'merge_and_unload() adapter',detail:'LoRA adapter (BxA side paths) must be baked into the base model before serving. merge_and_unload() adds BxA to Wo, producing a standard model. No PeftModel dependency needed for inference — just weights.'},
-    {name:'2. Serve',desc:'vllm serve → :8000',detail:'vLLM uses PagedAttention — virtual memory for the KV-cache. It allocates memory in small blocks on demand, eliminating fragmentation. Combined with continuous batching, it achieves 100x throughput vs HuggingFace pipeline().'},
-    {name:'3. Query',desc:'OpenAI-compatible API',detail:'vLLM exposes an OpenAI-compatible /v1 endpoint. Your existing code that calls OpenAI can now call your fine-tuned model — just change the base_url. Zero code changes. The model responds in ~50ms at 5000 tokens/second.'}
+    {name:'1. Merge',desc:'merge_and_unload() adapter',detail:'LoRA adapter (BxA side paths) must be baked into the base model before serving. merge_and_unload() adds BxA to Wo, producing a standard model. No PeftModel dependency needed.'},
+    {name:'2. Serve',desc:'vllm serve → :8000',detail:'vLLM uses PagedAttention — virtual memory for the KV-cache. Combined with continuous batching, it achieves 100x throughput vs HuggingFace pipeline().'},
+    {name:'3. Query',desc:'OpenAI-compatible API',detail:'vLLM exposes an OpenAI-compatible /v1 endpoint. Change the base_url and your existing code works. Zero code changes. ~50ms at 5000 tokens/second.'}
   ]}
 ];
 
 let curStage=0,curSub=0;
 
 function render(){
-  // Pipeline header
   ['ps0','ps1','ps2','ps3'].forEach((id,i)=>{
     let el=document.getElementById(id);
     el.classList.remove('active','done');
@@ -153,17 +160,13 @@ function render(){
     else if(i<curStage)el.classList.add('done');
   });
 
-  // Substeps
   let sh='';
   stages[curStage].subs.forEach((s,i)=>{
-    let cls='';
-    if(i===curSub)cls='current';
-    else if(i<curSub)cls='done';
-    sh+=`<div class="substep ${cls}" onclick="curSub=${i};render()">${s.name}<br><span style="font-size:0.4rem">${s.desc}</span></div>`;
+    let cls=i===curSub?'current':i<curSub?'done':'';
+    sh+=`<div class="substep ${cls}" onclick="curSub=${i};render()">${s.name}<br><span style="font-size:0.6rem;color:var(--tmut)">${s.desc}</span></div>`;
   });
   document.getElementById('substeps').innerHTML=sh;
 
-  // Stats
   let st=stages[curStage];
   document.getElementById('stat1').textContent=st.stat1;
   document.getElementById('stat2').textContent=st.stat2;
@@ -175,391 +178,196 @@ function render(){
   if(curStage===0){
     if(curSub===0){
       v=`<div style="text-align:center;width:100%">
-        <div style="font-family:'Orbitron',sans-serif;font-size:0.55rem;color:var(--tdim);margin-bottom:0.5rem;">MLflow Run Lifecycle — What TrackRun Does</div>
-        <div style="display:flex;gap:0.3rem;justify-content:center;flex-wrap:wrap;align-items:center;">
-          <div style="background:var(--raised);border:1px solid var(--violet);border-radius:6px;padding:0.5rem;text-align:center;min-width:80px;">
-            <div style="font-size:0.8rem;">▶️</div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:0.45rem;color:var(--violet);">START</div>
-            <div style="font-size:0.4rem;color:var(--tdim);">Record time</div>
-            <div style="font-size:0.4rem;color:var(--tdim);">+ GPU info</div>
-          </div>
-          <div style="color:var(--violet);">→</div>
-          <div style="background:var(--raised);border:1px solid var(--violet);border-radius:6px;padding:0.5rem;text-align:center;min-width:80px;">
-            <div style="font-size:0.8rem;">📝</div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:0.45rem;color:var(--violet);">LOG PARAMS</div>
-            <div style="font-size:0.4rem;color:var(--tdim);">r=8, lr=2e-4</div>
-            <div style="font-size:0.4rem;color:var(--tdim);">epochs=10</div>
-          </div>
-          <div style="color:var(--violet);">→</div>
-          <div style="background:var(--raised);border:1px solid var(--violet);border-radius:6px;padding:0.5rem;text-align:center;min-width:80px;">
-            <div style="font-size:0.8rem;">🏋️</div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:0.45rem;color:var(--violet);">TRAIN</div>
-            <div style="font-size:0.4rem;color:var(--tdim);">trainer.train()</div>
-            <div style="font-size:0.4rem;color:var(--tdim);">loss logged</div>
-          </div>
-          <div style="color:var(--violet);">→</div>
-          <div style="background:var(--raised);border:1px solid var(--violet);border-radius:6px;padding:0.5rem;text-align:center;min-width:80px;">
-            <div style="font-size:0.8rem;">💾</div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:0.45rem;color:var(--violet);">LOG ARTIFACT</div>
-            <div style="font-size:0.4rem;color:var(--tdim);">adapter.safetensors</div>
-            <div style="font-size:0.4rem;color:var(--tdim);">(4.2 MB)</div>
-          </div>
+        <div class="vz-title">MLflow Run Lifecycle — What TrackRun Does</div>
+        <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;align-items:center;">
+          <div class="vz-box"><div style="font-size:1.3rem">▶️</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">START</div><div class="vz-label">Record time, GPU info</div></div>
+          <div class="vz-arrow">→</div>
+          <div class="vz-box"><div style="font-size:1.3rem">📝</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">LOG PARAMS</div><div class="vz-label">r=8, lr=2e-4, epochs=10</div></div>
+          <div class="vz-arrow">→</div>
+          <div class="vz-box"><div style="font-size:1.3rem">🏋️</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">TRAIN</div><div class="vz-label">trainer.train(), loss logged</div></div>
+          <div class="vz-arrow">→</div>
+          <div class="vz-box"><div style="font-size:1.3rem">💾</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">LOG ARTIFACT</div><div class="vz-label">adapter.safetensors (4.2 MB)</div></div>
         </div>
-        <div style="margin-top:0.5rem;font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:var(--green);">On exit → auto-log duration, GPU memory, register model ✅</div>
+        <div style="margin-top:0.8rem;font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--green)">On exit → auto-log duration, GPU memory, register model ✅</div>
       </div>`;
-      c='<span style="color:#569cd6;">from</span> scripts.mlflow_tracking <span style="color:#569cd6;">import</span> TrackRun\n\n<span style="color:#569cd6;">with</span> TrackRun(<span style="color:#ce9178;">"instruction-ft-medical"</span>, {<span style="color:#ce9178;">"r"</span>: <span style="color:#ce9178;">8</span>, <span style="color:#ce9178;">"lr"</span>: <span style="color:#ce9178;">2e-4</span>}) <span style="color:#569cd6;">as</span> run:\n    trainer.train()\n    run.log_metric(<span style="color:#ce9178;">"final_loss"</span>, <span style="color:#ce9178;">0.32</span>)\n    run.log_adapter(<span style="color:#ce9178;">"./adapter"</span>)';
+      c='from scripts.mlflow_tracking import TrackRun\n\nwith TrackRun("instruction-ft-medical", {"r": 8, "lr": 2e-4}) as run:\n    trainer.train()\n    run.log_metric("final_loss", 0.32)\n    run.log_adapter("./adapter")';
     }else if(curSub===1){
       v=`<div style="text-align:center;width:100%">
-        <div style="font-family:'Orbitron',sans-serif;font-size:0.55rem;color:var(--tdim);margin-bottom:0.5rem;">What MLflow Records for Each Run</div>
-        <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
-          <div style="background:var(--raised);border:1px solid var(--border);border-radius:8px;padding:0.6rem;text-align:left;min-width:160px;">
-            <div style="font-family:'Orbitron',sans-serif;font-size:0.45rem;color:var(--violet);margin-bottom:0.3rem;">PARAMETERS</div>
-            <div style="font-size:0.45rem;color:var(--tdim);line-height:1.8;">lora_r: <span style="color:var(--cyan);">8</span></div>
-            <div style="font-size:0.45rem;color:var(--tdim);line-height:1.8;">lora_alpha: <span style="color:var(--cyan);">16</span></div>
-            <div style="font-size:0.45rem;color:var(--tdim);line-height:1.8;">learning_rate: <span style="color:var(--cyan);">2e-4</span></div>
-            <div style="font-size:0.45rem;color:var(--tdim);line-height:1.8;">epochs: <span style="color:var(--cyan);">10</span></div>
-            <div style="font-size:0.45rem;color:var(--tdim);line-height:1.8;">base_model: <span style="color:var(--cyan);">TinyLlama-1.1B</span></div>
-          </div>
-          <div style="background:var(--raised);border:1px solid var(--border);border-radius:8px;padding:0.6rem;text-align:left;min-width:160px;">
-            <div style="font-family:'Orbitron',sans-serif;font-size:0.45rem;color:var(--green);margin-bottom:0.3rem;">METRICS</div>
-            <div style="font-size:0.45rem;color:var(--tdim);line-height:1.8;">final_loss: <span style="color:var(--green);">0.32</span></div>
-            <div style="font-size:0.45rem;color:var(--tdim);line-height:1.8;">loss_step_0: <span style="color:var(--green);">2.41</span></div>
-            <div style="font-size:0.45rem;color:var(--tdim);line-height:1.8;">loss_step_20: <span style="color:var(--green);">0.32</span></div>
-            <div style="font-size:0.45rem;color:var(--tdim);line-height:1.8;">duration: <span style="color:var(--green);">4m 12s</span></div>
-            <div style="font-size:0.45rem;color:var(--tdim);line-height:1.8;">gpu_memory: <span style="color:var(--green);">4234 MB</span></div>
-          </div>
-          <div style="background:var(--raised);border:1px solid var(--border);border-radius:8px;padding:0.6rem;text-align:left;min-width:160px;">
-            <div style="font-family:'Orbitron',sans-serif;font-size:0.45rem;color:var(--amber);margin-bottom:0.3rem;">ARTIFACTS</div>
-            <div style="font-size:0.45rem;color:var(--tdim);line-height:1.8;">📁 adapter/</div>
-            <div style="font-size:0.45rem;color:var(--tdim);line-height:1.8;">  adapter_config.json</div>
-            <div style="font-size:0.45rem;color:var(--tdim);line-height:1.8;">  adapter_model.safetensors</div>
-            <div style="font-size:0.45rem;color:var(--tdim);line-height:1.8;">  tokenizer.json</div>
-            <div style="font-size:0.45rem;color:var(--tdim);line-height:1.8;">📁 checkpoints/</div>
-          </div>
+        <div class="vz-title">What MLflow Records for Each Run</div>
+        <div class="params-grid">
+          <div class="param-card"><div class="p-title">⚙️ PARAMETERS</div>
+            <div class="p-row">lora_r: 8</div><div class="p-row">lora_alpha: 16</div><div class="p-row">learning_rate: 2e-4</div><div class="p-row">epochs: 10</div><div class="p-row">base_model: TinyLlama-1.1B</div></div>
+          <div class="param-card"><div class="p-title">📊 METRICS</div>
+            <div class="p-row">final_loss: 0.32</div><div class="p-row">loss_step_0: 2.41</div><div class="p-row">loss_step_20: 0.32</div><div class="p-row">duration: 4m 12s</div><div class="p-row">gpu_memory: 4234 MB</div></div>
+          <div class="param-card"><div class="p-title">📁 ARTIFACTS</div>
+            <div class="p-row">📁 adapter/</div><div class="p-row">  adapter_config.json</div><div class="p-row">  adapter_model.safetensors</div><div class="p-row">  tokenizer.json</div><div class="p-row">📁 checkpoints/</div></div>
         </div>
       </div>`;
-      c='<span style="color:#6a9955;"># Everything auto-logged — zero manual work</span>\nrun.log_metric(<span style="color:#ce9178;">"final_loss"</span>, <span style="color:#ce9178;">0.32</span>)\nrun.log_metrics({<span style="color:#ce9178;">"eval_acc"</span>: <span style="color:#ce9178;">0.89</span>, <span style="color:#ce9178;">"perplexity"</span>: <span style="color:#ce9178;">12.4</span>})\nrun.log_adapter(<span style="color:#ce9178;">"./adapter"</span>)  <span style="color:#6a9955;"># Registers in Model Registry</span>\n\n<span style="color:#6a9955;"># View: mlflow ui → localhost:5000</span>';
+      c='# Everything auto-logged\nrun.log_metric("final_loss", 0.32)\nrun.log_metrics({"eval_acc": 0.89, "perplexity": 12.4})\nrun.log_adapter("./adapter")  # Registers in Model Registry\n\n# View: mlflow ui → localhost:5000';
     }else{
       v=`<div style="text-align:center;width:100%">
-        <div style="font-family:'Orbitron',sans-serif;font-size:0.55rem;color:var(--tdim);margin-bottom:0.5rem;">Model Registry — Promote Through Stages</div>
-        <div style="display:flex;gap:0.3rem;justify-content:center;align-items:center;flex-wrap:wrap;">
-          <div style="background:var(--raised);border:1px solid var(--border);border-radius:8px;padding:0.5rem;text-align:center;min-width:100px;">
-            <div style="font-size:0.45rem;color:var(--tdim);">Run 7 (new)</div>
-            <div style="font-size:0.6rem;color:var(--tdim);">loss=0.28</div>
-            <div class="tag" style="background:rgba(139,148,158,0.15);color:var(--tmut);">None</div>
-          </div>
-          <div style="color:var(--amber);font-size:0.8rem;">→</div>
-          <div style="background:var(--raised);border:2px solid var(--amber);border-radius:8px;padding:0.5rem;text-align:center;min-width:100px;">
-            <div style="font-size:0.45rem;color:var(--amber);">Run 7 (review)</div>
-            <div style="font-size:0.6rem;color:var(--amber);">loss=0.28</div>
-            <div class="tag" style="background:rgba(255,179,71,0.15);color:var(--amber);">Staging</div>
-          </div>
-          <div style="color:var(--green);font-size:0.8rem;">→</div>
-          <div style="background:var(--raised);border:2px solid var(--green);border-radius:8px;padding:0.5rem;text-align:center;min-width:100px;">
-            <div style="font-size:0.45rem;color:var(--green);">Run 7 (live)</div>
-            <div style="font-size:0.6rem;color:var(--green);">loss=0.28</div>
-            <div class="tag" style="background:rgba(63,185,80,0.15);color:var(--green);">Production</div>
-          </div>
-          <div style="color:var(--tdim);font-size:0.8rem;">→</div>
-          <div style="background:var(--raised);border:1px solid var(--border);border-radius:8px;padding:0.5rem;text-align:center;min-width:100px;">
-            <div style="font-size:0.45rem;color:var(--tdim);">Run 6 (old)</div>
-            <div style="font-size:0.6rem;color:var(--tdim);">loss=0.32</div>
-            <div class="tag" style="background:rgba(139,148,158,0.15);color:var(--tmut);">Archived</div>
-          </div>
+        <div class="vz-title">Model Registry — Promote Through Stages</div>
+        <div style="display:flex;gap:0.5rem;justify-content:center;align-items:center;flex-wrap:wrap;">
+          <div class="vz-box"><div style="font-size:0.65rem;color:var(--tdim)">Run 7 (new)</div><div style="font-size:0.8rem;font-weight:700">loss=0.28</div><span class="vz-tag p">None</span></div>
+          <div style="color:var(--amber);font-size:1.1rem">→</div>
+          <div class="vz-box" style="border:2px solid var(--amber)"><div style="font-size:0.65rem;color:var(--amber);font-weight:700">Run 7 (review)</div><div style="font-size:0.8rem;font-weight:700;color:var(--amber)">loss=0.28</div><span class="vz-tag a">Staging</span></div>
+          <div style="color:var(--green);font-size:1.1rem">→</div>
+          <div class="vz-box" style="border:2px solid var(--green)"><div style="font-size:0.65rem;color:var(--green);font-weight:700">Run 7 (live)</div><div style="font-size:0.8rem;font-weight:700;color:var(--green)">loss=0.28</div><span class="vz-tag m">Production</span></div>
+          <div style="color:var(--tdim);font-size:1.1rem">→</div>
+          <div class="vz-box"><div style="font-size:0.65rem;color:var(--tdim)">Run 6 (old)</div><div style="font-size:0.8rem;font-weight:700;color:var(--tdim)">loss=0.32</div><span class="vz-tag" style="background:var(--raised);color:var(--tmut)">Archived</span></div>
         </div>
-        <div style="margin-top:0.5rem;font-size:0.45rem;color:var(--tdim);">Rollback: <span style="color:var(--cyan);">mlflow models transition medical-qa 6 --stage Production</span> — one command.</div>
+        <div style="margin-top:0.8rem;font-size:0.7rem;color:var(--tdim)">Rollback: <span style="font-family:'JetBrains Mono',monospace;color:var(--violet);font-weight:600">mlflow models transition medical-qa 6 --stage Production</span> — one command.</div>
       </div>`;
-      c='<span style="color:#6a9955;"># Promote to Staging (human reviews here)</span>\n<span style="color:#c586c0;">$</span> mlflow models transition instruction-ft-medical <span style="color:#ce9178;">7</span> --stage Staging\n\n<span style="color:#6a9955;"># After review → Production (live traffic)</span>\n<span style="color:#c586c0;">$</span> mlflow models transition instruction-ft-medical <span style="color:#ce9178;">7</span> --stage Production\n\n<span style="color:#6a9955;"># Emergency rollback</span>\n<span style="color:#c586c0;">$</span> mlflow models transition instruction-ft-medical <span style="color:#ce9178;">6</span> --stage Production';
+      c='# Promote to Staging (human reviews here)\n$ mlflow models transition instruction-ft-medical 7 --stage Staging\n\n# After review → Production (live traffic)\n$ mlflow models transition instruction-ft-medical 7 --stage Production\n\n# Emergency rollback\n$ mlflow models transition instruction-ft-medical 6 --stage Production';
     }
   }
   // ── STAGE 1: DVC ──
   else if(curStage===1){
     if(curSub===0){
       v=`<div style="text-align:center;width:100%">
-        <div style="font-family:'Orbitron',sans-serif;font-size:0.55rem;color:var(--tdim);margin-bottom:0.5rem;">DVC Data Versioning — Git + Cloud Storage</div>
-        <div style="display:flex;gap:0.8rem;justify-content:center;align-items:flex-start;flex-wrap:wrap;">
-          <div style="text-align:center;min-width:140px;">
-            <div style="font-family:'Orbitron',sans-serif;font-size:0.45rem;color:var(--tdim);margin-bottom:0.3rem;">Your Laptop</div>
-            <div class="file-tree">
-<div class="dir">project/</div>
-<div class="dir">  data/</div>
-<div class="file tracked">    instruction_data.csv  <span style="color:var(--amber);">(5 MB)</span></div>
-<div class="file">      → .dvc pointer (200 B)</div>
-<div class="file added">    train_split.csv       <span style="color:var(--green);">(output)</span></div>
-<div class="dir">  models/</div>
-<div class="file added">    adapter_model.safetensors</div>
-            </div>
-            <div style="margin-top:0.3rem;"><span class="tag git">Git tracks: .dvc pointer (200 B)</span></div>
+        <div class="vz-title">DVC Data Versioning — Git + Cloud Storage</div>
+        <div style="display:flex;gap:1.2rem;justify-content:center;align-items:flex-start;flex-wrap:wrap;">
+          <div style="text-align:center;min-width:160px">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;color:var(--tdim);font-weight:600;margin-bottom:0.4rem">💻 Your Laptop</div>
+            <div class="file-tree"><div class="dir">project/</div><div class="dir">  data/</div><div class="tracked">    instruction_data.csv  (5 MB)</div><div style="color:var(--tdim)">      → .dvc pointer (200 B)</div><div class="added">    train_split.csv       (output)</div><div class="dir">  models/</div><div class="added">    adapter_model.safetensors</div></div>
+            <div style="margin-top:0.4rem"><span class="tag git">Git tracks: .dvc pointer (200 B)</span></div>
           </div>
-          <div style="text-align:center;min-width:140px;">
-            <div style="font-family:'Orbitron',sans-serif;font-size:0.45rem;color:var(--tdim);margin-bottom:0.3rem;">DVC Remote (S3/GDrive)</div>
-            <div class="file-tree">
-<div class="dir">dvc-cache/</div>
-<div class="file">  a1/</div>
-<div class="file tracked">    b2c3d4e5...   <span style="color:var(--amber);">(5 MB)</span></div>
-<div class="file">  f6/</div>
-<div class="file tracked">    g7h8i9j0...   <span style="color:var(--amber);">(5 MB)</span></div>
-<div class="file">  ...5 versions total</div>
-            </div>
-            <div style="margin-top:0.3rem;"><span class="tag dvc">DVC stores: actual data files</span></div>
+          <div style="text-align:center;min-width:160px">
+            <div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;color:var(--tdim);font-weight:600;margin-bottom:0.4rem">☁️ DVC Remote (S3/GDrive)</div>
+            <div class="file-tree"><div class="dir">dvc-cache/</div><div>  a1/</div><div class="tracked">    b2c3d4e5...   (5 MB)</div><div>  f6/</div><div class="tracked">    g7h8i9j0...   (5 MB)</div><div style="color:var(--tdim)">  ...5 versions total</div></div>
+            <div style="margin-top:0.4rem"><span class="tag dvc">DVC stores: actual data files</span></div>
           </div>
         </div>
-        <div style="margin-top:0.4rem;font-size:0.45rem;color:var(--tdim);">
-          dvc add → hashes file → copies to cache → writes .dvc pointer → <strong>git commit the pointer, dvc push the data</strong>
-        </div>
+        <div style="margin-top:0.6rem;font-size:0.72rem;color:var(--tdim)"><strong>dvc add → hashes file → copies to cache → writes .dvc pointer → git commit the pointer, dvc push the data</strong></div>
       </div>`;
-      c='<span style="color:#6a9955;"># Add data to DVC — Git tracks the pointer, DVC stores the file</span>\n<span style="color:#c586c0;">$</span> dvc add data/instruction_data.csv\n<span style="color:#c586c0;">$</span> git add data/instruction_data.csv.dvc .gitignore\n<span style="color:#c586c0;">$</span> git commit -m <span style="color:#ce9178;">"Add Q&A dataset v2 — 500 rows"</span>\n<span style="color:#c586c0;">$</span> dvc push  <span style="color:#6a9955;"># Upload to S3/GDrive</span>\n\n<span style="color:#6a9955;"># Anyone can reproduce:</span>\n<span style="color:#c586c0;">$</span> git checkout &lt;commit&gt;\n<span style="color:#c586c0;">$</span> dvc checkout  <span style="color:#6a9955;"># Restores exact dataset version</span>';
+      c='# Add data to DVC — Git tracks the pointer, DVC stores the file\n$ dvc add data/instruction_data.csv\n$ git add data/instruction_data.csv.dvc .gitignore\n$ git commit -m "Add Q&A dataset v2 — 500 rows"\n$ dvc push  # Upload to S3/GDrive\n\n# Anyone can reproduce:\n$ git checkout <commit>\n$ dvc checkout  # Restores exact dataset version';
     }else if(curSub===1){
       v=`<div style="text-align:center;width:100%">
-        <div style="font-family:'Orbitron',sans-serif;font-size:0.55rem;color:var(--tdim);margin-bottom:0.5rem;">DVC Pipeline — 3 Stages, Hash-Cached</div>
-        <div style="display:flex;flex-direction:column;gap:0.3rem;align-items:center;">
-          <div style="display:flex;gap:0.3rem;align-items:center;flex-wrap:wrap;">
-            <div style="background:var(--raised);border:1px solid var(--amber);border-radius:6px;padding:0.4rem;min-width:140px;text-align:left;font-size:0.4rem;">
-              <span style="color:var(--amber);font-weight:700;">Stage 1: prepare_data</span><br>
-              <span style="color:var(--tdim);">deps: data/instruction_data.csv</span><br>
-              <span style="color:var(--tdim);">outs: train_split.csv, val_split.csv</span>
-            </div>
-            <span style="color:var(--tdim);">→</span>
-            <div style="background:var(--raised);border:1px solid var(--violet);border-radius:6px;padding:0.4rem;min-width:140px;text-align:left;font-size:0.4rem;">
-              <span style="color:var(--violet);font-weight:700;">Stage 2: train</span><br>
-              <span style="color:var(--tdim);">deps: train_split.csv</span><br>
-              <span style="color:var(--tdim);">outs: adapter_model.safetensors</span>
-            </div>
-            <span style="color:var(--tdim);">→</span>
-            <div style="background:var(--raised);border:1px solid var(--green);border-radius:6px;padding:0.4rem;min-width:140px;text-align:left;font-size:0.4rem;">
-              <span style="color:var(--green);font-weight:700;">Stage 3: evaluate</span><br>
-              <span style="color:var(--tdim);">deps: adapter_model.safetensors</span><br>
-              <span style="color:var(--tdim);">metrics: evaluation_metrics.json</span>
-            </div>
-          </div>
-          <div style="background:var(--green-bg);border:1px solid var(--green);border-radius:6px;padding:0.4rem;max-width:500px;font-size:0.4rem;color:var(--green);">
-            <strong>CACHING:</strong> DVC hashes every dependency. If nothing changed → CACHED (skipped).<br>
-            Change one CSV row → all 3 stages re-run. Change only evaluate script → only evaluate re-runs.
+        <div class="vz-title">DVC Pipeline — 3 Stages, Hash-Cached</div>
+        <div style="display:flex;flex-direction:column;gap:0.4rem;align-items:center">
+          <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap">
+            <div class="vz-box" style="border-color:var(--amber);text-align:left;min-width:150px"><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;color:var(--amber);font-weight:700">Stage 1: prepare_data</div><div class="vz-label">deps: instruction_data.csv</div><div class="vz-label">outs: train_split.csv, val_split.csv</div></div>
+            <div class="vz-arrow">→</div>
+            <div class="vz-box" style="border-color:var(--violet);text-align:left;min-width:150px"><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;color:var(--violet);font-weight:700">Stage 2: train</div><div class="vz-label">deps: train_split.csv, adapter/</div><div class="vz-label">outs: adapter_model.safetensors</div></div>
+            <div class="vz-arrow">→</div>
+            <div class="vz-box" style="border-color:var(--green);text-align:left;min-width:150px"><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;color:var(--green);font-weight:700">Stage 3: evaluate</div><div class="vz-label">deps: val_split.csv, model</div><div class="vz-label">outs: metrics.json, drift_report.html</div></div>
           </div>
         </div>
+        <div style="margin-top:0.6rem;font-size:0.7rem;color:var(--tdim)"><strong>dvc repro</strong> walks the DAG. If nothing changed → <span style="color:var(--green);font-weight:700">CACHED (skipped).</span></div>
       </div>`;
-      c='<span style="color:#6a9955;"># dvc.yaml — the entire pipeline in one file</span>\n<span style="color:#569cd6;">stages:</span>\n  <span style="color:#569cd6;">prepare_data:</span>\n    <span style="color:#569cd6;">cmd:</span> <span style="color:#ce9178;">python scripts/prepare_data.py</span>\n    <span style="color:#569cd6;">deps:</span> [<span style="color:#ce9178;">data/instruction_data.csv</span>]\n    <span style="color:#569cd6;">outs:</span> [<span style="color:#ce9178;">data/train_split.csv</span>]\n  <span style="color:#569cd6;">train:</span>\n    <span style="color:#569cd6;">cmd:</span> <span style="color:#ce9178;">python scripts/train_stage.py</span>\n    <span style="color:#569cd6;">deps:</span> [<span style="color:#ce9178;">data/train_split.csv</span>]\n    <span style="color:#569cd6;">outs:</span> [<span style="color:#ce9178;">models/adapter.safetensors</span>]';
+      c='# dvc.yaml — 3 stages, auto-cached\nstages:\n  prepare_data:\n    cmd: python scripts/prepare_data.py\n    deps: [data/instruction_data.csv]\n    outs: [data/train_split.csv, data/val_split.csv]\n  train:\n    cmd: python scripts/train.py\n    deps: [data/train_split.csv, adapter/]\n    outs: [adapter/adapter_model.safetensors]\n  evaluate:\n    cmd: python scripts/evaluate.py\n    deps: [data/val_split.csv, adapter/]\n    metrics: [metrics.json]';
     }else{
       v=`<div style="text-align:center;width:100%">
-        <div style="font-family:'Orbitron',sans-serif;font-size:0.55rem;color:var(--tdim);margin-bottom:0.5rem;">dvc repro — One Command, Full Pipeline</div>
-        <div style="background:var(--raised);border:1px solid var(--border);border-radius:8px;padding:0.6rem;display:inline-block;text-align:left;font-family:'JetBrains Mono',monospace;font-size:0.45rem;line-height:2;">
-          <div style="color:var(--cyan);">$ dvc repro</div>
-          <div style="color:var(--tdim);">Stage 'prepare_data' is <span style="color:var(--green);">cached</span> — skipping.</div>
-          <div style="color:var(--tdim);">Stage 'train' is <span style="color:var(--green);">cached</span> — skipping.</div>
-          <div style="color:var(--tdim);">Stage 'evaluate' is <span style="color:var(--green);">cached</span> — skipping.</div>
-          <div style="color:var(--green);">Pipeline is up to date. Nothing to reproduce.</div>
-          <div style="color:var(--tdim);margin-top:0.5rem;">...3 weeks later, drift detected, add new Q&A...</div>
-          <div style="color:var(--cyan);margin-top:0.5rem;">$ dvc repro</div>
-          <div style="color:var(--amber);">Running stage 'prepare_data': 500 rows → 550 rows (hash changed!)</div>
-          <div style="color:var(--violet);">Running stage 'train': training on 550 examples... [MLflow] Run: k9l0m1n2</div>
-          <div style="color:var(--green);">Running stage 'evaluate': drift = 0.15 (was 0.62!) → PASS</div>
+        <div class="vz-title">dvc repro — Reproduce Everything with One Command</div>
+        <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
+          <div class="vz-box"><div style="font-size:1.3rem">📝</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--amber)">DATA CHANGED?</div><div class="vz-label">Hash differs → re-run</div></div>
+          <div class="vz-arrow">→</div>
+          <div class="vz-box"><div style="font-size:1.3rem">⚡</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--green)">CACHED?</div><div class="vz-label">Same hash → skip</div></div>
+          <div class="vz-arrow">→</div>
+          <div class="vz-box" style="border:2px solid var(--violet)"><div style="font-size:1.3rem">✅</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">DONE</div><div class="vz-label">All stages complete</div></div>
         </div>
+        <div style="margin-top:0.6rem;font-size:0.7rem;color:var(--tdim)">Hashes every dependency bottom-up. <strong>Only changed stages re-run.</strong> Saves GPU hours.</div>
       </div>`;
-      c='<span style="color:#6a9955;"># Reproduce the full pipeline — one command</span>\n<span style="color:#c586c0;">$</span> dvc repro\n\n<span style="color:#6a9955;"># Or run a single stage:</span>\n<span style="color:#c586c0;">$</span> dvc repro train  <span style="color:#6a9955;"># Only re-run training</span>\n\n<span style="color:#6a9955;"># Check what would run (dry-run):</span>\n<span style="color:#c586c0;">$</span> dvc repro --dry';
+      c='$ dvc repro\nRunning stage prepare_data:   → CACHED (hash matches)\nRunning stage train:          → data changed, re-running...\n  Epoch 10/10 | loss: 0.32 | GPU: 4m 12s\nRunning stage evaluate:       → model changed, re-running...\n  Accuracy: 0.89 | Perplexity: 12.4\n\n✅ Pipeline complete. 2/3 stages re-ran.';
     }
   }
   // ── STAGE 2: Evidently ──
   else if(curStage===2){
     if(curSub===0){
       v=`<div style="text-align:center;width:100%">
-        <div style="font-family:'Orbitron',sans-serif;font-size:0.55rem;color:var(--tdim);margin-bottom:0.5rem;">Evidently AI — Compare Training vs Production Data</div>
-        <div style="display:flex;gap:0.8rem;justify-content:center;align-items:center;flex-wrap:wrap;">
-          <div style="text-align:center;">
-            <div style="font-family:'Orbitron',sans-serif;font-size:0.4rem;color:var(--green);">REFERENCE (Training)</div>
-            <div style="background:var(--raised);border:2px solid var(--green);border-radius:6px;padding:0.4rem;min-width:120px;margin-top:0.2rem;">
-              <div style="font-size:0.4rem;color:var(--tdim);line-height:1.8;">"Metformin is..."</div>
-              <div style="font-size:0.4rem;color:var(--tdim);line-height:1.8;">"Diabetes symptoms..."</div>
-              <div style="font-size:0.4rem;color:var(--tdim);line-height:1.8;">"Insulin resistance..."</div>
-              <div style="font-size:0.4rem;color:var(--tdim);line-height:1.8;">"A1C normal range..."</div>
-            </div>
-            <div style="font-size:0.4rem;color:var(--tdim);margin-top:0.2rem;">500 medical Q&A</div>
-          </div>
-          <div style="font-size:1.2rem;color:var(--green);">vs</div>
-          <div style="text-align:center;">
-            <div style="font-family:'Orbitron',sans-serif;font-size:0.4rem;color:var(--red);">CURRENT (Production)</div>
-            <div style="background:var(--raised);border:2px solid var(--red);border-radius:6px;padding:0.4rem;min-width:120px;margin-top:0.2rem;">
-              <div style="font-size:0.4rem;color:var(--tdim);line-height:1.8;">"Metformin is..."</div>
-              <div style="font-size:0.4rem;color:var(--red);line-height:1.8;">"Kubernetes pods..."</div>
-              <div style="font-size:0.4rem;color:var(--tdim);line-height:1.8;">"A1C normal range..."</div>
-              <div style="font-size:0.4rem;color:var(--red);line-height:1.8;">"Docker compose..."</div>
-            </div>
-            <div style="font-size:0.4rem;color:var(--tdim);margin-top:0.2rem;">50% medical + 50% new topics</div>
-          </div>
+        <div class="vz-title">Evidently AI — Compare Training vs Live Data</div>
+        <div style="display:flex;gap:0.8rem;justify-content:center;flex-wrap:wrap;align-items:center;">
+          <div class="vz-box"><div style="font-size:1.3rem">📊</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">REFERENCE</div><div class="vz-label">What you trained on</div><div class="vz-label">500 Q&A pairs</div></div>
+          <div class="vz-arrow">VS</div>
+          <div class="vz-box"><div style="font-size:1.3rem">📡</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--cyan)">CURRENT</div><div class="vz-label">What users are asking</div><div class="vz-label">Last 7 days of queries</div></div>
+          <div class="vz-arrow">→</div>
+          <div class="vz-box" style="border:2px solid var(--green)"><div style="font-size:1.3rem">📋</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--green)">DRIFT REPORT</div><div class="vz-label">Per-column drift scores</div></div>
         </div>
-        <div style="margin-top:0.4rem;">
-          <div style="font-size:0.45rem;color:var(--tdim);">Evidently computes drift using statistical tests (KL divergence, Wasserstein distance)</div>
-          <div class="bar-track"><div class="bar-fill" style="width:62%;"></div></div>
-          <div style="font-size:0.45rem;color:var(--red);">Drift Score: 0.62 — USERS ASKING ABOUT NEW TOPICS</div>
-        </div>
+        <div style="margin-top:0.6rem;font-size:0.7rem;color:var(--tdim)">Evidently computes drift using statistical tests — <strong>KL divergence for text, Wasserstein distance for numeric.</strong></div>
       </div>`;
-      c='<span style="color:#569cd6;">from</span> evidently <span style="color:#569cd6;">import</span> Report\n<span style="color:#569cd6;">from</span> evidently.metric_preset <span style="color:#569cd6;">import</span> DataDriftPreset\n\nreport = Report(metrics=[DataDriftPreset()])\nreport.run(\n    reference_data=train_df,   <span style="color:#6a9955;"># What you trained on</span>\n    current_data=live_df       <span style="color:#6a9955;"># What users ask NOW</span>\n)\nreport.save_html(<span style="color:#ce9178;">"drift_report.html"</span>)';
+      c='from evidently.report import Report\nfrom evidently.metrics import DataDriftTable\n\nreport = Report(metrics=[DataDriftTable()])\nreport.run(reference_data=train_df, current_data=live_df)\nreport.save_html("drift_report.html")';
     }else if(curSub===1){
       v=`<div style="text-align:center;width:100%">
-        <div style="font-family:'Orbitron',sans-serif;font-size:0.55rem;color:var(--tdim);margin-bottom:0.5rem;">When Drift > 0.5 — The Model is Failing Silently</div>
-        <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
-          <div style="background:var(--green-bg);border:2px solid var(--green);border-radius:8px;padding:0.5rem;text-align:center;min-width:130px;">
-            <div style="font-size:0.7rem;">🟢</div>
-            <div style="font-family:'Orbitron',sans-serif;font-size:0.45rem;color:var(--green);">Server is UP</div>
-            <div style="font-size:0.4rem;color:var(--tdim);">HTTP 200 OK</div>
-            <div style="font-size:0.4rem;color:var(--tdim);">Latency: 50ms</div>
-          </div>
-          <div style="background:var(--amber-bg);border:2px solid var(--amber);border-radius:8px;padding:0.5rem;text-align:center;min-width:130px;">
-            <div style="font-size:0.7rem;">🟡</div>
-            <div style="font-family:'Orbitron',sans-serif;font-size:0.45rem;color:var(--amber);">Model Responds</div>
-            <div style="font-size:0.4rem;color:var(--tdim);">Tokens flowing</div>
-            <div style="font-size:0.4rem;color:var(--tdim);">No errors</div>
-          </div>
-          <div style="background:var(--red-bg);border:2px solid var(--red);border-radius:8px;padding:0.5rem;text-align:center;min-width:130px;">
-            <div style="font-size:0.7rem;">🔴</div>
-            <div style="font-family:'Orbitron',sans-serif;font-size:0.45rem;color:var(--red);">Answers are WRONG</div>
-            <div style="font-size:0.4rem;color:var(--red);">"Kubernetes is a diabetes drug?"</div>
-            <div style="font-size:0.4rem;color:var(--tdim);">Hallucinating on new topics</div>
-          </div>
+        <div class="vz-title">Drift Score > 0.5 → RETRAIN</div>
+        <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;align-items:center;">
+          <div class="vz-box"><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--green)">✅ Normal</div><div style="font-size:1rem;font-weight:700;color:var(--green)">0.15</div><div class="vz-label">Users asking similar Q's</div></div>
+          <div class="vz-arrow">→</div>
+          <div class="vz-box" style="border:2px solid var(--amber)"><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--amber)">⚠ Warning</div><div style="font-size:1rem;font-weight:700;color:var(--amber)">0.35</div><div class="vz-label">New topics emerging</div></div>
+          <div class="vz-arrow">→</div>
+          <div class="vz-box" style="border:2px solid var(--red)"><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--red)">🔴 RETRAIN</div><div style="font-size:1rem;font-weight:700;color:var(--red)">0.62</div><div class="vz-label">Model failing silently!</div></div>
         </div>
-        <div style="margin-top:0.5rem;font-size:0.45rem;color:var(--tdim);">
-          <strong style="color:var(--red);">Traditional monitoring fails here.</strong> The server is up. The model responds. The answers are silently wrong.<br>
-          Only <strong style="color:var(--green);">Evidently AI drift detection</strong> catches this — by comparing what users ask NOW to what you trained on.
-        </div>
+        <div style="margin-top:0.6rem;font-size:0.7rem;color:var(--tdim)">The daily GitHub Actions job catches drift <strong>within 24 hours.</strong> The model responds — but the answers are wrong.</div>
       </div>`;
-      c='<span style="color:#6a9955;"># GitHub Actions runs this DAILY at 6am UTC</span>\n<span style="color:#569cd6;">if</span> drift_score > <span style="color:#ce9178;">0.5</span>:\n    <span style="color:#c586c0;">print</span>(<span style="color:#ce9178;">"DRIFT DETECTED! Model needs retraining."</span>)\n    sys.exit(<span style="color:#ce9178;">1</span>)  <span style="color:#6a9955;"># Fails the workflow → you get notified</span>\n\n<span style="color:#6a9955;"># Evidently report shows exactly which columns drifted</span>';
+      c='if drift_score > 0.5:\n    print("🔴 RETRAIN: Users asking about untrained topics")\n    # The model is responding, but answers are wrong\n    # Trigger: collect new data → dvc repro → MLflow → deploy';
     }else{
       v=`<div style="text-align:center;width:100%">
-        <div style="font-family:'Orbitron',sans-serif;font-size:0.55rem;color:var(--tdim);margin-bottom:0.5rem;">The Drift → Retrain → Deploy Loop</div>
-        <div style="display:flex;flex-direction:column;gap:0.3rem;align-items:center;font-size:0.45rem;">
-          <div style="display:flex;gap:0.3rem;align-items:center;flex-wrap:wrap;">
-            <div style="background:var(--red-bg);border:1px solid var(--red);border-radius:5px;padding:0.3rem 0.5rem;">🔴 Drift Detected (0.62)</div>
-            <span style="color:var(--tdim);">→</span>
-            <div style="background:var(--amber-bg);border:1px solid var(--amber);border-radius:5px;padding:0.3rem 0.5rem;">🟡 Human Reviews</div>
-            <span style="color:var(--tdim);">→</span>
-            <div style="background:var(--cyan-bg);border:1px solid var(--cyan);border-radius:5px;padding:0.3rem 0.5rem;">🔵 Collect New Q&A</div>
-            <span style="color:var(--tdim);">→</span>
-            <div style="background:var(--vbg);border:1px solid var(--violet);border-radius:5px;padding:0.3rem 0.5rem;">🟣 dvc repro</div>
-            <span style="color:var(--tdim);">→</span>
-            <div style="background:var(--green-bg);border:1px solid var(--green);border-radius:5px;padding:0.3rem 0.5rem;">🟢 Promote v8</div>
-          </div>
-          <div class="bar-track"><div class="bar-fill" style="width:100%;"></div></div>
-          <div style="color:var(--green);">Drift: 0.62 → 0.15. Model now handles Docker + K8s + Metformin.</div>
+        <div class="vz-title">Drift → Act → Retrain → Deploy</div>
+        <div style="display:flex;gap:0.4rem;justify-content:center;flex-wrap:wrap;align-items:center;">
+          <div class="vz-box"><div style="font-size:1.3rem">🔍</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--red)">DRIFT</div><div class="vz-label">Detected by Evidently</div></div>
+          <div class="vz-arrow">→</div>
+          <div class="vz-box"><div style="font-size:1.3rem">👤</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--amber)">REVIEW</div><div class="vz-label">Human checks what changed</div></div>
+          <div class="vz-arrow">→</div>
+          <div class="vz-box"><div style="font-size:1.3rem">➕</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">APPEND</div><div class="vz-label">New Q&A to dataset</div></div>
+          <div class="vz-arrow">→</div>
+          <div class="vz-box"><div style="font-size:1.3rem">⚡</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--cyan)">DVC REPRO</div><div class="vz-label">Re-run pipeline</div></div>
+          <div class="vz-arrow">→</div>
+          <div class="vz-box" style="border:2px solid var(--green)"><div style="font-size:1.3rem">🚀</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--green)">DEPLOY</div><div class="vz-label">Promote to Production</div></div>
         </div>
+        <div style="margin-top:0.6rem;font-size:0.7rem;color:var(--tdim)">The full cycle: <strong>detect → review → append → dvc repro → MLflow → promote.</strong></div>
       </div>`;
-      c='<span style="color:#6a9955;"># 1. Drift alert fires (GitHub Actions, 6am UTC)</span>\n<span style="color:#6a9955;"># 2. Human: "Users asking about DevOps tools"</span>\n<span style="color:#c586c0;">$</span> echo <span style="color:#ce9178;">"docker,k8s Q&A"</span> >> data/instruction_data.csv\n<span style="color:#c586c0;">$</span> dvc add data/instruction_data.csv && dvc push\n<span style="color:#c586c0;">$</span> dvc repro  <span style="color:#6a9955;"># Re-runs all 3 stages</span>\n\n<span style="color:#6a9955;"># 3. New model handles old + new topics</span>\n<span style="color:#c586c0;">$</span> mlflow models transition medical-qa <span style="color:#ce9178;">8</span> --stage Production';
+      c='# Drift detected → fix it\n$ python scripts/append_qa.py --new-qa new_questions.json  # Append new Q&A\n$ dvc add data/instruction_data.csv                          # Track new version\n$ dvc push                                                   # Upload to remote\n$ dvc repro                                                  # Re-run pipeline\n$ mlflow models transition instruction-ft-medical 8 --stage Production';
     }
   }
   // ── STAGE 3: vLLM ──
   else if(curStage===3){
     if(curSub===0){
       v=`<div style="text-align:center;width:100%">
-        <div style="font-family:'Orbitron',sans-serif;font-size:0.55rem;color:var(--tdim);margin-bottom:0.5rem;">Merge LoRA Adapter → Standard Model</div>
-        <div style="display:flex;gap:0.5rem;justify-content:center;align-items:center;flex-wrap:wrap;">
-          <div style="text-align:center;min-width:100px;">
-            <div style="font-family:'Orbitron',sans-serif;font-size:0.4rem;color:var(--tdim);">Before Merge</div>
-            <div style="background:var(--raised);border:1px solid var(--border);border-radius:6px;padding:0.4rem;margin-top:0.2rem;">
-              <div style="font-size:0.4rem;color:var(--cyan);">W₀ (frozen)</div>
-              <div style="font-size:0.4rem;color:var(--violet);">+ B×A (LoRA)</div>
-              <div style="font-size:0.35rem;color:var(--tmut);">PeftModel</div>
-              <div style="font-size:0.35rem;color:var(--red);">vLLM: ❌</div>
-            </div>
-          </div>
-          <div style="font-size:1.2rem;color:var(--cyan);">→ merge_and_unload() →</div>
-          <div style="text-align:center;min-width:100px;">
-            <div style="font-family:'Orbitron',sans-serif;font-size:0.4rem;color:var(--tdim);">After Merge</div>
-            <div style="background:var(--raised);border:2px solid var(--green);border-radius:6px;padding:0.4rem;margin-top:0.2rem;">
-              <div style="font-size:0.4rem;color:var(--green);">W₀ + B×A baked in</div>
-              <div style="font-size:0.35rem;color:var(--tmut);">Normal AutoModel</div>
-              <div style="font-size:0.35rem;color:var(--green);">vLLM: ✅</div>
-            </div>
-          </div>
+        <div class="vz-title">merge_and_unload() — Bake LoRA into Base Model</div>
+        <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;align-items:center;">
+          <div class="vz-box"><div style="font-size:1.3rem">🧠</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">PeftModel</div><div class="vz-label">W₀ frozen (1.1B)</div><div class="vz-label">+ B×A side paths</div></div>
+          <div class="vz-arrow">→</div>
+          <div class="vz-box" style="border:2px solid var(--violet)"><div style="font-size:1.3rem">🔀</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">merge_and_unload()</div><div class="vz-label">W_new = W₀ + B×A</div></div>
+          <div class="vz-arrow">→</div>
+          <div class="vz-box" style="border:2px solid var(--green)"><div style="font-size:1.3rem">✅</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--green)">Standard Model</div><div class="vz-label">One set of weights</div><div class="vz-label">No LoRA dependency</div></div>
         </div>
-        <div style="margin-top:0.5rem;font-size:0.45rem;color:var(--tdim);">
-          <strong>Why?</strong> vLLM expects a standard model — no LoRA side paths. merge_and_unload() bakes BxA into Wo.<br>
-          The result is a normal model.safetensors file. Any inference engine can load it.
-        </div>
+        <div style="margin-top:0.6rem;font-size:0.7rem;color:var(--tdim)">B and A matrices are <strong>deleted</strong> after merging. The model is now a standard transformers model — no PeftModel dependency.</div>
       </div>`;
-      c='<span style="color:#569cd6;">from</span> peft <span style="color:#569cd6;">import</span> PeftModel\n\nmodel = AutoModelForCausalLM.from_pretrained(<span style="color:#ce9178;">"TinyLlama-1.1B"</span>)\nmodel = PeftModel.from_pretrained(model, <span style="color:#ce9178;">"./adapter"</span>)\nmodel = model.merge_and_unload()  <span style="color:#6a9955;"># Bake BxA into Wo</span>\nmodel.save_pretrained(<span style="color:#ce9178;">"./merged_model"</span>)\ntokenizer.save_pretrained(<span style="color:#ce9178;">"./merged_model"</span>)';
+      c='# Merge adapter into base model\nmodel = PeftModel.from_pretrained(base_model, "./adapter")\nmodel = model.merge_and_unload()\nmodel.save_pretrained("./merged_model")\n# Ready for vLLM!';
     }else if(curSub===1){
       v=`<div style="text-align:center;width:100%">
-        <div style="font-family:'Orbitron',sans-serif;font-size:0.55rem;color:var(--tdim);margin-bottom:0.5rem;">vLLM — PagedAttention (Virtual Memory for KV-Cache)</div>
+        <div class="vz-title">vLLM — PagedAttention + Continuous Batching</div>
         <div style="display:flex;gap:0.8rem;justify-content:center;flex-wrap:wrap;">
-          <div style="text-align:center;min-width:150px;">
-            <div style="font-family:'Orbitron',sans-serif;font-size:0.4rem;color:var(--red);">HuggingFace pipeline()</div>
-            <div style="background:var(--red-bg);border:1px solid var(--red);border-radius:6px;padding:0.4rem;margin-top:0.2rem;">
-              <div style="font-size:0.4rem;color:var(--tdim);line-height:1.6;">Fixed max-size per request</div>
-              <div style="background:var(--raised);border-radius:3px;height:20px;width:120px;display:inline-block;position:relative;margin:0.2rem 0;">
-                <div style="position:absolute;left:0;top:0;bottom:0;width:40px;background:rgba(63,185,80,0.3);border-radius:3px;"></div>
-                <div style="position:absolute;left:40px;top:0;bottom:0;width:80px;background:rgba(248,81,73,0.2);border-radius:3px;"></div>
-              </div>
-              <div style="font-size:0.35rem;color:var(--red);">~65% VRAM wasted</div>
-              <div style="font-size:0.35rem;color:var(--tdim);">~50 tok/s</div>
-            </div>
-          </div>
-          <div style="font-size:1.2rem;color:var(--cyan);">vs</div>
-          <div style="text-align:center;min-width:150px;">
-            <div style="font-family:'Orbitron',sans-serif;font-size:0.4rem;color:var(--green);">vLLM (PagedAttention)</div>
-            <div style="background:var(--green-bg);border:1px solid var(--green);border-radius:6px;padding:0.4rem;margin-top:0.2rem;">
-              <div style="font-size:0.4rem;color:var(--tdim);line-height:1.6;">Blocks allocated on demand</div>
-              <div style="background:var(--raised);border-radius:3px;height:20px;width:120px;display:inline-block;position:relative;margin:0.2rem 0;">
-                <div style="position:absolute;left:0;top:0;bottom:0;width:30px;background:rgba(63,185,80,0.3);border-radius:3px;"></div>
-                <div style="position:absolute;left:30px;top:0;bottom:0;width:20px;background:rgba(57,210,255,0.3);border-radius:3px;"></div>
-                <div style="position:absolute;left:50px;top:0;bottom:0;width:40px;background:rgba(63,185,80,0.3);border-radius:3px;"></div>
-                <div style="position:absolute;left:90px;top:0;bottom:0;width:20px;background:rgba(57,210,255,0.3);border-radius:3px;"></div>
-                <div style="position:absolute;left:110px;top:0;bottom:0;width:10px;background:rgba(63,185,80,0.3);border-radius:3px;"></div>
-              </div>
-              <div style="font-size:0.35rem;color:var(--green);">~95% VRAM utilized</div>
-              <div style="font-size:0.35rem;color:var(--tdim);">~5,000 tok/s (100x)</div>
-            </div>
-          </div>
+          <div class="vz-box" style="min-width:180px"><div style="font-size:1.3rem">📄</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">PAGED ATTENTION</div><div class="vz-label" style="line-height:1.6">Virtual memory for KV-cache.<br>Allocates in small blocks.<br><strong>Zero fragmentation.</strong></div></div>
+          <div class="vz-box" style="min-width:180px"><div style="font-size:1.3rem">🔄</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--cyan)">CONTINUOUS BATCHING</div><div class="vz-label" style="line-height:1.6">New requests join mid-batch.<br>Finished requests don't block.<br><strong>100× vs HF pipeline.</strong></div></div>
+          <div class="vz-box" style="min-width:180px"><div style="font-size:1.3rem">⚡</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--green)">PERFORMANCE</div><div class="vz-label" style="line-height:1.6">5000 tokens/second<br>~50ms per response<br><strong>$0.50/hr on T4 GPU</strong></div></div>
         </div>
-        <div style="margin-top:0.4rem;font-size:0.4rem;color:var(--tdim);">
-          PagedAttention = OS virtual memory for transformers. No fragmentation = more concurrent users = 100x throughput.
-        </div>
+        <div style="margin-top:0.6rem;font-size:0.7rem;color:var(--tdim)"><strong>One command:</strong> <code style="font-family:'JetBrains Mono',monospace;background:var(--raised);padding:0.2em 0.5em;border-radius:4px;color:var(--violet)">vllm serve ./merged_model --port 8000</code></div>
       </div>`;
-      c='<span style="color:#6a9955;"># Start vLLM server — OpenAI-compatible API on port 8000</span>\n<span style="color:#c586c0;">$</span> vllm serve ./merged_model --port <span style="color:#ce9178;">8000</span>\n\n<span style="color:#6a9955;"># vLLM auto-configures:</span>\n<span style="color:#6a9955;"># - PagedAttention (KV-cache in blocks)</span>\n<span style="color:#6a9955;"># - Continuous batching (dynamic request scheduling)</span>\n<span style="color:#6a9955;"># - FlashAttention (fused kernel for speed)</span>\n<span style="color:#6a9955;"># - GPTQ/AWQ quantization (if model supports it)</span>';
+      c='$ vllm serve ./merged_model --port 8000\nINFO: Using PagedAttention with block_size=16\nINFO: Model loaded in 2.1s. Ready on :8000\n# 5000 tok/s, 50ms latency, OpenAI-compatible API';
     }else{
       v=`<div style="text-align:center;width:100%">
-        <div style="font-family:'Orbitron',sans-serif;font-size:0.55rem;color:var(--tdim);margin-bottom:0.5rem;">Query Your Model — Same Code as OpenAI</div>
-        <div style="display:flex;gap:0.8rem;justify-content:center;flex-wrap:wrap;">
-          <div style="background:var(--raised);border:1px solid var(--border);border-radius:8px;padding:0.5rem;text-align:left;min-width:250px;font-family:'JetBrains Mono',monospace;font-size:0.42rem;line-height:1.8;">
-            <div style="color:var(--tdim);">Client sends request:</div>
-            <div style="color:var(--cyan);">POST /v1/chat/completions</div>
-            <div style="color:var(--tdim);">{</div>
-            <div style="color:var(--tdim);">  "model": "./merged_model",</div>
-            <div style="color:var(--tdim);">  "messages": [{</div>
-            <div style="color:var(--tdim);">    "role": "user",</div>
-            <div style="color:var(--ce9178);">    "content": "What is Metformin?"</div>
-            <div style="color:var(--tdim);">  }]</div>
-            <div style="color:var(--tdim);">}</div>
-          </div>
-          <div style="font-size:1rem;color:var(--cyan);">→</div>
-          <div style="background:var(--raised);border:2px solid var(--green);border-radius:8px;padding:0.5rem;text-align:left;min-width:250px;font-family:'JetBrains Mono',monospace;font-size:0.42rem;line-height:1.8;">
-            <div style="color:var(--tdim);">Server responds (50ms):</div>
-            <div style="color:var(--green);">200 OK</div>
-            <div style="color:var(--tdim);">{</div>
-            <div style="color:var(--tdim);">  "choices": [{</div>
-            <div style="color:var(--tdim);">    "message": {</div>
-            <div style="color:var(--green);">      "content": "Metformin is</div>
-            <div style="color:var(--green);">       a biguanide..."</div>
-            <div style="color:var(--tdim);">    }</div>
-            <div style="color:var(--tdim);">  }]</div>
-            <div style="color:var(--tdim);">}</div>
-          </div>
+        <div class="vz-title">OpenAI-Compatible API — Zero Code Changes</div>
+        <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;align-items:center;">
+          <div class="vz-box"><div style="font-size:1.3rem">💻</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">YOUR CODE</div><div class="vz-label">Same OpenAI client</div></div>
+          <div class="vz-arrow">→</div>
+          <div class="vz-box" style="border:2px solid var(--violet)"><div style="font-size:1.3rem">🔀</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">SWAP URL</div><div class="vz-label">api.openai.com<br>→<br>localhost:8000</div></div>
+          <div class="vz-arrow">→</div>
+          <div class="vz-box" style="border:2px solid var(--green)"><div style="font-size:1.3rem">🤖</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--green)">YOUR MODEL</div><div class="vz-label">Fine-tuned<br>50ms response</div></div>
         </div>
-        <div style="margin-top:0.4rem;font-size:0.42rem;color:var(--tdim);">
-          Change ONE line: <span style="color:var(--cyan);">base_url="http://localhost:8000/v1"</span> instead of <span style="color:var(--tdim);">"https://api.openai.com/v1"</span><br>
-          Everything else works — same client, same code, your model.
-        </div>
+        <div style="margin-top:0.6rem;font-size:0.7rem;color:var(--tdim)">Change <strong>one line</strong> — the base_url. Everything else works. <strong>Zero code changes.</strong></div>
       </div>`;
-      c='<span style="color:#569cd6;">from</span> openai <span style="color:#569cd6;">import</span> OpenAI\n\nclient = OpenAI(\n    base_url=<span style="color:#ce9178;">"http://localhost:8000/v1"</span>,  <span style="color:#6a9955;"># ← Only change!</span>\n    api_key=<span style="color:#ce9178;">"not-needed"</span>\n)\nresponse = client.chat.completions.create(\n    model=<span style="color:#ce9178;">"./merged_model"</span>,\n    messages=[{<span style="color:#ce9178;">"role"</span>: <span style="color:#ce9178;">"user"</span>, <span style="color:#ce9178;">"content"</span>: <span style="color:#ce9178;">"What is Metformin?"</span>}]\n)\n<span style="color:#c586c0;">print</span>(response.choices[<span style="color:#ce9178;">0</span>].message.content)';
+      c='# Same code. One line changed.\nfrom openai import OpenAI\n\nclient = OpenAI(\n    base_url="http://localhost:8000/v1",  # ← Only this changes\n    api_key="not-needed"\n)\nresponse = client.chat.completions.create(\n    model="medical-qa-v8",\n    messages=[{"role": "user", "content": "What is Metformin?"}]\n)';
     }
   }
 
   document.getElementById('visual').innerHTML=v;
-  document.getElementById('codeBox').innerHTML=c;
+  document.getElementById('codeBox').textContent=c;
 }
 
 function selectStage(i){curStage=i;curSub=0;render()}
-function nextSub(){if(curSub<stages[curStage].subs.length-1){curSub++;render()}else if(curStage<3){curStage++;curSub=0;render()}}
-function prevSub(){if(curSub>0){curSub--;render()}else if(curStage>0){curStage--;curSub=stages[curStage].subs.length-1;render()}}
+function nextSub(){let st=stages[curStage];curSub=(curSub+1)%st.subs.length;if(curSub===0&&curStage<3){curStage++;render();return}render()}
+function prevSub(){if(curSub>0){curSub--}else if(curStage>0){curStage--;curSub=stages[curStage].subs.length-1}render()}
 function resetAll(){curStage=0;curSub=0;render()}
-document.addEventListener('keydown',function(e){if(e.key==='ArrowRight')nextSub();if(e.key==='ArrowLeft')prevSub()});
 render();
 </script>
 </body>
