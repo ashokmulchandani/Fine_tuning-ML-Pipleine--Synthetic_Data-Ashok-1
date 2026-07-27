@@ -169,6 +169,48 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
   </div>
 </div>
 
+<!-- METRICS PER DATA TYPE -->
+<div class="metric-card">
+  <h2>📊 Metrics Applied to Each Fine-Tuning Type</h2>
+  <div style="overflow-x:auto;">
+  <table class="summary-table">
+    <thead><tr><th>FT Type</th><th>Primary Metric</th><th>Good Score</th><th>How It's Calculated</th></tr></thead>
+    <tbody>
+    <tr><td class="metric-name">📝 Text FT</td><td style="color:var(--red);">Training Loss</td><td>< 1.0</td><td>Cross-entropy: "was the next word right?"</td></tr>
+    <tr><td class="metric-name">📊 Tabular FT</td><td style="color:var(--red);">Training Loss</td><td>< 1.0</td><td>Same as text FT — rows become sentences</td></tr>
+    <tr><td class="metric-name">🖼️ Image FT</td><td style="color:var(--cyan);">mAP</td><td>> 0.7</td><td>Box overlap + correct class across all images</td></tr>
+    <tr><td class="metric-name">🖼️📝 Vision-Lang FT</td><td style="color:var(--red);">Training Loss</td><td>< 1.0</td><td>Same as text FT — model predicts answer text</td></tr>
+    <tr><td class="metric-name">🔧 Sensor FT</td><td style="color:var(--red);">Training Loss</td><td>< 1.0</td><td>Same as text FT — vibrations become sentences</td></tr>
+    <tr><td class="metric-name">🔄 Lifecycle (BUILD)</td><td style="color:var(--red);">Training Loss</td><td>< 1.0</td><td>During training: loss decreasing = learning</td></tr>
+    <tr><td class="metric-name">🔄 Lifecycle (TEST)</td><td style="color:var(--violet);">Accuracy</td><td>> 85%</td><td>Behavioral tests: did model answer correctly?</td></tr>
+    <tr><td class="metric-name">🔄 Lifecycle (MONITOR)</td><td style="color:var(--amber);">Drift Score</td><td>< 0.2</td><td>Evidently AI: are users asking new topics?</td></tr>
+    <tr><td class="metric-name">🚀 Deploy (YOLO)</td><td style="color:var(--cyan);">mAP + FPS</td><td>mAP>0.7, FPS>30</td><td>Accuracy + speed on target hardware</td></tr>
+    <tr><td class="metric-name">🚀 Deploy (LLM/vLLM)</td><td style="color:var(--green);">Perplexity</td><td>< 3.0</td><td>Model confidence at inference time</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<!-- WHEN EACH METRIC IS USED -->
+<div class="metric-card">
+  <h2>🔄 When Each Metric Appears in the Lifecycle</h2>
+
+  <table class="summary-table">
+    <thead><tr><th>Stage</th><th>Metric</th><th>Question It Answers</th></tr></thead>
+    <tbody>
+    <tr><td class="metric-name">📦 BUILD (Training)</td><td style="color:var(--red);">Loss ↓</td><td>"Is the model learning?"</td></tr>
+    <tr><td class="metric-name">🧪 TEST (Validation)</td><td style="color:var(--violet);">Accuracy ↑</td><td>"Does it give correct answers on unseen data?"</td></tr>
+    <tr><td class="metric-name">🚀 DEPLOY</td><td style="color:var(--cyan);">mAP ↑ / Perplexity ↓</td><td>"Is it fast and accurate enough to serve?"</td></tr>
+    <tr><td class="metric-name">⚡ RUN</td><td style="color:var(--blue);">Latency (ms) / FPS</td><td>"Is it fast enough for users?"</td></tr>
+    <tr><td class="metric-name">📊 MONITOR</td><td style="color:var(--amber);">Drift ↓</td><td>"Are users still asking what we trained on?"</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <strong>🧠 Key pattern:</strong> Training → Loss. Testing → Accuracy/mAP. Production → Drift + Latency. Different metrics for different stages of the model's life.
+  </div>
+</div>
+
 <!-- WHICH METRIC WHEN -->
 <div class="metric-card">
   <h2>🗺️ Which Metric for Which Phase?</h2>
