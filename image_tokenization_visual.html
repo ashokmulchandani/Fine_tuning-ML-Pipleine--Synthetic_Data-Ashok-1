@@ -12,51 +12,51 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 .app{max-width:900px;margin:0 auto;padding:1.5rem;}
 
 .header{text-align:center;padding:2rem 0 1.5rem;}
-.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;color:var(--violet);}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--violet);}
 .header p{color:var(--tdim);font-size:0.95rem;}
 
-.step{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin:1.5rem 0;}
-.step h2{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;color:var(--violet);margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem;}
+.step{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin:1.5rem 0;}
+.step h2{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;font-weight:600;color:var(--violet);margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem;}
+.step h2 .num{background:var(--violet);color:#fff;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:0.75rem;}
+.step p{color:var(--tdim);font-size:0.9rem;margin-bottom:0.5rem;}
 
-.arrow-down{text-align:center;font-size:2rem;color:var(--violet);margin:0.3rem 0;}
+.arrow-down{text-align:center;font-size:2.5rem;color:var(--violet);margin:0.3rem 0;}
 
-/* Grid */
-.grid-container{display:flex;justify-content:center;margin:0.75rem 0;}
-.grid-14{display:grid;grid-template-columns:repeat(14,1fr);gap:1px;width:280px;height:280px;border:2px solid var(--border);border-radius:4px;overflow:hidden;}
-.grid-cell{background:var(--cyan);opacity:0.3;border:1px solid rgba(0,122,153,0.1);}
-.grid-cell.highlight{background:var(--violet);opacity:0.8;border:2px solid var(--violet);animation:pulse 0.8s ease-in-out;}
-@keyframes pulse{0%,100%{opacity:0.8;}50%{opacity:0.4;}}
+/* Canvas for drawing */
+.canvas-wrap{display:flex;justify-content:center;margin:1rem 0;}
+canvas{border:1px solid var(--border);border-radius:8px;}
 
-/* Patch zoom */
-.patch-zoom{display:flex;align-items:center;gap:1rem;justify-content:center;margin:0.75rem 0;flex-wrap:wrap;}
-.patch-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;width:80px;height:80px;border:2px solid var(--violet);border-radius:4px;}
-.patch-pixel{background:var(--cyan);opacity:0.5;}
+/* Flow */
+.flow-row{display:flex;align-items:center;gap:0.5rem;justify-content:center;flex-wrap:wrap;margin:1rem 0;font-family:'Space Grotesk',sans-serif;}
+.flow-box{padding:0.6rem 1rem;border-radius:10px;text-align:center;font-weight:600;font-size:0.75rem;border:2px solid;}
+.flow-box.img{border-color:var(--cyan);background:rgba(0,122,153,0.06);}
+.flow-box.patches{border-color:var(--violet);background:var(--vbg);}
+.flow-box.vectors{border-color:var(--green);background:rgba(26,110,52,0.06);}
+.flow-arr{font-size:1.5rem;color:var(--violet);}
 
-/* Vector */
-.vector-row{display:flex;align-items:center;gap:0.25rem;justify-content:center;flex-wrap:wrap;margin:0.5rem 0;}
-.vec-cell{width:10px;height:10px;border-radius:2px;background:var(--violet);opacity:0.6;}
-.vec-label{font-size:0.6rem;color:var(--tmut);font-family:'Space Grotesk',monospace;}
-
-/* Token flow */
-.token-flow{display:flex;align-items:center;gap:0.2rem;flex-wrap:wrap;justify-content:center;margin:0.75rem 0;}
-.token-block{padding:0.3rem 0.5rem;border-radius:4px;font-family:'Space Grotesk',monospace;font-size:0.55rem;font-weight:600;}
-.token-block.visual{background:rgba(0,122,153,0.1);border:1px solid var(--cyan);color:var(--cyan);}
-.token-block.cls{background:rgba(91,58,168,0.1);border:1px solid var(--violet);color:var(--violet);}
-.token-block.text{background:rgba(184,112,0,0.1);border:1px solid var(--amber);color:var(--amber);}
-
-/* Projection */
-.proj-box{background:var(--card);border:2px solid var(--violet);border-radius:10px;padding:1rem;text-align:center;margin:0.75rem 0;}
-.dim-display{display:flex;align-items:center;justify-content:center;gap:0.5rem;flex-wrap:wrap;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.85rem;}
-
-.code-box{background:#1e1e1e;border:1px solid #333;border-radius:8px;padding:0.75rem 1rem;margin:0.5rem 0;font-family:'Space Grotesk',monospace;font-size:0.72rem;line-height:1.7;white-space:pre-wrap;overflow-x:auto;color:#d4d4d4;}
+.code-box{background:#1e1e1e;border:1px solid #333;border-radius:8px;padding:0.8rem 1rem;margin:0.75rem 0;font-family:'Space Grotesk',monospace;font-size:0.75rem;line-height:1.7;white-space:pre-wrap;overflow-x:auto;color:#d4d4d4;}
 
 .callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.75rem 1rem;margin:0.75rem 0;font-size:0.85rem;line-height:1.7;}
 
-table{width:100%;border-collapse:collapse;font-size:0.78rem;margin:0.75rem 0;}
-th{font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);padding:0.3rem;border-bottom:2px solid var(--border);text-align:left;}
-td{padding:0.3rem;border-bottom:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-size:0.8rem;margin:0.75rem 0;}
+th{font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);padding:0.35rem;border-bottom:2px solid var(--border);text-align:left;}
+td{padding:0.35rem;border-bottom:1px solid var(--border);}
 
-@media(max-width:768px){.grid-14{width:210px;height:210px;}.app{padding:0.75rem;}}
+/* Patch display */
+.patch-demo{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;width:100px;height:100px;margin:0 auto;}
+.patch-demo div{border-radius:2px;}
+.patch-demo .dark{background:#1a6e34;opacity:0.9;}
+.patch-demo .med{background:#1a6e34;opacity:0.5;}
+.patch-demo .light{background:#1a6e34;opacity:0.2;}
+.patch-demo .white{background:#e0e0e0;}
+
+/* Token bar */
+.token-bar{display:flex;gap:1px;height:30px;border-radius:6px;overflow:hidden;margin:0.5rem 0;}
+.token-bar .vis{background:var(--cyan);}
+.token-bar .cls-tok{background:var(--violet);}
+.token-bar .txt{background:var(--amber);}
+
+@media(max-width:768px){.app{padding:0.75rem;}}
 </style>
 </head>
 <body>
@@ -65,152 +65,188 @@ td{padding:0.3rem;border-bottom:1px solid var(--border);}
 
 <header class="header">
   <h1>How an Image Becomes Tokens</h1>
-  <p>224×224 pixels → 14×14 patches → 197 visual tokens → combined with text → LLM input</p>
+  <p>224×224 pixels → 14×14 patches → 197 visual tokens → combined with text → LLM processes everything together</p>
 </header>
 
-<!-- STEP 1: Image → Patches -->
+<!-- STEP 1 -->
 <div class="step">
-  <h2>Step 1: Split Image into 14×14 Patches</h2>
-  <p style="font-size:0.85rem;color:var(--tdim);">CLIP-ViT-L/14 divides a 224×224 image into a <strong>14×14 grid</strong>. Each cell = 16×16 pixels = 1 patch. The number 14 comes from: 224 ÷ 16 = 14.</p>
+  <h2><span class="num">1</span> The Image — 224×224 Pixels</h2>
+  <p>This is what the model "sees." A chest X-ray, 224 pixels wide × 224 pixels tall. Each pixel has a value (0=black, 255=white).</p>
 
-  <div class="grid-container">
-    <div class="grid-14">
-      ${Array.from({length:196},(_,i)=>`<div class="grid-cell ${i===27?'highlight':''}"></div>`).join('')}
-    </div>
+  <div class="canvas-wrap">
+    <canvas id="c1" width="224" height="224"></canvas>
   </div>
-  <p style="font-size:0.7rem;color:var(--tmut);text-align:center;margin-top:0.5rem;">
-    14×14 = <strong>196 patches</strong>. Each patch = 16×16 = <strong>256 pixels</strong>. Highlighted: one patch (position 2,3).
+  <p style="font-size:0.7rem;color:var(--tmut);text-align:center;margin-top:0.3rem;">224×224 = <strong>50,176 pixels</strong> (simplified X-ray pattern)</p>
+</div>
+
+<div class="arrow-down">↓</div>
+
+<!-- STEP 2 -->
+<div class="step">
+  <h2><span class="num">2</span> Split into 14×14 Patches (16×16 pixels each)</h2>
+  <p>The image is divided into a <strong>14×14 grid</strong>. Each cell = 16×16 pixels = <strong>one patch</strong>. 224 ÷ 16 = 14. Result: <strong>196 patches</strong>.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="c2" width="280" height="280"></canvas>
+  </div>
+  <p style="font-size:0.7rem;color:var(--tmut);text-align:center;margin-top:0.3rem;">
+    Each patch = 16×16 = 256 pixels. Flattened into <strong style="color:var(--violet);">256 numbers</strong>.<br>
+    One patch shown zoomed (4×4 subset to fit): dark=bone, light=lung, white=background.
   </p>
 
-  <div class="patch-zoom">
-    <div style="text-align:center;font-size:0.7rem;color:var(--tmut);">One Patch<br>(16×16 pixels):</div>
-    <div class="patch-grid">
-      ${Array.from({length:16},()=>'<div class="patch-pixel"></div>').join('')}
-    </div>
-    <div style="font-size:0.7rem;color:var(--tdim);">
-      256 pixels<br>flattened to<br><strong style="color:var(--violet);">256 numbers</strong>
-    </div>
+  <div class="patch-demo">
+    <div class="dark"></div><div class="dark"></div><div class="med"></div><div class="med"></div>
+    <div class="dark"></div><div class="dark"></div><div class="med"></div><div class="light"></div>
+    <div class="med"></div><div class="med"></div><div class="light"></div><div class="white"></div>
+    <div class="med"></div><div class="light"></div><div class="white"></div><div class="white"></div>
   </div>
+  <p style="font-size:0.65rem;color:var(--tmut);text-align:center;margin-top:0.3rem;">Example: this patch is [0.9, 0.9, 0.5, 0.5, 0.9, 0.9, 0.5, 0.3, 0.5, 0.5, 0.3, 0.0, 0.5, 0.3, 0.0, 0.0] — 16 numbers</p>
 </div>
 
 <div class="arrow-down">↓</div>
 
-<!-- STEP 2: ViT Encoder -->
+<!-- STEP 3 -->
 <div class="step">
-  <h2>Step 2: CLIP-ViT-L Encodes Each Patch → 1024-dim Vector</h2>
-  <p style="font-size:0.85rem;color:var(--tdim);">Each patch (256 pixels) goes through the ViT encoder. Output: a <strong>1024-dimensional vector</strong> representing that patch. Plus 1 special [CLS] token = 197 tokens total.</p>
+  <h2><span class="num">3</span> CLIP-ViT-L Encodes Each Patch → 1024-dim Vector</h2>
+  <p>All 196 patches go through <strong>CLIP-ViT-L</strong> (304M params, frozen). Each 256-number patch becomes a <strong>1024-number vector</strong>. Plus 1 special [CLS] summary token = <strong>197 tokens</strong>.</p>
 
-  <div style="display:flex;align-items:center;gap:0.5rem;justify-content:center;flex-wrap:wrap;margin:1rem 0;">
-    <div style="text-align:center;padding:0.5rem;border:1px solid var(--border);border-radius:8px;font-size:0.7rem;">
-      196 patches<br>+<br>1 [CLS]
-    </div>
-    <span style="font-size:1.5rem;color:var(--violet);">→</span>
-    <div style="text-align:center;padding:0.5rem;border:2px solid var(--violet);border-radius:8px;font-size:0.7rem;background:var(--vbg);">
-      <strong>CLIP-ViT-L</strong><br>304M params<br>FROZEN
-    </div>
-    <span style="font-size:1.5rem;color:var(--violet);">→</span>
-    <div style="text-align:center;padding:0.5rem;border:1px solid var(--border);border-radius:8px;font-size:0.7rem;">
-      197 vectors<br>each <strong style="color:var(--violet);">1024-dim</strong>
-    </div>
+  <div class="flow-row">
+    <div class="flow-box img">196 patches<br>(256 numbers each)</div>
+    <span class="flow-arr">→</span>
+    <div class="flow-box patches">CLIP-ViT-L<br>304M params<br><span style="font-size:0.6rem;">FROZEN</span></div>
+    <span class="flow-arr">→</span>
+    <div class="flow-box vectors">197 tokens<br>each <strong>1024-dim</strong><br><span style="font-size:0.55rem;">+ 1 [CLS]</span></div>
   </div>
 
-  <p style="font-size:0.75rem;color:var(--tmut);text-align:center;">Each of the 197 tokens is now a 1024-number vector. But the LLM needs 4096-dim input...</p>
+  <div class="canvas-wrap">
+    <canvas id="c3" width="800" height="120"></canvas>
+  </div>
+  <p style="font-size:0.7rem;color:var(--tmut);text-align:center;margin-top:0.3rem;">
+    197 visual tokens, each is a 1024-dim vector (represented as a colored row above)
+  </p>
 </div>
 
 <div class="arrow-down">↓</div>
 
-<!-- STEP 3: Projection -->
+<!-- STEP 4 -->
 <div class="step">
-  <h2>Step 3: Project to LLM Space — 1024 → 4096</h2>
-  <p style="font-size:0.85rem;color:var(--tdim);">A simple linear projection layer maps each 1024-dim visual token to 4096-dim — matching the LLM's input size. Think of it as a <strong>translation layer</strong> between vision and language.</p>
+  <h2><span class="num">4</span> Project to LLM Space — 1024 → 4096</h2>
+  <p>A single linear layer maps each 1024-dim visual token → <strong>4096-dim</strong> — the exact size the LLM expects. This layer has 1024×4096 = 4.2M params (frozen).</p>
 
-  <div class="proj-box">
-    <div class="dim-display">
-      <span style="color:var(--tmut);">197 tokens ×</span>
-      <span style="color:var(--violet);">1024-dim</span>
-      <span style="font-size:1.5rem;">→</span>
-      <span style="background:var(--vbg);padding:0.3rem 0.6rem;border-radius:6px;border:1px solid var(--violet);">Linear Projection<br><span style="font-size:0.6rem;">1024×4096 matrix (4.2M params, FROZEN)</span></span>
-      <span style="font-size:1.5rem;">→</span>
-      <span style="color:var(--green);">197 tokens ×</span>
-      <span style="color:var(--green);">4096-dim</span>
-    </div>
+  <div class="flow-row">
+    <div class="flow-box vectors">197 tokens<br>1024-dim each</div>
+    <span class="flow-arr">→</span>
+    <div class="flow-box patches">Projection Layer<br>1024→4096<br><span style="font-size:0.6rem;">4.2M params, FROZEN</span></div>
+    <span class="flow-arr">→</span>
+    <div class="flow-box vectors" style="border-color:var(--green);">197 tokens<br><strong style="font-size:0.9rem;">4096-dim</strong> each</div>
   </div>
 
   <div class="callout">
-    <strong>🧠 Why 4096?</strong> Because the LLM (Llama-7B) expects 4096-dimensional input. Everything must match: word embeddings are 4096-dim, so visual tokens must also be 4096-dim to be processed together. The projection layer is the "bridge" between the vision world (1024-dim) and the language world (4096-dim).
+    <strong>🧠 The Projection Layer = "Language Translator" for Images.</strong><br>
+    CLIP-ViT outputs in "vision language" (1024-dim). The LLM speaks "text language" (4096-dim). This layer translates between them. Once translated, the LLM can process visual tokens exactly like it processes words.
   </div>
 </div>
 
 <div class="arrow-down">↓</div>
 
-<!-- STEP 4: Combine -->
+<!-- STEP 5 -->
 <div class="step">
-  <h2>Step 4: Combine Visual + Text → One 512-Token Sequence</h2>
-  <p style="font-size:0.85rem;color:var(--tdim);">The 197 visual tokens are <strong>prepended</strong> to the text tokens. The LLM sees them as one continuous sequence. It doesn't know which tokens came from the image and which from the text.</p>
+  <h2><span class="num">5</span> Combine Visual + Text → One Input</h2>
+  <p>The 197 visual tokens are <strong>prepended</strong> to the text tokens. The LLM sees one flat sequence of 512 tokens, each 4096-dim. It doesn't know which came from the image.</p>
 
-  <div class="token-flow" style="font-size:0.6rem;">
-    <span style="color:var(--tmut);">[</span>
-    <span class="token-block visual">img₁</span>
-    <span class="token-block visual">img₂</span>
-    <span style="color:var(--tmut);">...</span>
-    <span class="token-block visual">img₁₉₆</span>
-    <span class="token-block cls">[CLS]</span>
-    <span style="color:var(--tmut);">]</span>
-    <span style="font-size:0.8rem;">+</span>
-    <span style="color:var(--tmut);">[</span>
-    <span class="token-block text">Instruction</span>
-    <span class="token-block text">What does</span>
-    <span class="token-block text">X-ray show?</span>
-    <span class="token-block text">Response</span>
-    <span style="color:var(--tmut);">]</span>
+  <div class="token-bar">
+    <div class="vis" style="width:38.5%;" title="197 visual tokens"></div>
+    <div class="txt" style="width:61.5%;" title="315 text tokens"></div>
   </div>
-  <p style="font-size:0.7rem;color:var(--tmut);text-align:center;">197 visual tokens + 315 text tokens = <strong style="color:var(--violet);">512 total tokens, each 4096-dim</strong></p>
+  <p style="font-size:0.7rem;color:var(--tmut);text-align:center;margin-top:0.3rem;">
+    <span style="color:var(--cyan);">■ 197 visual tokens (38.5%)</span> &nbsp;
+    <span style="color:var(--amber);">■ 315 text tokens (61.5%)</span> &nbsp;
+    = <strong>512 total, each 4096-dim</strong>
+  </p>
 
   <div class="code-box">
 <span style="color:#6a9955;">LLM Input (what Llama-7B actually receives):</span>
-┌──────────────────────────────────────────────┐
-│ [img₁] [img₂] ... [img₁₉₇] [Inst] [...] [Resp]│  ← 512 vectors
-│ ←─── 197 visual tokens ──→ ←─ 315 text tokens ─→│
-│ Each vector: 4096 numbers                      │
-└──────────────────────────────────────────────┘
-         ↓
-   Transformer ×32 (with LoRA on Q+V)
-         ↓
-   Generates text response</div>
+
+[img₁] [img₂] [img₃] ... [img₁₉₆] [CLS] [###] [Instruction] ... [###] [Response]
+←────── 197 visual tokens ──────→ ←─────────── 315 text tokens ────────────→
+                              └─────────── 512 total tokens ──────────────┘
+                              Each token = 4096 floating-point numbers</div>
 </div>
 
-<!-- Summary table -->
+<!-- Summary -->
 <div class="step">
-  <h2>📊 Full Pipeline — Image to Answer</h2>
+  <h2>📊 Full Pipeline Summary</h2>
   <table>
-    <tr><th>Stage</th><th>Input</th><th>Output</th><th>Params</th><th>Trainable?</th></tr>
-    <tr><td>1. Patch Split</td><td>224×224 pixels</td><td>196 patches (16×16 each)</td><td>0</td><td>N/A</td></tr>
-    <tr><td>2. ViT Encode</td><td>196 patches + [CLS]</td><td>197×1024 vectors</td><td>304M</td><td>❌ Frozen</td></tr>
-    <tr><td>3. Project</td><td>197×1024 vectors</td><td>197×4096 vectors</td><td>4.2M</td><td>❌ Frozen</td></tr>
-    <tr><td>4. Tokenize Text</td><td>"What does X-ray show?"</td><td>315 text tokens (4096-dim each)</td><td>0</td><td>N/A</td></tr>
-    <tr><td>5. Combine</td><td>197+315 = 512 tokens</td><td>512×4096 matrix</td><td>0</td><td>N/A</td></tr>
-    <tr><td>6. Transformer</td><td>512×4096 matrix</td><td>Next token prediction</td><td>6.5B</td><td>⚠️ LoRA (0.4%)</td></tr>
-    <tr><td>7. Output</td><td>Predicted token</td><td>"Pneumonia in right lobe"</td><td>131M</td><td>❌ Frozen</td></tr>
+    <tr><th>Stage</th><th>Input → Output</th><th>Params</th><th>Frozen?</th></tr>
+    <tr><td>1. Patch Split</td><td>224×224 pixels → 196 patches (16×16)</td><td>0</td><td>N/A</td></tr>
+    <tr><td>2. ViT Encode</td><td>196 patches → 197×1024 vectors</td><td>304M</td><td>❄️ Frozen</td></tr>
+    <tr><td>3. Project</td><td>197×1024 → 197×4096 vectors</td><td>4.2M</td><td>❄️ Frozen</td></tr>
+    <tr><td>4. Text Tokenize</td><td>"What does X-ray show?" → 315 tokens</td><td>0</td><td>N/A</td></tr>
+    <tr><td>5. Combine</td><td>197 + 315 = 512 tokens (4096-dim each)</td><td>0</td><td>N/A</td></tr>
+    <tr><td>6. Transformer</td><td>512×4096 → next token prediction</td><td>6.5B</td><td>🔥 LoRA on Q+V (0.4%)</td></tr>
   </table>
 
   <div class="callout">
-    <strong>🧠 The LLM has no idea it's processing an image.</strong> It just sees 512 vectors of 4096 numbers. The visual tokens happen to carry information about "a chest X-ray showing pneumonia." The text tokens ask "what does this show?" The Transformer processes them together and generates the answer. The "magic" is that CLIP-ViT-L was trained to produce visual tokens that the LLM can reason about.
+    <strong>🧠 Key insight:</strong> The LLM doesn't know it's processing an image. It receives 512 vectors of 4096 numbers — identical format to text-only input. The visual tokens carry "what's in this X-ray" as numerical patterns the LLM learned to interpret during training. The text tokens ask the question. The Transformer processes everything together and generates the answer — exactly like it does for text.
   </div>
 </div>
 
 </div>
 
 <script>
-// Animate patch highlighting
-let highlightIdx=0;
-const cells=document.querySelectorAll('.grid-cell');
-if(cells.length>0){
-  setInterval(()=>{
-    cells.forEach(c=>c.classList.remove('highlight'));
-    if(cells[highlightIdx]) cells[highlightIdx].classList.add('highlight');
-    highlightIdx=(highlightIdx+1)%196;
-  },1500);
+// Draw X-ray image on canvas 1
+const c1=document.getElementById('c1'), ctx1=c1.getContext('2d');
+// Background (lung — dark)
+ctx1.fillStyle='#1a1a2e';ctx1.fillRect(0,0,224,224);
+// Lungs (lighter areas)
+ctx1.fillStyle='#2d2d44';ctx1.beginPath();ctx1.ellipse(112,100,70,90,0,0,Math.PI*2);ctx1.fill();
+ctx1.fillStyle='#2d2d44';ctx1.beginPath();ctx1.ellipse(112,100,60,80,0,0,Math.PI*2);ctx1.fill();
+// Bones (white)
+ctx1.strokeStyle='#e0e0e0';ctx1.lineWidth=3;
+// Ribs
+for(let i=0;i<5;i++){ctx1.beginPath();ctx1.arc(112,100,50+i*8,0,Math.PI*0.7);ctx1.stroke();}
+// Spine
+ctx1.strokeStyle='#d0d0d0';ctx1.lineWidth=4;
+ctx1.beginPath();ctx1.moveTo(112,30);ctx1.lineTo(112,190);ctx1.stroke();
+// Heart shadow
+ctx1.fillStyle='rgba(200,200,200,0.15)';ctx1.beginPath();ctx1.ellipse(112,130,25,30,0,0,Math.PI*2);ctx1.fill();
+// Opacity (pneumonia)
+ctx1.fillStyle='rgba(255,255,255,0.2)';ctx1.beginPath();ctx1.ellipse(150,90,20,25,0,0,Math.PI*2);ctx1.fill();
+
+// Draw patches on canvas 2
+const c2=document.getElementById('c2'), ctx2=c2.getContext('2d');
+ctx2.fillStyle='#fff';ctx2.fillRect(0,0,280,280);
+for(let row=0;row<14;row++){
+  for(let col=0;col<14;col++){
+    const x=col*20, y=row*20;
+    // Copy from c1
+    const srcX=col*16, srcY=row*16;
+    ctx2.drawImage(c1,srcX,srcY,16,16,x,y,20,20);
+    // Grid line
+    ctx2.strokeStyle='rgba(0,0,0,0.15)';ctx2.lineWidth=0.5;
+    ctx2.strokeRect(x,y,20,20);
+  }
 }
+// Highlight one patch
+ctx2.strokeStyle='#5b3aa8';ctx2.lineWidth=2.5;
+ctx2.strokeRect(2*20,3*20,20,20); // patch at row 3, col 2
+ctx2.fillStyle='rgba(91,58,168,0.15)';
+ctx2.fillRect(2*20,3*20,20,20);
+
+// Draw vector rows on canvas 3
+const c3=document.getElementById('c3'), ctx3=c3.getContext('2d');
+ctx3.fillStyle='#f8f9fc';ctx3.fillRect(0,0,800,120);
+const barH=3, barGap=1, startX=30, barW=740;
+for(let i=0;i<197;i++){
+  const y=10+i*(barH+barGap);
+  if(y>110) break;
+  const hue=200+(i*0.5)%160;
+  ctx3.fillStyle=`hsl(${hue},60%,${40+(i%30)*1.5}%)`;
+  ctx3.fillRect(startX,y,(0.3+Math.random()*0.7)*barW,barH);
+}
+ctx3.fillStyle='var(--tmut)';ctx3.font='10px "Inter"';ctx3.textAlign='right';
+ctx3.fillText('197 visual tokens (each row = 1024-dim vector)',780,12);
+ctx3.fillText('← 1024 dimensions (shown as brightness & color) →',780,110);
 </script>
 </body>
 </html>
