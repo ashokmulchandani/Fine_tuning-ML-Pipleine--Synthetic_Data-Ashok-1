@@ -230,7 +230,7 @@ const slides = [
   </div>
 </div>
 
-<p><strong>Think of it like this:</strong> Instead of memorizing 16.8 million individual changes, you learn a "compressed" version using only 65K numbers. B captures <em>what</em> changes. A captures <em>where</em> the changes go.</p>
+<p><strong>Think of it like this:</strong> Instead of memorizing 16.8 million individual changes, you learn a "compressed" version using only 65K numbers. B and A are <strong>brand new matrices</strong> created from scratch (B=random, A=zeros). They are NOT calculated by breaking apart W₀. They learn what changes to make through gradient descent — same training process you already understand from QAT.</p>
 </div></div>`;}
 },
 { // 3.4
@@ -295,6 +295,17 @@ const slides = [
 <span style="color:var(--tmut)">At inference:</span>
   Merge once: W = W₀ + B×A
   Then use:   h = W × x    (same speed as original!)</div>
+
+<div class="callout" style="background:rgba(198,40,40,0.06);border:1px solid rgba(198,40,40,0.2);border-radius:10px;padding:0.75rem 1rem;margin:0.75rem 0;font-size:0.88rem;line-height:1.7;">
+<strong>⚠️ Common Misconception: B and A are NOT derived from W₀!</strong><br>
+B and A are <strong>brand new matrices</strong>, randomly initialized from scratch. They are NOT created by decomposing or breaking apart W₀. W₀ stays completely frozen and untouched.<br><br>
+<strong>What actually happens:</strong><br>
+&nbsp;&nbsp;• B = random small numbers (Gaussian, mean 0) — created fresh<br>
+&nbsp;&nbsp;• A = ALL ZEROS — created fresh (so B×A=0 at the start)<br>
+&nbsp;&nbsp;• Both trained via gradient descent (same as W1 in QAT!)<br>
+&nbsp;&nbsp;• W₀ is NEVER decomposed, never touched, never changed<br><br>
+<strong>Think of it like:</strong> You have a frozen pizza (W₀). You don't cut the pizza into smaller pieces. You make a tiny side salad (B×A) from scratch. The pizza stays the same. The salad is new. Together they make a meal.
+</div>
 
 <div class="quiz" id="q5"><div class="q">🧪 Why does LoRA add ZERO inference latency?</div>
 <div class="opt" data-correct="true" onclick="checkQuiz('q5',this)">A. B×A is merged into W₀ before deployment — same matrix size, same speed</div>
