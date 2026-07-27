@@ -178,10 +178,10 @@ td{padding:0.3rem;border-bottom:1px solid var(--border);}
   <p style="font-size:0.8rem;color:var(--tdim);">A linear layer (1024×4096 = 4.2M params, FROZEN) maps each visual token to <strong>4096-dim</strong> — the exact size the LLM expects.</p>
 
   <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1rem 0 0.5rem;">Step 4: Combine Visual + Text → One Input</h3>
-  <p style="font-size:0.8rem;color:var(--tdim);">197 visual tokens are <strong>prepended</strong> to 315 text tokens = <strong>512 total tokens</strong>, each 4096-dim. The LLM processes them identically.</p>
+  <p style="font-size:0.8rem;color:var(--tdim);">197 visual tokens are <strong>prepended</strong> to text tokens (variable, ~300) = <strong>512 total tokens</strong>, each 4096-dim. The LLM processes them identically.</p>
   <div style="display:flex;gap:1px;height:24px;border-radius:6px;overflow:hidden;margin:0.5rem 0;">
     <div style="width:38.5%;background:var(--cyan);" title="197 visual tokens"></div>
-    <div style="width:61.5%;background:var(--amber);" title="315 text tokens"></div>
+    <div style="width:61.5%;background:var(--amber);" title="text tokens (variable, ~300)"></div>
   </div>
   <p style="font-size:0.65rem;color:var(--tmut);text-align:center;"><span style="color:var(--cyan);">■ 197 visual (38.5%)</span> <span style="color:var(--amber);">■ 315 text (61.5%)</span> = <strong>512 tokens total</strong></p>
 

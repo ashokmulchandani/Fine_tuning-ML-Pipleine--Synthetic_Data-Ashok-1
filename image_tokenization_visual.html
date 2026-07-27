@@ -43,8 +43,8 @@ th{font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--t
 td{padding:0.35rem;border-bottom:1px solid var(--border);}
 
 /* Patch display */
-.patch-demo{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;width:100px;height:100px;margin:0 auto;}
-.patch-demo div{border-radius:2px;}
+.patch-demo{display:grid;grid-template-columns:repeat(16,1fr);gap:1px;width:200px;height:200px;margin:0 auto;}
+.patch-demo div{border-radius:1px;}
 .patch-demo .dark{background:#1a6e34;opacity:0.9;}
 .patch-demo .med{background:#1a6e34;opacity:0.5;}
 .patch-demo .light{background:#1a6e34;opacity:0.2;}
@@ -94,13 +94,8 @@ td{padding:0.35rem;border-bottom:1px solid var(--border);}
     One patch shown zoomed (4×4 subset to fit): dark=bone, light=lung, white=background.
   </p>
 
-  <div class="patch-demo">
-    <div class="dark"></div><div class="dark"></div><div class="med"></div><div class="med"></div>
-    <div class="dark"></div><div class="dark"></div><div class="med"></div><div class="light"></div>
-    <div class="med"></div><div class="med"></div><div class="light"></div><div class="white"></div>
-    <div class="med"></div><div class="light"></div><div class="white"></div><div class="white"></div>
-  </div>
-  <p style="font-size:0.65rem;color:var(--tmut);text-align:center;margin-top:0.3rem;">Example: this patch is [0.9, 0.9, 0.5, 0.5, 0.9, 0.9, 0.5, 0.3, 0.5, 0.5, 0.3, 0.0, 0.5, 0.3, 0.0, 0.0] — 16 numbers</p>
+  <div class="patch-demo" id="patchDemo"></div>
+  <p style="font-size:0.65rem;color:var(--tmut);text-align:center;margin-top:0.3rem;">One patch = 16×16 = <strong style="color:var(--violet);">256 pixels</strong>. Each pixel value (0=black, 1=white) becomes one number in the vector.</p>
 </div>
 
 <div class="arrow-down">↓</div>
@@ -232,6 +227,27 @@ ctx2.strokeStyle='#5b3aa8';ctx2.lineWidth=2.5;
 ctx2.strokeRect(2*20,3*20,20,20); // patch at row 3, col 2
 ctx2.fillStyle='rgba(91,58,168,0.15)';
 ctx2.fillRect(2*20,3*20,20,20);
+
+// Generate 16×16 patch with realistic values
+const patchDemo=document.getElementById('patchDemo');
+const patchVals=[];
+for(let r=0;r<16;r++){
+  for(let c=0;c<16;c++){
+    let val;
+    if(r<5 && c<4) val=0.9; // bone (top-left dense corner)
+    else if(r<6 && c<5) val=0.8;
+    else if(r>8 && r<14 && c>6 && c<14) val=0.4; // lung tissue
+    else if(r>9 && r<13 && c>7 && c<13) val=0.3;
+    else if(r>10 && r<12 && c>8 && c<12) val=0.2;
+    else if(c>13 || r>13) val=0.0; // background
+    else val=0.1+Math.random()*0.1;
+    const div=document.createElement('div');
+    const alpha=val;
+    div.style.background=`rgba(26,110,52,${alpha})`;
+    patchDemo.appendChild(div);
+    patchVals.push(val.toFixed(1));
+  }
+}
 
 // Draw vector rows on canvas 3
 const c3=document.getElementById('c3'), ctx3=c3.getContext('2d');
