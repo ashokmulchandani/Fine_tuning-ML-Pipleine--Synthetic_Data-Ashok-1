@@ -115,6 +115,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
   <button class="tab" onclick="switchTab(2)"><span class="tb-emoji">🖼️</span> Image FT</button>
   <button class="tab" onclick="switchTab(3)"><span class="tb-emoji">🖼️📝</span> Vision-Lang FT</button>
   <button class="tab" onclick="switchTab(4)"><span class="tb-emoji">🔄</span> Lifecycle</button>
+  <button class="tab" onclick="switchTab(5)"><span class="tb-emoji">🚀</span> Deploy: YOLO vs LLM</button>
 </div>
 
 <div id="app"></div>
@@ -314,6 +315,44 @@ const tabs=[
        {n:2,title:'Stage: Production',tag:'lora',viz:'<span class="vz-box vz-input">🧪 Staging</span><span class="vz-arrow">→</span><span class="vz-box vz-process">✅ Tests Pass</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🚀 Production</span>',code:'client.transition_model_version_stage(stage="Production")'},
        {n:3,title:'Serve with vLLM',tag:'dpo',viz:'<span class="vz-box vz-input">🧠 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ vLLM (5000 tok/s)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌐 API :8000</span>',code:'vllm serve ./merged_model --port 8000'},
        {n:4,title:'CI/CD Auto-retrain',tag:'sft',viz:'<span class="vz-box vz-input">📄 New Data</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔄 GitHub Actions</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🤖 Auto-retrain → Deploy</span>',code:'GitHub Actions → new data → auto-trigger retraining'},
+     ]},
+  ]
+},
+{ // 5: DEPLOY COMPARISON
+  name:'🚀 Deploy: YOLO vs LLM', phases:'Serving Architecture',
+  metrics:[
+    {val:'Static Graph',lbl:'YOLO Model Type',color:'var(--cyan)'},
+    {val:'Autoregressive',lbl:'LLM Model Type',color:'var(--violet)'},
+    {val:'TensorRT+Triton',lbl:'YOLO Serving Stack',color:'var(--amber)'},
+    {val:'vLLM (All-in-One)',lbl:'LLM Serving Stack',color:'var(--green)'},
+  ],
+  banner:[
+    {val:'.pt→.onnx→.engine',lbl:'YOLO: Offline Compile',color:'var(--cyan)'},
+    {val:'.safetensors→vLLM',lbl:'LLM: JIT Optimize',color:'var(--green)'},
+    {val:'Same Docker+K8s',lbl:'Containerization',color:'var(--blue)'},
+    {val:'HW Agnostic',lbl:'vLLM Auto-Detects GPU',color:'var(--violet)'},
+  ],
+  stages:[
+    {emoji:'🔧',name:'YOLO PATH',time:'5-step offline',desc:'Compile → Engine → Triton',
+     substeps:[
+       {n:1,title:'Export to ONNX',tag:'data',viz:'<span class="vz-box vz-input">🧠 best.pt</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📦 export()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📄 model.onnx</span>',code:'model.export(format="onnx")  # Static math graph, cross-platform'},
+       {n:2,title:'Compile to TensorRT',tag:'lora',viz:'<span class="vz-box vz-input">📄 model.onnx</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚙️ trtexec (AOT)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🚀 model.engine</span>',code:'trtexec --onnx=model.onnx --saveEngine=model.engine\n# T4 engine FAILS on A100! Hardware-specific.'},
+       {n:3,title:'Load into Triton',tag:'sft',viz:'<span class="vz-box vz-input">🚀 .engine</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🌐 Triton Server</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📡 REST/gRPC API</span>',code:'Triton loads .engine → manages dynamic batching → HTTP/gRPC'},
+       {n:4,title:'Containerize',tag:'dpo',viz:'<span class="vz-box vz-input">🌐 Triton</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🐳 Docker → ☸️ K8s → EC2</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌍 Production</span>',code:'Same Dockerfile → K8s pod → EC2 GPU node'},
+     ]},
+    {emoji:'⚡',name:'LLM PATH',time:'1-step (no compile)',desc:'Safetensors → vLLM → API',
+     substeps:[
+       {n:1,title:'Save Fine-Tuned Weights',tag:'data',viz:'<span class="vz-box vz-input">🤖 Fine-Tuned LLM</span><span class="vz-arrow">→</span><span class="vz-box vz-process">💾 save_pretrained()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📁 .safetensors + config.json</span>',code:'model.save_pretrained("./fine-tuned-weights")\ntokenizer.save_pretrained("./fine-tuned-weights")\n# NO .onnx export. NO .engine compile.'},
+       {n:2,title:'vLLM = Engine + Server',tag:'lora',viz:'<span class="vz-box vz-input">📁 Raw .safetensors</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ vLLM (PagedAttention+FlashAttn)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌐 OpenAI API :8000</span>',code:'python -m vllm.entrypoints.openai.api_server \\\n    --model ./fine-tuned-weights --port 8000\n# One command! Engine + Server combined.'},
+       {n:3,title:'GPU Auto-Detection',tag:'lora',viz:'<span class="vz-box vz-input">🔌 T4 / A100 / H100</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔍 vLLM JIT selects kernels</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Optimized in-memory</span>',code:'# vLLM auto-detects GPU at startup:\n# T4 → Turing kernels. A100 → FlashAttention-2.\n# Same container works on all GPUs! No recompile.'},
+       {n:4,title:'Containerize (Same as YOLO)',tag:'dpo',viz:'<span class="vz-box vz-input">🌐 vLLM API</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🐳 Docker → ☸️ K8s → EC2</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌍 Production</span>',code:'ENTRYPOINT ["python","-m","vllm.entrypoints.openai.api_server","--model","/app/weights"]\n# Same K8s deployment as Triton! Only container internals differ.'},
+     ]},
+    {emoji:'📊',name:'WHY DIFFERENT?',time:'Architecture reason',desc:'Static vs Autoregressive',
+     substeps:[
+       {n:1,title:'YOLO = Static One-Shot',tag:'data',viz:'<span class="vz-box vz-input">🖼️ Image</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ 1 Forward Pass</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📦 Boxes</span>',code:'# Fixed computational graph. Memory usage 100% predictable.\n# Perfect for AOT compilation (TensorRT).'},
+       {n:2,title:'LLM = Autoregressive Loop',tag:'lora',viz:'<span class="vz-box vz-input">📝 "What is..."</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔄 Token 1→2...→200</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 Full Answer</span>',code:'# Token-by-token. Model runs 200+ times per response.\n# KV-Cache grows dynamically. UNPREDICTABLE memory.\n# Static TensorRT wastes 60-80% VRAM on KV-Cache.'},
+       {n:3,title:'KV-Cache = The Problem',tag:'lora',viz:'<span class="vz-box vz-input">🧠 KV grows per token</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📄 PagedAttention (vLLM)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Dynamic VRAM pages</span>',code:'# PagedAttention = OS virtual memory for GPU\n# Breaks KV-Cache into small dynamic blocks\n# Near-zero fragmentation. 2-4× more users.'},
+       {n:4,title:'GPU Compatibility',tag:'dpo',viz:'<span class="vz-box vz-input">📦 .engine (HW-locked)</span><span class="vz-arrow">vs</span><span class="vz-box vz-input">📁 .safetensors (universal)</span>',code:'TensorRT: T4 engine FAILS on A100. Separate builds needed.\nvLLM: Same weights → auto-detects GPU → best kernels.\nOne Docker image works on ALL GPUs (T4→A100→H100).'},
      ]},
   ]
 }
