@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LoRA Forward Pass — Where B×A×x Happens</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8f9fc;--card:#fff;--border:#dde0e6;--text:#1a1d23;--tdim:#4a4f5b;--tmut:#8b909b;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--red:#c62828;--cyan:#007a99;--magenta:#9e2a6b;--blue:#2979ff;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;min-height:100vh;}
+.app{max-width:960px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:2rem 0 1.5rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.95rem;}
+
+.step{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin:1.5rem 0;}
+.step h2{font-family:'Space Grotesk',sans-serif;font-size:0.95rem;font-weight:600;color:var(--violet);margin-bottom:0.75rem;}
+
+/* Flow */
+.flow{display:flex;align-items:center;gap:0.3rem;flex-wrap:wrap;justify-content:center;margin:0.75rem 0;font-size:0.65rem;font-family:'Space Grotesk',sans-serif;}
+.flow-box{padding:0.5rem 0.7rem;border-radius:8px;text-align:center;font-weight:600;border:2px solid;}
+.flow-box.data{border-color:var(--cyan);background:rgba(0,122,153,0.05);}
+.flow-box.frozen{border-color:var(--tmut);background:var(--card);}
+.flow-box.lora{border-color:var(--violet);background:var(--vbg);}
+.flow-box.attention{border-color:var(--amber);background:rgba(184,112,0,0.05);}
+.flow-arrow{font-size:1.2rem;color:var(--tmut);}
+
+/* One layer detail */
+.layer-detail{background:var(--vbg);border:2px solid var(--violet);border-radius:12px;padding:1.25rem;margin:1rem 0;}
+.layer-detail h3{font-family:'Space Grotesk',sans-serif;font-size:0.75rem;color:var(--violet);margin-bottom:0.75rem;}
+
+.math-row{display:flex;align-items:center;gap:0.3rem;justify-content:center;flex-wrap:wrap;margin:0.5rem 0;font-family:'Space Grotesk',monospace;font-size:0.7rem;}
+.math-box{padding:0.3rem 0.5rem;border-radius:6px;border:1px solid;font-weight:600;}
+.math-box.data{border-color:var(--cyan);background:rgba(0,122,153,0.06);color:var(--cyan);}
+.math-box.frozen{border-color:var(--tmut);color:var(--tmut);}
+.math-box.lora{border-color:var(--violet);background:rgba(91,58,168,0.06);color:var(--violet);}
+.math-box.result{border-color:var(--green);background:rgba(26,110,52,0.06);color:var(--green);}
+
+.callout{background:rgba(198,40,40,0.04);border:1px solid rgba(198,40,40,0.2);border-radius:10px;padding:0.75rem 1rem;margin:0.75rem 0;font-size:0.85rem;line-height:1.7;}
+
+.code-box{background:#1e1e1e;border:1px solid #333;border-radius:8px;padding:0.75rem 1rem;margin:0.5rem 0;font-family:'Space Grotesk',monospace;font-size:0.72rem;line-height:1.7;white-space:pre-wrap;overflow-x:auto;color:#d4d4d4;}
+
+/* All 32 layers compact */
+.layer-stack{display:flex;flex-direction:column;gap:2px;margin:0.75rem 0;}
+.layer-row{display:flex;align-items:center;gap:0.3rem;padding:0.15rem 0;font-family:'Space Grotesk',monospace;font-size:0.55rem;}
+.layer-num{min-width:40px;text-align:right;color:var(--tmut);}
+.layer-pills{display:flex;gap:0.2rem;}
+.pill{width:22px;height:14px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:0.4rem;font-weight:700;}
+.pill.q{border:1px solid var(--violet);background:rgba(91,58,168,0.1);color:var(--violet);}
+.pill.k{border:1px solid var(--tmut);background:var(--card);color:var(--tmut);}
+.pill.v{border:1px solid var(--violet);background:rgba(91,58,168,0.1);color:var(--violet);}
+.pill.o{border:1px solid var(--tmut);background:var(--card);color:var(--tmut);}
+
+/* Comparison */
+table{width:100%;border-collapse:collapse;font-size:0.8rem;margin:0.75rem 0;}
+th{font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);padding:0.3rem;border-bottom:2px solid var(--border);text-align:left;}
+td{padding:0.3rem;border-bottom:1px solid var(--border);}
+
+@media(max-width:768px){.app{padding:0.75rem;}.math-row{gap:0.1rem;font-size:0.55rem;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>Where B×A×x Happens — Layer by Layer</h1>
+  <p>LoRA on Q and V: 2 adapters per layer × 32 layers = 64 independent B×A pairs</p>
+</header>
+
+<!-- THE BIG PICTURE -->
+<div class="step">
+  <h2>1. The Big Picture: One Input Through 32 Layers</h2>
+
+  <div class="flow" style="font-size:0.7rem;">
+    <div class="flow-box data">Input x<br><span style="font-size:0.5rem;">512×4096</span></div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box data">Layer 1<br>Q✅ V✅</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box data">Layer 2<br>Q✅ V✅</div>
+    <span class="flow-arrow">→</span>
+    <span style="color:var(--tmut);">...</span>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box data">Layer 32<br>Q✅ V✅</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-box data" style="border-color:var(--green);">Output</div>
+  </div>
+
+  <p style="font-size:0.8rem;color:var(--tdim);text-align:center;margin-top:0.5rem;">
+    At <strong>every single layer</strong>, Q and V each have their own B×A adapter.<br>
+    Total: 32 layers × 2 adapters = <strong>64 independent B×A pairs</strong>, all trained via gradient descent.
+  </p>
+
+  <div class="layer-stack">
+    <div class="layer-row"><div class="layer-num">Layer 1</div><div class="layer-pills"><div class="pill q">Q</div><div class="pill k">K</div><div class="pill v">V</div><div class="pill o">O</div></div><span style="color:var(--violet);">+ B_q¹×A_q¹ + B_v¹×A_v¹</span></div>
+    <div class="layer-row"><div class="layer-num">Layer 2</div><div class="layer-pills"><div class="pill q">Q</div><div class="pill k">K</div><div class="pill v">V</div><div class="pill o">O</div></div><span style="color:var(--violet);">+ B_q²×A_q² + B_v²×A_v²</span></div>
+    <div class="layer-row" style="color:var(--tmut);"><div class="layer-num">...</div></div>
+    <div class="layer-row"><div class="layer-num">Layer 32</div><div class="layer-pills"><div class="pill q">Q</div><div class="pill k">K</div><div class="pill v">V</div><div class="pill o">O</div></div><span style="color:var(--violet);">+ B_q³²×A_q³² + B_v³²×A_v³²</span></div>
+  </div>
+</div>
+
+<!-- ONE LAYER ZOOM -->
+<div class="step">
+  <h2>2. Zoom In: One Layer (Layer 15 as Example)</h2>
+  <p style="font-size:0.85rem;color:var(--tdim);margin-bottom:1rem;">The input x enters Layer 15. It hits Q, K, V, O. Only Q and V have LoRA side paths.</p>
+
+  <div class="layer-detail">
+    <h3>🔵 Q Path — With LoRA</h3>
+    <div class="math-row">
+      <span style="color:var(--tdim);">x</span>
+      <span style="color:var(--violet);">→</span>
+      <div class="math-box frozen">W_q · x<br><span style="font-size:0.5rem;">4096²=16.8M ops</span></div>
+      <span style="font-size:1.2rem;">+</span>
+      <div class="math-box lora">A_q · x<br><span style="font-size:0.5rem;">8×4096=32K</span></div>
+      <span style="color:var(--violet);">→</span>
+      <div class="math-box lora">B_q · (A_q·x)<br><span style="font-size:0.5rem;">4096×8=32K</span></div>
+      <span style="font-size:1.2rem;">=</span>
+      <div class="math-box result">Q_output<br><span style="font-size:0.5rem;">4096 numbers</span></div>
+    </div>
+    <p style="font-size:0.65rem;color:var(--tmut);text-align:center;margin-top:0.3rem;">
+      A·x runs FIRST (cheap: 8 dimensions). Then B·(A·x) runs (cheap: 8 dimensions). B×A is NEVER computed as a full 4096×4096 matrix.
+    </p>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:0.5rem;justify-content:center;margin:0.5rem 0;">
+    <span style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;color:var(--tmut);">K (no LoRA):</span>
+    <span style="font-family:'Space Grotesk',monospace;font-size:0.65rem;color:var(--tmut);">W_k · x → K_output (frozen, no B×A)</span>
+  </div>
+
+  <div class="layer-detail" style="margin-top:0.5rem;">
+    <h3>🔴 V Path — With LoRA</h3>
+    <div class="math-row">
+      <span style="color:var(--tdim);">x</span>
+      <span style="color:var(--violet);">→</span>
+      <div class="math-box frozen">W_v · x<br><span style="font-size:0.5rem;">4096²=16.8M</span></div>
+      <span style="font-size:1.2rem;">+</span>
+      <div class="math-box lora">A_v · x<br><span style="font-size:0.5rem;">8×4096=32K</span></div>
+      <span style="color:var(--violet);">→</span>
+      <div class="math-box lora">B_v · (A_v·x)<br><span style="font-size:0.5rem;">4096×8=32K</span></div>
+      <span style="font-size:1.2rem;">=</span>
+      <div class="math-box result">V_output<br><span style="font-size:0.5rem;">4096 numbers</span></div>
+    </div>
+  </div>
+
+  <p style="font-size:0.7rem;color:var(--tmut);text-align:center;margin-top:0.5rem;">
+    Q_output + K_output + V_output → Attention(Q,K,V) → O → output of Layer 15 → goes into Layer 16
+  </p>
+</div>
+
+<!-- OPERATION COUNT -->
+<div class="step">
+  <h2>3. Why LoRA Adds Almost No Cost</h2>
+  <table>
+    <tr><th>Operation</th><th>Multiplications</th><th>% of Total</th></tr>
+    <tr><td>W_q · x (frozen Q)</td><td>4096 × 4096 = 16,777,216</td><td style="color:var(--violet);">99.6%</td></tr>
+    <tr><td>A_q · x (LoRA step 1)</td><td>8 × 4096 = 32,768</td><td>0.2%</td></tr>
+    <tr><td>B_q · (A_q·x) (LoRA step 2)</td><td>4096 × 8 = 32,768</td><td>0.2%</td></tr>
+    <tr style="font-weight:700;"><td>Total Q path</td><td>16,842,752</td><td>100%</td></tr>
+  </table>
+  <p style="font-size:0.8rem;color:var(--tdim);margin-top:0.5rem;">
+    LoRA adds only <strong>65K operations</strong> to the <strong>16.8M operations</strong> of the frozen Q. That's <strong>0.4% overhead</strong>. Across all 32 layers with Q+V adapters, total overhead stays under 1%.
+  </p>
+</div>
+
+<!-- KEY INSIGHT -->
+<div class="step" style="text-align:center;">
+  <h2>The Two Rules of LoRA Forward Pass</h2>
+  <div class="callout" style="text-align:left;">
+    <strong>Rule 1:</strong> <span style="color:var(--violet);">A × x</span> runs FIRST (cheap, only 8 dimensions). Then <span style="color:var(--violet);">B × (A×x)</span> runs (cheap, only 8 dimensions). <strong>B×A is NEVER computed as a full matrix.</strong> It's always done in two cheap steps.<br><br>
+    <strong>Rule 2:</strong> The LoRA adapter for Q in layer 3 is <strong>different</strong> from the LoRA adapter for Q in layer 15. Every layer learns different things. Layer 3 adjusts grammar. Layer 28 adjusts style. They need different B and A matrices.
+  </div>
+</div>
+
+</div>
+</body>
+</html>
