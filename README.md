@@ -18,6 +18,10 @@ Click any link to open the interactive module. All hosted via GitHub Pages.
 | [lora_multiplication_animation.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/lora_multiplication_animation.html) | LoRA multiplication step-by-step animation + forward pass across 32 layers |
 | [lora_forward_pass_visual.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/lora_forward_pass_visual.html) | Where B×A×x happens — layer by layer visual |
 | [image_tokenization_visual.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/image_tokenization_visual.html) | How images become tokens — patches, ViT, projection, canvas drawings |
+| [vision_lang_walkthrough.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/vision_lang_walkthrough.html) | Vision-Language FT — one X-ray example traced step by step |
+| [drift_explained.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/drift_explained.html) | Data drift visual guide — bar charts, scores, when to retrain |
+| [metrics_explained.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/metrics_explained.html) | All ML metrics — speedometer gauges + real-world interpretations |
+| [rag_plus_finetune_sensor.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/rag_plus_finetune_sensor.html) | RAG + Fine-Tuning working together — Sensor FT example |
 
 ### 🎓 Phase 1: Fine-Tuning Fundamentals
 | Module | Description |
