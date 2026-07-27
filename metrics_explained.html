@@ -168,5 +168,62 @@ window.addEventListener('resize',()=>{
   metrics.forEach((m,i)=>drawGauge('gauge'+i, m.value, m.max, m.good, m.warn, m.colors, m.label, m.unit, m.lowGood));
 });
 </script>
+
+<!-- ═══════════ REAL EXAMPLES ═══════════ -->
+<div style="margin:2rem 0;padding-top:1.5rem;border-top:2px solid var(--border);">
+<h2 style="font-family:'Space Grotesk',sans-serif;font-size:1.2rem;color:var(--violet);text-align:center;margin-bottom:1rem;">📖 Real-World Interpretations</h2>
+
+<!-- LOSS EXAMPLE -->
+<div class="m-card" style="margin:1rem 0;padding:1.25rem;background:var(--card);border:1px solid var(--border);border-radius:14px;">
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;">📉 Loss = 0.43 — What The Model Predicted (Word by Word)</h3>
+<p style="font-size:0.75rem;color:var(--tdim);margin:0.5rem 0;"><strong>Prompt:</strong> "### Response:" &nbsp; | &nbsp; <strong>Expected:</strong> "Metformin is a biguanide agent used to treat type 2 diabetes."</p>
+<div style="display:flex;flex-direction:column;gap:0.4rem;margin:0.5rem 0;font-family:'Space Grotesk',monospace;font-size:0.7rem;">
+  <div style="display:flex;align-items:center;gap:0.3rem;flex-wrap:wrap;"><span style="min-width:55px;color:var(--violet);font-weight:700;">Token 1</span><span>Sees: "### Response:" →</span><span style="background:rgba(26,110,52,0.1);color:var(--green);padding:2px 6px;border-radius:4px;">Metformin ✅</span><span style="font-size:0.6rem;color:var(--green);">correct!</span></div>
+  <div style="display:flex;align-items:center;gap:0.3rem;flex-wrap:wrap;"><span style="min-width:55px;color:var(--violet);font-weight:700;">Token 2</span><span>Sees: "...Metformin" →</span><span style="background:rgba(26,110,52,0.1);color:var(--green);padding:2px 6px;border-radius:4px;">is ✅</span></div>
+  <div style="display:flex;align-items:center;gap:0.3rem;flex-wrap:wrap;"><span style="min-width:55px;color:var(--violet);font-weight:700;">Token 5</span><span>Sees: "...a biguanide" →</span><span style="background:rgba(198,40,28,0.1);color:var(--red);padding:2px 6px;border-radius:4px;">medication ❌</span><span style="font-size:0.6rem;color:var(--red);">(should be "agent" — adds to loss!)</span></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.4rem;margin:0.5rem 0;font-size:0.65rem;">
+  <div style="background:rgba(26,110,52,0.04);border-radius:6px;padding:0.4rem;text-align:center;"><strong style="color:var(--red);">Loss=3.26</strong><br>"the cat dog banana"<br>Random guessing</div>
+  <div style="background:rgba(184,112,0,0.04);border-radius:6px;padding:0.4rem;text-align:center;"><strong style="color:var(--amber);">Loss=1.26</strong><br>"Metformin is a medication..."<br>Getting there</div>
+  <div style="background:rgba(26,110,52,0.04);border-radius:6px;padding:0.4rem;text-align:center;"><strong style="color:var(--green);">Loss=0.57</strong><br>"Metformin is a biguanide..."<br>Mostly right</div>
+  <div style="background:rgba(26,110,52,0.04);border-radius:6px;padding:0.4rem;text-align:center;"><strong style="color:var(--green);">Loss=0.43</strong><br>"...agent used..."<br>One word off</div>
+</div>
+</div>
+
+<!-- mAP EXAMPLE -->
+<div class="m-card" style="margin:1rem 0;padding:1.25rem;background:var(--card);border:1px solid var(--border);border-radius:14px;">
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;">🎯 mAP = 0.75 — Box Overlap Explained</h3>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:0.5rem 0;font-size:0.7rem;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:0.6rem;text-align:center;"><strong style="color:var(--green);">✅ 75% overlap → CORRECT</strong><br>Box covers most of the object.<br>Above 50% threshold = True Positive</div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:0.6rem;text-align:center;"><strong style="color:var(--red);">❌ 25% overlap → WRONG</strong><br>Box barely touches the object.<br>Below 50% = False Positive</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.4rem;margin:0.5rem 0;font-size:0.65rem;">
+  <div style="background:rgba(26,110,52,0.04);border-radius:6px;padding:0.4rem;text-align:center;"><strong style="color:var(--green);">mAP=0.9</strong><br>Box EXACTLY on the cat.<br>Perfect.</div>
+  <div style="background:rgba(26,110,52,0.04);border-radius:6px;padding:0.4rem;text-align:center;"><strong style="color:var(--green);">mAP=0.75</strong><br>Box covers the cat well.<br>Production-ready.</div>
+  <div style="background:rgba(184,112,0,0.04);border-radius:6px;padding:0.4rem;text-align:center;"><strong style="color:var(--amber);">mAP=0.5</strong><br>Box SOMEWHERE near cat.<br>Needs work.</div>
+  <div style="background:rgba(198,40,28,0.04);border-radius:6px;padding:0.4rem;text-align:center;"><strong style="color:var(--red);">mAP=0.2</strong><br>"That's not a cat."<br>Poor.</div>
+</div>
+</div>
+
+<!-- DRIFT EXAMPLE -->
+<div class="m-card" style="margin:1rem 0;padding:1.25rem;background:var(--card);border:1px solid var(--border);border-radius:14px;">
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;">📊 Drift = 0.20 — Topics Changed Over Time</h3>
+<div style="display:flex;align-items:flex-end;gap:0.3rem;justify-content:center;margin:0.5rem 0;height:80px;">
+  <div style="text-align:center;"><div style="display:flex;gap:1px;"><div style="width:25px;height:65px;background:var(--violet);opacity:0.6;border-radius:2px 2px 0 0;"></div><div style="width:25px;height:60px;background:var(--amber);border-radius:2px 2px 0 0;"></div></div><span style="font-size:0.5rem;color:var(--green);">Metformin ✅</span></div>
+  <div style="text-align:center;"><div style="display:flex;gap:1px;"><div style="width:25px;height:35px;background:var(--violet);opacity:0.6;border-radius:2px 2px 0 0;"></div><div style="width:25px;height:33px;background:var(--amber);border-radius:2px 2px 0 0;"></div></div><span style="font-size:0.5rem;color:var(--green);">Diabetes ✅</span></div>
+  <div style="text-align:center;"><div style="display:flex;gap:1px;"><div style="width:25px;height:0px;background:var(--violet);opacity:0.6;border-radius:2px 2px 0 0;"></div><div style="width:25px;height:45px;background:var(--amber);border-radius:2px 2px 0 0;"></div></div><span style="font-size:0.5rem;color:var(--red);">COVID ❌</span></div>
+  <div style="text-align:center;"><div style="display:flex;gap:1px;"><div style="width:25px;height:0px;background:var(--violet);opacity:0.6;border-radius:2px 2px 0 0;"></div><div style="width:25px;height:35px;background:var(--amber);border-radius:2px 2px 0 0;"></div></div><span style="font-size:0.5rem;color:var(--red);">Weight Loss ❌</span></div>
+  <div style="text-align:center;"><div style="display:flex;gap:1px;"><div style="width:25px;height:15px;background:var(--violet);opacity:0.6;border-radius:2px 2px 0 0;"></div><div style="width:25px;height:40px;background:var(--amber);border-radius:2px 2px 0 0;"></div></div><span style="font-size:0.5rem;color:var(--amber);">Side Effects ⚠️</span></div>
+</div>
+<p style="font-size:0.6rem;color:var(--tmut);text-align:center;">🟣 Training &nbsp; 🟠 Live &nbsp; | &nbsp; 2 topics drifted ÷ 10 total = drift score 0.20</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin:0.5rem 0;font-size:0.65rem;">
+  <div style="background:rgba(26,110,52,0.04);border-radius:6px;padding:0.4rem;text-align:center;"><strong style="color:var(--green);">Drift=0.05</strong><br>Same topics.<br>Model is safe.</div>
+  <div style="background:rgba(184,112,0,0.04);border-radius:6px;padding:0.4rem;text-align:center;"><strong style="color:var(--amber);">Drift=0.20</strong><br>2 new topics.<br>Plan retraining.</div>
+  <div style="background:rgba(184,112,0,0.04);border-radius:6px;padding:0.4rem;text-align:center;"><strong style="color:var(--amber);">Drift=0.30</strong><br>3+ new topics.<br>Retrain this week.</div>
+  <div style="background:rgba(198,40,28,0.04);border-radius:6px;padding:0.4rem;text-align:center;"><strong style="color:var(--red);">Drift=0.60</strong><br>Obsolete.<br>Retrain NOW.</div>
+</div>
+</div>
+</div>
+
 </body>
 </html>
