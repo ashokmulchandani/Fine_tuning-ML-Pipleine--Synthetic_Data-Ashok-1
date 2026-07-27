@@ -162,7 +162,7 @@ const slides=[
       </div>
       <div class="flow-arrow">×</div>
       <div class="flow-block input"><div class="ftitle">x (d×1)</div><div class="fsize">3 numbers</div>
-        <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${x.map(v=>renderCell(v,'pos')).join('')}</div>
+        <div class="num-grid" style="grid-template-columns:repeat(1,1fr);">${x.map(v=>renderCell(v,'pos')).join('')}</div>
       </div>
       <div class="flow-arrow">=</div>
       <div class="flow-block output"><div class="ftitle">A_q·x</div><div class="fsize">r=1 number</div>
@@ -211,6 +211,13 @@ const slides=[
     <div class="flow">
       <div class="flow-block frozen"><div class="ftitle">W_q (d×d, FROZEN)</div><div class="fsize">3×3 matrix</div>
         <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${Wq.flat().map(v=>renderCell(v,'froz')).join('')}</div>
+      </div>
+      <div class="flow-arrow">×</div>
+      <div class="flow-block input"><div class="ftitle">x (d×1)</div><div class="fsize">3×1 column</div>
+        <div class="num-grid" style="grid-template-columns:repeat(1,1fr);">${x.map(v=>renderCell(v,'pos')).join('')}</div>
+      </div>
+      <div class="flow-arrow">=</div>
+      <div class="flow-block frozen"><div class="ftitle">W_q·x</div><div class="fsize">d=3 numbers</div>
       </div>
       <div class="flow-arrow">×</div>
       <div class="flow-block input"><div class="ftitle">x (d×1)</div><div class="fsize">3 numbers</div>
