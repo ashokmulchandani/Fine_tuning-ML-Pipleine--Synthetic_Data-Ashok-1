@@ -157,18 +157,19 @@ const slides=[
     <div class="step-box"><h2>${slides[0].title}</h2>
     <p style="font-size:0.85rem;color:var(--tdim);margin-bottom:1rem;">A_q is a tiny r×d matrix. r=1 (in real LoRA r=8). Multiply with input x (d numbers).</p>
     <div class="flow">
-      <div class="flow-block input"><div class="ftitle">Input x</div><div class="fsize">d=3 numbers</div>
-        <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${x.map(v=>renderCell(v,'pos')).join('')}</div>
+      <div class="flow-block op"><div class="ftitle">A_q (r×d)</div><div class="fsize">1 row × 3 cols</div>
+        <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${Aq[0].map(v=>renderCell(v,'pos')).join('')}</div>
       </div>
       <div class="flow-arrow">×</div>
-      <div class="flow-block op"><div class="ftitle">A_q</div><div class="fsize">r×d = 1×3</div>
-        <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${Aq[0].map(v=>renderCell(v,'pos')).join('')}</div>
+      <div class="flow-block input"><div class="ftitle">x (d×1)</div><div class="fsize">3 numbers</div>
+        <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${x.map(v=>renderCell(v,'pos')).join('')}</div>
       </div>
       <div class="flow-arrow">=</div>
       <div class="flow-block output"><div class="ftitle">A_q·x</div><div class="fsize">r=1 number</div>
         <div class="num-grid" style="grid-template-columns:repeat(1,1fr);">${renderCell(Ax,'pos')}</div>
       </div>
     </div>
+    <p style="font-size:0.65rem;color:var(--tmut);text-align:center;margin-top:0.3rem;">A_q (1×3) · x (3×1) → inner dims match (3=3) → 1×1 = <strong>1 number</strong>. Real: A (8×4096) · x (4096×1) → 8×1 = <strong>8 numbers</strong>.</p>
     <p style="font-size:0.7rem;color:var(--tmut);margin-top:0.75rem;">r×d = 3 multiplications → <strong>1 number</strong>. Real: 8×4096 = 32,768 ops. <strong style="color:var(--red);">A MUST go first — A·x compresses 4096→8.</strong></p>
     <div style="background:rgba(198,40,28,0.04);border:1px solid rgba(198,40,28,0.2);border-radius:8px;padding:0.5rem 0.75rem;margin-top:0.5rem;font-size:0.72rem;color:var(--tdim);text-align:center;">
       <strong>❌ Why NOT B·x?</strong> B is d×r (4096×8). x is d×1 (4096×1). <strong>Dimensions don't match!</strong> 8 ≠ 4096. You can't multiply [4096×8] × [4096×1]. A must go FIRST because A is r×d (8×4096) — it CAN multiply with x (4096×1) → compresses to 8 numbers. Then B (4096×8) multiplies with the 8 numbers → expands back to 4096. <strong>B and A are two halves of one operation. Order is not optional.</strong>
@@ -181,18 +182,19 @@ const slides=[
     <div class="step-box"><h2>${slides[1].title}</h2>
     <p style="font-size:0.85rem;color:var(--tdim);margin-bottom:1rem;">B_q is d×r. Multiply with the result from Step 1 (r numbers). Output = d numbers = ΔW.</p>
     <div class="flow">
-      <div class="flow-block input"><div class="ftitle">A_q·x</div><div class="fsize">r=1 number</div>
-        <div class="num-grid" style="grid-template-columns:repeat(1,1fr);">${renderCell(Ax,'pos')}</div>
-      </div>
-      <div class="flow-arrow">×</div>
-      <div class="flow-block op"><div class="ftitle">B_q</div><div class="fsize">d×r = 3×1</div>
+      <div class="flow-block op"><div class="ftitle">B_q (d×r)</div><div class="fsize">3 rows × 1 col</div>
         <div class="num-grid" style="grid-template-columns:repeat(1,1fr);">${Bq.map(r=>renderCell(r[0],'pos')).join('')}</div>
       </div>
+      <div class="flow-arrow">×</div>
+      <div class="flow-block input"><div class="ftitle">A_q·x (r×1)</div><div class="fsize">1 number (from Step 1)</div>
+        <div class="num-grid" style="grid-template-columns:repeat(1,1fr);">${renderCell(Ax,'pos')}</div>
+      </div>
       <div class="flow-arrow">=</div>
-      <div class="flow-block output"><div class="ftitle">ΔW = B_q·(A_q·x)</div><div class="fsize">d=3 numbers</div>
+      <div class="flow-block output"><div class="ftitle">B_q·(A_q·x) = ΔW</div><div class="fsize">d=3 numbers</div>
         <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${BAx.map(v=>renderCell(v,'pos')).join('')}</div>
       </div>
     </div>
+    <p style="font-size:0.65rem;color:var(--tmut);text-align:center;margin-top:0.3rem;">B (3×1) · (A·x) (1×1) → inner dims match (1=1) → 3×1 = <strong>3 numbers = ΔW</strong>. Real: B (4096×8) · (A·x) (8×1) → 4096×1.</p>
     <p style="font-size:0.7rem;color:var(--tmut);margin-top:0.75rem;">d×r = 3 multiplications → <strong>3 numbers = ΔW</strong>. Real: 4096×8 = 32,768 ops. <strong>B×A NEVER computed as full 4096×4096!</strong></p>
     <div style="background:rgba(91,58,168,0.04);border:1px solid rgba(91,58,168,0.12);border-radius:8px;padding:0.5rem 0.75rem;margin-top:0.5rem;font-size:0.72rem;color:var(--tdim);text-align:center;">
       <strong>🔍 The Funnel — Why Order Matters:</strong><br>
@@ -207,18 +209,19 @@ const slides=[
     <div class="step-box"><h2>${slides[2].title}</h2>
     <p style="font-size:0.85rem;color:var(--tdim);margin-bottom:1rem;">This is the SAME computation as always — the frozen weight matrix. LoRA doesn\'t change this.</p>
     <div class="flow">
-      <div class="flow-block input"><div class="ftitle">Input x</div><div class="fsize">d=3 numbers</div>
-        <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${x.map(v=>renderCell(v,'pos')).join('')}</div>
+      <div class="flow-block frozen"><div class="ftitle">W_q (d×d, FROZEN)</div><div class="fsize">3×3 matrix</div>
+        <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${Wq.flat().map(v=>renderCell(v,'froz')).join('')}</div>
       </div>
       <div class="flow-arrow">×</div>
-      <div class="flow-block frozen"><div class="ftitle">W_q (FROZEN)</div><div class="fsize">d×d = 3×3</div>
-        <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${Wq.flat().map(v=>renderCell(v,'froz')).join('')}</div>
+      <div class="flow-block input"><div class="ftitle">x (d×1)</div><div class="fsize">3 numbers</div>
+        <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${x.map(v=>renderCell(v,'pos')).join('')}</div>
       </div>
       <div class="flow-arrow">=</div>
       <div class="flow-block frozen"><div class="ftitle">W_q·x</div><div class="fsize">d=3 numbers</div>
         <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${Wx.map(v=>renderCell(v,'froz')).join('')}</div>
       </div>
     </div>
+    <p style="font-size:0.65rem;color:var(--tmut);text-align:center;margin-top:0.3rem;">W_q (3×3) · x (3×1) → inner dims match (3=3) → <strong>3 numbers</strong>. Real: W_q (4096×4096) · x (4096×1) = 16.8M ops. Same with or without LoRA.</p>
     <p style="font-size:0.7rem;color:var(--tmut);margin-top:0.75rem;">d² = 9 multiplications. Real: 4096² = <strong>16,777,216 ops</strong>. Same with or without LoRA.</p>
     </div>`
 },
