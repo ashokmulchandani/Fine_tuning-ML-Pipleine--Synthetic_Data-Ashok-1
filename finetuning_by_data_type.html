@@ -190,7 +190,9 @@ const tabs=[
      ]},
     {emoji:'🧠',name:'TRAIN',time:'~3 min',desc:'LoRA → SFTTrainer',
      substeps:[
-       {n:1,title:'Quantize Base Model',tag:'lora',code:'BitsAndBytesConfig(load_in_8bit=True)'},
+       {n:1,title:'Quantize Base Model',tag:'lora',code:'from transformers import BitsAndBytesConfig, AutoModelForCausalLM
+bnb_config = BitsAndBytesConfig(load_in_8bit=True)
+model = AutoModelForCausalLM.from_pretrained("TinyLlama/...", quantization_config=bnb_config, device_map="auto", torch_dtype=torch.float16)'},
        {n:2,title:'Apply LoRA (r=8)',tag:'lora',code:'LoraConfig(r=8, alpha=16, target_modules=["q_proj","v_proj"])'},
        {n:3,title:'Format Function',tag:'sft',code:'format_instruction(ex) — EXACT same as text FT'},
        {n:4,title:'SFTTrainer',tag:'sft',code:'SFTTrainer(model, dataset, formatting_func).train()'},
@@ -298,7 +300,9 @@ const tabs=[
   stages:[
     {emoji:'📦',name:'BUILD',time:'Phases 4-6',desc:'Quant → LoRA → Data → Train',
      substeps:[
-       {n:1,title:'Quantize Model',tag:'lora',viz:'<span class="vz-box vz-input">🧠 FP16</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⬇ INT8/4</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Smaller</span>',code:'BitsAndBytesConfig(load_in_8bit=True)'},
+       {n:1,title:'Quantize Model',tag:'lora',viz:'<span class="vz-box vz-input">🧠 FP16</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⬇ INT8/4</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Smaller</span>',code:'from transformers import BitsAndBytesConfig, AutoModelForCausalLM
+bnb_config = BitsAndBytesConfig(load_in_8bit=True)
+model = AutoModelForCausalLM.from_pretrained("TinyLlama/...", quantization_config=bnb_config, device_map="auto", torch_dtype=torch.float16)'},
        {n:2,title:'Apply LoRA',tag:'lora',viz:'<span class="vz-box vz-input">🔒 W₀</span><span class="vz-arrow">+</span><span class="vz-box vz-process">🆕 B×A</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ 0.4% trainable</span>',code:'LoraConfig(r=8, target_modules=["q_proj","v_proj"])'},
        {n:3,title:'Prepare Data',tag:'data',viz:'<span class="vz-box vz-input">📄 PDF</span><span class="vz-arrow">→</span><span class="vz-box vz-process">✂️ Chunks</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔢 Tokenize</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📊 Dataset</span>',code:'PDF → chunks → Dataset → tokenize → labels'},
        {n:4,title:'Train',tag:'sft',viz:'<span class="vz-box vz-input">📊 Data</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🎓 SFT / ⚖️ DPO</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🤖 Fine-Tuned</span>',code:'SFTTrainer / DPOTrainer → train()'},
@@ -382,7 +386,9 @@ const tabs=[
      ]},
     {emoji:'🧠',name:'TRAIN',time:'Same as Text',desc:'LoRA→SFTTrainer',
      substeps:[
-       {n:1,title:'Quantize',tag:'lora',viz:'<span class="vz-box vz-input">🧠 FP16</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⬇ 8-bit</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🧠 INT8</span>',code:'BitsAndBytesConfig(load_in_8bit=True)'},
+       {n:1,title:'Quantize',tag:'lora',viz:'<span class="vz-box vz-input">🧠 FP16</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⬇ 8-bit</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🧠 INT8</span>',code:'from transformers import BitsAndBytesConfig, AutoModelForCausalLM
+bnb_config = BitsAndBytesConfig(load_in_8bit=True)
+model = AutoModelForCausalLM.from_pretrained("TinyLlama/...", quantization_config=bnb_config, device_map="auto", torch_dtype=torch.float16)'},
        {n:2,title:'Apply LoRA',tag:'lora',viz:'<span class="vz-box vz-input">🔒 W₀</span><span class="vz-arrow">+</span><span class="vz-box vz-process">🆕 B×A</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ 0.4%</span>',code:'LoraConfig(r=8, target_modules=["q_proj","v_proj"])'},
        {n:3,title:'SFTTrainer',tag:'sft',viz:'<span class="vz-box vz-input">📋 Q&A</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🎓 SFTTrainer</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🤖 Model</span>',code:'trainer=SFTTrainer(model,dataset,formatting_func).train()\n# SAME 3 LINES as text FT'},
        {n:4,title:'Model Learns',tag:'sft',viz:'<span class="vz-box vz-input">📊 New Data</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🤖 LLM</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 Diagnosis</span>',code:'Model learns: kurtosis>5+crest>4=bearing fault in 48h'},
