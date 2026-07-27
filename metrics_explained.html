@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML Metrics — What They Mean</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8f9fc;--card:#fff;--border:#dde0e6;--text:#1a1d23;--tdim:#4a4f5b;--tmut:#8b909b;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--red:#c62828;--cyan:#007a99;--blue:#2979ff;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;min-height:100vh;}
+.app{max-width:850px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:2rem 0 1.5rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.95rem;}
+
+.metric-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin:1.2rem 0;}
+.metric-card h2{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;margin-bottom:0.4rem;display:flex;align-items:center;gap:0.5rem;}
+
+.summary-table{width:100%;border-collapse:collapse;font-size:0.78rem;margin:1.5rem 0;}
+.summary-table th{font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);padding:0.4rem 0.5rem;border-bottom:2px solid var(--border);text-align:left;}
+.summary-table td{padding:0.4rem 0.5rem;border-bottom:1px solid var(--border);}
+.summary-table .metric-name{font-weight:600;}
+
+/* Scale bar */
+.scale-bar{position:relative;height:28px;border-radius:6px;margin:0.5rem 0;overflow:hidden;}
+.scale-bar .seg{position:absolute;height:100%;display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;color:#fff;}
+.scale-arrow{position:absolute;top:-8px;font-size:1rem;transition:left 0.5s;}
+
+/* Mini loss curve */
+.loss-curve{display:flex;align-items:flex-end;gap:0.25rem;height:100px;padding:0 0.5rem;margin:0.5rem 0;}
+.loss-bar{flex:1;border-radius:3px 3px 0 0;}
+
+/* Comparison */
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:0.5rem 0;}
+.cmp-box{padding:0.75rem;border-radius:8px;text-align:center;font-size:0.78rem;}
+.cmp-box.ok{border:2px solid var(--green);background:rgba(26,110,52,0.04);}
+.cmp-box.warn{border:2px solid var(--amber);background:rgba(184,112,0,0.04);}
+.cmp-box.bad{border:2px solid var(--red);background:rgba(198,40,28,0.04);}
+
+.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.65rem 0.9rem;margin:0.5rem 0;font-size:0.8rem;}
+
+@media(max-width:768px){.app{padding:0.5rem;}.cmp{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>ML Metrics — What They Mean & How to Read Them</h1>
+  <p>Training loss, mAP, drift score, accuracy — which metric for which model?</p>
+</header>
+
+<!-- SUMMARY TABLE -->
+<div class="metric-card">
+  <h2>📊 Quick Reference — All Metrics</h2>
+  <div style="overflow-x:auto;">
+  <table class="summary-table">
+    <thead><tr><th>Metric</th><th>Used For</th><th>Scale</th><th>Good Value</th><th>Phase</th></tr></thead>
+    <tbody>
+    <tr><td class="metric-name" style="color:var(--red);">Training Loss</td><td>Text LLMs (SFT, DPO)</td><td>0 → 8</td><td>Lower = better<br>< 1.0 is good</td><td>4–6</td></tr>
+    <tr><td class="metric-name" style="color:var(--cyan);">mAP</td><td>Image/Object Detection (YOLO)</td><td>0 → 1.0</td><td>Higher = better<br>> 0.7 is good</td><td>10</td></tr>
+    <tr><td class="metric-name" style="color:var(--amber);">Drift Score</td><td>Production Monitoring</td><td>0 → 1.0</td><td>Lower = better<br>< 0.2 is safe</td><td>6B</td></tr>
+    <tr><td class="metric-name" style="color:var(--violet);">Accuracy</td><td>Classification</td><td>0 → 100%</td><td>Higher = better<br>> 85% is good</td><td>10</td></tr>
+    <tr><td class="metric-name" style="color:var(--green);">Perplexity</td><td>Text LLMs (same as loss)</td><td>1 → ∞</td><td>Lower = better<br>exp(loss)</td><td>4–6</td></tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<!-- TRAINING LOSS -->
+<div class="metric-card">
+  <h2 style="color:var(--red);">📉 Training Loss — "How Wrong Is The Model?"</h2>
+  <p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Loss measures prediction error. At each step, the model predicts the next word. Loss = how far off it was.</p>
+
+  <div class="loss-curve">
+    <div class="loss-bar" style="height:95%;background:var(--red);" title="Step 5: Loss 3.26"></div>
+    <div class="loss-bar" style="height:72%;background:var(--red);opacity:0.8;" title="Step 8: Loss 2.45"></div>
+    <div class="loss-bar" style="height:45%;background:var(--amber);" title="Step 10: Loss 1.26"></div>
+    <div class="loss-bar" style="height:25%;background:var(--amber);opacity:0.8;" title="Step 12: Loss 0.82"></div>
+    <div class="loss-bar" style="height:15%;background:var(--green);" title="Step 15: Loss 0.57"></div>
+    <div class="loss-bar" style="height:10%;background:var(--green);" title="Step 20: Loss 0.43"></div>
+  </div>
+  <p style="font-size:0.65rem;color:var(--tmut);text-align:center;">Start → → → Steps → → → End<br>3.26 → 1.26 → 0.57 → 0.43</p>
+
+  <div class="cmp">
+    <div class="cmp-box bad"><strong style="color:var(--red);">Loss = 3–5</strong><br>Random guessing. Model knows nothing.</div>
+    <div class="cmp-box warn"><strong style="color:var(--amber);">Loss = 1–2</strong><br>Learning. Patterns emerging.</div>
+    <div class="cmp-box ok"><strong style="color:var(--green);">Loss < 1.0</strong><br>Good fit. Model is reliable.</div>
+  </div>
+
+  <div class="callout">
+    <strong>🧠 Used in:</strong> Text Fine-Tuning (Phases 4–6). Lower = better. Your Phase 5 Metformin model went from 3.26 → 0.43.
+  </div>
+</div>
+
+<!-- mAP -->
+<div class="metric-card">
+  <h2 style="color:var(--cyan);">🎯 mAP (mean Average Precision) — "Are The Boxes Right?"</h2>
+  <p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">For object detection (YOLO). Measures both: (1) did you find the right object? AND (2) is your box in the right place?</p>
+
+  <div class="cmp">
+    <div class="cmp-box bad"><strong style="color:var(--red);">mAP < 0.3</strong><br>Poor. Missing most objects or boxes way off.</div>
+    <div class="cmp-box warn"><strong style="color:var(--amber);">mAP 0.3–0.7</strong><br>Decent. Works but needs improvement.</div>
+    <div class="cmp-box ok"><strong style="color:var(--green);">mAP > 0.7</strong><br>Good. Production-ready object detection.</div>
+  </div>
+
+  <div class="callout">
+    <strong>🧠 Used in:</strong> Image Fine-Tuning (Phase 10). Higher = better. YOLO reports mAP@0.5 (lenient) and mAP@0.5:0.95 (strict).
+  </div>
+</div>
+
+<!-- DRIFT -->
+<div class="metric-card">
+  <h2 style="color:var(--amber);">📊 Drift Score — "Are Users Still Asking The Same Things?"</h2>
+  <p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Fraction of features that changed between training data and live data. 0.30 = 30% of features look different now.</p>
+
+  <div class="scale-bar" style="background:linear-gradient(90deg,var(--green),var(--amber),var(--red));">
+    <div class="seg" style="left:2%;">0.0</div>
+    <div class="seg" style="left:28%;">0.3</div>
+    <div class="seg" style="right:2%;">1.0</div>
+  </div>
+
+  <div class="cmp">
+    <div class="cmp-box ok"><strong style="color:var(--green);">0.0–0.1</strong><br>No drift. Model is fine.</div>
+    <div class="cmp-box warn"><strong style="color:var(--amber);">0.1–0.3</strong><br>Mild drift. Monitor weekly.</div>
+    <div class="cmp-box bad"><strong style="color:var(--red);">> 0.3</strong><br>Strong drift. Retrain NOW.</div>
+  </div>
+
+  <div class="callout">
+    <strong>🧠 Used in:</strong> Production Monitoring (Phase 6B). Lower = better. Detected by Evidently AI. Triggers auto-retrain when > 0.3.
+  </div>
+</div>
+
+<!-- ACCURACY -->
+<div class="metric-card">
+  <h2 style="color:var(--violet);">✔️ Accuracy — "How Many Were Correct?"</h2>
+  <p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">The simplest metric. For classification tasks. NOT used for text generation (LLMs) because there's no single "correct" answer.</p>
+
+  <div class="cmp">
+    <div class="cmp-box bad"><strong style="color:var(--red);">< 70%</strong><br>Poor. Barely better than random.</div>
+    <div class="cmp-box warn"><strong style="color:var(--amber);">70–85%</strong><br>Decent. Needs more data/tuning.</div>
+    <div class="cmp-box ok"><strong style="color:var(--green);">> 85%</strong><br>Good. Production-ready classifier.</div>
+  </div>
+
+  <div class="callout">
+    <strong>🧠 Used in:</strong> Image Classification (Phase 10). Higher = better. Simple but doesn't work for text generation — you need loss for that.
+  </div>
+</div>
+
+<!-- PERPLEXITY -->
+<div class="metric-card">
+  <h2 style="color:var(--green);">🔢 Perplexity — "How Confused Is The Model?"</h2>
+  <p style="font-size:0.85rem;color:var(--tdim);margin-bottom:0.5rem;">Same thing as loss, just expressed differently. <strong>Perplexity = exp(loss)</strong>. "How many options is the model choosing between?"</p>
+
+  <div class="cmp">
+    <div class="cmp-box bad"><strong style="color:var(--red);">Perplexity > 50</strong><br>Model is guessing among 50+ words. Very uncertain.</div>
+    <div class="cmp-box ok"><strong style="color:var(--green);">Perplexity < 3</strong><br>Model is confident. Only considering ~3 word choices.</div>
+  </div>
+
+  <p style="font-size:0.75rem;text-align:center;color:var(--tdim);margin-top:0.5rem;">
+    Your Phase 5 model: Loss 0.43 → Perplexity = e⁰·⁴³ = <strong style="color:var(--green);">1.54</strong> — very confident!
+  </p>
+
+  <div class="callout">
+    <strong>🧠 Perplexity = e^loss.</strong> If loss = 3, perplexity = e³ = 20 (model is confused among 20 words). If loss = 0.43, perplexity = 1.54 (model is very sure).
+  </div>
+</div>
+
+<!-- WHICH METRIC WHEN -->
+<div class="metric-card">
+  <h2>🗺️ Which Metric for Which Phase?</h2>
+  <table class="summary-table">
+    <thead><tr><th>Phase</th><th>What You're Doing</th><th>Primary Metric</th><th>Tool</th></tr></thead>
+    <tbody>
+    <tr><td>4 — Domain FT</td><td>Train on PDFs</td><td style="color:var(--red);">Training Loss</td><td>Trainer logs</td></tr>
+    <tr><td>5 — SFT</td><td>Q&A pairs</td><td style="color:var(--red);">Training Loss</td><td>SFTTrainer logs</td></tr>
+    <tr><td>6 — DPO</td><td>Preference alignment</td><td style="color:var(--red);">DPO Loss</td><td>DPOTrainer logs</td></tr>
+    <tr><td>6A — Testing</td><td>Validate model</td><td style="color:var(--violet);">Accuracy (behavioral tests)</td><td>pytest</td></tr>
+    <tr><td>6B — MLOps</td><td>Production monitor</td><td style="color:var(--amber);">Drift Score</td><td>Evidently AI</td></tr>
+    <tr><td>10 — Vision</td><td>Object detection</td><td style="color:var(--cyan);">mAP</td><td>YOLO logs</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+</body>
+</html>
