@@ -157,7 +157,33 @@ td{padding:0.3rem;border-bottom:1px solid var(--border);}
 
 <!-- IMAGE TOKENIZATION -->
 <div class="step">
-  <h2>🖼️ Image Tokenization — How Vision Models "Read" Images</h2>
+  <h2>🖼️ Image Tokenization — How an Image Becomes Tokens</h2>
+  <p style="font-size:0.85rem;color:var(--tdim);">224×224 pixels → 14×14 patches → 197 visual tokens → combined with text → LLM processes everything together</p>
+  <div style="display:flex;justify-content:center;margin:0.75rem 0;"><canvas id="imgCanvas" width="224" height="224" style="border:1px solid var(--border);border-radius:8px;"></canvas></div>
+  <p style="font-size:0.7rem;color:var(--tmut);text-align:center;">224×224 = 50,176 pixels (simplified X-ray pattern)</p>
+
+  <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1rem 0 0.5rem;">Step 1: Split into 14×14 Patches (16×16 pixels each)</h3>
+  <div style="display:flex;justify-content:center;margin:0.5rem 0;"><canvas id="patchCanvas" width="280" height="280" style="border:1px solid var(--border);border-radius:8px;"></canvas></div>
+  <p style="font-size:0.7rem;color:var(--tmut);text-align:center;">14×14 = <strong>196 patches</strong>. Each = 16×16 = <strong style="color:var(--violet);">256 numbers</strong>. Highlighted: one patch.</p>
+
+  <div class="patch-demo" id="patchDemo" style="display:grid;grid-template-columns:repeat(16,1fr);gap:1px;width:180px;height:180px;margin:0.5rem auto;"></div>
+  <p style="font-size:0.65rem;color:var(--tmut);text-align:center;">Zoomed patch: 16×16 = <strong>256 pixel values</strong>. Dark=bone, light=lung.</p>
+
+  <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1rem 0 0.5rem;">Step 2: CLIP-ViT-L Encodes → 1024-dim Vectors</h3>
+  <p style="font-size:0.8rem;color:var(--tdim);">196 patches + 1 [CLS] → <strong>CLIP-ViT-L (304M, FROZEN)</strong> → 197 tokens, each <strong>1024-dimensional</strong>.</p>
+  <div style="display:flex;justify-content:center;margin:0.5rem 0;"><canvas id="vecCanvas" width="700" height="100" style="border:1px solid var(--border);border-radius:8px;"></canvas></div>
+  <p style="font-size:0.65rem;color:var(--tmut);text-align:center;">197 visual tokens (each colored row = one 1024-dim vector). The LLM needs 4096-dim...</p>
+
+  <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1rem 0 0.5rem;">Step 3: Project to LLM Space — 1024 → 4096</h3>
+  <p style="font-size:0.8rem;color:var(--tdim);">A linear layer (1024×4096 = 4.2M params, FROZEN) maps each visual token to <strong>4096-dim</strong> — the exact size the LLM expects.</p>
+
+  <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1rem 0 0.5rem;">Step 4: Combine Visual + Text → One Input</h3>
+  <p style="font-size:0.8rem;color:var(--tdim);">197 visual tokens are <strong>prepended</strong> to 315 text tokens = <strong>512 total tokens</strong>, each 4096-dim. The LLM processes them identically.</p>
+  <div style="display:flex;gap:1px;height:24px;border-radius:6px;overflow:hidden;margin:0.5rem 0;">
+    <div style="width:38.5%;background:var(--cyan);" title="197 visual tokens"></div>
+    <div style="width:61.5%;background:var(--amber);" title="315 text tokens"></div>
+  </div>
+  <p style="font-size:0.65rem;color:var(--tmut);text-align:center;"><span style="color:var(--cyan);">■ 197 visual (38.5%)</span> <span style="color:var(--amber);">■ 315 text (61.5%)</span> = <strong>512 tokens total</strong></p>
   <p style="font-size:0.85rem;color:var(--tdim);">Vision-Language models (LLaVA, GPT-4V) process images the same way — by converting them into tokens. But the tokenizer is different.</p>
 
   <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1rem 0 0.5rem;">Step 1: Split Image into Patches</h3>
@@ -190,25 +216,47 @@ td{padding:0.3rem;border-bottom:1px solid var(--border);}
   <p style="font-size:0.85rem;color:var(--tdim);">
     The 197 visual tokens are PREPENDED to the text tokens. The LLM sees them as one long sequence:
   </p>
-  <div class="code-box">
-<span style="color:#6a9955;">Total input to LLM:</span>
-[img_1] [img_2] ... [img_197] [### Instruction:] [What does X-ray show?] [### Response:]
- ← 197 visual tokens →   ←──────── 315 text tokens ────────────→
- = <strong style="color:#ce9178;">512 total tokens, each 4096-dim</strong></div>
-
-  <table>
-    <tr><th>Component</th><th>Tokens</th><th>Processor</th><th>Frozen?</th></tr>
-    <tr><td>Image patches</td><td>197 × 1024-dim</td><td>CLIP-ViT-L (304M)</td><td>✅ Frozen</td></tr>
-    <tr><td>Projection layer</td><td>197 × 1024→4096</td><td>Linear projection</td><td>✅ Frozen</td></tr>
-    <tr><td>Text tokens</td><td>315 × 4096-dim</td><td>Llama Tokenizer</td><td>✅ Frozen</td></tr>
-    <tr><td>Combined input</td><td>512 × 4096-dim</td><td>Llama-7B (LoRA on Q+V)</td><td>⚠️ LoRA trained</td></tr>
-  </table>
-
   <div class="callout">
-    <strong>🧠 Key insight:</strong> The LLM doesn't know the difference between visual tokens and text tokens. It sees 512 vectors, each 4096-dimensional, and processes them identically through the Transformer layers. The visual tokens at the beginning provide context about "what's in the image." The text tokens ask the question. The LLM generates the answer — exactly like it does for text-only input.
+    <strong>🧠 Key insight:</strong> The LLM doesn't know visual tokens from text tokens. It sees 512 vectors of 4096 numbers and processes them identically. The visual tokens carry "what's in this image" as numerical patterns. The text asks the question. The Transformer generates the answer — exactly like text-only input.
   </div>
 </div>
 
 </div>
+
+<script>
+// Draw X-ray
+const ic=document.getElementById('imgCanvas'), ictx=ic.getContext('2d');
+ictx.fillStyle='#1a1a2e';ictx.fillRect(0,0,224,224);
+ictx.fillStyle='#2d2d44';ictx.beginPath();ictx.ellipse(112,100,70,90,0,0,Math.PI*2);ictx.fill();
+ictx.fillStyle='#2d2d44';ictx.beginPath();ictx.ellipse(112,100,60,80,0,0,Math.PI*2);ictx.fill();
+ictx.strokeStyle='#e0e0e0';ictx.lineWidth=3;
+for(let i=0;i<5;i++){ictx.beginPath();ictx.arc(112,100,50+i*8,0,Math.PI*0.7);ictx.stroke();}
+ictx.strokeStyle='#d0d0d0';ictx.lineWidth=4;ictx.beginPath();ictx.moveTo(112,30);ictx.lineTo(112,190);ictx.stroke();
+ictx.fillStyle='rgba(200,200,200,0.15)';ictx.beginPath();ictx.ellipse(112,130,25,30,0,0,Math.PI*2);ictx.fill();
+ictx.fillStyle='rgba(255,255,255,0.2)';ictx.beginPath();ictx.ellipse(150,90,20,25,0,0,Math.PI*2);ictx.fill();
+
+// Draw patches
+const pc=document.getElementById('patchCanvas'), pctx=pc.getContext('2d');
+pctx.fillStyle='#fff';pctx.fillRect(0,0,280,280);
+for(let r=0;r<14;r++){for(let c=0;c<14;c++){
+  pctx.drawImage(ic,c*16,r*16,16,16,c*20,r*20,20,20);
+  pctx.strokeStyle='rgba(0,0,0,0.15)';pctx.lineWidth=0.5;pctx.strokeRect(c*20,r*20,20,20);
+}}
+pctx.strokeStyle='#5b3aa8';pctx.lineWidth=2.5;pctx.strokeRect(40,60,20,20);
+pctx.fillStyle='rgba(91,58,168,0.15)';pctx.fillRect(40,60,20,20);
+
+// Generate 16x16 patch
+const pd=document.getElementById('patchDemo');
+for(let r=0;r<16;r++){for(let c=0;c<16;c++){
+  let v;if(r<5&&c<4)v=0.9;else if(r<6&&c<5)v=0.8;else if(r>8&&r<14&&c>6&&c<14)v=0.4;else if(r>9&&r<13&&c>7&&c<13)v=0.3;else if(r>10&&r<12&&c>8&&c<12)v=0.2;else if(c>13||r>13)v=0.0;else v=0.1+Math.random()*0.1;
+  const d=document.createElement('div');d.style.background=`rgba(26,110,52,${v})`;pd.appendChild(d);
+}}
+
+// Draw vector rows
+const vc=document.getElementById('vecCanvas'), vctx=vc.getContext('2d');
+vctx.fillStyle='#f8f9fc';vctx.fillRect(0,0,700,100);
+for(let i=0;i<197;i++){const y=8+i*0.45;if(y>95)break;const hue=200+(i*0.5)%160;vctx.fillStyle=`hsl(${hue},60%,${40+(i%30)*1.5}%)`;vctx.fillRect(20,y,(0.3+Math.random()*0.7)*660,0.4);}
+vctx.fillStyle='var(--tmut)';vctx.font='9px "Inter"';vctx.textAlign='right';vctx.fillText('197 visual tokens (each row = 1024-dim vector)',680,10);
+</script>
 </body>
 </html>
