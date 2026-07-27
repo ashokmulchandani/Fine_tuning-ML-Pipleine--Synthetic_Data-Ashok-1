@@ -10,10 +10,14 @@ Click any link to open the interactive module. All hosted via GitHub Pages.
 | Module | Description |
 |--------|-------------|
 | [finetuning_plan_dashboard.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/finetuning_plan_dashboard.html) | Full dashboard — all phases, progress bar, formulas, timeline |
-| [finetuning_by_data_type.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/finetuning_by_data_type.html) | Fine-tuning works on anything — Text, Tabular, Image, Vision-Language |
-| [model_memory_lora_calculator.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/model_memory_lora_calculator.html) | Interactive calculator — FP32→Quant→LoRA, change any param |
+| [finetuning_by_data_type.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/finetuning_by_data_type.html) | 7-tab pipeline visualizer — Text, Tabular, Image, Vision-Lang, Sensor |
+| [model_memory_lora_calculator.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/model_memory_lora_calculator.html) | Interactive calculator — FP32→Quant→LoRA, change any param (12 models) |
 | [model_deployment_guide.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/model_deployment_guide.html) | 4 levels of deployment — local → API → HuggingFace Hub |
 | [training_loss_explained.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/training_loss_explained.html) | What training loss means — visual curve |
+| [tokenize_embed_visual.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/tokenize_embed_visual.html) | Tokenization + Embedding + Image Tokenization visual explainer |
+| [lora_multiplication_animation.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/lora_multiplication_animation.html) | LoRA multiplication step-by-step animation + forward pass across 32 layers |
+| [lora_forward_pass_visual.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/lora_forward_pass_visual.html) | Where B×A×x happens — layer by layer visual |
+| [image_tokenization_visual.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/image_tokenization_visual.html) | How images become tokens — patches, ViT, projection, canvas drawings |
 
 ### 🎓 Phase 1: Fine-Tuning Fundamentals
 | Module | Description |
@@ -38,11 +42,13 @@ Click any link to open the interactive module. All hosted via GitHub Pages.
 ### 🧬 Phase 3: LoRA & QLoRA
 | Module | Description |
 |--------|-------------|
-| [phase3_lora_qlora.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase3_lora_qlora.html) | 10 slides — matrix decomposition, rank, equation, QLoRA, config, adapter merging |
+| [phase3_lora_qlora.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase3_lora_qlora.html) | 11 slides — matrix decomposition, rank, equation, QLoRA, config, adapter merging |
+| [lora_multiplication_animation.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/lora_multiplication_animation.html) | LoRA multiplication step-by-step animation + 32-layer forward pass |
+| [lora_forward_pass_visual.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/lora_forward_pass_visual.html) | Where B×A×x happens — layer by layer |
 | [lora_target_modules_explained.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/lora_target_modules_explained.html) | Q/K/V/O visual explainer with library analogy |
 | [lora_adapters_per_layer.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/lora_adapters_per_layer.html) | Visual — 32 layers × independent adapters per module |
 | [lora_alpha_dropout_explained.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/lora_alpha_dropout_explained.html) | Alpha (volume knob) + Dropout (forget mechanism) explainer |
-| [lora_adapter_merging.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/lora_adapter_merging.html) | Why merge_and_unload() between stages — stacking vs merging |
+| [lora_adapter_merging.html](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/lora_adapter_merging.html) | Why merge_and_unload() between stages |
 
 ### 📄 Phase 4: Non-Instructional Fine-Tuning
 | Module | Description |
