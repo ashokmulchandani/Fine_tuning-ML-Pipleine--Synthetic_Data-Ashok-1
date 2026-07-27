@@ -312,6 +312,46 @@ B and A are <strong>brand new matrices</strong>, randomly initialized from scrat
 <div class="opt" onclick="checkQuiz('q5',this)">B. B and A are so small they compute instantly</div></div>
 </div></div>`;}
 },
+{ // 3.5b — Forward Pass Detail
+  id:'3.5b', title:'How B×A×x Actually Computes — Step by Step',
+  fact:'B×A is NEVER computed as a full 4096×4096 matrix. It\'s always done as two cheap operations: A·x first (8×4096), then B·(A·x) (4096×8). That\'s 65K ops vs 16.8M for W·x.',
+  render(){return `
+<div class="slide"><div class="card">
+<h2><span class="num">3.5b</span> The Forward Pass — One Token Through One Layer</h2>
+<p>x is <strong>one 4096-dim vector</strong> (one token), NOT the whole 512×4096 matrix. Each token goes through Q/K/V individually. Same W_q, B_q, A_q used for all 512 tokens.</p>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1rem 0 0.5rem;">🔵 Q Path — With LoRA</h3>
+<div class="code-box">
+<span style="color:var(--tmut)">x = input vector (4096 numbers, from previous layer)</span>
+
+<span style="color:var(--violet)">Step 1 (cheap):</span>  A_q · x    = [8×4096]·[4096×1] = 8 numbers
+<span style="color:var(--violet)">Step 2 (cheap):</span>  B_q · (A_q·x) = [4096×8]·[8×1] = 4096 numbers
+<span style="color:var(--tmut)">Step 3 (heavy):</span> W_q · x       = [4096×4096]·[4096×1] = 4096 numbers <span style="color:#6a9955;">← FROZEN</span>
+
+<span style="color:var(--green)">Q_output = W_q·x + B_q·(A_q·x)   ← 4096 numbers</span>
+
+<span style="color:var(--tmut)">Cost: 16.8M (W_q) + 65K (B×A) = 16.87M total. LoRA adds only 0.4%!</span></div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1rem 0 0.5rem;">🔴 V Path — Same Pattern</h3>
+<div class="code-box">
+<span style="color:var(--green)">V_output = W_v·x + B_v·(A_v·x)</span>
+
+<span style="color:var(--tmut)">Same two cheap steps. Same 0.4% overhead.</span></div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1rem 0 0.5rem;">⚪ K and O — No LoRA</h3>
+<div class="code-box">
+K_output = W_k·x     <span style="color:#6a9955;">← Just the frozen weight. No adapter.</span>
+O_output = W_o·(attention_result)    <span style="color:#6a9955;">← Frozen. No adapter (by default).</span></div>
+
+<div class="callout" style="background:rgba(91,58,168,0.06);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.75rem 1rem;margin:0.75rem 0;font-size:0.88rem;line-height:1.7;">
+<strong>🧠 Key insight:</strong> B×A is NEVER computed as a full matrix. A·x runs FIRST (cheap, 8 dims), then B·(A·x) runs (cheap, 8 dims). The 512×4096 input matrix = 512 separate 4096-dim vectors. Each goes through individually. Same W_q, same B_q, same A_q for all 512 tokens.
+</div>
+
+<div class="quiz" id="q5b"><div class="q">🧪 Does each token position use different B and A matrices?</div>
+<div class="opt" onclick="checkQuiz('q5b',this)">A. Yes — each token has its own B and A</div>
+<div class="opt" data-correct="true" onclick="checkQuiz('q5b',this)">B. No — same B and A for all 512 tokens in this layer</div></div>
+</div></div>`;}
+},
 { // 3.6
   id:'3.6', title:'Parameter Savings — 175B → 37.7M (0.02%)',
   fact:'A full GPT-3 fine-tune stores ~350 GB. A LoRA adapter for GPT-3 with r=8 is ~75 MB — small enough to email. You can have 4,500 LoRA adapters for the storage cost of ONE full fine-tune.',
