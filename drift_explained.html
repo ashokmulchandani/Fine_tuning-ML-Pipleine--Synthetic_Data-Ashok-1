@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Drift — What It Is & How to Read It</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8f9fc;--card:#fff;--border:#dde0e6;--text:#1a1d23;--tdim:#4a4f5b;--tmut:#8b909b;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--red:#c62828;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;min-height:100vh;}
+.app{max-width:800px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:2rem 0 1.5rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.95rem;}
+
+.step{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin:1.2rem 0;}
+.step h2{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;color:var(--violet);margin-bottom:0.5rem;}
+
+/* Bar chart for drift */
+.drift-bars{display:flex;align-items:flex-end;gap:0.5rem;justify-content:center;margin:1rem 0;height:150px;}
+.drift-col{display:flex;flex-direction:column;align-items:center;gap:0.2rem;width:60px;}
+.drift-col .bar-pair{display:flex;gap:2px;align-items:flex-end;}
+.drift-col .bar{width:25px;border-radius:3px 3px 0 0;transition:height 0.5s;}
+.drift-col .bar.train{background:var(--violet);opacity:0.7;}
+.drift-col .bar.live{background:var(--amber);}
+.drift-col .label{font-size:0.55rem;color:var(--tmut);text-align:center;margin-top:0.2rem;}
+
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:0.5rem 0;}
+.cmp-box{padding:0.75rem;border-radius:8px;text-align:center;font-size:0.78rem;}
+.cmp-box.ok{border:2px solid var(--green);background:rgba(26,110,52,0.04);}
+.cmp-box.drift{border:2px solid var(--red);background:rgba(198,40,28,0.04);}
+
+table{width:100%;border-collapse:collapse;font-size:0.78rem;margin:0.5rem 0;}
+th{font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);padding:0.3rem;border-bottom:2px solid var(--border);text-align:left;}
+td{padding:0.3rem;border-bottom:1px solid var(--border);}
+
+.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.75rem 1rem;margin:0.5rem 0;font-size:0.82rem;}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>Data Drift — Is Your Model Still Working?</h1>
+  <p>Detect when user questions change — before your model gives wrong answers</p>
+</header>
+
+<!-- What is drift -->
+<div class="step">
+  <h2>📊 What Drift Looks Like</h2>
+  <p style="font-size:0.85rem;color:var(--tdim);">You trained on Metformin Q&A. Now users are asking about something NEW. The model doesn't know this topic. Its answers will be wrong. Drift detects this BEFORE users complain.</p>
+
+  <div class="drift-bars">
+    <div class="drift-col">
+      <div class="label" style="font-weight:600;">Metformin</div>
+      <div class="bar-pair">
+        <div class="bar train" style="height:80px;" title="Training: 800 questions"></div>
+        <div class="bar live" style="height:75px;" title="Live: 720 questions"></div>
+      </div>
+      <div class="label">800 vs 720<br><span style="color:var(--green);">Similar ✅</span></div>
+    </div>
+    <div class="drift-col">
+      <div class="label" style="font-weight:600;">COVID</div>
+      <div class="bar-pair">
+        <div class="bar train" style="height:5px;" title="Training: 0 questions"></div>
+        <div class="bar live" style="height:60px;" title="Live: 450 questions"></div>
+      </div>
+      <div class="label">0 vs 450<br><span style="color:var(--red);">DRIFT! ❌</span></div>
+    </div>
+    <div class="drift-col">
+      <div class="label" style="font-weight:600;">Diabetes</div>
+      <div class="bar-pair">
+        <div class="bar train" style="height:60px;" title="Training: 500 questions"></div>
+        <div class="bar live" style="height:55px;" title="Live: 480 questions"></div>
+      </div>
+      <div class="label">500 vs 480<br><span style="color:var(--green);">Similar ✅</span></div>
+    </div>
+    <div class="drift-col">
+      <div class="label" style="font-weight:600;">Weight Loss</div>
+      <div class="bar-pair">
+        <div class="bar train" style="height:3px;" title="Training: 0 questions"></div>
+        <div class="bar live" style="height:40px;" title="Live: 300 questions"></div>
+      </div>
+      <div class="label">0 vs 300<br><span style="color:var(--red);">DRIFT! ❌</span></div>
+    </div>
+  </div>
+  <p style="font-size:0.65rem;color:var(--tmut);text-align:center;">🟣 Training data (what model knows) &nbsp; 🟠 Live data (what users ask now)</p>
+</div>
+
+<!-- How to read it -->
+<div class="step">
+  <h2>🔍 How to Read the Drift Report</h2>
+
+  <div class="cmp">
+    <div class="cmp-box ok">
+      <strong style="color:var(--green);">✅ No Drift (bars match)</strong><br>
+      Users still ask what the model trained on.<br>
+      Model answers are reliable.<br>
+      <strong>Do nothing. Keep monitoring.</strong>
+    </div>
+    <div class="cmp-box drift">
+      <strong style="color:var(--red);">❌ Drift Detected (bars mismatched)</strong><br>
+      Users asking about new topics (COVID, weight loss).<br>
+      Model was NOT trained on this. Answers will be WRONG.<br>
+      <strong>Action: RETRAIN with new data.</strong>
+    </div>
+  </div>
+
+  <table>
+    <tr><th>Drift Score</th><th>Meaning</th><th>Action</th></tr>
+    <tr><td>< 0.1</td><td style="color:var(--green);">No drift — model is fine</td><td>😊 Relax</td></tr>
+    <tr><td>0.1–0.3</td><td style="color:var(--amber);">Mild drift — monitor closely</td><td>👀 Watch weekly</td></tr>
+    <tr><td>> 0.3</td><td style="color:var(--red);">Strong drift — model degrading</td><td>🚨 Retrain now</td></tr>
+  </table>
+</div>
+
+<!-- Concrete example -->
+<div class="step">
+  <h2>📝 Concrete Example — Your Metformin Model</h2>
+
+  <table>
+    <tr><th>What You Trained On</th><th>What Users Ask Today</th><th>Drift?</th></tr>
+    <tr><td>"What is Metformin?"</td><td>"What is Metformin?"</td><td style="color:var(--green);">✅ No</td></tr>
+    <tr><td>"Side effects of Metformin?"</td><td>"Side effects of Metformin?"</td><td style="color:var(--green);">✅ No</td></tr>
+    <tr><td>"How does Metformin work?"</td><td>"Does Metformin help with weight loss?"</td><td style="color:var(--amber);">⚠️ Partial</td></tr>
+    <tr><td>— (never trained on this)</td><td>"What vaccine should I get?"</td><td style="color:var(--red);">❌ Complete drift</td></tr>
+    <tr><td>— (never trained on this)</td><td>"Is Paxlovid better than Metformin?"</td><td style="color:var(--red);">❌ Complete drift</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>🧠 Drift = the DISTRIBUTION of questions changed.</strong> It's not that users ask one new question. It's that the PATTERN of questions shifted — e.g., from "mostly Metformin" to "mostly COVID." The model was never trained on COVID. Its answers will be hallucinated or wrong. Drift catches this BEFORE it becomes a problem.
+  </div>
+</div>
+
+<!-- How Evidently shows it -->
+<div class="step">
+  <h2>🛠️ How Evidently AI Detects Drift</h2>
+  <p style="font-size:0.85rem;color:var(--tdim);">Evidently compares your training data distribution to live data using statistical tests (KL divergence, Jensen-Shannon).</p>
+
+  <table>
+    <tr><th>Feature</th><th>Training Distribution</th><th>Live Distribution</th><th>Drift Detected?</th></tr>
+    <tr><td>Avg question length</td><td>8.2 words</td><td>12.5 words</td><td style="color:var(--amber);">⚠️ Mild</td></tr>
+    <tr><td>Topic: Metformin</td><td>85% of queries</td><td>40% of queries</td><td style="color:var(--red);">❌ Yes</td></tr>
+    <tr><td>Topic: COVID</td><td>0% of queries</td><td>45% of queries</td><td style="color:var(--red);">❌ Yes</td></tr>
+    <tr><td>Avg response rating</td><td>4.2/5</td><td>2.1/5</td><td style="color:var(--red);">❌ Yes (quality dropped!)</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>🚨 When average response rating drops from 4.2 → 2.1, users are telling you something is wrong.</strong> Drift detection catches the CAUSE (topic shift) before the SYMPTOM (ratings drop) becomes obvious. That's the whole point.
+  </div>
+</div>
+
+</div>
+</body>
+</html>
