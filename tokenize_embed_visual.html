@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tokenization + Embedding — Visual Explainer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8f9fc;--card:#fff;--border:#dde0e6;--text:#1a1d23;--tdim:#4a4f5b;--tmut:#8b909b;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--magenta:#9e2a6b;--cyan:#007a99;--red:#c62828;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;min-height:100vh;}
+.app{max-width:950px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:2rem 0 1.5rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.95rem;}
+
+.step{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin:1.5rem 0;}
+.step h2{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;color:var(--violet);margin-bottom:0.75rem;}
+
+/* Demo text */
+.demo-text{font-family:'Space Grotesk',sans-serif;font-size:0.9rem;background:var(--raised);padding:0.6rem 1rem;border-radius:8px;text-align:center;margin:0.5rem 0;font-weight:600;}
+.arrow-down{text-align:center;font-size:2rem;color:var(--violet);margin:0.3rem 0;}
+
+/* Token card */
+.token-flow{display:flex;align-items:center;gap:0.25rem;flex-wrap:wrap;justify-content:center;margin:0.75rem 0;}
+.token-box{display:flex;flex-direction:column;align-items:center;gap:0.15rem;padding:0.3rem;}
+.token-box .word{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;font-weight:600;background:var(--card);border:1px solid var(--border);border-radius:4px;padding:0.2rem 0.4rem;}
+.token-box .id{font-family:'Space Grotesk',monospace;font-size:0.6rem;color:var(--violet);font-weight:700;}
+.token-box .id.pad{color:var(--red);font-size:0.55rem;}
+.token-arrow{color:var(--tmut);font-size:0.6rem;}
+
+/* Embedding matrix */
+.embed-vis{display:flex;align-items:center;gap:0.5rem;justify-content:center;margin:0.75rem 0;flex-wrap:wrap;}
+.embed-row{display:flex;flex-direction:column;align-items:center;}
+.embed-row .token-label{font-family:'Space Grotesk',monospace;font-size:0.55rem;color:var(--violet);font-weight:700;margin-bottom:0.2rem;}
+.embed-row .vector{display:flex;flex-direction:column;gap:1px;}
+.embed-row .vcell{width:14px;height:14px;border-radius:2px;}
+.embed-row .vcell.pos{background:var(--green);}
+.embed-row .vcell.neg{background:var(--red);}
+.embed-row .vcell.zero{background:var(--border);}
+.embed-label{font-size:0.55rem;color:var(--tmut);text-align:center;margin-top:0.2rem;}
+
+/* Code */
+.code-box{background:#1e1e1e;border:1px solid #333;border-radius:8px;padding:0.75rem 1rem;margin:0.5rem 0;font-family:'Space Grotesk',monospace;font-size:0.72rem;line-height:1.7;white-space:pre-wrap;overflow-x:auto;color:#d4d4d4;}
+
+.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.75rem 1rem;margin:0.75rem 0;font-size:0.85rem;line-height:1.7;}
+
+table{width:100%;border-collapse:collapse;font-size:0.8rem;margin:0.75rem 0;}
+th{font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);padding:0.3rem;border-bottom:2px solid var(--border);text-align:left;}
+td{padding:0.3rem;border-bottom:1px solid var(--border);}
+
+@media(max-width:768px){.app{padding:0.75rem;}.token-flow{gap:0.1rem;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>Tokenization + Embedding — What Actually Happens</h1>
+  <p>From English text → Integer IDs → 4096-dimensional vectors</p>
+</header>
+
+<!-- STEP 1: Tokenization -->
+<div class="step">
+  <h2>Step 1: Tokenization — Text → Integer IDs</h2>
+  <p style="font-size:0.85rem;color:var(--tdim);">The model CANNOT read "Metformin." It reads integer 464. The tokenizer converts every word/subword to its vocabulary ID.</p>
+
+  <div class="demo-text">"Metformin treats diabetes"</div>
+  <div class="arrow-down">↓</div>
+
+  <div class="token-flow">
+    <div class="token-box"><div class="word">Met</div><div class="id">464</div></div>
+    <span class="token-arrow">+</span>
+    <div class="token-box"><div class="word">formin</div><div class="id">8522</div></div>
+    <span class="token-arrow">+</span>
+    <div class="token-box"><div class="word">treats</div><div class="id">4521</div></div>
+    <span class="token-arrow">+</span>
+    <div class="token-box"><div class="word">diabetes</div><div class="id">319</div></div>
+    <span class="token-arrow">+</span>
+    <div class="token-box"><div class="word">[PAD]</div><div class="id pad">0</div></div>
+    <span class="token-arrow">...</span>
+    <div class="token-box"><div class="word">[PAD]</div><div class="id pad">0</div></div>
+  </div>
+
+  <p style="font-size:0.75rem;color:var(--tmut);text-align:center;">4 real tokens + 508 padding tokens = 512 total. "Metformin" split into Met + formin (subword tokenization).</p>
+
+  <div class="code-box">
+<span style="color:#6a9955;"># input_ids = [1, 464, 8522, 4521, 319, 0, 0, 0, ... 0]  ← 512 integers
+# attention_mask = [1, 1,   1,    1,   1,  0, 0, 0, ... 0]  ← 1=real, 0=padding</span></div>
+
+  <div class="callout">
+    <strong>🔑 Tokenizer = Dictionary Lookup.</strong> It has a fixed vocabulary of 32,000 subwords. "Metformin" is not in the vocabulary (too rare), so it splits into "Met" + "formin" (both ARE in the vocab). Like breaking an unknown word into syllables you DO know.
+  </div>
+</div>
+
+<div class="arrow-down">↓</div>
+
+<!-- STEP 2: Embedding -->
+<div class="step">
+  <h2>Step 2: Embedding — Integer ID → 4096-Dimensional Vector</h2>
+  <p style="font-size:0.85rem;color:var(--tdim);">Each token ID looks up its vector in the <strong>Embedding Matrix</strong> (32,000 rows × 4096 columns = 131M params). YES — every single word has its own 4096-number vector.</p>
+
+  <table>
+    <tr><th>Token ID</th><th>Word</th><th>Embedding Vector (first 6 of 4096 dimensions)</th></tr>
+    <tr><td>464</td><td>"Met"</td><td style="font-family:monospace;font-size:0.7rem;">[ 0.12, -0.34,  0.78,  0.05, -0.21,  0.44, ... ]</td></tr>
+    <tr><td>8522</td><td>"formin"</td><td style="font-family:monospace;font-size:0.7rem;">[ 0.45,  0.21, -0.11,  0.67, -0.33,  0.08, ... ]</td></tr>
+    <tr><td>4521</td><td>"treats"</td><td style="font-family:monospace;font-size:0.7rem;">[-0.28,  0.55,  0.31, -0.42,  0.19, -0.56, ... ]</td></tr>
+    <tr><td>319</td><td>"diabetes"</td><td style="font-family:monospace;font-size:0.7rem;">[ 0.63, -0.17,  0.89,  0.02, -0.74,  0.33, ... ]</td></tr>
+    <tr><td>0</td><td>"[PAD]"</td><td style="font-family:monospace;font-size:0.7rem;">[ 0.00,  0.00,  0.00,  0.00,  0.00,  0.00, ... ] ← ALL ZEROS!</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>🧠 The Embedding Matrix = A Giant Lookup Table.</strong><br>
+    &nbsp;&nbsp;Token 464 → Row 464 of the matrix → 4096 numbers<br>
+    &nbsp;&nbsp;Token 8522 → Row 8522 → 4096 numbers<br>
+    &nbsp;&nbsp;Every token gets its OWN vector. 'Met' and 'formin' have different vectors because they mean different things.<br><br>
+    <strong>Is this the same as Q/K/V attention?</strong> NO. Embedding is the FIRST step (text → vector). Q/K/V attention happens AFTER embedding (vector → context-aware vector). Two different things.
+  </div>
+</div>
+
+<div class="arrow-down">↓</div>
+
+<!-- STEP 3: Full pipeline -->
+<div class="step">
+  <h2>Step 3: The Complete Pipeline — Text → Prediction</h2>
+
+  <table>
+    <tr><th>Stage</th><th>Input</th><th>Output</th><th>Size</th><th>Who Does It</th></tr>
+    <tr><td>1. Tokenizer</td><td>"Metformin treats diabetes"</td><td>[1, 464, 8522, 4521, 319, 0, 0...]</td><td>512 integers</td><td>Free lookup</td></tr>
+    <tr><td>2. Embedding</td><td>[1, 464, 8522, ...]</td><td>[[0.12,-0.34...], [0.45,0.21...], ...]</td><td>512 × 4096 floats</td><td>131M learned params</td></tr>
+    <tr><td>3. Transformer ×32</td><td>512 × 4096 matrix</td><td>Context-aware vectors</td><td>512 × 4096 floats</td><td>6.5B learned params</td></tr>
+    <tr><td>4. LM Head</td><td>Final vector</td><td>Probability over 32K words</td><td>32,000 floats</td><td>131M learned params</td></tr>
+    <tr><td>5. Next Token</td><td>Probabilities</td><td>"is" (token 318)</td><td>1 integer</td><td>Argmax/sampling</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>🧠 Where LoRA fits:</strong> Stage 3 (Transformer). LoRA freezes the 6.5B Transformer weights and trains tiny B×A adapters on Q and V only. Stage 1 (Tokenizer) and Stage 2 (Embedding) are NOT touched by LoRA. They stay frozen with the original pre-trained values.
+  </div>
+</div>
+
+<div class="step">
+  <h2>📊 Memory Map — What's Where</h2>
+  <table>
+    <tr><th>Component</th><th>Params</th><th>Frozen?</th><th>LoRA?</th></tr>
+    <tr><td>Tokenizer</td><td>0 (just a lookup table)</td><td>✅ Always</td><td>❌ Never</td></tr>
+    <tr><td>Embedding</td><td>32K × 4096 = 131M</td><td>✅ Always</td><td>❌ Never</td></tr>
+    <tr><td>Q matrix (per layer)</td><td>4096 × 4096 = 16.8M</td><td>✅ Frozen</td><td>✅ LoRA!</td></tr>
+    <tr><td>K matrix (per layer)</td><td>4096 × 4096 = 16.8M</td><td>✅ Frozen</td><td>❌ Usually not</td></tr>
+    <tr><td>V matrix (per layer)</td><td>4096 × 4096 = 16.8M</td><td>✅ Frozen</td><td>✅ LoRA!</td></tr>
+    <tr><td>O matrix (per layer)</td><td>4096 × 4096 = 16.8M</td><td>✅ Frozen</td><td>⚠️ Optional</td></tr>
+    <tr><td>FF gate/up/down</td><td>135M per layer</td><td>✅ Frozen</td><td>⚠️ Optional</td></tr>
+    <tr><td>LM Head</td><td>4096 × 32K = 131M</td><td>✅ Always</td><td>❌ Never</td></tr>
+  </table>
+</div>
+
+</div>
+</body>
+</html>
