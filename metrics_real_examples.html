@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metrics — Real Examples & Intuition</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8f9fc;--card:#fff;--border:#dde0e6;--text:#1a1d23;--tdim:#4a4f5b;--tmut:#8b909b;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--red:#c62828;--cyan:#007a99;--blue:#2979ff;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;min-height:100vh;}
+.app{max-width:850px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:1.5rem 0 1rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.9rem;}
+
+.section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin:1.2rem 0;}
+.section h2{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.5rem;}
+
+/* Prediction demo */
+.pred-row{display:flex;align-items:center;gap:0.3rem;flex-wrap:wrap;justify-content:center;margin:0.5rem 0;font-family:'Space Grotesk',monospace;}
+.pred-token{padding:0.3rem 0.6rem;border-radius:6px;font-size:0.75rem;font-weight:700;}
+.pred-token.correct{background:rgba(26,110,52,0.12);color:var(--green);border:1px solid var(--green);}
+.pred-token.wrong{background:rgba(198,40,28,0.08);color:var(--red);border:1px solid var(--red);}
+.pred-token.miss{background:rgba(136,153,166,0.1);color:var(--tmut);border:1px dashed var(--tmut);}
+
+/* Loss story */
+.loss-story{display:flex;flex-direction:column;gap:0.5rem;margin:0.75rem 0;}
+.loss-row{display:flex;align-items:center;gap:0.5rem;font-size:0.75rem;}
+.loss-row .step-num{font-family:'Space Grotesk',sans-serif;font-weight:700;min-width:50px;text-align:right;color:var(--violet);}
+.loss-row .step-viz{flex:1;display:flex;align-items:center;gap:0.3rem;}
+.loss-row .emoji{font-size:1.2rem;}
+
+/* Box demo */
+.box-demo{position:relative;width:200px;height:150px;border:2px solid var(--border);margin:0.5rem auto;background:rgba(0,122,153,0.03);}
+.box-pred{position:absolute;border:2px dashed var(--violet);}
+.box-truth{position:absolute;border:2px solid var(--green);}
+.box-label{position:absolute;font-size:0.5rem;font-weight:700;}
+
+/* Drift demo */
+.drift-bars{display:flex;align-items:flex-end;gap:0.3rem;justify-content:center;margin:0.5rem 0;height:100px;}
+.drift-pair{display:flex;gap:2px;align-items:flex-end;}
+.drift-bar{width:30px;border-radius:3px 3px 0 0;}
+.drift-bar.train{background:var(--violet);opacity:0.6;}
+.drift-bar.live{background:var(--amber);}
+.drift-label{font-size:0.5rem;color:var(--tmut);text-align:center;margin-top:0.1rem;}
+
+/* How its calculated */
+.calc-box{background:#1e1e1e;color:#d4d4d4;font-family:'Space Grotesk',monospace;font-size:0.7rem;padding:0.6rem 0.8rem;border-radius:8px;line-height:1.7;margin:0.5rem 0;}
+
+/* Summary row */
+.insight-row{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:0.5rem 0;}
+.insight{background:var(--vbg);border-radius:8px;padding:0.6rem;font-size:0.7rem;text-align:center;}
+
+/* Tabs */
+.tabs{display:flex;gap:0.3rem;justify-content:center;margin:1rem 0;flex-wrap:wrap;}
+.tab{font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:600;padding:0.4em 1em;border:2px solid var(--border);border-radius:100px;background:var(--card);color:var(--tmut);cursor:pointer;transition:0.15s;}
+.tab:hover{border-color:var(--violet);color:var(--violet);}
+.tab.active{background:var(--violet);border-color:var(--violet);color:#fff;}
+
+@media(max-width:768px){.app{padding:0.5rem;}.insight-row{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>What Metrics Actually Mean — Real Examples</h1>
+  <p>See the actual predictions, boxes, and data behind the numbers</p>
+</header>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab active" onclick="showMetric('loss')">📉 Loss</button>
+  <button class="tab" onclick="showMetric('mAP')">🎯 mAP</button>
+  <button class="tab" onclick="showMetric('drift')">📊 Drift</button>
+  <button class="tab" onclick="showMetric('all')">🗺️ All Together</button>
+</div>
+
+<div id="content"></div>
+
+</div>
+
+<script>
+// ── LOSS EXAMPLE ──
+const lossHTML=`
+<div class="section">
+  <h2>📉 Loss = 0.43 — What The Model Actually Predicted</h2>
+  <p style="font-size:0.8rem;color:var(--tdim);">Your Phase 5 model was trained to answer Metformin questions. Loss=0.43 means it's fairly confident. Here's what happened at every word position.</p>
+
+  <div style="font-size:0.75rem;color:var(--tdim);margin:0.5rem 0;text-align:center;">
+    <strong>Prompt:</strong> "### Response:" &nbsp; | &nbsp; <strong>Expected:</strong> "Metformin is a biguanide agent used to treat type 2 diabetes."
+  </div>
+
+  <div class="loss-story">
+    <div class="loss-row">
+      <div class="step-num">Token 1</div>
+      <div class="step-viz">
+        <span>Sees: "### Response:" → Predicts:</span>
+        <span class="pred-token correct">Metformin</span>
+        <span class="emoji">✅</span>
+        <span style="font-size:0.6rem;color:var(--green);">(correct! low contribution to loss)</span>
+      </div>
+    </div>
+    <div class="loss-row">
+      <div class="step-num">Token 2</div>
+      <div class="step-viz">
+        <span>Sees: "...Metformin" → Predicts:</span>
+        <span class="pred-token correct">is</span>
+        <span class="emoji">✅</span>
+        <span style="font-size:0.6rem;color:var(--green);">(easy — almost zero loss)</span>
+      </div>
+    </div>
+    <div class="loss-row">
+      <div class="step-num">Token 3</div>
+      <div class="step-viz">
+        <span>Sees: "...Metformin is" → Predicts:</span>
+        <span class="pred-token correct">a</span>
+        <span class="emoji">✅</span>
+      </div>
+    </div>
+    <div class="loss-row">
+      <div class="step-num">Token 4</div>
+      <div class="step-viz">
+        <span>Sees: "...is a" → Predicts:</span>
+        <span class="pred-token correct">biguanide</span>
+        <span class="emoji">✅</span>
+        <span style="font-size:0.6rem;color:var(--green);">(learned during training!)</span>
+      </div>
+    </div>
+    <div class="loss-row">
+      <div class="step-num">Token 5</div>
+      <div class="step-viz">
+        <span>Sees: "...a biguanide" → Predicts:</span>
+        <span class="pred-token wrong">medication</span>
+        <span class="emoji">❌</span>
+        <span style="font-size:0.6rem;color:var(--red);">(should be "agent" — contributes to loss!)</span>
+      </div>
+    </div>
+    <div class="loss-row">
+      <div class="step-num">Token 6</div>
+      <div class="step-viz">
+        <span>Sees: "...biguanide medication" → Predicts:</span>
+        <span class="pred-token correct">used</span>
+        <span class="emoji">✅</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="calc-box">
+<span style="color:#6a9955;">How Loss = 0.43 is calculated:</span>
+
+20 tokens in the response × each token has a probability
+Most tokens predicted correctly (low loss per token)
+A few wrong (high loss per token — like "medication" vs "agent")
+
+<span style="color:#ce9178;">Average loss across ALL 20 positions = 0.43</span>
+
+<span style="color:#6a9955;">If ALL predictions were wrong → Loss ≈ 4-5 (random guessing)
+If ALL predictions were perfect → Loss → 0
+0.43 means: mostly right, occasionally wrong</span></div>
+
+  <div class="insight-row">
+    <div class="insight"><strong style="color:var(--green);">Loss=3.26 (Step 5)</strong><br>Predicting "the cat dog banana"<br>← Random. Knows nothing.</div>
+    <div class="insight"><strong style="color:var(--amber);">Loss=1.26 (Step 10)</strong><br>Predicting "Metformin is a medication..."<br>← Getting there. Some mistakes.</div>
+    <div class="insight"><strong style="color:var(--green);">Loss=0.57 (Step 15)</strong><br>Predicting "Metformin is a biguanide..."<br>← Mostly right. One or two wrong.</div>
+    <div class="insight"><strong style="color:var(--green);">Loss=0.43 (Step 20)</strong><br>Predicting "Metformin is a biguanide agent used..."<br>← Good. "medication"↔"agent" is the last error.</div>
+  </div>
+</div>`;
+
+// ── mAP EXAMPLE ──
+const mAPHTML=`
+<div class="section">
+  <h2>🎯 mAP = 0.75 — What The Boxes Actually Look Like</h2>
+  <p style="font-size:0.8rem;color:var(--tdim);">mAP measures overlap between predicted boxes and ground truth. mAP=0.75 means: on average, your boxes have 75% overlap with the real objects.</p>
+
+  <div class="box-demo" id="boxDemo">
+    <div class="box-truth" style="left:40px;top:30px;width:80px;height:60px;"></div>
+    <div class="box-pred" id="boxPred" style="left:35px;top:25px;width:90px;height:70px;"></div>
+    <div class="box-label" style="left:42px;top:15px;color:var(--green);">🐱 Ground Truth</div>
+    <div class="box-label" style="left:80px;bottom:5px;color:var(--violet);">Predicted (75% overlap)</div>
+  </div>
+  <p style="font-size:0.6rem;color:var(--tmut);text-align:center;">Green = real cat location. Dashed violet = model prediction. Overlap = 75% → <strong style="color:var(--green);">CORRECT</strong> (above 50% threshold).</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:0.75rem 0;font-size:0.7rem;">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:0.6rem;text-align:center;">
+      <strong style="color:var(--green);">✅ 75% overlap</strong><br>Counted as CORRECT<br><span style="color:var(--tmut);">Box>50% overlap = True Positive</span>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:0.6rem;text-align:center;">
+      <strong style="color:var(--red);">❌ 25% overlap</strong><br>Counted as WRONG<br><span style="color:var(--tmut);">Box<50% overlap = False Positive</span>
+    </div>
+  </div>
+
+  <div class="calc-box">
+<span style="color:#6a9955;">How mAP = 0.75 is calculated:</span>
+
+Image 1: cat box 85% overlap → ✅ Correct
+Image 2: cat box 72% overlap → ✅ Correct
+Image 3: cat box 91% overlap → ✅ Correct
+Image 4: cat box 45% overlap → ❌ Wrong (below 50%)
+Image 5: cat completely missed → ❌ Wrong (no detection)
+...
+Average precision across ALL images, ALL classes = <span style="color:#ce9178;">0.75</span></div>
+
+  <div class="insight-row">
+    <div class="insight"><strong style="color:var(--green);">mAP=0.9</strong><br>"The box is EXACTLY on the cat"<br>Perfect overlap. Rare.</div>
+    <div class="insight"><strong style="color:var(--green);">mAP=0.75</strong><br>"The box covers the cat well"<br>Good. Production-ready.</div>
+    <div class="insight"><strong style="color:var(--amber);">mAP=0.5</strong><br>"The box is SOMEWHERE near the cat"<br>Barely usable. Needs work.</div>
+    <div class="insight"><strong style="color:var(--red);">mAP=0.2</strong><br>"Wait, that's not even a cat"<br>Poor. Missing most objects.</div>
+  </div>
+</div>`;
+
+// ── DRIFT EXAMPLE ──
+const driftHTML=`
+<div class="section">
+  <h2>📊 Drift = 0.12 — What Actually Changed?</h2>
+  <p style="font-size:0.8rem;color:var(--tdim);">You trained on Metformin. Users are now asking about COVID too. Drift=0.12 means 12% of the question topics are NEW — the model never saw them during training.</p>
+
+  <div class="drift-bars">
+    <div style="text-align:center;">
+      <div class="drift-pair"><div class="drift-bar train" style="height:85px;"></div><div class="drift-bar live" style="height:80px;"></div></div>
+      <div class="drift-label">Metformin<br><span style="color:var(--green);">No drift ✅</span></div>
+    </div>
+    <div style="text-align:center;">
+      <div class="drift-pair"><div class="drift-bar train" style="height:50px;"></div><div class="drift-bar live" style="height:48px;"></div></div>
+      <div class="drift-label">Diabetes<br><span style="color:var(--green);">No drift ✅</span></div>
+    </div>
+    <div style="text-align:center;">
+      <div class="drift-pair"><div class="drift-bar train" style="height:20px;"></div><div class="drift-bar live" style="height:55px;"></div></div>
+      <div class="drift-label">Side Effects<br><span style="color:var(--amber);">Mild ⚠️</span></div>
+    </div>
+    <div style="text-align:center;">
+      <div class="drift-pair"><div class="drift-bar train" style="height:0px;"></div><div class="drift-bar live" style="height:35px;"></div></div>
+      <div class="drift-label">COVID<br><span style="color:var(--red);">DRIFT! ❌</span></div>
+    </div>
+    <div style="text-align:center;">
+      <div class="drift-pair"><div class="drift-bar train" style="height:0px;"></div><div class="drift-bar live" style="height:25px;"></div></div>
+      <div class="drift-label">Weight Loss<br><span style="color:var(--red);">DRIFT! ❌</span></div>
+    </div>
+  </div>
+  <p style="font-size:0.6rem;color:var(--tmut);text-align:center;">🟣 Training data &nbsp; 🟠 Live data</p>
+
+  <div class="calc-box">
+<span style="color:#6a9955;">How Drift = 0.12 is calculated:</span>
+
+10 features tracked (topics like Metformin, COVID, question length...)
+  • Metformin:   train=85%, live=80% → p=0.45 → No drift ✅
+  • Diabetes:    train=10%, live=12% → p=0.52 → No drift ✅
+  • Side Effects: train=3%,  live=8%  → p=0.03 → Drifted ⚠️
+  • COVID:        train=0%,  live=35% → p=0.001 → DRIFT ❌
+  • Weight Loss:  train=0%,  live=25% → p=0.002 → DRIFT ❌
+
+Drifted features = 2 out of 10 = <span style="color:#ce9178;">0.20</span> (20% of features changed)</div>
+
+  <div class="insight-row">
+    <div class="insight"><strong style="color:var(--green);">Drift=0.05</strong><br>"Users ask exactly what we trained on"<br>Model is safe. No action.</div>
+    <div class="insight"><strong style="color:var(--amber);">Drift=0.12</strong><br>"1-2 new topics appearing"<br>Monitor weekly. Plan retraining.</div>
+    <div class="insight"><strong style="color:var(--amber);">Drift=0.30</strong><br>"3+ new topics, model answers worsening"<br>Retrain this week.</div>
+    <div class="insight"><strong style="color:var(--red);">Drift=0.60</strong><br>"Most questions are new topics"<br>Model is obsolete. Retrain NOW.</div>
+  </div>
+</div>`;
+
+// ── ALL TOGETHER ──
+const allHTML=`
+<div class="section">
+  <h2>🗺️ All Metrics — When to Use Which</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:0.72rem;">
+    <thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.3rem;">FT Type</th><th style="text-align:left;padding:0.3rem;">Metric</th><th style="text-align:left;padding:0.3rem;">Interpretation</th></tr></thead>
+    <tbody>
+    <tr><td style="padding:0.3rem;"><strong>📝 Text FT</strong></td><td style="color:var(--red);padding:0.3rem;">Loss</td><td style="padding:0.3rem;">"4 out of 20 predicted words were slightly wrong." Loss=0.43</td></tr>
+    <tr><td style="padding:0.3rem;"><strong>📊 Tabular FT</strong></td><td style="color:var(--red);padding:0.3rem;">Loss</td><td style="padding:0.3rem;">Same — rows→sentences→same prediction task</td></tr>
+    <tr><td style="padding:0.3rem;"><strong>🖼️ Image FT</strong></td><td style="color:var(--cyan);padding:0.3rem;">mAP</td><td style="padding:0.3rem;">"75% of predicted boxes overlap well with real objects." mAP=0.75</td></tr>
+    <tr><td style="padding:0.3rem;"><strong>🖼️📝 Vision-Lang</strong></td><td style="color:var(--red);padding:0.3rem;">Loss</td><td style="padding:0.3rem;">Same as text — model predicts words, not boxes</td></tr>
+    <tr><td style="padding:0.3rem;"><strong>🔧 Sensor FT</strong></td><td style="color:var(--red);padding:0.3rem;">Loss</td><td style="padding:0.3rem;">Same — vibrations→sentences→same prediction task</td></tr>
+    <tr><td style="padding:0.3rem;"><strong>🧪 Testing (6A)</strong></td><td style="color:var(--violet);padding:0.3rem;">Accuracy</td><td style="padding:0.3rem;">"87 out of 100 test questions answered correctly." 87%</td></tr>
+    <tr><td style="padding:0.3rem;"><strong>📊 Monitor (6B)</strong></td><td style="color:var(--amber);padding:0.3rem;">Drift</td><td style="padding:0.3rem;">"2 out of 10 tracked topics are new (COVID, weight loss)." 0.20</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:0.7rem;color:var(--tmut);text-align:center;margin-top:0.5rem;">
+    <strong style="color:var(--red);">Loss</strong>: during training. <strong style="color:var(--cyan);">mAP</strong>: for images only. <strong style="color:var(--amber);">Drift</strong>: in production.<br>
+    <strong style="color:var(--violet);">Accuracy</strong>: for testing. <strong style="color:var(--green);">Perplexity</strong>: same as loss, different unit.
+  </p>
+</div>`;
+
+function showMetric(m){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  event.target.classList.add('active');
+  const map={loss:lossHTML, mAP:mAPHTML, drift:driftHTML, all:allHTML};
+  document.getElementById('content').innerHTML=map[m];
+  if(m==='loss') setTimeout(animLoss,100);
+}
+
+// Animate the prediction words
+function animLoss(){
+  const wrong=document.querySelector('.pred-token.wrong');
+  if(!wrong) return;
+  let count=0;
+  const interval=setInterval(()=>{
+    count++;
+    wrong.style.transform=`translateY(${Math.sin(count*0.5)*3}px)`;
+    if(count>20){clearInterval(interval);wrong.style.transform='';}
+  },100);
+}
+
+showMetric('loss');
+</script>
+</body>
+</html>
