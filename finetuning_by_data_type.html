@@ -116,6 +116,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
   <button class="tab" onclick="switchTab(3)"><span class="tb-emoji">🖼️📝</span> Vision-Lang FT</button>
   <button class="tab" onclick="switchTab(4)"><span class="tb-emoji">🔄</span> Lifecycle</button>
   <button class="tab" onclick="switchTab(5)"><span class="tb-emoji">🚀</span> Deploy: YOLO vs LLM</button>
+  <button class="tab" onclick="switchTab(6)"><span class="tb-emoji">🔧</span> Sensor FT</button>
 </div>
 
 <div id="app"></div>
@@ -353,6 +354,44 @@ const tabs=[
        {n:2,title:'LLM = Autoregressive Loop',tag:'lora',viz:'<span class="vz-box vz-input">📝 "What is..."</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔄 Token 1→2...→200</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 Full Answer</span>',code:'# Token-by-token. Model runs 200+ times per response.\n# KV-Cache grows dynamically. UNPREDICTABLE memory.\n# Static TensorRT wastes 60-80% VRAM on KV-Cache.'},
        {n:3,title:'KV-Cache = The Problem',tag:'lora',viz:'<span class="vz-box vz-input">🧠 KV grows per token</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📄 PagedAttention (vLLM)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Dynamic VRAM pages</span>',code:'# PagedAttention = OS virtual memory for GPU\n# Breaks KV-Cache into small dynamic blocks\n# Near-zero fragmentation. 2-4× more users.'},
        {n:4,title:'GPU Compatibility',tag:'dpo',viz:'<span class="vz-box vz-input">📦 .engine (HW-locked)</span><span class="vz-arrow">vs</span><span class="vz-box vz-input">📁 .safetensors (universal)</span>',code:'TensorRT: T4 engine FAILS on A100. Separate builds needed.\nvLLM: Same weights → auto-detects GPU → best kernels.\nOne Docker image works on ALL GPUs (T4→A100→H100).'},
+     ]},
+  ]
+},
+{ // 6: SENSOR / IoT
+  name:'🔧 Sensor/IoT Fine-Tuning', phases:'Predictive Maintenance',
+  metrics:[
+    {val:'SFT',lbl:'Training Method',color:'var(--amber)'},
+    {val:'Vibration→Text',lbl:'Key Trick',color:'var(--cyan)'},
+    {val:'TinyLlama / Llama',lbl:'Model',color:'var(--violet)'},
+    {val:'LoRA ✅',lbl:'r=8, Q+V',color:'var(--green)'},
+  ],
+  banner:[
+    {val:'Vibration→Text',lbl:'Only Difference',color:'var(--cyan)'},
+    {val:'Same Code',lbl:'As Text FT',color:'var(--green)'},
+    {val:'IoT Sensors',lbl:'Input Source',color:'var(--blue)'},
+    {val:'30% Less Downtime',lbl:'Business Impact',color:'var(--amber)'},
+  ],
+  stages:[
+    {emoji:'📋',name:'PREPROCESS',time:'Feature Extraction',desc:'Vibration → Features → Text',
+     substeps:[
+       {n:1,title:'Raw Vibration Signal',tag:'data',viz:'<span class="vz-box vz-input">📈 Raw Waveform (10kHz)</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📊 Rolling Windows (1s)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📋 Time Segments</span>',code:'# Raw accelerometer data: 10,000 samples/sec\nwindow = signal[i:i+10000]  # 1-second windows'},
+       {n:2,title:'Extract Vibration Features',tag:'data',viz:'<span class="vz-box vz-input">📋 Time Window</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔢 Feature Engineering</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📊 12 Features</span>',code:'features = {\n  "kurtosis": scipy.stats.kurtosis(window),  # >3 = impulsive fault\n  "rms": np.sqrt(np.mean(window**2)),       # Overall energy\n  "crest_factor": np.max(window)/rms,        # Peak severity\n  "skewness": scipy.stats.skew(window),      # Asymmetry\n  "peak_to_peak": np.max(window)-np.min(window),\n  "dominant_freq": fft_peak(window),         # FFT dominant\n  "sideband_spacing": sideband_detect(fft)   # Gear/Bearing fault\n}'},
+       {n:3,title:'Feature → Natural Language',tag:'sft',viz:'<span class="vz-box vz-input">📊 Features Dict</span><span class="vz-arrow">→</span><span class="vz-box vz-process">✍️ Template Fill</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 Diagnostic Sentence</span>',code:'def features_to_text(f, machine_id, timestamp):\n    return f"Machine {machine_id} at {timestamp}. "\n           f"RMS: {f[\'rms\']:.2f} mm/s. "\n           f"Kurtosis: {f[\'kurtosis\']:.1f} (>3=impulsive). "\n           f"Crest Factor: {f[\'crest_factor\']:.1f}. "\n           f"Dominant Freq: {f[\'dominant_freq\']:.0f} Hz. "\n           f"Sideband spacing: {f[\'sideband_spacing\']:.0f} Hz."'},
+       {n:4,title:'Create Q&A Pairs with Labels',tag:'data',viz:'<span class="vz-box vz-input">📝 Sensor Text</span><span class="vz-arrow">+</span><span class="vz-box vz-input">🏷️ Maintenance Log</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📋 instruction_data.json</span>',code:'instruction_data = [{\n  "instruction": "Diagnose this machine based on vibration",\n  "input": features_to_text(f, "Pump-A", "2025-07-27 14:30"),\n  "output": "Bearing inner race fault — kurtosis elevated to 8.2. "\n           "Schedule replacement within 48 hours."\n}]'},
+     ]},
+    {emoji:'🧠',name:'TRAIN',time:'Same as Text FT',desc:'LoRA → SFTTrainer → Diagnosis Model',
+     substeps:[
+       {n:1,title:'Quantize Base Model',tag:'lora',viz:'<span class="vz-box vz-input">🧠 FP16 (2.2GB)</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⬇ 8-bit</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🧠 INT8 (1.1GB)</span>',code:'BitsAndBytesConfig(load_in_8bit=True)'},
+       {n:2,title:'Apply LoRA (r=8)',tag:'lora',viz:'<span class="vz-box vz-input">🔒 Frozen W₀</span><span class="vz-arrow">+</span><span class="vz-box vz-process">🆕 B×A (4MB)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ 0.4% Trainable</span>',code:'LoraConfig(r=8, alpha=16, target_modules=["q_proj","v_proj"])'},
+       {n:3,title:'SFT Trainer',tag:'sft',viz:'<span class="vz-box vz-input">📋 Sensor Q&A Pairs</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🎓 SFTTrainer (lr=2e-4)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🤖 Diagnostic Model</span>',code:'trainer = SFTTrainer(model, dataset, formatting_func)\ntrainer.train()  # EXACT SAME 3 LINES as text FT'},
+       {n:4,title:'Model Now Diagnoses Machines',tag:'sft',viz:'<span class="vz-box vz-input">📊 New Vibration Data</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🤖 Fine-Tuned LLM</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 "Bearing fault — 48h"</span>',code:'# Model learns: kurtosis>5 + crest_factor>4 = bearing fault\n# RMS trending up = unbalance/misalignment\n# Sidebands at 120Hz = gear mesh issue'},
+     ]},
+    {emoji:'🚀',name:'DEPLOY',time:'vLLM → API → Dashboard',desc:'Real-time sensor → diagnosis',
+     substeps:[
+       {n:1,title:'Save Adapter',tag:'lora',viz:'<span class="vz-box vz-input">🤖 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">💾 save_pretrained()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📁 adapter_model.safetensors (4MB)</span>',code:'model.save_pretrained("./predictive_maintenance_adapter")'},
+       {n:2,title:'Real-Time API',tag:'dpo',viz:'<span class="vz-box vz-input">📈 IoT Stream</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ vLLM API :8000</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 Diagnosis Response</span>',code:'# Every 1 second: extract features → text → API → diagnosis\ncurl -X POST :8000/generate -d \'{"prompt":"Machine Pump-A. RMS:4.2 Kurtosis:8.1..."}\''},
+       {n:3,title:'Dashboard + Alerts',tag:'sft',viz:'<span class="vz-box vz-input">📝 Diagnosis</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📊 Grafana Dashboard</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📱 Alert: "Maintenance needed"</span>',code:'# Streamlit/Grafana dashboard shows:\n# - Real-time vibration trends\n# - LLM diagnosis per machine\n# - Alert when: "kurtosis>5" or "RMS>threshold"'},
+       {n:4,title:'Monitor + Retrain Loop',tag:'dpo',viz:'<span class="vz-box vz-input">📊 Live Data</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔍 Drift Detection</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🔄 Auto-Retrain</span>',code:'# Evidently AI monitors data drift\n# New machine type added → auto-retrain\n# Model adapts to new equipment over time'},
      ]},
   ]
 }
