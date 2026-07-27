@@ -261,30 +261,270 @@ const tabs=[
      substeps:[
        {n:1,title:'Create Pairs',tag:'data',viz:'<span class="vz-box vz-input">🖼️ Image</span><span class="vz-arrow">+</span><span class="vz-box vz-input">📝 Question</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📋 Q&A Pair</span>',code:'# Step 1: Create image-question-answer pairs\n# Same format as text FT, just add "image" field!\ndata = [{\n    "image": "chest_xray_001.jpg",  # ← Path to image file (local or URL)\n    "instruction": "What does this chest X-ray show?",\n    "output": "Bilateral pneumonia with consolidation in the right lower lobe."\n},{\n    "image": "chest_xray_002.jpg",\n    "instruction": "Is there any abnormality?",\n    "output": "No acute cardiopulmonary abnormality is seen."\n}]\n# ─── data flows into Step 3 & 4 ───→'},
        {n:2,title:'Image = Path',tag:'data',viz:'<span class="vz-box vz-input">📁 "xray_001.jpg"</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🖼️ Image.open()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🖼️ Loaded Image</span>',code:'# "image" field = file path (same as fitz.open("pdf") in Phase 4)\n# Model loads it automatically during training\nfrom PIL import Image\nimg = Image.open(example["image"])  # Opens the file\n\n# Can be:\n#   Local: "chest_xray_001.jpg" (upload to Colab)\n#   URL: "https://example.com/scans/xray.png"\n# The training code handles loading — you just provide the path!'},
-       {n:3,title:'Format as Text',tag:'sft',viz:'<span class="vz-box vz-input">📋 JSON</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔤 format_instruction()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📄 One String</span>',code:'# 🔑 format_instruction() ONLY touches instruction and output. Image is IGNORED here.
+       {n:3,title:'Format as Text',tag:'sft',viz:'<span class="vz-box vz-input">📋 JSON</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔤 format_instruction()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📄 One String</span>',code:'# 🔑 The image and text take TWO SEPARATE paths. They meet only at the LLM.\n\n# YOU write this JSON:\n# {\n#   "image": "chest_xray_001.jpg",\n#   "instruction": "What does this chest X-ray show?",\n#   "output": "Bilateral pneumonia in the right lower lobe."\n# }\n\n# ┌── PATH 1: Image ──────────────────────────────────┐\n# │ "chest_xray_001.jpg" → CLIP-ViT-L → [■ ■ ■ ... ■] │  197 visual tokens\n# └────────────────────────────────────────────────────┘\n#                                                      │\n# ┌── PATH 2: Text (Alpaca) ──────────────────────────┐│\n# │ format_instruction() turns JSON into this string:  ││\n# │ "Below is an instruction. Write a response.\\n\\n"   ││\n# │ "### Instruction:\\n"                               ││\n# │ "What does this chest X-ray show?\\n\\n"             ││\n# │ "### Response:\\n"                                  ││\n# │ "Bilateral pneumonia in the right lower lobe."     ││\n# │ → tokenizer → [1, 464, 8522, ...]                 ││  ~300 text tokens\n# └────────────────────────────────────────────────────┘│\n#                                                      │\n#              COMBINED before LLM:  ◄─────────────────┘\n#  [■][■][■]...[■] [1][464][8522]...[###][Resp]\n#   ← 197 visual →  ←──── ~300 text ────→\n#   The LLM sees ONE flat list of ~500 tokens. It does NOT know which is which.'},
+       {n:4,title:'Tokenize',tag:'data',viz:'<span class="vz-box vz-input">🖼️📝 Image+Text</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔢 Vision Tokenizer</span><span class="vz-arrow">→</span><span class="vz-box vz-output">[img tokens, text tokens]</span>',code:'# Step 4: Tokenize → creates "dataset" variable used by TRAIN\n# 📥 Input: "data" from Step 1, via format_instruction() from Step 3\n# 📤 Output: "dataset" → passed to train_dataset=dataset in TRAIN Step 2\n\nfrom datasets import Dataset\n\ndataset = Dataset.from_list(data)              # Step 1\'s data\ndataset = dataset.map(format_instruction)       # Step 3\'s function\ndataset = dataset.map(tokenize, batched=True)   # Step 4: tokenize\n\n# ✅ "dataset" is ready! Used as: SFTTrainer(..., train_dataset=dataset, ...)\n#    ↑ This is the SAME "dataset" variable from TRAIN Step 2\n\n# Vision tokenizer + Text tokenizer work together\n# CLIP processes image → 197 visual tokens\n# Llama tokenizer processes text → ~300 text tokens (variable)\n# Combined: [visual_tokens] + [text_tokens] → model input\n\ndef tokenize(examples):\n    return tokenizer(\n        examples["text"],\n        truncation=True, padding="max_length", max_length=512\n    )\n# Vision tokens handled automatically by LLaVA processor'},
+     ]},
+    {emoji:'🧠',name:'TRAIN',time:'~5 min',desc:'LoRA → SFTTrainer',
+     substeps:[
+       {n:1,title:'Quantize + LoRA (LLaVA)',tag:'lora',viz:'<span class="vz-box vz-input">🧠 LLaVA-1.5-7B</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⬇ 8-bit + LoRA(r=8)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ 0.4% trainable</span>',code:'# LLaVA-1.5-7B = CLIP-ViT-L/14 (frozen, 304M) + Llama-7B (LoRA)\n# Same code as text FT! LoRA on the LLM part only.\nfrom transformers import BitsAndBytesConfig, AutoModelForCausalLM\nfrom peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training\nimport torch\n\nbnb_config = BitsAndBytesConfig(load_in_8bit=True)\nmodel = AutoModelForCausalLM.from_pretrained(\n    "llava-hf/llava-1.5-7b-hf",\n    quantization_config=bnb_config,\n    device_map="auto", torch_dtype=torch.float16\n)\nmodel = prepare_model_for_kbit_training(model)\nlora_config = LoraConfig(r=8, lora_alpha=16,\n    target_modules=["q_proj","v_proj"])\nmodel = get_peft_model(model, lora_config)\n# Vision encoder (CLIP-ViT-L): FROZEN. LLM (Llama-7B): LoRA on Q+V only.'},
+       {n:2,title:'SFTTrainer',tag:'sft',viz:'<span class="vz-box vz-input">📋 Image+Q Pairs</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🎓 SFTTrainer (lr=2e-4)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🤖 Medical VLM</span>',code:'# 📥 "dataset" comes from PREPROCESS Step 4 (tokenized Q&A pairs)\n# SAME SFTTrainer as text FT! Same 3 lines. Different data.\nfrom transformers import TrainingArguments\nfrom trl import SFTTrainer\n\ntraining_args = TrainingArguments(\n    output_dir="./medical_vlm_tuned",\n    num_train_epochs=3, per_device_train_batch_size=4,\n    learning_rate=2e-4, logging_steps=10,\n)\ntrainer = SFTTrainer(model=model, train_dataset=dataset,\n    formatting_func=format_instruction, args=training_args)\ntrainer.train()  # IDENTICAL to text FT pipeline!\n\n# 📤 Output: medical_vlm_tuned/adapter_model.safetensors (4MB)'},
+       {n:3,title:'Vision Encoder',tag:'lora',viz:'<span class="vz-box vz-input">🖼️ Image</span><span class="vz-arrow">→</span><span class="vz-box vz-process">👁️ CLIP-ViT-L (304M)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🔢 576 image tokens</span>',code:'CLIP-ViT-L/14 — frozen vision encoder. Converts image → patch embeddings.'},
+       {n:4,title:'LLM Decoder',tag:'sft',viz:'<span class="vz-box vz-input">🔢 Image tokens + 📝 Text</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🧠 Llama-7B / Mistral-7B</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 Medical answer</span>',code:'Llama-7B / Mistral-7B — combines vision embeddings + text → generates response'},
+     ]},
+    {emoji:'🚀',name:'DEPLOY',time:'~1 min',desc:'Save → HF Hub → Serve',
+     substeps:[
+       {n:1,title:'Save Adapter',tag:'lora',viz:'<span class="vz-box vz-input">🧠 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">💾 save_pretrained()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📁 adapter_model.safetensors (4MB)</span>',code:'# Save adapter (4MB) — same as text FT\nmodel.save_pretrained("./medical_vlm_adapter")\ntokenizer.save_pretrained("./medical_vlm_adapter")\n# 📁 Files: adapter_model.safetensors (4MB) + adapter_config.json (1KB)'},
+       {n:2,title:'Push to HF Hub',tag:'lora',viz:'<span class="vz-box vz-input">📁 Local</span><span class="vz-arrow">→</span><span class="vz-box vz-process">☁️ push_to_hub()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌐 HF Hub</span>',code:'# Share your 4MB adapter on HuggingFace Hub\nfrom huggingface_hub import login\nlogin()  # Your HF token (one-time)\nmodel.push_to_hub("ashokmulchandani/medical-xray-vlm")\ntokenizer.push_to_hub("ashokmulchandani/medical-xray-vlm")\n# Anyone can download: AutoModel.from_pretrained("ashokmulchandani/medical-xray-vlm")'},
+       {n:3,title:'Serve',tag:'dpo',viz:'<span class="vz-box vz-input">🧠 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ vLLM / TGI</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌐 API Ready</span>',code:'# Serve with vLLM (5000 tok/s, OpenAI-compatible API)\n# One command: engine + server combined\npython -m vllm.entrypoints.openai.api_server \\\n    --model ./medical_vlm_adapter --port 8000\n# Now call via OpenAI client at http://localhost:8000/v1'},
+       {n:4,title:'Query',tag:'sft',viz:'<span class="vz-box vz-input">🖼️ New X-ray</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🤖 Medical VLM</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 "No acute finding."</span>',code:'# Query your Medical VLM with new X-rays\nfrom transformers import pipeline\npipe = pipeline("image-text-to-text", model=model, tokenizer=tokenizer)\nresult = pipe("chest_xray_002.jpg", "Is there any abnormality?")\n# → "No acute cardiopulmonary abnormality is seen."\n# Model sees the image AND reads the question — answers both together!'},
+     ]},
+  ]
+},
+{ // 4: LIFECYCLE
+  name:'🔄 Fine-Tuning Lifecycle', phases:'Phases 1–6B',
+  metrics:[
+    {val:'5 Phases',lbl:'Universal Pattern',color:'var(--violet)'},
+    {val:'12 Phases',lbl:'Our Plan',color:'var(--amber)'},
+    {val:'Same Pattern',lbl:'Text, Image, Tabular',color:'var(--cyan)'},
+    {val:'Phase 6AB',lbl:'Testing + MLOps',color:'var(--green)'},
+  ],
+  banner:[
+    {val:'BUILD',lbl:'Quant + LoRA',color:'var(--violet)'},
+    {val:'TEST',lbl:'4 Layers',color:'var(--amber)'},
+    {val:'DEPLOY',lbl:'MLflow + vLLM',color:'var(--cyan)'},
+    {val:'RUN',lbl:'Generation',color:'var(--green)'},
+    {val:'MONITOR',lbl:'Drift → Retrain',color:'var(--magenta)'},
+  ],
+  stages:[
+    {emoji:'📦',name:'BUILD',time:'Phases 4-6',desc:'Quant → LoRA → Data → Train',
+     substeps:[
+       {n:1,title:'Quantize Model',tag:'lora',viz:'<span class="vz-box vz-input">🧠 FP16</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⬇ INT8/4</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Smaller</span>',code:'BitsAndBytesConfig(load_in_8bit=True)'},
+       {n:2,title:'Apply LoRA',tag:'lora',viz:'<span class="vz-box vz-input">🔒 W₀</span><span class="vz-arrow">+</span><span class="vz-box vz-process">🆕 B×A</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ 0.4% trainable</span>',code:'LoraConfig(r=8, target_modules=["q_proj","v_proj"])'},
+       {n:3,title:'Prepare Data',tag:'data',viz:'<span class="vz-box vz-input">📄 PDF</span><span class="vz-arrow">→</span><span class="vz-box vz-process">✂️ Chunks</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔢 Tokenize</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📊 Dataset</span>',code:'PDF → chunks → Dataset → tokenize → labels'},
+       {n:4,title:'Train',tag:'sft',viz:'<span class="vz-box vz-input">📊 Data</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🎓 SFT / ⚖️ DPO</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🤖 Fine-Tuned</span>',code:'SFTTrainer / DPOTrainer → train()'},
+     ]},
+    {emoji:'🧪',name:'TEST',time:'Phase 6A',desc:'4 Testing Layers',
+     substeps:[
+       {n:1,title:'Layer 1: Data',tag:'data',viz:'<span class="vz-box vz-input">📊 Dataset</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔍 Pandera</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Valid</span>',code:'Pandera schema — instruction + output not null'},
+       {n:2,title:'Layer 2: Model',tag:'sft',viz:'<span class="vz-box vz-input">🤖 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🧪 pytest MFT/INV/DIR</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Pass</span>',code:'pytest — MFT, INV, DIR behavioral tests'},
+       {n:3,title:'Layer 3: Pipeline',tag:'lora',viz:'<span class="vz-box vz-input">🔄 Pipeline</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🚂 Smoke Test</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Train→Save→Load</span>',code:'Smoke test — train 1 epoch → save → load → predict'},
+       {n:4,title:'Layer 4: Production',tag:'dpo',viz:'<span class="vz-box vz-input">📊 Live Data</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔍 Evidently AI</span><span class="vz-arrow">→</span><span class="vz-box vz-output">⚠️ Drift? → Retrain</span>',code:'Evidently AI — drift detection, response quality'},
+     ]},
+    {emoji:'🚀',name:'DEPLOY',time:'Phase 6B',desc:'MLflow → vLLM → API',
+     substeps:[
+       {n:1,title:'Register Model',tag:'lora',viz:'<span class="vz-box vz-input">📊 MLflow Run</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📦 register_model()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🏷️ Version 1</span>',code:'mlflow.register_model("runs:/abc123/adapter")'},
+       {n:2,title:'Stage: Production',tag:'lora',viz:'<span class="vz-box vz-input">🧪 Staging</span><span class="vz-arrow">→</span><span class="vz-box vz-process">✅ Tests Pass</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🚀 Production</span>',code:'client.transition_model_version_stage(stage="Production")'},
+       {n:3,title:'Serve with vLLM',tag:'dpo',viz:'<span class="vz-box vz-input">🧠 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ vLLM (5000 tok/s)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌐 API :8000</span>',code:'vllm serve ./merged_model --port 8000'},
+       {n:4,title:'CI/CD Auto-retrain',tag:'sft',viz:'<span class="vz-box vz-input">📄 New Data</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔄 GitHub Actions</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🤖 Auto-retrain → Deploy</span>',code:'GitHub Actions → new data → auto-trigger retraining'},
+     ]},
+  ]
+},
+{ // 5: DEPLOY COMPARISON
+  name:'🚀 Deploy: YOLO vs LLM', phases:'Serving Architecture',
+  metrics:[
+    {val:'Static Graph',lbl:'YOLO Model',color:'var(--cyan)'},
+    {val:'Autoregressive',lbl:'LLM Model',color:'var(--violet)'},
+    {val:'TensorRT+Triton',lbl:'YOLO Stack',color:'var(--amber)'},
+    {val:'vLLM (All-in-One)',lbl:'LLM Stack',color:'var(--green)'},
+  ],
+  banner:[
+    {val:'.pt→.onnx→.engine',lbl:'YOLO: Offline',color:'var(--cyan)'},
+    {val:'.safetensors→vLLM',lbl:'LLM: JIT',color:'var(--green)'},
+    {val:'Same Docker+K8s',lbl:'Container',color:'var(--blue)'},
+    {val:'HW Agnostic',lbl:'vLLM detects GPU',color:'var(--violet)'},
+  ],
+  stages:[
+    {emoji:'🔧',name:'YOLO PATH',time:'5 offline steps',desc:'Compile→Engine→Triton',
+     substeps:[
+       {n:1,title:'Export ONNX',tag:'data',viz:'<span class="vz-box vz-input">🧠 best.pt</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📦 export()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📄 model.onnx</span>',code:'model.export(format="onnx")'},
+       {n:2,title:'Compile TensorRT',tag:'lora',viz:'<span class="vz-box vz-input">📄 .onnx</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚙️ trtexec (AOT)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🚀 model.engine</span>',code:'trtexec --onnx=model.onnx --saveEngine=model.engine\n# T4 engine FAILS on A100! Hardware-specific.'},
+       {n:3,title:'Load Triton',tag:'sft',viz:'<span class="vz-box vz-input">🚀 .engine</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🌐 Triton Server</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📡 REST/gRPC</span>',code:'Triton loads .engine → dynamic batching → HTTP/gRPC'},
+       {n:4,title:'Containerize',tag:'dpo',viz:'<span class="vz-box vz-input">🌐 Triton</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🐳 Docker→K8s→EC2</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌍 Production</span>',code:'Same Dockerfile→K8s pod→EC2 GPU node'},
+     ]},
+    {emoji:'⚡',name:'LLM PATH',time:'1 step (no compile)',desc:'Safetensors→vLLM→API',
+     substeps:[
+       {n:1,title:'Save Weights',tag:'data',viz:'<span class="vz-box vz-input">🤖 FT Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">💾 save_pretrained()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📁 .safetensors</span>',code:'model.save_pretrained("./weights")\n# NO .onnx export. NO .engine compile.'},
+       {n:2,title:'vLLM=Engine+Server',tag:'lora',viz:'<span class="vz-box vz-input">📁 .safetensors</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ vLLM (PagedAttn)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌐 API :8000</span>',code:'python -m vllm.entrypoints.openai.api_server \\\n    --model ./weights --port 8000'},
+       {n:3,title:'GPU Auto-Detect',tag:'lora',viz:'<span class="vz-box vz-input">🔌 T4/A100/H100</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔍 JIT kernel select</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Optimized</span>',code:'vLLM detects GPU → picks best CUDA kernels.\nSame container works on ALL GPUs.'},
+       {n:4,title:'Containerize',tag:'dpo',viz:'<span class="vz-box vz-input">🌐 vLLM API</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🐳 Docker→K8s→EC2</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌍 Production</span>',code:'Same K8s as Triton! Only container internals differ.'},
+     ]},
+    {emoji:'📊',name:'WHY DIFFERENT',time:'Architecture',desc:'Static vs Autoregressive',
+     substeps:[
+       {n:1,title:'YOLO=Static',tag:'data',viz:'<span class="vz-box vz-input">🖼️ Image</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ 1 Pass</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📦 Output</span>',code:'Fixed graph. Predictable memory. AOT compile works.'},
+       {n:2,title:'LLM=Loop',tag:'lora',viz:'<span class="vz-box vz-input">📝 Prompt</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔄 Token 1..200</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 Answer</span>',code:'Token-by-token. KV-Cache grows. Unpredictable memory.'},
+       {n:3,title:'KV=PagedAttention',tag:'lora',viz:'<span class="vz-box vz-input">🧠 KV grows</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📄 PagedAttention</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Dynamic VRAM</span>',code:'PagedAttention = OS virtual memory for GPU. 2-4× more users.'},
+       {n:4,title:'GPU Compat',tag:'dpo',viz:'<span class="vz-box vz-input">📦 .engine(HW)</span><span class="vz-arrow">vs</span><span class="vz-box vz-input">📁 .safetensors</span>',code:'.engine = locked to GPU. .safetensors = universal. Same Docker image.'},
+     ]},
+  ]
+},
+{ // 6: SENSOR / IoT
+  name:'🔧 Sensor/IoT FT', phases:'Predictive Maintenance',
+  metrics:[
+    {val:'SFT',lbl:'Training Method',color:'var(--amber)'},
+    {val:'Vibration→Text',lbl:'Key Trick',color:'var(--cyan)'},
+    {val:'TinyLlama/Llama',lbl:'Model',color:'var(--violet)'},
+    {val:'LoRA ✅',lbl:'r=8, Q+V',color:'var(--green)'},
+  ],
+  banner:[
+    {val:'Vibration→Text',lbl:'Only Difference',color:'var(--cyan)'},
+    {val:'Same Code',lbl:'As Text FT',color:'var(--green)'},
+    {val:'IoT Sensors',lbl:'Input Source',color:'var(--blue)'},
+    {val:'30% Less Downtime',lbl:'Business Impact',color:'var(--amber)'},
+  ],
+  stages:[
+    {emoji:'📋',name:'PREPROCESS',time:'Feature Extraction',desc:'Vibration→Features→Text',
+     substeps:[
+       {n:1,title:'Raw Signal → Windows (🤖 Automatic)',tag:'data',viz:'<span class="vz-box vz-input">📈 Sensor→MQTT→<br>pump_vibration.csv<br>10,000 rows/sec</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🪟 Sliding Window<br>1 sec = 10,000 rows</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📋 1 Window =<br>10,000 numbers</span>',code:'# DATA SOURCE: IoT accelerometer → MQTT → CSV/Parquet\n# File: pump_a_vibration_2025-07-27.csv\n# Columns: timestamp, accel_x, accel_y, accel_z, temp\n# 10 kHz = 10,000 rows per second per sensor\n\n# 📡 MQTT (Message Queue Telemetry Transport)\n# = Text messaging for machines. Sensor→MQTT Broker→CSV.\n# AWS IoT / Azure IoT Hub handles MQTT. You read the CSV.\n\nimport pandas as pd\ndf = pd.read_csv("pump_a_vibration_2025-07-27.csv")\n\n# Rolling window: split continuous stream into 1-sec chunks\nwindow_size = 10000  # 1 second at 10kHz\nfor i in range(0, len(df), window_size):\n    window = df.iloc[i : i+window_size]\n    # window = 10,000 rows × 4 columns (x,y,z,temp)\n\n# 🤖 DONE PROGRAMMATICALLY — Python script runs 24/7'},
+       {n:2,title:'Extract Features (🤖 Automatic)',tag:'data',viz:'<span class="vz-box vz-input">📋 1 Window<br>10,000 rows</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔢 scipy+numpy<br>12 formulas</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📊 features_2025-07-27.csv<br>1 row per second</span>',code:'# 🤖 DONE PROGRAMMATICALLY — Python script\n# Input: 10,000 numbers per window → Output: 12 features\n\nfrom scipy import stats\nimport numpy as np\n\ndef extract_features(window_1sec):\n    x = window_1sec["accel_x"].values\n    fft = np.fft.fft(x)\n    freqs = np.fft.fftfreq(len(x), 1/10000)\n    features = {\n        # TIME-DOMAIN (raw signal shape)\n        "kurtosis": stats.kurtosis(x),     # >3 = bearing fault!\n        "skewness": stats.skew(x),         # ≠0 = uneven wear\n        "rms": np.sqrt(np.mean(x**2)),     # overall vibration energy\n        "crest_factor": np.max(np.abs(x))/np.sqrt(np.mean(x**2)),\n        # FREQUENCY-DOMAIN (FFT → which part?)\n        "dominant_freq": freqs[np.argmax(np.abs(fft[:len(fft)//2]))],\n        "sideband_spacing": detect_sidebands(fft, freqs),\n    }\n    return features\n\n# 💾 OUTPUT FILE: features_2025-07-27.csv\n# 1 row per second, 12 feature columns\n# THIS FILE is used in Steps 3 and 4 below!\nfeatures_df.to_csv("features_2025-07-27.csv", index=False)'},
+       {n:3,title:'Features → Natural Language (The Bridge!)',tag:'sft',viz:'<span class="vz-box vz-input">📊 Numbers Only<br>kurtosis: 8.2<br>rms: 4.2<br>crest: 5.3</span><span class="vz-arrow">→</span><span class="vz-box vz-process">✍️ f-string<br>fills blanks</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 English Sentence<br>"Machine Pump-A.<br>RMS:4.2. Kurtosis:8.2..."</span>',code:'# 🔑 THE BRIDGE: Numbers → English (LLMs read text, not numbers)\n# Think of it as a MAD LIBS game — fill numbers into a template\n\ndef features_to_text(f, machine_id, timestamp):\n    """Convert 12 numbers into 1 English sentence the LLM can read."""\n    return (\n        f"Machine {machine_id} at {timestamp}. "\n        f"RMS: {f[\'rms\']:.2f} mm/s (overall energy). "\n        f"Kurtosis: {f[\'kurtosis\']:.1f} (>3=impulsive fault). "\n        f"Crest Factor: {f[\'crest_factor\']:.1f} (peak severity). "\n        f"Skewness: {f[\'skewness\']:.1f} (≠0=asymmetric wear). "\n        f"Peak-to-Peak: {f[\'peak_to_peak\']:.2f} mm/s. "\n        f"Dominant Frequency: {f[\'dominant_freq\']:.0f} Hz. "\n        f"Dominant Amplitude: {f[\'dominant_amplitude\']:.2f}. "\n        f"Sideband Spacing: {f[\'sideband_spacing\']:.0f} Hz. "\n    )\n\n# 📥 INPUT: Reads features_2025-07-27.csv (from Step 2)\n# 📤 OUTPUT: One English sentence per row\n\n# BEFORE (LLM cannot understand):\n# {rms:4.2, kurtosis:8.2, crest_factor:5.3}\n\n# AFTER (LLM CAN understand):\n# "Machine Pump-A at 2025-07-27 14:30. RMS: 4.20 mm/s.\n#  Kurtosis: 8.2 (>3=impulsive). Crest Factor: 5.3..."\n# → LLM reads this like a diagnostic report and can reason about it!'},
+       {n:4,title:'Create Q&A from Maintenance Logs (🤖 Automatic)',tag:'data',viz:'<span class="vz-box vz-input">📝 Sensor Sentence<br>+<br>🔧 Work Order DB<br>(SAP/Oracle/Excel)</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔗 JOIN by<br>Timestamp+MachineID</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📋 instruction_data.json<br>(3000+ Q&A pairs)</span>',code:'# 🏷️ LABELS FROM: Maintenance work order system (SAP/Oracle/Excel)\n# "Pump-A bearing replaced on 2025-07-29 — inner race fault"\n\nmaintenance_log = pd.read_csv("work_orders_2025.csv")\n# Columns: machine_id, date, fault_type, action_taken, severity\n\n# Join: match sensor timestamp → nearest maintenance event\nfor _, sensor_row in features_df.iterrows():\n    match = maintenance_log[\n        (maintenance_log.machine_id == sensor_row.machine_id) &\n        (maintenance_log.date >= sensor_row.timestamp) &\n        (maintenance_log.date <= sensor_row.timestamp + timedelta(days=7))\n    ]\n    if len(match) > 0:\n        instruction_data.append({\n            "instruction": "Diagnose machine from vibration",\n            "input": features_to_text(sensor_row),\n            "output": f"{match.iloc[0].fault_type}. {match.iloc[0].action_taken}."\n        })\n\n# 📥 INPUT: features_2025-07-27.csv (from Step 2)\n# 📥 INPUT: work_orders_2025.csv (from maintenance system)\n# 📤 OUTPUT: instruction_data.json (Q&A pairs for SFT)\n\n# 🔧 Labels = real maintenance records, NOT manual labeling!'},
+       {n:'📖',title:'Feature→Fault Mapping',tag:'data',viz:'<span class="vz-box vz-input">🔢+⚙️ Specs</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📐 Physics</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🎯 Fault</span>',code:'# Domain knowledge from mechanical engineering:\n# Kurtosis>5+Crest>4→Bearing fault | RMS↑→Unbalance\n# 1×RPM→Unbalance | 2×RPM→Misalignment\n# Gear_mesh±sidebands→Gear wear'},
+     ]},
+    {emoji:'🧠',name:'TRAIN',time:'Same as Text',desc:'LoRA→SFTTrainer',
+     substeps:[
+       {n:1,title:'Quantize',tag:'lora',viz:'<span class="vz-box vz-input">🧠 FP16</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⬇ 8-bit</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🧠 INT8</span>',code:'BitsAndBytesConfig(load_in_8bit=True)'},
+       {n:2,title:'Apply LoRA',tag:'lora',viz:'<span class="vz-box vz-input">🔒 W₀</span><span class="vz-arrow">+</span><span class="vz-box vz-process">🆕 B×A</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ 0.4%</span>',code:'LoraConfig(r=8, target_modules=["q_proj","v_proj"])'},
+       {n:3,title:'SFTTrainer',tag:'sft',viz:'<span class="vz-box vz-input">📋 Q&A</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🎓 SFTTrainer</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🤖 Model</span>',code:'trainer=SFTTrainer(model,dataset,formatting_func).train()\n# SAME 3 LINES as text FT'},
+       {n:4,title:'Model Learns',tag:'sft',viz:'<span class="vz-box vz-input">📊 New Data</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🤖 LLM</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 Diagnosis</span>',code:'Model learns: kurtosis>5+crest>4=bearing fault in 48h'},
+     ]},
+    {emoji:'🚀',name:'DEPLOY',time:'vLLM→API→Dashboard',desc:'Real-time diagnosis',
+     substeps:[
+       {n:1,title:'Save Adapter',tag:'lora',viz:'<span class="vz-box vz-input">🤖 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">💾 save</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📁 .safetensors</span>',code:'model.save_pretrained("./predictive_maintenance")'},
+       {n:2,title:'Real-Time API',tag:'dpo',viz:'<span class="vz-box vz-input">📈 IoT Stream</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ vLLM API</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 Diagnosis</span>',code:'Every 1s: features→text→API→diagnosis'},
+       {n:3,title:'Dashboard',tag:'sft',viz:'<span class="vz-box vz-input">📝 Diagnosis</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📊 Grafana</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📱 Alert</span>',code:'Grafana/Streamlit shows real-time trends + LLM diagnosis'},
+       {n:4,title:'Monitor+Retrain',tag:'dpo',viz:'<span class="vz-box vz-input">📊 Live Data</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔍 Drift?</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🔄 Retrain</span>',code:'Evidently AI→drift→auto-retrain on new machine types'},
+     ]},
+  ]
+}
+];
 
-def format_instruction(example):
-    text = "Below is an instruction. Write a response.\n\n"
-    text += "### Instruction:\n" + example["instruction"] + "\n\n"
-    text += "### Response:\n" + example["output"]
-    return {"text": text}
+// ── RENDER ──
+let currentTab=0, currentStage=0;
 
-# INPUT JSON:
-#   {"image": "chest_xray_001.jpg",           ← IGNORED by this function!
-#    "instruction": "What does this X-ray show?",
-#    "output": "Bilateral pneumonia in right lower lobe."}
+function switchTab(i){
+  currentTab=i; currentStage=0;
+  document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',j===i));
+  render();
+}
 
-# OUTPUT STRING (exactly what is produced):
-# Below is an instruction. Write a response.
-#
-# ### Instruction:
-# What does this chest X-ray show?
-#
-# ### Response:
-# Bilateral pneumonia with consolidation in the right lower lobe.
+function render(){
+  const t=tabs[currentTab];
 
-# WHAT HAPPENS NEXT:
-# This string → tokenizer → text token IDs [1, 464, 8522, ...]
-# The image → CLIP-ViT-L (happens later, during training, automatically)
-# Image tokens PREPENDED to text tokens before entering LLM.
-# format_instruction() never sees the image. The image never sees Alpaca.'
+  let html=`
+    <div class="pipeline-card">
+      <div class="pipeline-label">${t.name} — ${t.phases}</div>
+
+      <div class="perf-banner">
+        ${t.banner.map((b,i)=>`
+          ${i>0?'<div class="perf-divider"></div>':''}
+          <div class="perf-item"><div class="pv" style="color:${b.color};">${b.val}</div><div class="pl">${b.lbl}</div></div>
+        `).join('')}
+      </div>
+
+      <div class="metrics">${t.metrics.map(m=>`
+        <div class="metric"><div class="val" style="color:${m.color};">${m.val}</div><div class="lbl">${m.lbl}</div></div>
+      `).join('')}</div>
+
+      <div class="pipeline">`;
+
+  if(t.stages){
+    t.stages.forEach((s,i)=>{
+      const active=i===currentStage?' active-stage':'';
+      html+=`
+        <div class="pipe-stage${active}" onclick="selectStage(${i})">
+          <div class="st-emoji">${s.emoji}</div>
+          <div class="st-name">${s.name}</div>
+          <div class="st-time">${s.time}</div>
+          <div class="st-desc">${s.desc}</div>
+        </div>`;
+      if(i<t.stages.length-1) html+='<div class="pipe-arrow">→</div>';
+    });
+  }
+
+  // For lifecycle tab, only 3 stages (no RUN/MONITOR as separate stages since they're in DEPLOY)
+  html+=`</div>`;
+
+  // Substeps
+  if(t.stages&&t.stages[currentStage]){
+    const s=t.stages[currentStage];
+    html+=`
+      <div class="substeps show">
+        <h4>${s.emoji} ${s.name} — Sub-Operations (${s.time})</h4>
+        <div class="substep-grid">
+          ${s.substeps.map(ss=>`
+            <div class="substep">
+              <span class="ss-num">Step ${ss.n}</span>
+              <div class="ss-title">${ss.title}</div>
+              ${ss.viz?`<div class="ss-viz">${ss.viz}</div>`:''}
+              <div class="ss-code">${ss.code}</div>
+              <span class="ss-tag ${ss.tag==='lora'?'lora':ss.tag==='sft'?'sft':'dpo'}">${ss.tag==='lora'?'LoRA/Quant':ss.tag==='sft'?'SFT':'DPO/Deploy'}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+  }
+
+  html+=`
+    </div>
+    <div class="nav-row">
+      <button class="nav-btn" onclick="selectStage(${currentStage-1})" ${currentStage===0?'disabled':''}>◀ Prev</button>
+      <span style="font-size:0.65rem;color:var(--tmut);">Stage ${currentStage+1} / ${t.stages?t.stages.length:1}</span>
+      <button class="nav-btn" onclick="selectStage(${currentStage+1})" ${!t.stages||currentStage===t.stages.length-1?'disabled':''}>Next ▶</button>
+      <button class="nav-btn" onclick="selectStage(0)">↺ Reset</button>
+    </div>`;
+
+  document.getElementById('app').innerHTML=html;
+
+  // Comparison
+  document.getElementById('comparison').innerHTML=`
+    <h3>📊 All 4 Data Types — Side by Side</h3>
+    <div style="overflow-x:auto;">
+    <table class="tbl">
+    <thead><tr><th></th><th>📝 Text</th><th>📊 Tabular</th><th>🖼️ Image</th><th>🖼️📝 Vision-Lang</th></tr></thead>
+    <tbody>
+    <tr><td>Input</td><td>Q&A text</td><td>Rows → sentences</td><td>Images + labels</td><td>Images + questions</td></tr>
+    <tr><td>Model</td><td>TinyLlama-1.1B, Llama-7B, Mistral-7B</td><td>TinyLlama-1.1B, Llama-7B, Mistral-7B</td><td>YOLOv8n, ResNet-50, ViT</td><td>LLaVA-1.5-7B, GPT-4V, Qwen-VL</td></tr>
+    <tr><td>LoRA?</td><td class="yes">✅ Yes</td><td class="yes">✅ Yes</td><td class="no">⚠️ Not standard</td><td class="yes">✅ Yes</td></tr>
+    <tr><td>Training</td><td>SFT + DPO</td><td>SFT</td><td>Transfer Learning</td><td>SFT + DPO</td></tr>
+    <tr><td>Phase</td><td>4–6</td><td>Now</td><td>10</td><td>10</td></tr>
+    </tbody></table></div>
+    <div class="callout" style="margin-top:0.75rem;"><strong>🧠 Pre-trained model → freeze → adapter → train on YOUR data.</strong> Tools change with data type. Pattern never changes.</div>
+
+<h3 style="margin-top:1.5rem;">🔓 Model Licensing — Are They Free?</h3>
+<div style="overflow-x:auto;">
+<table class="tbl">
+<thead><tr><th>Model</th><th>License</th><th>Free?</th><th>Commercial Use?</th><th>The Catch</th></tr></thead>
+<tbody>
+<tr style="background:rgba(26,110,52,0.04);"><td><strong>TinyLlama-1.1B</strong></td><td>Apache 2.0</td><td class="yes">✅ Free</td><td class="yes">✅ Yes</td><td style="font-size:0.62rem;">None — fully open. Deploy anywhere.</td></tr>
+<tr style="background:rgba(26,110,52,0.04);"><td><strong>ResNet-50</strong></td><td>Apache 2.0 / MIT</td><td class="yes">✅ Free</td><td class="yes">✅ Yes</td><td style="font-size:0.62rem;">None — classic CV backbone, no restrictions.</td></tr>
+<tr style="background:rgba(26,110,52,0.04);"><td><strong>LLaVA-1.5</strong></td><td>Apache 2.0</td><td class="yes">✅ Free</td><td class="yes">✅ Yes</td><td style="font-size:0.62rem;">None — run locally via vLLM or Ollama.</td></tr>
+<tr style="background:rgba(184,112,0,0.04);"><td><strong>Llama-7B / 70B</strong></td><td>Meta Llama Community</td><td class="yes">✅ Free</td><td style="color:var(--amber);">⚠️ Conditional</td><td style="font-size:0.62rem;">>700M MAU requires custom license from Meta.</td></tr>
+<tr style="background:rgba(184,112,0,0.04);"><td><strong>Mistral-7B</strong></td><td>Apache 2.0</td><td class="yes">✅ Free</td><td class="yes">✅ Yes</td><td style="font-size:0.62rem;">None — Apache 2.0, fully permissive.</td></tr>
+<tr style="background:rgba(184,112,0,0.04);"><td><strong>YOLOv8n</strong></td><td>AGPL-3.0</td><td class="yes">✅ Free</td><td style="color:var(--amber);">⚠️ Copyleft</td><td style="font-size:0.62rem;">SaaS/API use → must open-source your code OR buy Enterprise license.</td></tr>
+<tr style="background:rgba(198,40,40,0.04);"><td><strong>GPT-4V</strong></td><td>Proprietary</td><td class="no">❌ Paid API</td><td class="no">❌ API only</td><td style="font-size:0.62rem;">Cannot download. Cannot run locally. Billed per token.</td></tr>
+<tr style="background:rgba(198,40,40,0.04);"><td><strong>Qwen-VL</strong></td><td>Apache 2.0 (Qwen License)</td><td class="yes">✅ Free</td><td class="yes">✅ Yes</td><td style="font-size:0.62rem;">Free for <100M MAU. Over 100M needs Alibaba approval.</td></tr>
+</tbody></table>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin:0.75rem 0;font-size:0.65rem;text-align:center;">
+  <div style="background:rgba(26,110,52,0.06);border:1px solid rgba(26,110,52,0.2);border-radius:8px;padding:0.5rem;"><strong style="color:var(--green);">🟢 Truly Open Source</strong><br>TinyLlama, ResNet, LLaVA, Mistral<br><span style="color:var(--tmut);">Apache 2.0 / MIT — No restrictions</span></div>
+  <div style="background:rgba(184,112,0,0.06);border:1px solid rgba(184,112,0,0.2);border-radius:8px;padding:0.5rem;"><strong style="color:var(--amber);">🟡 Open-Weights (Catches)</strong><br>Llama, YOLOv8, Qwen-VL<br><span style="color:var(--tmut);">Free to use, commercial has limits</span></div>
+  <div style="background:rgba(198,40,40,0.06);border:1px solid rgba(198,40,40,0.2);border-radius:8px;padding:0.5rem;"><strong style="color:var(--red);">🔴 Proprietary (Paid)</strong><br>GPT-4V<br><span style="color:var(--tmut);">API only, billed per token</span></div>
+</div>`;
+}
+
+function selectStage(i){
+  const t=tabs[currentTab];
+  if(!t.stages||i<0||i>=t.stages.length) return;
+  currentStage=i; render();
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight') selectStage(currentStage+1);
+  if(e.key==='ArrowLeft') selectStage(currentStage-1);
+});
+
+render();
+</script>
+</body>
+</html>
