@@ -197,7 +197,27 @@ td{padding:0.3rem;border-bottom:1px solid var(--border);}
   </table>
 
   <div class="callout">
-    <strong>🧠 Why no embedding matrix for images?</strong> There are infinite possible images (unlike 32K fixed words). You can't have a lookup table for every possible image patch. Instead, CLIP-ViT <strong>computes</strong> the vector from the pixel values — it's a function, not a lookup. Same idea as how a camera converts light into pixels: there's no "lookup table" for every possible scene.
+    <strong>🧠 Why no embedding matrix for images?</strong> There are infinite possible images (unlike 32K fixed words). CLIP-ViT <strong>computes</strong> the vector from pixel values — it's a function, not a lookup.
+
+    <h4 style="font-family:'Space Grotesk',sans-serif;font-size:0.7rem;color:var(--violet);margin:0.75rem 0 0.4rem;">🔍 What Both Vectors Look Like (First 20 of 4096 dimensions)</h4>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin:0.5rem 0;">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:0.6rem;">
+        <strong style="font-size:0.65rem;">📝 Text: "Met" (ID 464)</strong>
+        <div style="display:flex;gap:1px;flex-wrap:wrap;margin:0.3rem 0;" id="textVecVis"></div>
+        <span style="font-size:0.55rem;color:var(--tmut);">... 4076 more numbers → Total: 4096-dim vector</span>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:0.6rem;">
+        <strong style="font-size:0.65rem;">🖼️ Image: one X-ray patch</strong>
+        <div style="display:flex;gap:1px;flex-wrap:wrap;margin:0.3rem 0;" id="imgVecVis"></div>
+        <span style="font-size:0.55rem;color:var(--tmut);">... 4076 more numbers → Total: 4096-dim vector</span>
+      </div>
+    </div>
+    <p style="font-size:0.65rem;color:var(--tmut);text-align:center;margin-top:0.3rem;">
+      <span style="color:var(--green);">■ Positive</span> &nbsp; <span style="color:var(--red);">■ Negative</span> &nbsp; <span style="color:var(--border);">■ Near zero</span><br>
+      Both are just arrays of 4096 floats. The LLM can't tell which came from text and which from an image.<br>
+      But the PATTERN of numbers is different — "Met" has a consistent pattern (learned once).<br>
+      The X-ray patch varies with pixel values (computed fresh each time).
+    </p>
   </div>
 
   <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1.2rem 0 0.5rem;">After This: Visual + Text Tokens Go Through Transformer ×32 Together</h3>
@@ -275,6 +295,27 @@ const vc=document.getElementById('vecCanvas'), vctx=vc.getContext('2d');
 vctx.fillStyle='#f8f9fc';vctx.fillRect(0,0,700,100);
 for(let i=0;i<197;i++){const y=8+i*0.45;if(y>95)break;const hue=200+(i*0.5)%160;vctx.fillStyle=`hsl(${hue},60%,${40+(i%30)*1.5}%)`;vctx.fillRect(20,y,(0.3+Math.random()*0.7)*660,0.4);}
 vctx.fillStyle='var(--tmut)';vctx.font='9px "Inter"';vctx.textAlign='right';vctx.fillText('197 visual tokens (each row = 1024-dim vector)',680,10);
+
+// Generate vector visualization — text embedding vs image patch vector
+function renderVector(containerId, seed, isText){
+  const container=document.getElementById(containerId);
+  // Generate pseudo-random but deterministic values based on seed
+  let r=seed;
+  const rand=()=>{r=(r*16807+0)%2147483647;return(r-1073741823)/1073741823;};
+  for(let i=0;i<20;i++){
+    const val=isText?Math.tanh(rand()*2)*0.8:Math.sin(i*0.7+seed)*0.6+rand()*0.3;
+    const cell=document.createElement('div');
+    const abs=Math.abs(val);
+    if(abs<0.1) cell.style.background='var(--border)';
+    else if(val>0) cell.style.background=`rgba(26,110,52,${0.2+abs})`;
+    else cell.style.background=`rgba(198,40,40,${0.2+abs})`;
+    cell.style.width='10px';cell.style.height='10px';cell.style.borderRadius='1px';
+    cell.title=val.toFixed(3);
+    container.appendChild(cell);
+  }
+}
+renderVector('textVecVis', 464, true);   // Text: consistent pattern (lookup)
+renderVector('imgVecVis', 42, false);    // Image: varies with pixel content
 </script>
 </body>
 </html>
