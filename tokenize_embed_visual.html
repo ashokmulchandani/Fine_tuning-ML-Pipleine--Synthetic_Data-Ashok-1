@@ -155,6 +155,60 @@ td{padding:0.3rem;border-bottom:1px solid var(--border);}
   </table>
 </div>
 
+<!-- IMAGE TOKENIZATION -->
+<div class="step">
+  <h2>🖼️ Image Tokenization — How Vision Models "Read" Images</h2>
+  <p style="font-size:0.85rem;color:var(--tdim);">Vision-Language models (LLaVA, GPT-4V) process images the same way — by converting them into tokens. But the tokenizer is different.</p>
+
+  <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1rem 0 0.5rem;">Step 1: Split Image into Patches</h3>
+  <p style="font-size:0.85rem;color:var(--tdim);">
+    A 224×224 pixel image is divided into <strong>14×14 = 196 patches</strong>. Each patch = 16×16 pixels. Just like text is split into words, an image is split into patches.
+  </p>
+  <table>
+    <tr><th>Text</th><th>Image</th></tr>
+    <tr><td>"Metformin" → "Met" + "formin" (2 subwords)</td><td>224×224 image → 196 patches (14×14 grid)</td></tr>
+    <tr><td>Tokenizer splits by vocabulary (32K words)</td><td>ViT splits by grid (fixed 16×16 pixel squares)</td></tr>
+    <tr><td>Output: integer IDs [464, 8522]</td><td>Output: patch vectors [p₁, p₂, ..., p₁₉₆]</td></tr>
+  </table>
+
+  <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1rem 0 0.5rem;">Step 2: CLIP-ViT Encodes Each Patch</h3>
+  <p style="font-size:0.85rem;color:var(--tdim);">
+    Each 16×16 patch (256 pixels) is flattened into a vector, then projected through CLIP-ViT-L (304M params). The output: each patch becomes a <strong>1024-dim vector</strong>. Plus one special [CLS] token = <strong>197 visual tokens</strong> total.
+  </p>
+  <div class="code-box">
+<span style="color:#6a9955;"># CLIP-ViT-L/14 processes a 224×224 image:</span>
+224×224 pixels → 14×14 grid of 16×16 patches
+  = 196 patches
+  + 1 [CLS] token (summary of whole image)
+  = <strong style="color:#ce9178;">197 visual tokens</strong>, each 1024-dimensional
+
+<span style="color:#6a9955;"># These 197 tokens then go through a projection layer:</span>
+1024-dim (vision space) → <strong style="color:#ce9178;">4096-dim</strong> (LLM space)
+  = 197 tokens × 4096-dim → matched to LLM input size!</div>
+
+  <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1rem 0 0.5rem;">Step 3: Combine Visual + Text Tokens</h3>
+  <p style="font-size:0.85rem;color:var(--tdim);">
+    The 197 visual tokens are PREPENDED to the text tokens. The LLM sees them as one long sequence:
+  </p>
+  <div class="code-box">
+<span style="color:#6a9955;">Total input to LLM:</span>
+[img_1] [img_2] ... [img_197] [### Instruction:] [What does X-ray show?] [### Response:]
+ ← 197 visual tokens →   ←──────── 315 text tokens ────────────→
+ = <strong style="color:#ce9178;">512 total tokens, each 4096-dim</strong></div>
+
+  <table>
+    <tr><th>Component</th><th>Tokens</th><th>Processor</th><th>Frozen?</th></tr>
+    <tr><td>Image patches</td><td>197 × 1024-dim</td><td>CLIP-ViT-L (304M)</td><td>✅ Frozen</td></tr>
+    <tr><td>Projection layer</td><td>197 × 1024→4096</td><td>Linear projection</td><td>✅ Frozen</td></tr>
+    <tr><td>Text tokens</td><td>315 × 4096-dim</td><td>Llama Tokenizer</td><td>✅ Frozen</td></tr>
+    <tr><td>Combined input</td><td>512 × 4096-dim</td><td>Llama-7B (LoRA on Q+V)</td><td>⚠️ LoRA trained</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>🧠 Key insight:</strong> The LLM doesn't know the difference between visual tokens and text tokens. It sees 512 vectors, each 4096-dimensional, and processes them identically through the Transformer layers. The visual tokens at the beginning provide context about "what's in the image." The text tokens ask the question. The LLM generates the answer — exactly like it does for text-only input.
+  </div>
+</div>
+
 </div>
 </body>
 </html>
