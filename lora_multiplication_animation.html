@@ -88,6 +88,47 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
   <strong>🧠 Why this matters:</strong> B×A is <strong>NEVER</strong> computed as a full 4096×4096 matrix. Always two cheap steps: A·x (32K ops) then B·(A·x) (32K ops). Total LoRA overhead = <strong>0.39%</strong>. At inference, merge B×A into W → <strong>ZERO</strong> overhead.
 </div>
 
+<!-- ── WHERE THIS HAPPENS IN THE MODEL ── -->
+<div style="margin:2rem 0;padding-top:1.5rem;border-top:2px solid var(--border);">
+<h2 style="font-family:'Space Grotesk',sans-serif;font-size:1.2rem;font-weight:700;color:var(--violet);text-align:center;margin-bottom:1rem;">Where B×A×x Happens — Across 32 Layers</h2>
+
+<!-- Big Picture -->
+<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin:1rem 0;">
+  <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin-bottom:0.75rem;">The Big Picture: 2 Adapters Per Layer × 32 Layers = 64 Independent B×A Pairs</h3>
+  <p style="font-size:0.8rem;color:var(--tdim);margin-bottom:0.75rem;">The input flows through 32 transformer layers. At <strong>every layer</strong>, Q and V each have their OWN B×A adapter (4-step computation from above). K and O have no adapters.</p>
+  <div style="display:flex;flex-direction:column;gap:2px;font-family:'Space Grotesk',monospace;font-size:0.55rem;margin:0.5rem 0;">
+    <div style="display:flex;align-items:center;gap:0.3rem;padding:2px 0;"><span style="min-width:45px;color:var(--tmut);">Layer 1</span><span style="background:rgba(91,58,168,0.1);color:var(--violet);padding:1px 4px;border-radius:3px;">Q✅</span><span style="color:var(--tmut);">K</span><span style="background:rgba(91,58,168,0.1);color:var(--violet);padding:1px 4px;border-radius:3px;">V✅</span><span style="color:var(--tmut);">O</span><span style="color:var(--violet);font-size:0.5rem;">+ B¹_q×A¹_q + B¹_v×A¹_v</span></div>
+    <div style="display:flex;align-items:center;gap:0.3rem;padding:2px 0;"><span style="min-width:45px;color:var(--tmut);">Layer 2</span><span style="background:rgba(91,58,168,0.1);color:var(--violet);padding:1px 4px;border-radius:3px;">Q✅</span><span style="color:var(--tmut);">K</span><span style="background:rgba(91,58,168,0.1);color:var(--violet);padding:1px 4px;border-radius:3px;">V✅</span><span style="color:var(--violet);font-size:0.5rem;">+ B²_q×A²_q + B²_v×A²_v</span></div>
+    <div style="color:var(--tmut);text-align:center;">⋮</div>
+    <div style="display:flex;align-items:center;gap:0.3rem;padding:2px 0;"><span style="min-width:45px;color:var(--tmut);">Layer 32</span><span style="background:rgba(91,58,168,0.1);color:var(--violet);padding:1px 4px;border-radius:3px;">Q✅</span><span style="color:var(--tmut);">K</span><span style="background:rgba(91,58,168,0.1);color:var(--violet);padding:1px 4px;border-radius:3px;">V✅</span><span style="color:var(--tmut);">O</span><span style="color:var(--violet);font-size:0.5rem;">+ B³²_q×A³²_q + B³²_v×A³²_v</span></div>
+  </div>
+  <p style="font-size:0.7rem;color:var(--tmut);text-align:center;margin-top:0.5rem;">Each adapter is INDEPENDENT. Layer 3 adjusts grammar. Layer 28 adjusts style. They learn different things.</p>
+</div>
+
+<!-- Operation Count -->
+<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin:1rem 0;">
+  <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin-bottom:0.75rem;">Why LoRA Adds Almost No Cost</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:0.78rem;">
+    <tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.3rem;">Operation</th><th style="text-align:left;padding:0.3rem;">Multiplications</th><th style="text-align:left;padding:0.3rem;">%</th></tr>
+    <tr><td style="padding:0.3rem;">W_q·x (frozen Q)</td><td style="padding:0.3rem;">4096² = 16,777,216</td><td style="color:var(--gray);">99.6%</td></tr>
+    <tr><td style="padding:0.3rem;">A_q·x (LoRA step 1)</td><td style="padding:0.3rem;">8 × 4096 = 32,768</td><td style="color:var(--violet);">0.2%</td></tr>
+    <tr><td style="padding:0.3rem;">B_q·(A_q·x) (LoRA step 2)</td><td style="padding:0.3rem;">4096 × 8 = 32,768</td><td style="color:var(--violet);">0.2%</td></tr>
+    <tr style="font-weight:700;border-top:2px solid var(--border);"><td>Total Q path</td><td>16,842,752</td><td>100%</td></tr>
+  </table>
+  <p style="font-size:0.7rem;color:var(--tmut);margin-top:0.5rem;">LoRA adds only 65K ops to 16.8M. Across 32 layers with Q+V = 64 adapters, total overhead stays under <strong>1%</strong>.</p>
+</div>
+
+<!-- Two Rules -->
+<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin:1rem 0;text-align:center;">
+  <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin-bottom:0.75rem;">The Two Rules of LoRA Forward Pass</h3>
+  <p style="font-size:0.82rem;color:var(--tdim);line-height:1.8;">
+    <strong>Rule 1:</strong> <span style="color:var(--violet);">A·x first (cheap, r dimensions)</span> → <span style="color:var(--violet);">B·(A·x) cheap</span>. <strong>B×A NEVER computed as full matrix.</strong> Two cheap steps.<br>
+    <strong>Rule 2:</strong> Q in layer 3 ≠ Q in layer 15. <strong>64 independent B×A pairs.</strong> Each learns what THAT layer needs.<br>
+    <strong>Bonus:</strong> At inference, merge B×A into W → <strong>zero overhead</strong>. Same as original model speed.
+  </p>
+</div>
+</div>
+
 </div>
 
 <script>
