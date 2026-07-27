@@ -299,20 +299,27 @@ vctx.fillStyle='var(--tmut)';vctx.font='9px "Inter"';vctx.textAlign='right';vctx
 // Generate vector visualization — text embedding vs image patch vector
 function renderVector(containerId, seed, isText){
   const container=document.getElementById(containerId);
-  // Generate pseudo-random but deterministic values based on seed
   let r=seed;
   const rand=()=>{r=(r*16807+0)%2147483647;return(r-1073741823)/1073741823;};
+  const values=[];
+  // First, render 20 colored cells
   for(let i=0;i<20;i++){
     const val=isText?Math.tanh(rand()*2)*0.8:Math.sin(i*0.7+seed)*0.6+rand()*0.3;
+    values.push(val);
     const cell=document.createElement('div');
     const abs=Math.abs(val);
     if(abs<0.1) cell.style.background='var(--border)';
     else if(val>0) cell.style.background=`rgba(26,110,52,${0.2+abs})`;
     else cell.style.background=`rgba(198,40,40,${0.2+abs})`;
-    cell.style.width='10px';cell.style.height='10px';cell.style.borderRadius='1px';
-    cell.title=val.toFixed(3);
+    cell.style.width='12px';cell.style.height='12px';cell.style.borderRadius='2px';
+    cell.title=val.toFixed(4);
     container.appendChild(cell);
   }
+  // Then, show the actual numbers
+  const numRow=document.createElement('div');
+  numRow.style.cssText='font-family:monospace;font-size:0.55rem;color:var(--tmut);margin-top:0.3rem;line-height:1.5;word-break:break-all;';
+  numRow.textContent='['+values.map(v=>(v>=0?'+':'')+v.toFixed(4)).join(', ')+', ...]';
+  container.appendChild(numRow);
 }
 renderVector('textVecVis', 464, true);   // Text: consistent pattern (lookup)
 renderVector('imgVecVis', 42, false);    // Image: varies with pixel content
