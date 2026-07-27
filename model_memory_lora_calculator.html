@@ -84,7 +84,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
       <option value="llama13b">Llama-13B</option>
       <option value="llama70b">Llama-70B</option>
       <option value="gpt3">GPT-3 175B</option>
-      <option value="gpt3">GPT-3 175B</option>
       <option value="llava7b">LLaVA-1.5-7B (VL Model)</option>
       <option value="---">── Vision (diff architecture) ──</option>
       <option value="yolov8n">YOLOv8n (3.2M)</option>
@@ -346,11 +345,11 @@ function applyPreset(){
 
 // ── CALC ──
 function calc(){
-  const d=parseInt(document.getElementById('d').value)||4096;
-  const ffMid=parseInt(document.getElementById('ff').value)||11008;
-  const layers=parseInt(document.getElementById('layers').value)||32;
-  const vocab=parseInt(document.getElementById('vocab').value)||32000;
-  const rank=parseInt(document.getElementById('rank').value)||8;
+  const d=parseInt(document.getElementById('d').value); const dVal=isNaN(d)?4096:d;
+  const ffMid=parseInt(document.getElementById('ff').value); const ffVal=isNaN(ffMid)?11008:ffMid;
+  const layers=parseInt(document.getElementById('layers').value); const lVal=isNaN(layers)?32:layers;
+  const vocab=parseInt(document.getElementById('vocab').value); const vVal=isNaN(vocab)?32000:vocab;
+  const rank=parseInt(document.getElementById('rank').value); const rVal=isNaN(rank)?8:rank;
   const ftMode=document.getElementById('ftMode').value;
   const isQLoRA=ftMode==='qlora';
   const prec=document.getElementById('precision').value;
@@ -366,19 +365,19 @@ function calc(){
 
   // ── FROZEN PARAMS ──
   // Embedding
-  const embParams=vocab*d;
+  const embParams=vVal*dVal;
 
   // Per attention matrix (Q,K,V,O): d×d
-  const attnMatrixParams=d*d;
+  const attnMatrixParams=dVal*dVal;
 
   // Per FF matrix (gate,up): d×ffMid, (down): ffMid×d
-  const ffGateUpParams=d*ffMid;
-  const ffDownParams=ffMid*d;
+  const ffGateUpParams=dVal*ffVal;
+  const ffDownParams=ffVal*dVal;
   const ffPerLayerParams=2*ffGateUpParams+ffDownParams;
 
   // Totals
-  const totalAttnFrozen=layers*4*attnMatrixParams;
-  const totalFFFrozen=layers*ffPerLayerParams;
+  const totalAttnFrozen=lVal*4*attnMatrixParams;
+  const totalFFFrozen=lVal*ffPerLayerParams;
   const otherFrozen=Math.round(embParams*0.1 + layers*d*0.05);
   const totalFrozen=embParams+totalAttnFrozen+totalFFFrozen+otherFrozen;
   const totalFrozenRounded=Math.round(totalFrozen/1e6)*1e6; // round to millions
@@ -394,13 +393,13 @@ function calc(){
   // Per attention module
   attnModules.forEach(m=>{
     if(activeAttn[m]){
-      const perModule=2*d*rank; // B(d×r) + A(r×d)
+      const perModule=2*dVal*rVal; // B(d×r) + A(r×d)
       const perLayer=perModule;
-      const total=layers*perModule;
+      const total=lVal*perModule;
       loraParams+=total;
-      loraDetail.push({name:`${m}_proj (attn)`,frozen:layers*attnMatrixParams,lora:total,calc:`${layers}layers × 2×${d}×${rank}`});
+      loraDetail.push({name:`${m}_proj (attn)`,frozen:lVal*attnMatrixParams,lora:total,calc:`${lVal}layers × 2×${dVal}×${rank}`});
     }else{
-      loraDetail.push({name:`${m}_proj (attn)`,frozen:layers*attnMatrixParams,lora:0,calc:'frozen'});
+      loraDetail.push({name:`${m}_proj (attn)`,frozen:lVal*attnMatrixParams,lora:0,calc:'frozen'});
     }
   });
 
@@ -410,10 +409,10 @@ function calc(){
       const colDim=(m==='down')?d:ffMid;
       const rowDim=(m==='down')?ffMid:d;
       const perModule=rowDim*rank+rank*colDim;
-      const total=layers*perModule;
+      const total=lVal*perModule;
       loraParams+=total;
       const frozenTotal=layers*(m==='down'?ffDownParams:ffGateUpParams);
-      loraDetail.push({name:`${m}_proj (FF)`,frozen:frozenTotal,lora:total,calc:`${layers}layers × (${rowDim}×${rank}+${rank}×${colDim})`});
+      loraDetail.push({name:`${m}_proj (FF)`,frozen:frozenTotal,lora:total,calc:`${lVal}layers × (${rowDim}×${rank}+${rank}×${colDim})`});
     }else{
       const frozenTotal=layers*(m==='down'?ffDownParams:ffGateUpParams);
       loraDetail.push({name:`${m}_proj (FF)`,frozen:frozenTotal,lora:0,calc:'frozen'});
@@ -489,17 +488,17 @@ function calc(){
     <tr><td>Embedding</td><td>${formatNum(vocab)} × ${formatNum(d)}</td><td class="num">${formatNum(embParams)}</td><td class="num">—</td><td class="num">${formatNum(embParams)}</td></tr>
     <tr><td>Output Head (lm_head)</td><td>${formatNum(d)} × ${formatNum(vocab)}</td><td class="num" style="color:var(--tmut);">(tied)</td><td class="num">—</td><td class="num" style="color:var(--tmut);">(tied)</td></tr>
     <tr><td colspan="5" style="font-size:0.65rem;color:var(--tmut);text-align:center;">Tied with embedding — same weights, same memory. Counted once in total.</td></tr>
-    <tr><td class="section-label" colspan="5">Attention (${layers} layers × 4 matrices)</td></tr>`;
+    <tr><td class="section-label" colspan="5">Attention (${lVal} layers × 4 matrices)</td></tr>`;
 
   attnModules.forEach(m=>{
     const det=loraDetail.find(x=>x.name.startsWith(m));
-    const frozen=layers*attnMatrixParams;
+    const frozen=lVal*attnMatrixParams;
     const lora=det.lora||0;
     sumFrozen+=frozen; sumLora+=lora;
     tblHTML+=`<tr><td>${m}_proj</td><td>${formatNum(d)} × ${formatNum(d)}</td><td class="num">${formatNum(frozen)}</td><td class="num">${lora>0?formatNum(lora):'—'}</td><td class="num">${formatNum(frozen+lora)}</td></tr>`;
   });
 
-  tblHTML+=`<tr><td class="section-label" colspan="5">Feed-Forward (${layers} layers × 3 matrices)</td></tr>`;
+  tblHTML+=`<tr><td class="section-label" colspan="5">Feed-Forward (${lVal} layers × 3 matrices)</td></tr>`;
   ffModules.forEach(m=>{
     const det=loraDetail.find(x=>x.name.startsWith(m));
     const frozen=layers*(m==='down'?ffDownParams:ffGateUpParams);
@@ -511,8 +510,8 @@ function calc(){
   });
 
   // Calculate other params properly
-  const attnLayerNorm=layers*2*d;
-  const finalLayerNorm=d;
+  const attnLayerNorm=lVal*2*dVal;
+  const finalLayerNorm=dVal;
   const totalNorms=attnLayerNorm+finalLayerNorm;
   const otherSmall=otherFrozen-totalNorms>0?otherFrozen-totalNorms:0;
 
@@ -521,7 +520,7 @@ function calc(){
 
   tblHTML+=`
     <tr><td class="section-label" colspan="5">Normalization & Other</td></tr>
-    <tr><td>Layer Norms (2 per layer × ${layers})</td><td>2 × ${layers} × ${formatNum(d)}</td><td class="num">${formatNum(attnLayerNorm)}</td><td class="num">—</td><td class="num">${formatNum(attnLayerNorm)}</td></tr>
+    <tr><td>Layer Norms (2 per layer × ${lVal})</td><td>2 × ${lVal} × ${formatNum(d)}</td><td class="num">${formatNum(attnLayerNorm)}</td><td class="num">—</td><td class="num">${formatNum(attnLayerNorm)}</td></tr>
     <tr><td>Final Layer Norm</td><td>1 × ${formatNum(d)}</td><td class="num">${formatNum(finalLayerNorm)}</td><td class="num">—</td><td class="num">${formatNum(finalLayerNorm)}</td></tr>
     <tr><td>Other (positional, biases)</td><td>~</td><td class="num">${formatNum(otherSmall)}</td><td class="num">—</td><td class="num">${formatNum(otherSmall)}</td></tr>
     <tr><td colspan="5" style="font-size:0.65rem;color:var(--tmut);text-align:center;">Layer Norm = learnable scale + shift per dimension (not a matrix). Llama uses RoPE (no learned positional params) and no biases.</td></tr>
@@ -640,13 +639,13 @@ function calc(){
   const activeFFCount=Object.values(activeFF).filter(Boolean).length;
   const loraPerRank=r=>{
     let total=0;
-    if(activeAttn.q) total+=layers*2*d*r;
-    if(activeAttn.k) total+=layers*2*d*r;
-    if(activeAttn.v) total+=layers*2*d*r;
-    if(activeAttn.o) total+=layers*2*d*r;
-    if(activeFF.gate) total+=layers*(d*r+r*ffMid);
-    if(activeFF.up) total+=layers*(d*r+r*ffMid);
-    if(activeFF.down) total+=layers*(ffMid*r+r*d);
+    if(activeAttn.q) total+=lVal*2*dVal*r;
+    if(activeAttn.k) total+=lVal*2*dVal*r;
+    if(activeAttn.v) total+=lVal*2*dVal*r;
+    if(activeAttn.o) total+=lVal*2*dVal*r;
+    if(activeFF.gate) total+=lVal*(dVal*rVal+rVal*ffVal);
+    if(activeFF.up) total+=lVal*(dVal*rVal+rVal*ffVal);
+    if(activeFF.down) total+=lVal*(ffVal*rVal+rVal*dVal);
     return Math.round(total/1e3)*1e3;
   };
 
