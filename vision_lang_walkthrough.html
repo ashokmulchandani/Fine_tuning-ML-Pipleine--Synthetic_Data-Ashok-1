@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vision-Language FT — One Example Step by Step</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8f9fc;--card:#fff;--border:#dde0e6;--text:#1a1d23;--tdim:#4a4f5b;--tmut:#8b909b;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--red:#c62828;--cyan:#007a99;--magenta:#9e2a6b;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;min-height:100vh;}
+.app{max-width:850px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:2rem 0 1.5rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.9rem;}
+
+.step{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin:1.2rem 0;}
+.step h2{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;color:var(--violet);margin-bottom:0.5rem;}
+.step h2 .num{background:var(--violet);color:#fff;width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:0.7rem;margin-right:0.5rem;}
+.step p{font-size:0.88rem;color:var(--tdim);margin-bottom:0.5rem;}
+
+.json-box{background:#1e1e1e;color:#d4d4d4;font-family:'Space Grotesk',monospace;font-size:0.8rem;padding:0.8rem 1rem;border-radius:8px;line-height:1.8;margin:0.5rem 0;}
+.text-box{background:#1e1e1e;color:#ce9178;font-family:'Space Grotesk',monospace;font-size:0.75rem;padding:0.8rem 1rem;border-radius:8px;line-height:1.6;margin:0.5rem 0;}
+
+.arrow-down{text-align:center;font-size:2rem;color:var(--violet);margin:0.2rem 0;}
+
+/* Token flow */
+.token-bar{display:flex;gap:2px;height:40px;border-radius:8px;overflow:hidden;margin:0.5rem 0;align-items:stretch;}
+.token-bar .vis-tok{background:var(--cyan);flex:1;display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.5rem;font-weight:700;}
+.token-bar .txt-tok{background:var(--amber);flex:1;display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.5rem;font-weight:700;}
+
+.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.75rem 1rem;margin:0.5rem 0;font-size:0.82rem;}
+
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:0.5rem 0;}
+.cmp-box{background:var(--raised);border-radius:8px;padding:0.75rem;text-align:center;}
+.cmp-box.img{border:2px solid var(--cyan);}
+.cmp-box.txt{border:2px solid var(--amber);}
+.cmp-box h4{font-family:'Space Grotesk',sans-serif;font-size:0.65rem;margin-bottom:0.3rem;}
+.cmp-box.img h4{color:var(--cyan);}
+.cmp-box.txt h4{color:var(--amber);}
+
+@media(max-width:768px){.app{padding:0.5rem;}.cmp{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>One X-ray Example — Start to Finish</h1>
+  <p>Trace one training example from JSON → Alpaca text → tokens → combined input</p>
+</header>
+
+<!-- STEP 1: The JSON -->
+<div class="step">
+  <h2><span class="num">1</span> You Write One JSON Example</h2>
+  <p>One chest X-ray image + one question + one doctor's answer. That's it.</p>
+  <div class="json-box">
+{<br>
+&nbsp;&nbsp;<span style="color:#ce9178;">"image"</span>: <span style="color:#ce9178;">"chest_xray_001.jpg"</span>,<br>
+&nbsp;&nbsp;<span style="color:#ce9178;">"instruction"</span>: <span style="color:#ce9178;">"What does this chest X-ray show?"</span>,<br>
+&nbsp;&nbsp;<span style="color:#ce9178;">"output"</span>: <span style="color:#ce9178;">"Bilateral pneumonia in the right lower lobe."</span><br>
+}
+  </div>
+  <p style="font-size:0.75rem;color:var(--tmut);">3 fields. Same as text FT, just with "image" added.</p>
+</div>
+
+<div class="arrow-down">↓</div>
+
+<!-- STEP 2: Split into two paths -->
+<div class="step">
+  <h2><span class="num">2</span> Two Paths Split Here</h2>
+  <p>The "image" field goes to the vision encoder. The "instruction" and "output" go through Alpaca formatting.</p>
+
+  <div class="cmp">
+    <div class="cmp-box img">
+      <h4>🖼️ Path A: Image</h4>
+      <p style="font-size:0.75rem;color:var(--tdim);">"chest_xray_001.jpg"<br>↓<br>CLIP-ViT-L (304M params, FROZEN)<br>↓<br><strong style="color:var(--cyan);">197 visual tokens</strong><br>each = 1024 numbers<br>↓<br>Project to 4096-dim</p>
+    </div>
+    <div class="cmp-box txt">
+      <h4>📝 Path B: Text (Alpaca)</h4>
+      <p style="font-size:0.75rem;color:var(--tdim);">format_instruction()<br>↓<br>One long string<br>↓<br>Tokenizer<br>↓<br><strong style="color:var(--amber);">Text token IDs</strong><br>each = 4096-dim (embedding)</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>Path A and Path B run COMPLETELY independently.</strong> The image never touches format_instruction(). The text never goes through CLIP-ViT-L. They only meet at the LLM input.
+  </div>
+</div>
+
+<div class="arrow-down">↓</div>
+
+<!-- STEP 3: Path B — Alpaca string -->
+<div class="step">
+  <h2><span class="num">3</span> Path B: Text → Alpaca String → Token IDs</h2>
+  <p>The instruction and output are formatted using the SAME Alpaca template as text fine-tuning.</p>
+
+  <p style="font-size:0.75rem;color:var(--tmut);margin-bottom:0.3rem;">format_instruction() produces this exact string:</p>
+  <div class="text-box">
+Below is an instruction. Write a response.<br><br>
+### Instruction:<br>
+What does this chest X-ray show?<br><br>
+### Response:<br>
+Bilateral pneumonia in the right lower lobe.
+  </div>
+
+  <p style="font-size:0.75rem;color:var(--tmut);margin-top:0.5rem;">Then tokenized (simplified — first few tokens):</p>
+  <div class="json-box" style="font-size:0.7rem;">
+[1, 464, 8522, 318, 247, 3749, ... &nbsp;<span style="color:#6a9955;">// "Below", "is", "an", "instruction"...</span>]
+<br>...more tokens...<br>
+[..., 318, 464, 8522, 318, 247, ... &nbsp;<span style="color:#6a9955;">// "Bilateral", "pneumonia"...</span>]
+  </div>
+  <p style="font-size:0.7rem;color:var(--tmut);">Each integer → looked up in embedding table → <strong>4096-dim vector</strong></p>
+</div>
+
+<div class="arrow-down">↓</div>
+
+<!-- STEP 4: WHAT THE LLM SEES -->
+<div class="step">
+  <h2><span class="num">4</span> What the LLM Actually Receives</h2>
+  <p>Path A's 197 visual tokens are placed <strong>at the front</strong>. Path B's text tokens follow. The LLM sees one flat list.</p>
+
+  <div class="token-bar">
+    <div class="vis-tok">v₁</div><div class="vis-tok">v₂</div><div class="vis-tok">v₃</div>
+    <div style="background:var(--cyan);flex:0.5;display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.45rem;">···</div>
+    <div class="vis-tok">v₁₉₇</div>
+    <div class="txt-tok">t₁</div><div class="txt-tok">t₂</div><div class="txt-tok">t₃</div>
+    <div style="background:var(--amber);flex:0.5;display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.45rem;">···</div>
+    <div class="txt-tok">tₙ</div>
+  </div>
+  <p style="font-size:0.65rem;color:var(--tmut);text-align:center;margin-top:0.3rem;">
+    <span style="color:var(--cyan);">■ 197 visual tokens</span> + <span style="color:var(--amber);">■ ~300 text tokens</span> = ~500 total tokens, each 4096-dim
+  </p>
+
+  <div class="callout">
+    <strong>🧠 THIS is what the Transformer processes:</strong><br><br>
+    Token 1: [0.12, -0.34, 0.78, ...] ← image patch (from CLIP-ViT-L)<br>
+    Token 2: [0.45, 0.21, -0.11, ...] ← image patch<br>
+    ···<br>
+    Token 198: [-0.28, 0.55, 0.31, ...] ← "Below" (from embedding table)<br>
+    Token 199: [0.63, -0.17, 0.89, ...] ← "is" (from embedding table)<br><br>
+    <strong>Every token is 4096 numbers. The LLM processes them ALL through the same Q/K/V attention. It has no idea which tokens came from the image and which came from the text.</strong>
+  </div>
+</div>
+
+<div class="step">
+  <h2><span class="num">5</span> The LLM Generates the Answer</h2>
+  <p>Same as text-only. It reads the 500 tokens, processes through 32 Transformer layers (with LoRA on Q+V), and predicts the next word — which should be the medical answer it learned during training.</p>
+
+  <div class="json-box" style="font-size:0.75rem;">
+<span style="color:#6a9955;">Training label (from JSON output):</span>
+"Bilateral pneumonia in the right lower lobe."
+
+<span style="color:#6a9955;">The LLM's job:</span>
+See 500 tokens → predict "Bilateral" → predict "pneumonia" → predict "in" → ...
+<span style="color:#6a9955;">Each prediction compared to the label → loss → gradient → update LoRA (B and A)</span>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
