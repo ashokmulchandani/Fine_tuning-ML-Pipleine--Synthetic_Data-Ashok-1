@@ -4,377 +4,634 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Phase 6B: MLOps & Deployment</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--cyan:#007a99;--magenta:#9e2a6b;--red:#c62828;}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;min-height:100vh;}
-.app{max-width:1000px;margin:0 auto;padding:1.5rem;}
-
-.header{text-align:center;padding:2rem 0 1rem;}
-.header .badge{display:inline-block;font-family:'Space Grotesk',sans-serif;font-size:0.7rem;letter-spacing:0.12em;color:var(--cyan);border:1.5px solid rgba(0,122,153,0.3);background:rgba(0,122,153,0.06);border-radius:100px;padding:0.3em 1.2em;margin-bottom:0.75rem;font-weight:600;}
-.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--violet);}
-.header p{color:var(--tdim);font-size:0.95rem;}
-
-.topbar{position:sticky;top:0;z-index:100;background:rgba(250,251,252,0.9);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0.5rem 1.5rem;display:flex;align-items:center;gap:0.8rem;}
-.topbar .logo{font-family:'Space Grotesk',sans-serif;font-size:0.65rem;letter-spacing:0.12em;color:var(--violet);white-space:nowrap;font-weight:600;}
-.topbar .dots{display:flex;gap:0.3rem;flex:1;justify-content:center;}
-.topbar .dot{width:22px;height:3px;border-radius:2px;background:var(--border);transition:0.3s;cursor:pointer;}
-.topbar .dot.done{background:var(--green);}
-.topbar .dot.active{background:var(--violet);box-shadow:0 0 6px rgba(91,58,168,0.3);}
-.topbar .step-label{font-family:'Space Grotesk',monospace;font-size:0.6rem;color:var(--tmut);}
-
-.chips{display:flex;flex-wrap:wrap;gap:0.4rem;justify-content:center;margin:1rem 0;}
-.chip{font-family:'Space Grotesk',sans-serif;font-size:0.6rem;padding:0.4em 1em;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--tmut);cursor:pointer;transition:0.2s;}
-.chip:hover{border-color:var(--tmut);}
-.chip.visited{border-color:var(--green);color:var(--green);background:rgba(26,110,52,0.06);}
-.chip.current{border-color:var(--violet);color:var(--violet);background:var(--vbg);}
-
-.slide{opacity:0;transform:translateY(20px);animation:fadeIn 0.45s ease forwards;}
-@keyframes fadeIn{to{opacity:1;transform:translateY(0);}}
-
-.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.75rem;margin-bottom:1rem;}
-.card h2{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;font-weight:600;margin-bottom:0.8rem;display:flex;align-items:center;gap:0.5rem;}
-.card h2 .num{font-size:0.7rem;color:var(--violet);background:var(--vbg);border-radius:6px;padding:0.2em 0.6em;font-weight:700;}
-.card p{color:var(--tdim);margin-bottom:0.7rem;font-size:0.95rem;}
-
-.code-box{background:#1e1e1e;border:1px solid #333;border-left:3px solid var(--violet);border-radius:8px;padding:1rem 1.25rem;margin:0.75rem 0;font-family:'Space Grotesk',monospace;font-size:0.85rem;line-height:1.8;white-space:pre-wrap;overflow-x:auto;color:#d4d4d4;}
-
-.compare{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0;}
-.cmp-card{background:var(--raised);border:1px solid var(--border);border-radius:10px;padding:1.25rem;}
-
-.flow{display:flex;align-items:center;gap:0.3rem;flex-wrap:wrap;justify-content:center;margin:1rem 0;font-family:'Space Grotesk',sans-serif;font-size:0.62rem;}
-.flow-step{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:0.4rem 0.7rem;text-align:center;}
-.flow-arrow{color:var(--violet);font-size:1rem;}
-
-.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.75rem 1rem;margin:0.75rem 0;font-size:0.88rem;line-height:1.7;}
-
-.fun-fact{background:linear-gradient(135deg,rgba(91,58,168,0.04),rgba(0,122,153,0.04));border:1px solid var(--border);border-radius:14px;padding:1rem 1.25rem;margin:1rem 0;display:flex;align-items:flex-start;gap:0.7rem;font-size:0.88rem;}
-
-.nav-row{display:flex;justify-content:space-between;margin:1.5rem 0 3rem;}
-.nav-btn{font-family:'Space Grotesk',sans-serif;font-size:0.72rem;font-weight:600;letter-spacing:0.06em;padding:0.65em 1.6em;border:1.5px solid var(--border);border-radius:100px;background:var(--bg);color:var(--text);cursor:pointer;transition:0.2s;}
-.nav-btn:hover{border-color:var(--violet);color:var(--violet);}
-.nav-btn:disabled{opacity:0.3;cursor:not-allowed;}
-.nav-btn.primary{background:var(--violet);border-color:var(--violet);color:#fff;}
-
-@media(max-width:768px){.app{padding:0.75rem;}.compare{grid-template-columns:1fr;}}
+:root{--bg:#06090f;--card:#0d1117;--raised:#161b22;--border:#21262d;--text:#e6edf3;--tdim:#8b949e;--tmut:#484f58;--cyan:#39d2ff;--cyan-bg:#39d2ff15;--amber:#ffb347;--amber-bg:#ffb34715;--green:#3fb950;--green-bg:#3fb95015;--magenta:#ff6ec7;--magenta-bg:#ff6ec715;--red:#f85149;--violet:#a371f7;--vbg:#a371f715;--radius:14px;--radius-sm:8px;--transition:0.3s cubic-bezier(0.4,0,0.2,1)}
+body.light{--bg:#f6f8fa;--card:#fff;--raised:#e8ecf0;--border:#d0d7de;--text:#1f2328;--tdim:#656d76;--tmut:#8b949e;--cyan:#0969da;--cyan-bg:#ddf4ff;--amber:#9a6700;--amber-bg:#fff8c5;--green:#1a7f37;--green-bg:#dafbe1;--magenta:#bf3989;--magenta-bg:#fbefff;--red:#cf222e;--violet:#8250df;--vbg:#f3effc}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.65;transition:background 0.3s,color 0.3s}
+.bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+.app{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:2rem}
+.theme-toggle{position:fixed;top:0.7rem;right:2rem;z-index:200;background:var(--raised);border:1px solid var(--border);color:var(--text);font-size:1.1rem;cursor:pointer;padding:0.35rem 0.6rem;border-radius:6px;transition:var(--transition);font-family:'JetBrains Mono',monospace}
+.theme-toggle:hover{border-color:var(--cyan);color:var(--cyan)}
+.topbar{position:sticky;top:0;z-index:100;background:rgba(6,9,15,0.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0.6rem 2rem;display:flex;align-items:center;gap:1rem;font-size:0.8rem}
+.topbar .logo{font-family:'Orbitron',sans-serif;font-size:0.7rem;letter-spacing:0.15em;color:var(--cyan);white-space:nowrap}
+.topbar .step-dots{display:flex;gap:0.4rem;flex:1;justify-content:center}
+.topbar .step-dot{width:28px;height:4px;border-radius:2px;background:var(--border);transition:var(--transition);cursor:pointer}
+.topbar .step-dot.done{background:var(--green)}.topbar .step-dot.active{background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.topbar .step-dot:hover{background:var(--tdim)}
+.topbar .step-label{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--tdim);white-space:nowrap}
+.header{text-align:center;padding:3rem 0 1rem}
+.header .phase-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:0.7rem;letter-spacing:0.2em;color:var(--cyan);border:1px solid var(--cyan-bg);border-radius:100px;padding:0.4em 1.4em;margin-bottom:1rem}
+.header h1{font-family:'Orbitron',sans-serif;font-size:clamp(1.3rem,4vw,2rem);font-weight:700;background:linear-gradient(135deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:0.5rem}
+.header .tagline{color:var(--tdim);font-size:0.9rem}
+.topic-list{display:flex;flex-wrap:wrap;gap:0.4rem;justify-content:center;margin:1.5rem 0 1rem}
+.topic-chip{font-family:'JetBrains Mono',monospace;font-size:0.6rem;letter-spacing:0.04em;padding:0.3rem 0.7rem;border-radius:100px;border:1px solid var(--border);color:var(--tmut);cursor:pointer;transition:var(--transition);background:transparent}
+.topic-chip.visited{border-color:var(--green);color:var(--green);background:var(--green-bg)}.topic-chip.current{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-bg)}
+.fun-fact{background:linear-gradient(135deg,var(--amber-bg),var(--magenta-bg));border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.65rem 1.2rem;margin-bottom:1.5rem;font-size:0.78rem;color:var(--tdim);display:flex;align-items:center;gap:0.6rem}
+.fun-fact .bulb{font-size:1.2rem;flex-shrink:0}.fun-fact strong{color:var(--amber)}
+.slide{animation:slideIn 0.35s ease}@keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:2rem}
+.card h2{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:600;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem;color:var(--text)}
+.card h2 .num{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--cyan);background:var(--cyan-bg);border-radius:6px;padding:0.2em 0.6em}
+.card p{color:var(--tdim);margin-bottom:1rem;font-size:0.95rem}
+.card h3{font-family:'Orbitron',sans-serif;font-size:0.85rem;color:var(--cyan);margin:1.2rem 0 0.5rem}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+.compare-card{background:var(--raised);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1.2rem;transition:var(--transition)}
+.compare-card:hover{transform:translateY(-3px)}.compare-card.bad{border-left:3px solid var(--red)}.compare-card.good{border-left:3px solid var(--green)}.compare-card.best{border-left:3px solid var(--cyan)}
+.compare-card h4{font-family:'Orbitron',sans-serif;font-size:0.72rem;margin-bottom:0.5rem}.compare-card.bad h4{color:var(--red)}.compare-card.good h4{color:var(--green)}.compare-card.best h4{color:var(--cyan)}
+.compare-card p{font-size:0.72rem!important;color:var(--tdim)!important}
+.compare-grid.three{grid-template-columns:1fr 1fr 1fr}
+.pipeline{display:flex;align-items:center;gap:0.3rem;justify-content:center;flex-wrap:wrap;margin:1rem 0}
+.pipeline-stage{background:var(--raised);border:1px solid var(--border);border-radius:6px;padding:0.5rem 0.7rem;text-align:center;font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:var(--tdim);min-width:70px}
+.pipeline-stage.highlight{border-color:var(--cyan);background:var(--cyan-bg);color:var(--cyan)}
+.pipeline-stage.dvc{border-color:var(--amber);background:var(--amber-bg);color:var(--amber)}
+.pipeline-stage.ml{border-color:var(--violet);background:var(--vbg);color:var(--violet)}
+.pipeline-stage.ev{border-color:var(--green);background:var(--green-bg);color:var(--green)}
+.pipeline-arrow{font-size:0.9rem;color:var(--cyan)}
+.code-box{background:#1e1e1e;border:1px solid #333;border-left:3px solid var(--cyan);border-radius:8px;padding:1rem 1.25rem;margin:1rem 0;font-family:'JetBrains Mono',monospace;font-size:0.6rem;line-height:1.8;white-space:pre-wrap;overflow-x:auto;color:#d4d4d4;position:relative}
+.code-wrapper{position:relative;margin:1rem 0}.copy-btn2{position:absolute;top:8px;right:8px;font-family:'JetBrains Mono',monospace;font-size:0.55rem;font-weight:600;padding:0.3em 0.7em;border:1px solid #555;border-radius:6px;background:#2d2d2d;color:#ccc;cursor:pointer;transition:0.15s;opacity:0;z-index:5}
+.code-wrapper:hover .copy-btn2{opacity:1}.copy-btn2:hover{background:#333;color:var(--cyan);border-color:var(--cyan)}.copy-btn2.copied{opacity:1;background:#2d2d2d;color:var(--green);border-color:var(--green)}
+.eq-box{background:rgba(0,0,0,0.4);border-left:3px solid var(--cyan);border-radius:var(--radius-sm);padding:1rem 1.25rem;margin:1rem 0;font-family:'JetBrains Mono',monospace;font-size:0.7rem;line-height:1.8;color:var(--text);white-space:pre-wrap;overflow-x:auto}
+.quiz{background:var(--raised);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1.2rem;margin-top:1.5rem}
+.quiz .question{font-family:'Orbitron',sans-serif;font-size:0.82rem;color:var(--text);margin-bottom:0.8rem}
+.quiz .options{display:flex;flex-direction:column;gap:0.4rem}
+.quiz .option{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:0.6rem 1rem;font-size:0.82rem;color:var(--tdim);cursor:pointer;transition:var(--transition)}
+.quiz .option:hover{border-color:var(--cyan);color:var(--cyan)}.quiz .option.correct{border-color:var(--green);background:var(--green-bg);color:var(--green)}.quiz .option.wrong{border-color:var(--red);background:#f8514920;color:var(--red)}
+.quiz .feedback{display:none;margin-top:0.8rem;padding:0.6rem 1rem;border-radius:6px;font-size:0.82rem}.quiz .feedback.show{display:block}.quiz .feedback.correct{background:var(--green-bg);color:var(--green)}.quiz .feedback.wrong{background:#f8514920;color:var(--red)}
+.nav-row{display:flex;gap:1rem;justify-content:center;margin-top:1.5rem}
+.nav-btn{font-family:'JetBrains Mono',monospace;font-size:0.8rem;padding:0.6rem 1.8rem;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--tdim);cursor:pointer;transition:var(--transition)}
+.nav-btn:hover{border-color:var(--cyan);color:var(--cyan)}.nav-btn:disabled{opacity:0.3;cursor:not-allowed}.nav-btn.primary{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-bg)}
+.callout{background:var(--cyan-bg);border:1px solid var(--cyan);border-radius:8px;padding:0.7rem 1rem;margin:0.8rem 0;display:flex;align-items:center;gap:0.6rem;font-size:0.72rem;color:var(--tdim)}
+.callout.amber{background:var(--amber-bg);border-color:var(--amber)}
+.callout.green{background:var(--green-bg);border-color:var(--green)}
+table.param{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:0.55rem;margin:0.5rem 0}
+table.param th{padding:0.4rem;border:1px solid var(--border);color:var(--tdim);background:var(--raised)}table.param td{padding:0.4rem;border:1px solid var(--border);text-align:center}
+table.param2{width:100%;border-collapse:collapse;font-size:0.82rem;margin:0.5rem 0}
+table.param2 th{padding:0.5rem 0.8rem;border-bottom:2px solid var(--border);color:var(--tdim);text-align:left;font-family:'Orbitron',sans-serif;font-size:0.65rem}
+table.param2 td{padding:0.5rem 0.8rem;border-bottom:1px solid var(--border);font-size:0.8rem}
+.big-stat{text-align:center;margin:1rem 0}.big-stat .number{font-family:'Orbitron',sans-serif;font-size:2.2rem;font-weight:700;background:linear-gradient(135deg,var(--cyan),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.big-stat .label{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--tmut);margin-top:0.2rem}
+.anim-box{background:var(--raised);border:1px solid var(--border);border-radius:10px;padding:1rem;margin:0.5rem 0;min-height:140px}
+.anim-btn{font-family:'JetBrains Mono',monospace;font-size:0.55rem;padding:0.4em 0.9em;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--tmut);cursor:pointer;transition:var(--transition)}
+.anim-btn.active{background:var(--cyan-bg)!important;border-color:var(--cyan)!important;color:var(--cyan)!important}
+.anim-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+@media(max-width:768px){.app{padding:1rem}.compare-grid,.compare-grid.three{grid-template-columns:1fr}.card{padding:1.2rem}}
 </style>
 </head>
 <body>
-
-<nav class="topbar">
-  <span class="logo">Phase 6B</span>
-  <div class="dots" id="dots"></div>
-  <span class="step-label" id="stepLabel">1/9</span>
-</nav>
-
+<canvas class="bg-canvas" id="bgCanvas"></canvas>
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">☀️</button>
+<nav class="topbar"><span class="logo">FINE-TUNING — PHASE 6B</span><div class="step-dots" id="stepDots"></div><span class="step-label" id="stepLabel">1/9</span></nav>
 <div class="app">
-
-<header class="header">
-  <div class="badge">⬜ NEW</div>
-  <h1>MLOps & Deployment</h1>
-  <p>From experiment to production — track, version, deploy, monitor, retrain</p>
-</header>
-
-<div class="chips" id="chips"></div>
-<div class="fun-fact" id="funFact"><span style="font-size:1.3rem;">💡</span><span id="funFactText"></span></div>
+<header class="header"><div class="phase-badge">🔧 PHASE 6B — MLOps & DEPLOYMENT</div><h1>MLOps & Deployment for Fine-Tuned Models</h1><p class="tagline">Track (MLflow) + Version (DVC) + Deploy (vLLM) + Monitor (Evidently) — one pipeline, one command: dvc repro</p></header>
+<div class="topic-list" id="topicChips"></div>
+<div class="fun-fact" id="funFact"><span class="bulb">💡</span><span class="fact-text" id="funFactText"></span></div>
 <div id="slideContainer"></div>
-
-<div class="nav-row">
-  <button class="nav-btn" id="prevBtn" onclick="goTo(cur-1)">← Previous</button>
-  <button class="nav-btn primary" id="nextBtn" onclick="goTo(cur+1)">Next →</button>
-</div>
-
+<div class="nav-row"><button class="nav-btn" id="prevBtn" onclick="goTo(cur-1)">← Previous</button><button class="nav-btn primary" id="nextBtn" onclick="goTo(cur+1)">Next →</button></div>
 </div>
 
 <script>
-const slides=[
-{id:'6B.1',title:'MLflow — Track Every Experiment',
-fact:'MLflow was created by Databricks in 2018 and is now the de-facto standard for ML experiment tracking. It is used by OpenAI, Microsoft, and thousands of ML teams.',
-render:()=>`
+function toggleTheme(){document.body.classList.toggle('light');document.getElementById('themeToggle').textContent=document.body.classList.contains('light')?'🌙':'☀️';localStorage.setItem('p6b-theme',document.body.classList.contains('light')?'light':'dark')}
+if(localStorage.getItem('p6b-theme')==='light'){document.body.classList.add('light');document.getElementById('themeToggle').textContent='🌙'}
+(function(){var c=document.getElementById('bgCanvas'),ctx=c.getContext('2d'),p=[];function r(){c.width=window.innerWidth;c.height=window.innerHeight}r();window.addEventListener('resize',r);for(var i=0;i<50;i++)p.push({x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-0.5)*0.3,vy:(Math.random()-0.5)*0.3,rr:Math.random()*2+0.5});function a(){ctx.clearRect(0,0,c.width,c.height);var il=document.body.classList.contains('light');var lc=il?'rgba(9,105,218,0.05)':'rgba(57,210,255,0.05)';var dc=il?'rgba(9,105,218,0.25)':'rgba(57,210,255,0.25)';p.forEach(function(pp){pp.x+=pp.vx;pp.y+=pp.vy;if(pp.x<0)pp.x=c.width;if(pp.x>c.width)pp.x=0;if(pp.y<0)pp.y=c.height;if(pp.y>c.height)pp.y=0});for(var i=0;i<p.length;i++)for(var j=i+1;j<p.length;j++){var dx=p[i].x-p[j].x,dy=p[i].y-p[j].y;if(Math.sqrt(dx*dx+dy*dy)<100){ctx.beginPath();ctx.moveTo(p[i].x,p[i].y);ctx.lineTo(p[j].x,p[j].y);ctx.strokeStyle=lc;ctx.lineWidth=0.5;ctx.stroke()}}p.forEach(function(pp){ctx.beginPath();ctx.arc(pp.x,pp.y,pp.rr,0,Math.PI*2);ctx.fillStyle=dc;ctx.fill()});requestAnimationFrame(a)}a()})()
+function copyCode(el){var txt=el.parentElement.querySelector('.code-box').innerText;navigator.clipboard.writeText(txt).then(function(){el.textContent='✓ Copied';el.classList.add('copied');setTimeout(function(){el.textContent='📋 Copy';el.classList.remove('copied')},2000)})}
+function checkQuiz(id,el){var fb=document.getElementById(id+'-fb');var opts=el.parentElement.querySelectorAll('.option');if(el.dataset.correct==='true'){el.classList.add('correct');fb.className='feedback correct show';fb.textContent='✅ Correct! '+{q0:'MLflow tracks experiments, DVC versions datasets. Together they answer: "Which exact code + data produced this model?" Without both, you cannot reproduce any result.',q1:'DVC detects that data changed (new hash), re-runs only the affected stages, and skips the rest. This is the caching superpower — change one CSV row, re-run only what depends on it.',q2:'The run that produced the lowest loss with your production adapter. MLflow makes this trivial — sort by final_loss, click the best run, see every parameter that produced it. All in the UI.',q3:'The model won\'t crash — it will respond with wrong or outdated information. Traditional health checks (200 OK, latency < 500ms) all pass. Only drift detection catches the silent degradation.',q4:'DVC repro traverses the pipeline DAG starting from the changed data. prepare_data re-runs (new hash), train re-runs (new input), evaluate re-runs (new adapter). All cache-missed stages execute in dependency order.',q5:'Batch is for overnight reports (cheap), real-time is for chatbots/APIs (fast), streaming is for IoT/sensors (continuous). For fine-tuned LLMs, real-time via vLLM is the sweet spot — 100x faster than pipeline().',q6:'vLLM uses PagedAttention — a virtual memory system for the KV-cache that eliminates fragmentation. Combined with continuous batching, it achieves 10-100x throughput vs naive pipeline(). Same model, different serving engine.'}[id]||'Great understanding!'}else{el.classList.add('wrong');fb.className='feedback wrong show';fb.textContent='❌ Not quite. The correct answer is A. '+(id==='q0'?'Git versions code. MLflow versions experiments. DVC versions data. You need all three for reproducibility.':id==='q1'?'DVC uses file hashes. If nothing changed, nothing re-runs. This is fundamentally different from Makefiles (timestamps) or CI/CD (always re-run).':id==='q2'?'Every run is recorded automatically. The registry stages (Staging→Production) add governance on top of tracking.':id==='q3'?'AI models degrade silently. Server health checks pass while response quality tanks. Drift detection is NOT optional.':id==='q4'?'DVC creates a DAG from your pipeline definition. Change one input, only downstream dependencies re-run. Everything else uses cached outputs.':id==='q5'?'The pattern matters. Batch for reports, real-time for interactive, streaming for continuous. Pick based on latency requirements and cost tolerance.':id==='q6'?'PagedAttention is the key innovation — it\'s virtual memory for transformer attention. Without it, KV-cache fragmentation wastes 60-80% of VRAM.':'')}opts.forEach(function(o){o.style.pointerEvents='none'});opts.forEach(function(o){if(o.dataset.correct==='true')o.classList.add('correct')})}
+
+const S=[{
+  id:'6B.1',title:'MLflow + DVC — The Twin Pillars of Reproducible ML',
+  fact:'<strong>Git versions code. DVC versions data. MLflow versions experiments.</strong> Without all three, you cannot answer: "What exact code + data + parameters produced this adapter 3 months ago?"',
+  render:()=>`
 <div class="slide"><div class="card">
-<h2><span class="num">6B.1</span> MLflow — Git for Model Experiments</h2>
-<p>Every time you fine-tune, MLflow logs: <strong>what parameters</strong> you used, <strong>what metrics</strong> you got, and <strong>what model</strong> you produced.</p>
+<h2><span class="num">6B.1</span> MLflow + DVC — The Reproducibility Trinity</h2>
+<p>Fine-tuning without MLOps is alchemy. You produce an adapter, deploy it, and 3 months later — when something breaks — <strong>you cannot reproduce it.</strong></p>
 
+<div class="compare-grid three">
+<div class="compare-card best"><h4>🟢 Git</h4><p><strong>Versions: Code</strong><br><br><code>format_instruction()</code>, training notebook, LoRA config.<br><br>git commit → git push → anyone can see the code.</p></div>
+<div class="compare-card good"><h4>🟡 DVC</h4><p><strong>Versions: Data</strong><br><br><code>instruction_data.csv</code> (500KB → 5MB → 50MB).<br><br>dvc add → dvc push → S3/GDrive. Git tracks the .dvc pointer.</p></div>
+<div class="compare-card best"><h4>🟣 MLflow</h4><p><strong>Versions: Experiments</strong><br><br>r=8/lr=2e-4 → loss=0.32.<br>r=16/lr=2e-4 → loss=0.28.<br><br>Compare runs side-by-side. Register the best one as "Production".</p></div>
+</div>
+
+<h3>The Question Every Fine-Tuning Project Must Answer</h3>
+<table class="param2" style="margin:0.5rem 0;">
+<tr><th style="width:250px;">Question</th><th>Tool</th><th>How</th></tr>
+<tr><td>What code trained this adapter?</td><td style="color:var(--cyan);">Git</td><td style="font-size:0.7rem;">git log adapter_model.safetensors → commit hash</td></tr>
+<tr><td>What data was it trained on?</td><td style="color:var(--amber);">DVC</td><td style="font-size:0.7rem;">dvc checkout instruction_data.csv.dvc → exact version</td></tr>
+<tr><td>What hyperparameters were used?</td><td style="color:var(--violet);">MLflow</td><td style="font-size:0.7rem;">mlflow ui → click run → params: r, lr, epochs</td></tr>
+<tr><td>What was the final loss?</td><td style="color:var(--violet);">MLflow</td><td style="font-size:0.7rem;">mlflow ui → metrics: final_loss=0.32</td></tr>
+<tr><td>Can I reproduce the exact adapter?</td><td style="color:var(--green);">All 3</td><td style="font-size:0.7rem;">git checkout <hash> && dvc checkout && dvc repro train</td></tr>
+</table>
+
+<div style="text-align:center;margin:1rem 0;">
+<svg width="480" height="120" style="max-width:100%;font-family:'JetBrains Mono',monospace;">
+  <text x="240" y="15" fill="#8b949e" font-size="9" text-anchor="middle">The Reproducibility Trinity</text>
+  <circle cx="130" cy="80" r="45" fill="rgba(57,210,255,0.08)" stroke="#39d2ff" stroke-width="1.5"/>
+  <text x="130" y="75" fill="#39d2ff" font-size="9" text-anchor="middle" font-weight="700">Git</text>
+  <text x="130" y="92" fill="#8b949e" font-size="7" text-anchor="middle">Code</text>
+  <circle cx="290" cy="60" r="42" fill="rgba(255,179,71,0.08)" stroke="#ffb347" stroke-width="1.5"/>
+  <text x="290" y="55" fill="#ffb347" font-size="9" text-anchor="middle" font-weight="700">DVC</text>
+  <text x="290" y="72" fill="#8b949e" font-size="7" text-anchor="middle">Data</text>
+  <circle cx="370" cy="85" r="40" fill="rgba(163,113,247,0.08)" stroke="#a371f7" stroke-width="1.5"/>
+  <text x="370" y="80" fill="#a371f7" font-size="9" text-anchor="middle" font-weight="700">MLflow</text>
+  <text x="370" y="97" fill="#8b949e" font-size="7" text-anchor="middle">Experiments</text>
+  <text x="240" y="110" fill="#3fb950" font-size="8" text-anchor="middle">All 3 = Reproducible Adapter</text>
+</svg>
+</div>
+
+<div class="quiz" id="q0"><div class="question">Why do you need BOTH MLflow AND DVC — can't you just use Git for everything?</div>
+<div class="options">
+<div class="option" data-correct="true" onclick="checkQuiz('q0',this)">A. Git cannot handle large files efficiently (50MB+ CSVs, model weights). DVC stores data in S3/GDrive and tracks pointers in Git. MLflow adds the experiment layer — which run produced the best result? Git+DVC re-creates the data; MLflow tells you which parameters to use.</div>
+<div class="option" onclick="checkQuiz('q0',this)">B. Git can store everything — MLflow and DVC are just redundant wrappers</div>
+<div class="option" onclick="checkQuiz('q0',this)">C. MLflow replaces both Git and DVC for ML projects</div>
+</div><div class="feedback" id="q0-fb"></div></div>
+</div></div>`
+},{
+  id:'6B.2',title:'DVC Pipeline — Data Versioning + Reproducible Stages',
+  fact:'<strong>DVC detects changes by hashing files.</strong> Change one row in instruction_data.csv → new hash → dvc repro re-runs only the affected stages. Everything else uses cache. No wasted GPU time.',
+  render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6B.2</span> DVC — Git for Data, Pipeline for Reproducibility</h2>
+<p>DVC solves two problems: <strong>(1) versioning datasets</strong> too large for Git, and <strong>(2) defining reproducible pipelines</strong> where each stage is cached by its dependencies.</p>
+
+<h3>📐 The 3-Stage DVC Pipeline (our project)</h3>
+<div class="pipeline">
+<div class="pipeline-stage dvc">📊 prepare_data</div><div class="pipeline-arrow" style="color:var(--amber);">→</div>
+<div class="pipeline-stage ml">🧠 train</div><div class="pipeline-arrow" style="color:var(--violet);">→</div>
+<div class="pipeline-stage ev">📈 evaluate</div>
+</div>
+
+<div class="code-wrapper"><button class="copy-btn2" onclick="copyCode(this)">📋 Copy</button>
 <div class="code-box">
-<span style="color:#569cd6;">import</span> mlflow
+<span style="color:#6a9955;"># dvc.yaml — The whole pipeline in one file</span>
+<span style="color:#569cd6;">stages</span>:
+  <span style="color:#569cd6;">prepare_data</span>:
+    <span style="color:#569cd6;">cmd</span>: <span style="color:#ce9178;">python scripts/prepare_data.py</span>
+    <span style="color:#569cd6;">deps</span>:                        <span style="color:#6a9955;"># IF any of these change → re-run</span>
+      - <span style="color:#ce9178;">scripts/prepare_data.py</span>
+      - <span style="color:#ce9178;">data/instruction_data.csv</span>  <span style="color:#6a9955;"># ← DVC hashes this!</span>
+    <span style="color:#569cd6;">outs</span>:
+      - <span style="color:#ce9178;">data/train_split.csv</span>
+      - <span style="color:#ce9178;">data/val_split.csv</span>
 
-<span style="color:#6a9955;"># Start tracking this fine-tuning run</span>
-<span style="color:#569cd6;">with</span> mlflow.start_run(run_name=<span style="color:#ce9178;">"phase5-sft-metformin-r8-lr2e4"</span>):
+  <span style="color:#569cd6;">train</span>:
+    <span style="color:#569cd6;">cmd</span>: <span style="color:#ce9178;">python scripts/train_stage.py</span>
+    <span style="color:#569cd6;">deps</span>:
+      - <span style="color:#ce9178;">scripts/train_stage.py</span>
+      - <span style="color:#ce9178;">data/train_split.csv</span>        <span style="color:#6a9955;"># IF prepare_data re-ran → re-run train</span>
+    <span style="color:#569cd6;">outs</span>:
+      - <span style="color:#ce9178;">models/adapter_model.safetensors</span>
 
-    <span style="color:#6a9955;"># Log ALL parameters (everything you chose)</span>
-    mlflow.log_params({
-        <span style="color:#ce9178;">"r"</span>: <span style="color:#ce9178;">8</span>, <span style="color:#ce9178;">"lora_alpha"</span>: <span style="color:#ce9178;">16</span>, <span style="color:#ce9178;">"lr"</span>: <span style="color:#ce9178;">2e-4</span>,
-        <span style="color:#ce9178;">"epochs"</span>: <span style="color:#ce9178;">10</span>, <span style="color:#ce9178;">"model"</span>: <span style="color:#ce9178;">"TinyLlama-1.1B"</span>,
-        <span style="color:#ce9178;">"dataset"</span>: <span style="color:#ce9178;">"metformin-5-qa"</span>
-    })
+  <span style="color:#569cd6;">evaluate</span>:
+    <span style="color:#569cd6;">cmd</span>: <span style="color:#ce9178;">python scripts/evaluate_stage.py</span>
+    <span style="color:#569cd6;">deps</span>:
+      - <span style="color:#ce9178;">models/adapter_model.safetensors</span>  <span style="color:#6a9955;"># IF train re-ran → re-run evaluate</span>
+    <span style="color:#569cd6;">metrics</span>:
+      - <span style="color:#ce9178;">metrics/evaluation_metrics.json</span>
 
-    <span style="color:#6a9955;"># Train (your existing code)</span>
+<span style="color:#6a9955;"># One command to rule them all:</span>
+<span style="color:#c586c0;">$</span> dvc repro
+<span style="color:#6a9955;"># Stage prepare_data: CACHED (no changes detected)</span>
+<span style="color:#6a9955;"># Stage train: CACHED (dependencies unchanged)</span>
+<span style="color:#6a9955;"># Stage evaluate: CACHED — nothing to do!</span>
+
+<span style="color:#c586c0;">$</span> echo "new Q&A" >> data/instruction_data.csv  <span style="color:#6a9955;"># Add drift data</span>
+<span style="color:#c586c0;">$</span> dvc repro
+<span style="color:#6a9955;"># Stage prepare_data: RUNNING (hash changed!)</span>
+<span style="color:#6a9955;"># Stage train: RUNNING (input changed)</span>
+<span style="color:#6a9955;"># Stage evaluate: RUNNING (adapter changed)</span></div></div>
+
+<div class="compare-grid">
+<div class="compare-card best"><h4>🟢 DVC Caching</h4><p><strong>Hash-based, not time-based.</strong> Unlike Makefiles (timestamps) or CI/CD (always re-run), DVC hashes every dependency. If nothing changed, nothing runs. Even across different machines — same hash = cached.</p></div>
+<div class="compare-card bad"><h4>🔴 Without DVC</h4><p><strong>"Which data version was this trained on?"</strong> You don't know. The CSV file was overwritten 3 times. The adapter was trained last month. Reproducing it requires guessing which backup file to use.</p></div>
+</div>
+
+<div class="quiz" id="q1"><div class="question">You add 50 new Q&A pairs to instruction_data.csv. What happens when you run 'dvc repro'?</div>
+<div class="options">
+<div class="option" data-correct="true" onclick="checkQuiz('q1',this)">A. prepare_data re-runs (data hash changed), producing new train/val splits → train re-runs (input changed), producing a new adapter → evaluate re-runs, validating the new adapter. Every downstream stage that depends on the changed data re-runs. Nothing else does.</div>
+<div class="option" onclick="checkQuiz('q1',this)">B. All 3 stages re-run every time — DVC doesn't cache</div>
+<div class="option" onclick="checkQuiz('q1',this)">C. Only the train stage re-runs because the data changed</div>
+</div><div class="feedback" id="q1-fb"></div></div>
+</div></div>`
+},{
+  id:'6B.3',title:'MLflow Tracking — Log Every Experiment Automatically',
+  fact:'<strong>MLflow automatically records every training run.</strong> Open source, created by Databricks, used by OpenAI & Microsoft. One context manager and every parameter, metric, and artifact is saved forever.',
+  render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6B.3</span> MLflow — Experiment Tracking + Model Registry</h2>
+<p>Our <code>TrackRun</code> context manager wraps every training run. <strong>3 lines of code, zero manual logging.</strong></p>
+
+<div class="code-wrapper"><button class="copy-btn2" onclick="copyCode(this)">📋 Copy</button>
+<div class="code-box">
+<span style="color:#569cd6;">from</span> scripts.mlflow_tracking <span style="color:#569cd6;">import</span> TrackRun
+
+<span style="color:#6a9955;"># Wrap your training in TrackRun — it logs EVERYTHING</span>
+<span style="color:#569cd6;">with</span> TrackRun(<span style="color:#ce9178;">"instruction-ft-medical"</span>, {
+    <span style="color:#ce9178;">"lora_r"</span>: <span style="color:#ce9178;">8</span>,
+    <span style="color:#ce9178;">"lora_alpha"</span>: <span style="color:#ce9178;">16</span>,
+    <span style="color:#ce9178;">"learning_rate"</span>: <span style="color:#ce9178;">2e-4</span>,
+    <span style="color:#ce9178;">"epochs"</span>: <span style="color:#ce9178;">10</span>,
+    <span style="color:#ce9178;">"base_model"</span>: <span style="color:#ce9178;">"TinyLlama-1.1B"</span>,
+}) <span style="color:#569cd6;">as</span> run:
+
+    <span style="color:#6a9955;"># Your existing training code — unchanged!</span>
     trainer.train()
 
-    <span style="color:#6a9955;"># Log metrics (what the training produced)</span>
-    mlflow.log_metrics({<span style="color:#ce9178;">"final_loss"</span>: <span style="color:#ce9178;">0.43</span>, <span style="color:#ce9178;">"steps"</span>: <span style="color:#ce9178;">20</span>})
+    <span style="color:#6a9955;"># Log the final result</span>
+    run.log_metric(<span style="color:#ce9178;">"final_loss"</span>, <span style="color:#ce9178;">0.32</span>)
 
-    <span style="color:#6a9955;"># Save the adapter as an artifact</span>
-    mlflow.log_artifact(<span style="color:#ce9178;">"./instruction_tuned_adapter"</span>)
+    <span style="color:#6a9955;"># Register the adapter in Model Registry</span>
+    run.log_adapter(<span style="color:#ce9178;">"./adapter"</span>)
 
-<span style="color:#6a9955;"># View all runs: mlflow ui -> localhost:5000</span></div>
+<span style="color:#6a9955;"># On exit — auto-logs: duration, GPU memory, python version
+# Output:
+# [MLflow] Experiment: instruction-ft-medical
+# [MLflow] Run: a1b2c3d4...
+# [MLflow] Training completed in 3m 24s
+# [MLflow] Registered model v7 in 'instruction-ft-medical'
+# [MLflow] View results: mlflow ui</span></div></div>
 
-<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1rem 0 0.5rem;">📁 Data Versioning — What Data Was This Trained On?</h3>
-<p style="font-size:0.9rem;color:var(--tdim);">Models are useless without knowing which data version produced them. DVC (Data Version Control) solves this — like Git for datasets.</p>
-
-<div class="code-box">
-<span style="color:#6a9955;"># DVC tracks your training data alongside your code</span>
-<span style="color:#6a9955;"># Install: pip install dvc</span>
-
-<span style="color:#6a9955;"># Initialize DVC in your project</span>
-dvc init
-
-<span style="color:#6a9955;"># Track your dataset (like git add, but for large files)</span>
-dvc add data/instruction_data.json
-git add data/instruction_data.json.dvc .gitignore
-git commit -m <span style="color:#ce9178;">"Add metformin instruction dataset v1"</span>
-
-<span style="color:#6a9955;"># Push data to remote storage (S3, GCS, etc.)</span>
-dvc remote add -d storage s3://my-bucket/datasets
-dvc push
-
-<span style="color:#6a9955;"># Now in MLflow, log which data version was used:</span>
-mlflow.log_param(<span style="color:#ce9178;">"data_version"</span>, <span style="color:#ce9178;">"v1"</span>)
-mlflow.log_param(<span style="color:#ce9178;">"data_hash"</span>, <span style="color:#ce9178;">"a1b2c3"</span>)  <span style="color:#6a9955;"># Git commit hash of .dvc file</span></div>
-
-<div class="callout"><strong>🧠 The 3 things that must be versioned together:</strong> Code (Git) + Data (DVC) + Model (MLflow). If you change the data and retrain, you know exactly which data produced which model. Without data versioning, you're guessing.</div>
-</div></div>`},
-{id:'6B.2',title:'Model Registry — Version & Stage',
-fact:'The MLflow Model Registry lets you manage model versions like Git branches. Each version has a stage: Staging (testing) -> Production (live) -> Archived (retired).',
-render:()=>`
-<div class="slide"><div class="card">
-<h2><span class="num">6B.2</span> Model Registry — Which Version Is in Production?</h2>
-<p>After running 20 experiments, you have 20 adapters. Which one is deployed? Which one is being tested? The registry tracks this.</p>
-
-<div class="code-box">
-<span style="color:#6a9955;"># Register the best model</span>
-mlflow.register_model(
-    <span style="color:#ce9178;">"runs:/abc123/instruction_tuned_adapter"</span>,
-    <span style="color:#ce9178;">"metformin-medical-qa"</span>
-)
-
-<span style="color:#6a9955;"># Promote through stages</span>
-<span style="color:#569cd6;">from</span> mlflow <span style="color:#569cd6;">import</span> MlflowClient
-client = MlflowClient()
-
-<span style="color:#6a9955;"># Version 1: testing internally</span>
-client.transition_model_version_stage(
-    name=<span style="color:#ce9178;">"metformin-medical-qa"</span>, version=<span style="color:#ce9178;">1</span>,
-    stage=<span style="color:#ce9178;">"Staging"</span>
-)
-
-<span style="color:#6a9955;"># Version 1: passed tests -> production!</span>
-client.transition_model_version_stage(
-    name=<span style="color:#ce9178;">"metformin-medical-qa"</span>, version=<span style="color:#ce9178;">1</span>,
-    stage=<span style="color:#ce9178;">"Production"</span>
-)
-
-<span style="color:#6a9955;"># Now your API loads "Production" stage automatically</span>
-model = mlflow.pyfunc.load_model(<span style="color:#ce9178;">"models:/metformin-medical-qa/Production"</span>)</div>
-
-<div class="flow" style="margin:1rem 0;">
-  <div class="flow-step">Experiment<br>r=8, lr=2e-4</div><span class="flow-arrow">→</span>
-  <div class="flow-step">Register<br>Version 1</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--amber);">Staging<br>(testing)</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--green);">Production<br>(live!)</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--tmut);">Archived<br>(retired)</div>
+<h3>Model Registry — Promote Through Stages</h3>
+<div class="pipeline">
+<div class="pipeline-stage" style="border-color:var(--tdim);">v7: loss=0.28<br><span style="font-size:0.4rem;">None</span></div><div class="pipeline-arrow">→</div>
+<div class="pipeline-stage" style="border-color:var(--amber);color:var(--amber);">v7: Staging<br><span style="font-size:0.4rem;">Human Review</span></div><div class="pipeline-arrow">→</div>
+<div class="pipeline-stage" style="border-color:var(--green);color:var(--green);">v7: Production<br><span style="font-size:0.4rem;">Live Traffic</span></div>
 </div>
-</div></div>`},
-{id:'6B.3',title:'Comparing Runs — Find the Best Config',
-fact:'MLflow UI shows all your runs in a table. Sort by loss, filter by hyperparams. Found the best config in 10 seconds instead of scrolling through notebooks.',
-render:()=>`
-<div class="slide"><div class="card">
-<h2><span class="num">6B.3</span> Compare Runs Side by Side</h2>
-<p>You ran 5 experiments with different learning rates. Which was best? MLflow answers instantly.</p>
 
-<table style="width:100%;border-collapse:collapse;font-size:0.82rem;margin:1rem 0;">
-<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.3rem;">Run</th><th style="text-align:left;padding:0.3rem;">lr</th><th style="text-align:left;padding:0.3rem;">epochs</th><th style="text-align:left;padding:0.3rem;">Final Loss</th><th style="text-align:left;padding:0.3rem;">Verdict</th></tr></thead>
-<tbody>
-<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">run-1</td><td>2e-4</td><td>3</td><td style="color:var(--amber);">0.87</td><td>Underfit</td></tr>
-<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">run-2</td><td>2e-4</td><td>10</td><td style="color:var(--green);">0.43</td><td>Good</td></tr>
-<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">run-3</td><td>5e-5</td><td>10</td><td style="color:var(--green);">0.38</td><td style="font-weight:700;color:var(--violet);">⭐ Best</td></tr>
-<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">run-4</td><td>5e-4</td><td>10</td><td style="color:var(--red);">1.23</td><td>lr too high</td></tr>
-<tr><td style="padding:0.3rem;">run-5</td><td>2e-4</td><td>20</td><td style="color:var(--red);">0.15</td><td>Overfit</td></tr>
-</tbody>
+<div class="code-box">
+<span style="color:#6a9955;"># After human reviews v7 in Staging → promote to Production</span>
+<span style="color:#c586c0;">$</span> mlflow models transition instruction-ft-medical <span style="color:#ce9178;">7</span> --stage Production
+
+<span style="color:#6a9955;"># Production model is now v7. Previous v6 is Archived automatically.
+# Rollback: mlflow models transition instruction-ft-medical 6 --stage Production</span></div>
+
+<div class="quiz" id="q2"><div class="question">You trained 5 runs with different hyperparameters. How do you find the best one?</div>
+<div class="options">
+<div class="option" data-correct="true" onclick="checkQuiz('q2',this)">A. mlflow ui → sort by final_loss ascending → click the top run → see every parameter and metric. One click to register it as "Production". No manual tracking. No spreadsheet. No guessing.</div>
+<div class="option" onclick="checkQuiz('q2',this)">B. Manually check each training log and write down the best loss in a spreadsheet</div>
+<div class="option" onclick="checkQuiz('q2',this)">C. The last run is always the best — just use that one</div>
+</div><div class="feedback" id="q2-fb"></div></div>
+</div></div>`
+},{
+  id:'6B.4',title:'Comparing Runs — Find the Best Hyperparameters',
+  fact:'<strong>MLflow UI shows every run side-by-side.</strong> Sort by any metric. Compare loss curves. See which params produced the best result. Built into the free mlflow ui command.',
+  render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6B.4</span> Comparing Runs — Which Hyperparameters Won?</h2>
+<p>The <code>compare_runs()</code> function (in mlflow_tracking.py) prints a leaderboard. Or open <code>mlflow ui</code> for full visualization.</p>
+
+<div style="display:flex;gap:0.3rem;justify-content:center;flex-wrap:wrap;margin:0.5rem 0;">
+  <button class="anim-btn active" onclick="showCompVis(0,this)" style="font-size:0.45rem;">📊 CLI: compare_runs()</button>
+  <button class="anim-btn" onclick="showCompVis(1,this)" style="font-size:0.45rem;">🌐 mlflow ui</button>
+</div>
+<div id="compVizBox" style="background:var(--raised);border:1px solid var(--border);border-radius:10px;padding:1rem;margin:0.5rem 0;min-height:150px;"></div>
+
+<table class="param" style="margin:0.5rem auto;max-width:750px;">
+<tr><th style="width:80px;">Run ID</th><th>Loss</th><th>Duration</th><th>r</th><th>lr</th><th>alpha</th><th>In Registry?</th></tr>
+<tr><td style="color:var(--green);">a1b2c3d4</td><td style="color:var(--green);font-weight:700;">0.28</td><td>4m12s</td><td>16</td><td>2e-4</td><td>32</td><td style="color:var(--green);">Production v7</td></tr>
+<tr><td>e5f6g7h8</td><td>0.32</td><td>3m24s</td><td>8</td><td>2e-4</td><td>16</td><td style="color:var(--amber);">Staging v6</td></tr>
+<tr><td>i9j0k1l2</td><td>0.35</td><td>3m05s</td><td>8</td><td>1e-4</td><td>16</td><td style="color:var(--tdim);">None</td></tr>
+<tr><td style="color:var(--red);">m3n4o5p6</td><td style="color:var(--red);">NaN</td><td>0m45s</td><td>8</td><td style="color:var(--red);">1e-2</td><td>16</td><td style="color:var(--red);">None (failed)</td></tr>
 </table>
 
-<div class="callout">Run <code>mlflow ui</code> in terminal → open localhost:5000 → scatter plot of lr vs loss → click best point → register as Production. Done in 30 seconds.</div>
-</div></div>`},
-{id:'6B.4',title:'CI/CD for Fine-Tuning',
-fact:'Netflix retrains 500+ models weekly via automated CI/CD pipelines. New data arrives -> pipeline triggers -> model trained -> evaluated -> if better than current, auto-deployed.',
-render:()=>`
-<div class="slide"><div class="card">
-<h2><span class="num">6B.4</span> Automated Retraining Pipelines</h2>
-<p>Fine-tuning isn't one-and-done. New data arrives. Model drifts. You need automated retraining.</p>
+<div class="callout amber"><span style="font-size:1rem;">⚠️</span><span style="font-size:0.72rem;"><strong>See that NaN loss?</strong> lr=1e-2 is 50x too high. MLflow still recorded it — so you know what NOT to try again. Failed experiments are valuable data points too.</span></div>
 
-<div class="flow" style="margin:1rem 0;">
-  <div class="flow-step">New PDFs<br>uploaded</div><span class="flow-arrow">→</span>
-  <div class="flow-step">GitHub Action<br>triggers</div><span class="flow-arrow">→</span>
-  <div class="flow-step">Colab/SageMaker<br>fine-tunes</div><span class="flow-arrow">→</span>
-  <div class="flow-step">MLflow<br>evaluates</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--green);">Better?<br>Auto-deploy!</div>
+<div class="quiz" id="q3"><div class="question">You deployed a model to production 3 months ago. Users complain it's getting worse. How do you find out what changed?</div>
+<div class="options">
+<div class="option" data-correct="true" onclick="checkQuiz('q3',this)">A. Check Evidently AI drift report (current vs training distribution). If drift > 0.5, find the production run in MLflow → see which data version (DVC hash) was used → dvc checkout that version → compare to current data. Now you know exactly what changed and can decide whether to retrain.</div>
+<div class="option" onclick="checkQuiz('q3',this)">B. Just retrain with whatever data is available now</div>
+<div class="option" onclick="checkQuiz('q3',this)">C. Check the server logs for error messages</div>
+</div><div class="feedback" id="q3-fb"></div></div>
+</div></div>`
+},{
+  id:'6B.5',title:'CI/CD Pipelines — Automate Testing + Retraining',
+  fact:'<strong>GitHub Actions runs 3 jobs:</strong> PR checks (every push), daily drift monitor (6am UTC), and full GPU pipeline (manual trigger). If drift is detected, you get alerted — no silent failures.',
+  render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6B.5</span> CI/CD — GitHub Actions for Fine-Tuning</h2>
+<p>Our workflow has <strong>3 independent jobs</strong>. Each serves a different purpose in the MLOps lifecycle.</p>
+
+<div style="display:flex;gap:0.3rem;justify-content:center;flex-wrap:wrap;margin:0.5rem 0;">
+  <button class="anim-btn active" onclick="showCiVis(0,this)" style="font-size:0.45rem;">🔵 PR Checks (push)</button>
+  <button class="anim-btn" onclick="showCiVis(1,this)" style="font-size:0.45rem;">🟠 Drift Monitor (daily)</button>
+  <button class="anim-btn" onclick="showCiVis(2,this)" style="font-size:0.45rem;">🟢 GPU Pipeline (manual)</button>
+</div>
+<div id="ciVizBox" style="background:var(--raised);border:1px solid var(--border);border-radius:10px;padding:1rem;margin:0.5rem 0;min-height:160px;"></div>
+
+<div class="compare-grid">
+<div class="compare-card good"><h4>🟢 PR Checks</h4><p><strong>Every git push.</strong> Layer 1: Data validation (15 tests, 2s). Layer 2: Model tests (10 tests, 1s). Layer 4: Drift check (demo mode, 2s). <strong>Total: ~5 seconds on CPU.</strong> If any fail, PR blocked.</p></div>
+<div class="compare-card best"><h4>🟡 Scheduled Drift</h4><p><strong>Every day at 6am UTC.</strong> Runs check_drift.py against production data. If drift_score > 0.5 → workflow fails → you get notified. <strong>Silent degradation caught within 24 hours.</strong></p></div>
 </div>
 
+<div class="code-wrapper"><button class="copy-btn2" onclick="copyCode(this)">📋 Copy</button>
 <div class="code-box">
-<span style="color:#6a9955;"># .github/workflows/retrain.yml</span>
-<span style="color:#569cd6;">name</span>: <span style="color:#ce9178;">Retrain on New Data</span>
+<span style="color:#6a9955;"># .github/workflows/test-finetune.yml</span>
 <span style="color:#569cd6;">on</span>:
-  <span style="color:#569cd6;">push</span>:
-    <span style="color:#569cd6;">paths</span>: [<span style="color:#ce9178;">"data/new_pdfs/**"</span>]  <span style="color:#6a9955;"># Trigger on new PDFs</span>
+  <span style="color:#569cd6;">push</span>:          <span style="color:#6a9955;"># Every commit → PR checks</span>
+  <span style="color:#569cd6;">pull_request</span>:
+  <span style="color:#569cd6;">schedule</span>:       <span style="color:#6a9955;"># Daily at 6am UTC → drift monitor</span>
+    - <span style="color:#569cd6;">cron</span>: <span style="color:#ce9178;">"0 6 * * *"</span>
+  <span style="color:#569cd6;">workflow_dispatch</span>: <span style="color:#6a9955;"># Manual trigger → full GPU pipeline</span>
 
 <span style="color:#569cd6;">jobs</span>:
-  <span style="color:#569cd6;">retrain</span>:
-    <span style="color:#569cd6;">runs-on</span>: <span style="color:#ce9178;">ubuntu-latest</span>
-    <span style="color:#569cd6;">steps</span>:
-      - <span style="color:#569cd6;">run</span>: <span style="color:#ce9178;">pip install transformers peft mlflow</span>
-      - <span style="color:#569cd6;">run</span>: <span style="color:#ce9178;">python train.py --data new_pdfs/</span>
-      - <span style="color:#569cd6;">run</span>: <span style="color:#ce9178;">python evaluate.py --promote-if-better</span></div>
-</div></div>`},
-{id:'6B.5',title:'Deployment Patterns',
-fact:'There are 3 ways to serve an LLM: batch (offline, cheap), real-time API (online, responsive), streaming (token by token). Each has different cost/latency tradeoffs.',
-render:()=>`
-<div class="slide"><div class="card">
-<h2><span class="num">6B.5</span> Three Ways to Serve Your Fine-Tuned Model</h2>
+  <span style="color:#569cd6;">pr-checks</span>:       <span style="color:#6a9955;"># CPU-only, ~5s, blocks bad PRs</span>
+  <span style="color:#569cd6;">drift-monitor</span>:    <span style="color:#6a9955;"># Daily, alerts on silent degradation</span>
+  <span style="color:#569cd6;">gpu-pipeline</span>:     <span style="color:#6a9955;"># Self-hosted GPU, dvc repro train→evaluate</span></div></div>
 
-<div class="compare">
-  <div class="cmp-card">
-    <h4 style="font-family:'Space Grotesk',sans-serif;font-size:0.7rem;">📦 Batch Inference</h4>
-    <p style="font-size:0.8rem;color:var(--tdim);">Process 10,000 prompts overnight. Cheapest ($0.01/1K tokens). Use: labeling datasets, bulk summarization.</p>
-  </div>
-  <div class="cmp-card">
-    <h4 style="font-family:'Space Grotesk',sans-serif;font-size:0.7rem;">🌐 Real-Time API</h4>
-    <p style="font-size:0.8rem;color:var(--tdim);">FastAPI + model. Respond in < 500ms. Use: chatbots, customer support. Cost: GPU must stay ON ($1-3/hr).</p>
-  </div>
-</div>
-<div style="margin-top:0.5rem;display:flex;gap:0.5rem;align-items:center;justify-content:center;font-size:0.7rem;color:var(--tmut);">
-  <span>Batch: slow & cheap</span><span style="width:100px;height:4px;background:linear-gradient(90deg,var(--green),var(--red));border-radius:2px;"></span><span>Real-time: fast & expensive</span>
-</div>
-</div></div>`},
-{id:'6B.6',title:'vLLM — Production-Grade Serving',
-fact:'vLLM serves Llama-7B at 5000 tokens/second on a single A100 — 10× faster than HuggingFace pipeline. Used by LMSYS (Chatbot Arena) to serve 100+ models simultaneously.',
-render:()=>`
+<div class="quiz" id="q4"><div class="question">You add 100 new Q&A rows. What's the fastest way to verify everything works before training?</div>
+<div class="options">
+<div class="option" data-correct="true" onclick="checkQuiz('q4',this)">A. git push → GitHub Actions runs PR checks (data validation + model tests) in ~5 seconds. If all green, the new data is structurally valid. Then dvc repro on GPU to actually train. The PR checks catch 90% of issues before you waste GPU time.</div>
+<div class="option" onclick="checkQuiz('q4',this)">B. Manually run each test one by one on your laptop</div>
+<div class="option" onclick="checkQuiz('q4',this)">C. Skip testing and hope the training doesn't crash</div>
+</div><div class="feedback" id="q4-fb"></div></div>
+</div></div>`
+},{
+  id:'6B.6',title:'Deployment Patterns — Batch vs Real-Time vs Streaming',
+  fact:'<strong>One model, three ways to serve it.</strong> Batch = overnight report generation (cheap). Real-time = chatbot API (fast). Streaming = IoT sensor pipeline (continuous). Pick based on latency + cost.',
+  render:()=>`
 <div class="slide"><div class="card">
-<h2><span class="num">6B.6</span> vLLM — 10× Faster Than pipeline()</h2>
-<p>The <code>pipeline()</code> we used in Colab is for development. vLLM is for production.</p>
+<h2><span class="num">6B.6</span> Deployment Patterns — When to Use Which</h2>
+<p>Your fine-tuned adapter is a file on disk. How you <strong>serve</strong> it determines cost, latency, and throughput.</p>
 
+<div class="compare-grid three">
+<div class="compare-card good"><h4>🟢 Batch Inference</h4><p><strong>Run overnight. Cheapest.</strong><br><br>100K Q&A pairs → process all at once → save results.<br><br><strong>Cost:</strong> GPU only while running (minutes)<br><strong>Latency:</strong> Hours (acceptable)<br><strong>Use:</strong> Report generation, data labeling, offline eval</p></div>
+<div class="compare-card best"><h4>🟣 Real-Time API</h4><p><strong>Respond in < 500ms. Most common.</strong><br><br>User sends question → model responds immediately.<br><br><strong>Cost:</strong> GPU always on ($0.50-3/hr)<br><strong>Latency:</strong> < 500ms<br><strong>Use:</strong> Chatbots, Q&A systems, copilots</p></div>
+<div class="compare-card bad"><h4>🔴 Streaming</h4><p><strong>Continuous. Most complex.</strong><br><br>IoT sensors → 1000 events/sec → model processes each.<br><br><strong>Cost:</strong> GPU always on + queue infra<br><strong>Latency:</strong> < 50ms<br><strong>Use:</strong> Sensor FT, fraud detection, live translation</p></div>
+</div>
+
+<h3>For Fine-Tuned LLMs: Real-Time via vLLM is the Sweet Spot</h3>
+<table class="param" style="margin:0.5rem auto;max-width:700px;">
+<tr><th>Serving Method</th><th>Throughput</th><th>Latency</th><th>Cost/hr</th><th>Our Adapter?</th></tr>
+<tr><td>HuggingFace pipeline()</td><td>~50 tok/s</td><td>~2000ms</td><td style="color:var(--green);">$0.50 (T4)</td><td>✅ Yes</td></tr>
+<tr><td>vLLM (our target)</td><td>~5000 tok/s</td><td>~50ms</td><td style="color:var(--green);">$0.50 (T4)</td><td>✅ Yes</td></tr>
+<tr><td>AWS SageMaker endpoint</td><td>~3000 tok/s</td><td>~100ms</td><td style="color:var(--red);">$3.00/hr</td><td>Need to upload</td></tr>
+<tr><td>Azure AI Foundry</td><td>~4000 tok/s</td><td>~80ms</td><td style="color:var(--red);">$1.70/hr</td><td>Need to upload</td></tr>
+</table>
+
+<div class="callout"><span style="font-size:1rem;">💡</span><span style="font-size:0.72rem;"><strong>vLLM is 100x faster than pipeline()</strong> on the same T4 GPU. Same model, same adapter — different serving engine. Next slide shows how.</span></div>
+
+<div class="quiz" id="q5"><div class="question">You're building a medical chatbot. Users type questions and expect answers in under 1 second. Which deployment pattern?</div>
+<div class="options">
+<div class="option" data-correct="true" onclick="checkQuiz('q5',this)">A. Real-time API via vLLM. Merge your LoRA adapter into the base model, serve with vLLM on a T4 ($0.50/hr). 50ms latency, 5000 tok/s throughput. Supports 50+ concurrent users on one GPU.</div>
+<div class="option" onclick="checkQuiz('q5',this)">B. Batch inference — process all questions overnight and email answers in the morning</div>
+<div class="option" onclick="checkQuiz('q5',this)">C. Streaming — users can wait while the model processes their question in a queue</div>
+</div><div class="feedback" id="q5-fb"></div></div>
+</div></div>`
+},{
+  id:'6B.7',title:'vLLM Serving — 100× Faster Than HuggingFace Pipeline',
+  fact:'<strong>PagedAttention is virtual memory for transformers.</strong> Without it, KV-cache fragmentation wastes 60-80% of VRAM during generation. vLLM eliminates this — same model, 10-100x throughput.',
+  render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6B.7</span> vLLM — Production Serving for Fine-Tuned Models</h2>
+<p>The key insight: <strong>during text generation, the KV-cache grows and shrinks unpredictably.</strong> HuggingFace allocates a fixed max-size block per request. vLLM uses PagedAttention — allocating memory in small blocks, like an OS.</p>
+
+<div style="text-align:center;margin:1rem 0;">
+<svg width="480" height="140" style="max-width:100%;font-family:'JetBrains Mono',monospace;">
+  <text x="240" y="15" fill="#8b949e" font-size="9" text-anchor="middle">KV-Cache Memory: HuggingFace vs vLLM</text>
+  <!-- HF: fragmented -->
+  <text x="120" y="35" fill="#f85149" font-size="8" text-anchor="middle">HuggingFace</text>
+  <rect x="10" y="42" width="110" height="35" rx="3" fill="rgba(63,185,80,0.15)" stroke="#3fb950" stroke-width="0.5"/>
+  <text x="65" y="63" fill="#3fb950" font-size="6" text-anchor="middle">Used</text>
+  <rect x="120" y="42" width="100" height="35" rx="3" fill="rgba(248,81,73,0.12)" stroke="#f85149" stroke-width="0.5"/>
+  <text x="170" y="63" fill="#f85149" font-size="6" text-anchor="middle">WASTED</text>
+  <!-- Show fragmentation -->
+  <rect x="10" y="85" width="40" height="25" rx="2" fill="rgba(63,185,80,0.15)" stroke="#3fb950" stroke-width="0.5"/>
+  <rect x="50" y="85" width="60" height="25" rx="2" fill="rgba(248,81,73,0.12)" stroke="#f85149" stroke-width="0.5"/>
+  <rect x="110" y="85" width="30" height="25" rx="2" fill="rgba(63,185,80,0.15)" stroke="#3fb950" stroke-width="0.5"/>
+  <rect x="140" y="85" width="80" height="25" rx="2" fill="rgba(248,81,73,0.12)" stroke="#f85149" stroke-width="0.5"/>
+  <text x="120" y="125" fill="#f85149" font-size="7" text-anchor="middle">~65% wasted</text>
+  <!-- vLLM: packed -->
+  <text x="360" y="35" fill="#3fb950" font-size="8" text-anchor="middle">vLLM</text>
+  <rect x="250" y="42" width="220" height="35" rx="3" fill="rgba(63,185,80,0.15)" stroke="#3fb950" stroke-width="0.5"/>
+  <text x="360" y="63" fill="#3fb950" font-size="6" text-anchor="middle">Packed — blocks allocated on demand</text>
+  <rect x="250" y="85" width="50" height="25" rx="2" fill="rgba(63,185,80,0.15)" stroke="#3fb950" stroke-width="0.5"/>
+  <rect x="300" y="85" width="30" height="25" rx="2" fill="rgba(57,210,255,0.15)" stroke="#39d2ff" stroke-width="0.5"/>
+  <rect x="330" y="85" width="60" height="25" rx="2" fill="rgba(63,185,80,0.15)" stroke="#3fb950" stroke-width="0.5"/>
+  <rect x="390" y="85" width="40" height="25" rx="2" fill="rgba(57,210,255,0.15)" stroke="#39d2ff" stroke-width="0.5"/>
+  <rect x="430" y="85" width="40" height="25" rx="2" fill="rgba(63,185,80,0.15)" stroke="#3fb950" stroke-width="0.5"/>
+  <text x="360" y="125" fill="#3fb950" font-size="7" text-anchor="middle">~95% utilized</text>
+</svg>
+</div>
+
+<h3>The 3 Steps to Serve Your Adapter with vLLM</h3>
+<div class="code-wrapper"><button class="copy-btn2" onclick="copyCode(this)">📋 Copy</button>
 <div class="code-box">
-<span style="color:#6a9955;"># vLLM serves your fine-tuned model at production speed</span>
-<span style="color:#6a9955;"># Install: pip install vllm</span>
+<span style="color:#6a9955;"># Step 1: Merge LoRA adapter into base model (Phase 3.10 rule!)</span>
+<span style="color:#569cd6;">from</span> peft <span style="color:#569cd6;">import</span> PeftModel
+<span style="color:#569cd6;">from</span> transformers <span style="color:#569cd6;">import</span> AutoModelForCausalLM
 
-<span style="color:#569cd6;">from</span> vllm <span style="color:#569cd6;">import</span> LLM, SamplingParams
+model = AutoModelForCausalLM.from_pretrained(<span style="color:#ce9178;">"TinyLlama/TinyLlama-1.1B-Chat-v1.0"</span>)
+model = PeftModel.from_pretrained(model, <span style="color:#ce9178;">"./instruction_tuned_adapter"</span>)
+model = model.merge_and_unload()                    <span style="color:#6a9955;"># Bake B×A into W₀</span>
+model.save_pretrained(<span style="color:#ce9178;">"./merged_model"</span>)
+tokenizer.save_pretrained(<span style="color:#ce9178;">"./merged_model"</span>)
 
-<span style="color:#6a9955;"># Load your merged model</span>
-llm = LLM(model=<span style="color:#ce9178;">"./merged_medical_model"</span>)
+<span style="color:#6a9955;"># Step 2: Serve with vLLM (OpenAI-compatible API!)</span>
+<span style="color:#c586c0;">$</span> pip install vllm
+<span style="color:#c586c0;">$</span> vllm serve ./merged_model --port <span style="color:#ce9178;">8000</span>
 
-<span style="color:#6a9955;"># Generate — handles batching, KV-cache, PagedAttention automatically</span>
-outputs = llm.generate(
-    [<span style="color:#ce9178;">"What is Metformin?"</span>, <span style="color:#ce9178;">"Side effects?"</span>],
-    SamplingParams(temperature=<span style="color:#ce9178;">0.7</span>, max_tokens=<span style="color:#ce9178;">100</span>)
+<span style="color:#6a9955;"># Step 3: Query it like OpenAI</span>
+<span style="color:#569cd6;">from</span> openai <span style="color:#569cd6;">import</span> OpenAI
+client = OpenAI(base_url=<span style="color:#ce9178;">"http://localhost:8000/v1"</span>, api_key=<span style="color:#ce9178;">"not-needed"</span>)
+response = client.chat.completions.create(
+    model=<span style="color:#ce9178;">"./merged_model"</span>,
+    messages=[{<span style="color:#ce9178;">"role"</span>: <span style="color:#ce9178;">"user"</span>, <span style="color:#ce9178;">"content"</span>: <span style="color:#ce9178;">"What is Metformin?"</span>}]
 )
+<span style="color:#c586c0;">print</span>(response.choices[<span style="color:#ce9178;">0</span>].message.content)
+<span style="color:#6a9955;"># "Metformin is a biguanide medication..." — served at 5000 tok/s</span></div></div>
 
-<span style="color:#6a9955;"># vLLM also has an OpenAI-compatible API server:</span>
-<span style="color:#6a9955;"># python -m vllm.entrypoints.openai.api_server --model ./merged_medical_model</span>
-<span style="color:#6a9955;"># Now any OpenAI client can call your model!</span></div>
+<div class="big-stat"><div class="number">100×</div><div class="label">vLLM throughput vs HuggingFace pipeline() on the same T4 GPU</div></div>
 
-<table style="width:100%;border-collapse:collapse;font-size:0.8rem;margin:0.5rem 0;">
-<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">pipeline()</td><td style="padding:0.3rem;">~50 tokens/sec</td><td style="color:var(--red);">Dev only</td></tr>
-<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">vLLM</td><td style="padding:0.3rem;">~5000 tokens/sec</td><td style="color:var(--green);">Production</td></tr>
-<tr><td style="padding:0.3rem;">TGI (Text Gen Inference)</td><td style="padding:0.3rem;">~4000 tokens/sec</td><td style="color:var(--green);">Alternative to vLLM</td></tr>
-</table>
-</div></div>`},
-{id:'6B.7',title:'Monitoring — When to Retrain',
-fact:'Model drift detection: if your model\'s accuracy drops 5% below baseline, trigger automatic retraining. Standard practice at Uber, Netflix, and Stripe.',
-render:()=>`
+<div class="quiz" id="q6"><div class="question">Why can't you serve a PeftModel directly with vLLM — why merge first?</div>
+<div class="options">
+<div class="option" data-correct="true" onclick="checkQuiz('q6',this)">A. vLLM expects a standard AutoModelForCausalLM — no LoRA side paths. merge_and_unload() bakes B×A into W₀, producing a normal model. No PeftModel dependency. No adapter_config.json. Just weights. vLLM can optimize normal models — it cannot optimize LoRA's extra matrix multiplications.</div>
+<div class="option" onclick="checkQuiz('q6',this)">B. vLLM doesn't support HuggingFace models at all</div>
+<div class="option" onclick="checkQuiz('q6',this)">C. LoRA adapters are too large to serve efficiently</div>
+</div><div class="feedback" id="q6-fb"></div></div>
+</div></div>`
+},{
+  id:'6B.8',title:'Monitoring & Drift Detection — Evidently AI',
+  fact:'<strong>Your model is getting worse right now — and you don\'t know it.</strong> Evidently AI compares training data distribution to live data. Drift > 0.5 → users asking about new topics → time to retrain.',
+  render:()=>`
 <div class="slide"><div class="card">
-<h2><span class="num">6B.7</span> Monitoring — Is Your Model Still Good?</h2>
-<p>Models degrade over time. New medical terms appear. Writing styles change. You need to know WHEN to retrain.</p>
+<h2><span class="num">6B.8</span> Monitoring & Drift — Is It Still Working?</h2>
+<p>Fine-tuned models don't crash. They <strong>silently degrade.</strong> The only way to catch it: compare what users ask NOW to what you trained on.</p>
 
-<div class="compare">
-  <div class="cmp-card"><h4 style="font-family:'Space Grotesk',sans-serif;font-size:0.7rem;">📊 Data Drift</h4><p style="font-size:0.8rem;color:var(--tdim);">Input distribution changed. "Are users asking about new topics?" Monitor: KL divergence between train and live data.</p></div>
-  <div class="cmp-card"><h4 style="font-family:'Space Grotesk',sans-serif;font-size:0.7rem;">📉 Performance Drift</h4><p style="font-size:0.8rem;color:var(--tdim);">Model accuracy dropping. "Are users saying the answers are worse?" Monitor: thumbs up/down ratio, response length.</p></div>
+<div style="display:flex;gap:0.3rem;justify-content:center;flex-wrap:wrap;margin:0.5rem 0;">
+  <button class="anim-btn active" onclick="showDriftVis(0,this)" style="font-size:0.45rem;">📊 Healthy (drift=0.15)</button>
+  <button class="anim-btn" onclick="showDriftVis(1,this)" style="font-size:0.45rem;">🔴 Drifted (drift=0.62)</button>
+  <button class="anim-btn" onclick="showDriftVis(2,this)" style="font-size:0.45rem;">🔄 Auto-Retrain Flow</button>
 </div>
+<div id="driftVizBox" style="background:var(--raised);border:1px solid var(--border);border-radius:10px;padding:1rem;margin:0.5rem 0;min-height:160px;"></div>
 
-<div class="code-box">
-<span style="color:#6a9955;"># Simple drift check — run weekly</span>
-<span style="color:#569cd6;">import</span> mlflow
-
-current_loss = evaluate(model, live_data)
-baseline_loss = mlflow.get_run(<span style="color:#ce9178;">"production-run-id"</span>).data.metrics[<span style="color:#ce9178;">"final_loss"</span>]
-
-<span style="color:#569cd6;">if</span> current_loss > baseline_loss * <span style="color:#ce9178;">1.05</span>:  <span style="color:#6a9955;"># 5% worse than baseline</span>
-    trigger_retraining()  <span style="color:#6a9955;"># Automatically retrain on latest data</span></div>
-</div></div>`},
-{id:'6B.8',title:'Cost Optimization',
-fact:'Serving a fine-tuned Llama-7B on a dedicated GPU costs ~$730/month. With quantization + spot instances + caching, you can get it under $100/month.',
-render:()=>`
-<div class="slide"><div class="card">
-<h2><span class="num">6B.8</span> Cost Optimization — Serve for Less</h2>
-
-<table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin:1rem 0;">
-<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.3rem;">Technique</th><th style="text-align:left;padding:0.3rem;">Saves</th><th style="text-align:left;padding:0.3rem;">Tradeoff</th></tr></thead>
-<tbody>
-<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">INT4 Quantization</td><td style="padding:0.3rem;color:var(--green);">75% memory</td><td style="padding:0.3rem;">~1% accuracy loss</td></tr>
-<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">Spot Instances</td><td style="padding:0.3rem;color:var(--green);">60-90% cost</td><td style="padding:0.3rem;">Can be interrupted</td></tr>
-<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">KV-Cache (vLLM)</td><td style="padding:0.3rem;color:var(--green);">30% latency</td><td style="padding:0.3rem;">Higher memory</td></tr>
-<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">Batch Processing</td><td style="padding:0.3rem;color:var(--green);">10× throughput</td><td style="padding:0.3rem;">Not real-time</td></tr>
-<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem;">Model Distillation</td><td style="padding:0.3rem;color:var(--green);">10× smaller model</td><td style="padding:0.3rem;">Quality depends</td></tr>
-<tr><td style="padding:0.3rem;">Serverless GPU</td><td style="padding:0.3rem;color:var(--green);">Pay per request</td><td style="padding:0.3rem;">Cold start latency</td></tr>
-</tbody>
+<h3>The 3 Metrics That Matter</h3>
+<table class="param2" style="margin:0.5rem 0;">
+<tr><th>Metric</th><th>What It Detects</th><th>Threshold</th><th>Action</th></tr>
+<tr><td><strong style="color:var(--amber);">Data Drift</strong></td><td>Users asking about topics you never trained on</td><td style="color:var(--amber);">> 0.5</td><td style="color:var(--red);">Collect new data → dvc repro</td></tr>
+<tr><td><strong style="color:var(--amber);">Response Quality</strong></td><td>Responses getting shorter/worse</td><td style="color:var(--amber);">Length drop > 20%</td><td style="color:var(--red);">Investigate → rollback or retrain</td></tr>
+<tr><td><strong style="color:var(--amber);">Error Rate</strong></td><td>Refusals or empty responses increasing</td><td style="color:var(--amber);">> 5%</td><td style="color:var(--red);">Rollback to previous model version</td></tr>
 </table>
 
-<div class="callout"><strong>Typical savings:</strong> Dedicated A100 ($3/hr) -> spot A100 ($0.90/hr) -> INT4 on spot T4 ($0.15/hr). Same model, 20× cheaper.</div>
-</div></div>`},
-{id:'6B.9',title:'End-to-End Pipeline',
-fact:'The full MLOps pipeline: data -> train -> track -> register -> deploy -> monitor -> retrain. Every step automated. No human needed after initial setup.',
-render:()=>`
+<div class="callout green"><span style="font-size:1rem;">✅</span><span style="font-size:0.72rem;"><strong>GitHub Actions runs this DAILY at 6am UTC.</strong> If drift > 0.5 → workflow fails → you get notified. Combine with MLflow Model Registry to auto-rollback if needed.</span></div>
+</div></div>`
+},{
+  id:'6B.9',title:'End-to-End Pipeline — One Command from Data to Deployed Model',
+  fact:'<strong>dvc repro runs the entire pipeline.</strong> prepare_data → train (with MLflow tracking) → evaluate (with Evidently drift). If all passes, promote to Production. If drift detected, collect new data and re-run.',
+  render:()=>`
 <div class="slide"><div class="card">
-<h2><span class="num">6B.9</span> The Full Picture — End to End</h2>
+<h2><span class="num">6B.9</span> End-to-End — The Complete MLOps Flow</h2>
+<p>All three tools connected. <strong>One command</strong> from raw data to evaluated adapter, ready for registry promotion.</p>
 
-<div class="flow" style="margin:1.5rem 0;">
-  <div class="flow-step">📄 New Data<br>(PDFs, CSVs)</div><span class="flow-arrow">→</span>
-  <div class="flow-step">🔄 Preprocess<br>(chunk, format)</div><span class="flow-arrow">→</span>
-  <div class="flow-step">🧠 Fine-Tune<br>(LoRA/QLoRA)</div><span class="flow-arrow">→</span>
-  <div class="flow-step">📊 Evaluate<br>(loss, accuracy)</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--violet);">📦 Register<br>(MLflow)</div>
-</div>
-<div class="flow" style="margin:1.5rem 0;">
-  <div class="flow-step" style="border-color:var(--violet);">📦 Registry</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--amber);">🧪 Staging<br>(test API)</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--green);">🚀 Deploy<br>(vLLM/TGI)</div><span class="flow-arrow">→</span>
-  <div class="flow-step">📊 Monitor<br>(drift, metrics)</div><span class="flow-arrow">→</span>
-  <div class="flow-step" style="border-color:var(--red);">⚠️ Degraded?<br>Retrain!</div>
+<div class="pipeline">
+<div class="pipeline-stage dvc">📊 DVC<br>prepare_data<br><span style="font-size:0.4rem;">validate+split</span></div><div class="pipeline-arrow" style="color:var(--amber);">→</div>
+<div class="pipeline-stage ml">🧠 DVC+MLflow<br>train<br><span style="font-size:0.4rem;">LoRA+SFT+log</span></div><div class="pipeline-arrow" style="color:var(--violet);">→</div>
+<div class="pipeline-stage ev">📈 DVC+Evidently<br>evaluate<br><span style="font-size:0.4rem;">MFT+drift</span></div><div class="pipeline-arrow" style="color:var(--green);">→</div>
+<div class="pipeline-stage highlight">🚀 MLflow<br>Registry<br><span style="font-size:0.4rem;">Promote</span></div>
 </div>
 
-<div class="callout" style="text-align:center;">
-  <strong>This is what MLOps gives you.</strong> Without it, you have adapters scattered across folders with no record of what worked. With it, you have a self-healing pipeline that improves over time. Phases 1-10 taught you <strong>how to fine-tune</strong>. Phase 6B teaches you <strong>how to own it in production</strong>.
+<div class="eq-box">
+<span style="color:var(--cyan);">$ dvc repro</span>
+<span style="color:var(--tdim);">Stage 'prepare_data' is cached — skipping.</span>
+<span style="color:var(--tdim);">Stage 'train' is cached — skipping.</span>
+<span style="color:var(--tdim);">Stage 'evaluate' is cached — skipping.</span>
+<span style="color:var(--green);">Pipeline is up to date. Nothing to reproduce.</span>
+
+<span style="color:var(--tdim);"># ... 3 weeks later, drift detected ...</span>
+
+<span style="color:var(--cyan);">$ echo "docker,k8s,terraform Q&A" >> data/instruction_data.csv</span>
+<span style="color:var(--cyan);">$ dvc repro</span>
+<span style="color:var(--amber);">Running stage 'prepare_data': 5 rows → 500 rows (hash changed!)</span>
+<span style="color:var(--violet);">Running stage 'train': training on 500 examples...</span>
+<span style="color:var(--violet);">[MLflow] Run: k9l0m1n2... final_loss=0.27</span>
+<span style="color:var(--green);">Running stage 'evaluate': drift=0.15 (was 0.62!)</span>
+<span style="color:var(--green);">[PASS] All evaluations passed. Model ready for Staging.</span>
+
+<span style="color:var(--cyan);">$ mlflow models transition medical-qa 8 --stage Production</span>
+<span style="color:var(--green);">Model v8 is now in Production. v7 archived.</span></div>
+
+<h3>The Ops Loop — Every Fine-Tuning Project Follows This</h3>
+<div style="text-align:center;margin:1rem 0;">
+<svg width="440" height="260" style="max-width:100%;font-family:'JetBrains Mono',monospace;">
+  <rect x="120" y="10" width="200" height="50" rx="25" fill="rgba(57,210,255,0.08)" stroke="#39d2ff" stroke-width="1.5"/>
+  <text x="220" y="33" fill="#39d2ff" font-size="8" text-anchor="middle" font-weight="700">1. Serve (vLLM)</text>
+  <text x="220" y="48" fill="#8b949e" font-size="6" text-anchor="middle">Users query the model</text>
+  <line x1="220" y1="60" x2="220" y2="80" stroke="#39d2ff" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="120" y="80" width="200" height="50" rx="25" fill="rgba(255,179,71,0.08)" stroke="#ffb347" stroke-width="1.5"/>
+  <text x="220" y="103" fill="#ffb347" font-size="8" text-anchor="middle" font-weight="700">2. Monitor (Evidently)</text>
+  <text x="220" y="118" fill="#8b949e" font-size="6" text-anchor="middle">Drift < 0.5? Keep serving</text>
+  <line x1="220" y1="130" x2="220" y2="150" stroke="#ffb347" stroke-width="1.5"/>
+  <rect x="120" y="150" width="200" height="50" rx="25" fill="rgba(248,81,73,0.08)" stroke="#f85149" stroke-width="1.5"/>
+  <text x="220" y="173" fill="#f85149" font-size="8" text-anchor="middle" font-weight="700">3. Retrain (DVC)</text>
+  <text x="220" y="188" fill="#8b949e" font-size="6" text-anchor="middle">dvc add + dvc repro</text>
+  <line x1="220" y1="200" x2="220" y2="220" stroke="#f85149" stroke-width="1.5"/>
+  <rect x="120" y="220" width="200" height="50" rx="25" fill="rgba(163,113,247,0.08)" stroke="#a371f7" stroke-width="1.5"/>
+  <text x="220" y="243" fill="#a371f7" font-size="8" text-anchor="middle" font-weight="700">4. Promote (MLflow)</text>
+  <text x="220" y="258" fill="#8b949e" font-size="6" text-anchor="middle">Staging → Production</text>
+  <!-- Arrow back to top -->
+  <line x1="320" y1="245" x2="380" y2="245" stroke="#a371f7" stroke-width="1"/>
+  <line x1="380" y1="245" x2="380" y2="35" stroke="#a371f7" stroke-width="1"/>
+  <line x1="380" y1="35" x2="320" y2="35" stroke="#39d2ff" stroke-width="1"/>
+  <defs><marker id="a" markerWidth="6" markerHeight="6" refX="3" refY="3"><circle cx="3" cy="3" r="2" fill="#39d2ff"/></marker></defs>
+</svg>
 </div>
-</div></div>`}
-];
 
-let cur=0; const visited=new Set([0]);
+<div class="big-stat"><div class="number">dvc repro</div><div class="label">One command. Data → Train → Evaluate → Ready for Production.</div></div>
+</div></div>`
+}];
 
-function render(i){
-  cur=i;visited.add(i);
-  document.getElementById('slideContainer').innerHTML=slides[i].render();
-  document.getElementById('stepLabel').textContent=`${i+1}/${slides.length}`;
-  document.getElementById('funFactText').innerHTML=`<strong>${slides[i].id}:</strong> ${slides[i].fact}`;
-  document.getElementById('dots').innerHTML=slides.map((_,j)=>`<div class="dot ${j===cur?'active':visited.has(j)?'done':''}" onclick="goTo(${j})"></div>`).join('');
-  document.getElementById('chips').innerHTML=slides.map((s,j)=>`<span class="chip ${j===cur?'current':visited.has(j)?'visited':''}" onclick="goTo(${j})">${s.id}</span>`).join('');
-  document.getElementById('prevBtn').disabled=i===0;
-  const nb=document.getElementById('nextBtn');
-  if(i===slides.length-1){nb.textContent='✓ Complete';nb.style.background='var(--green)';}
-  else{nb.textContent='Next →';nb.style.background='var(--violet)';nb.style.color='#fff';}
-  document.getElementById('slideContainer').scrollIntoView({behavior:'smooth',block:'start'});
-}
+function showCompVis(mode,btn){var box=document.getElementById('compVizBox');var bts=btn.parentElement.querySelectorAll('.anim-btn');bts.forEach(function(b){b.classList.remove('active')});btn.classList.add('active');
+if(mode===0){box.innerHTML='<div style="font-family:JetBrains Mono,monospace;font-size:0.55rem;line-height:1.9;">'+
+'<div style="color:var(--cyan);">$ python scripts/mlflow_tracking.py compare</div>'+
+'<div style="color:var(--tdim);">Top runs for instruction-ft-medical (by final_loss):</div>'+
+'<div style="color:var(--tdim);">Run ID     Loss     Duration   r   lr</div>'+
+'<div style="color:var(--green);">a1b2c3d4   0.28     4m12s      16  2e-4  ← Production v7</div>'+
+'<div style="color:var(--tdim);">e5f6g7h8   0.32     3m24s      8   2e-4  ← Staging v6</div>'+
+'<div style="color:var(--tdim);">i9j0k1l2   0.35     3m05s      8   1e-4</div>'+
+'<div style="color:var(--red);">m3n4o5p6   NaN      0m45s      8   1e-2    ← lr too high!</div>'+
+'<div style="color:var(--tdim);margin-top:0.3rem;">Full UI: mlflow ui --backend-store-uri sqlite:///mlruns.db</div></div>'}
+else{box.innerHTML='<div style="font-family:JetBrains Mono,monospace;font-size:0.55rem;line-height:1.9;">'+
+'<div style="color:var(--cyan);">🌐 mlflow ui → localhost:5000</div>'+
+'<div style="color:var(--tdim);">┌─────────────────────────────────────────┐</div>'+
+'<div style="color:var(--tdim);">│  instruction-ft-medical                 │</div>'+
+'<div style="color:var(--tdim);">│  ┌────────┬──────┬──────┬───┬────────┐  │</div>'+
+'<div style="color:var(--green);">│  │✅ a1b2c3│0.28  │4m12s │16 │2e-4    │  │ ← Click to expand</div>'+
+'<div style="color:var(--tdim);">│  │  e5f6g7│0.32  │3m24s │8  │2e-4    │  │</div>'+
+'<div style="color:var(--tdim);">│  │  i9j0k1│0.35  │3m05s │8  │1e-4    │  │</div>'+
+'<div style="color:var(--tdim);">│  └────────┴──────┴──────┴───┴────────┘  │</div>'+
+'<div style="color:var(--tdim);">│  Sort by: [loss ▲] [duration] [params] │</div>'+
+'<div style="color:var(--tdim);">│  Actions: [Register Model] [Compare]   │</div>'+
+'<div style="color:var(--tdim);">└─────────────────────────────────────────┘</div>'+
+'<div style="color:var(--tdim);margin-top:0.3rem;">Click any run → see all params, metrics, artifacts, source code</div></div>'}}
 
-function goTo(i){if(i<0||i>=slides.length)return;render(i);}
-document.addEventListener('keydown',e=>{if(e.key==='ArrowRight'&&cur<slides.length-1)goTo(cur+1);if(e.key==='ArrowLeft'&&cur>0)goTo(cur-1);});
+function showCiVis(mode,btn){var box=document.getElementById('ciVizBox');var bts=btn.parentElement.querySelectorAll('.anim-btn');bts.forEach(function(b){b.classList.remove('active')});btn.classList.add('active');
+if(mode===0){box.innerHTML='<div style="font-family:JetBrains Mono,monospace;font-size:0.55rem;line-height:2;">'+
+'<div style="color:var(--cyan);">🔵 PR Checks — on: push, pull_request</div>'+
+'<div style="color:var(--green);">✅ Layer 1: Data Validation (15 tests, 2s)</div>'+
+'<div style="color:var(--green);">✅ Layer 2: Model Tests (10 tests, 1s)</div>'+
+'<div style="color:var(--green);">✅ Layer 4: Drift Check (demo, 2s)</div>'+
+'<div style="color:var(--green);margin-top:0.3rem;">All checks passed. PR can be merged.</div></div>'}
+else if(mode===1){box.innerHTML='<div style="font-family:JetBrains Mono,monospace;font-size:0.55rem;line-height:2;">'+
+'<div style="color:var(--amber);">🟠 Drift Monitor — on: schedule (6am UTC daily)</div>'+
+'<div style="color:var(--tdim);">Running check_drift.py...</div>'+
+'<div style="color:var(--tdim);">Reference: data/train_split.csv (500 rows, medical)</div>'+
+'<div style="color:var(--red);">Current:  data/live_production.csv (800 rows, mixed)</div>'+
+'<div style="color:var(--red);">Drift score: 0.62 > 0.5 threshold!</div>'+
+'<div style="color:var(--red);margin-top:0.3rem;">⛔ DRIFT DETECTED! Workflow failed.</div>'+
+'<div style="color:var(--tdim);">→ Review drift_report.html → Collect new data → dvc repro</div></div>'}
+else{box.innerHTML='<div style="font-family:JetBrains Mono,monospace;font-size:0.55rem;line-height:2;">'+
+'<div style="color:var(--green);">🟢 GPU Pipeline — on: workflow_dispatch (manual trigger)</div>'+
+'<div style="color:var(--tdim);">1. dvc pull data/instruction_data.csv.dvc</div>'+
+'<div style="color:var(--tdim);">2. dvc repro (prepare → train → evaluate)</div>'+
+'<div style="color:var(--tdim);">3. pytest tests/test_pipeline.py -m "gpu"</div>'+
+'<div style="color:var(--tdim);">4. python scripts/check_drift.py</div>'+
+'<div style="color:var(--green);">5. Upload metrics + drift report as artifacts</div>'+
+'<div style="color:var(--green);">6. Promote best model in MLflow Registry</div>'+
+'<div style="color:var(--tdim);margin-top:0.3rem;">Runs-on: [self-hosted, gpu] | Timeout: 120 min</div></div>'}}
+
+function showDriftVis(mode,btn){var box=document.getElementById('driftVizBox');var bts=btn.parentElement.querySelectorAll('.anim-btn');bts.forEach(function(b){b.classList.remove('active')});btn.classList.add('active');
+if(mode===0){box.innerHTML='<div style="font-family:JetBrains Mono,monospace;font-size:0.55rem;line-height:1.9;">'+
+'<div style="color:var(--green);">📊 Training distribution = Production distribution</div>'+
+'<div style="color:var(--tdim);">Reference: 500 medical Q&A (Metformin, diabetes, insulin)</div>'+
+'<div style="color:var(--tdim);">Current:   480 medical Q&A + 20 new (similar topics)</div>'+
+'<div style="margin:0.3rem 0;"><svg width="400" height="40">'+
+'<rect x="0" y="5" width="370" height="30" rx="4" fill="rgba(63,185,80,0.15)" stroke="#3fb950" stroke-width="1"/>'+
+'<text x="185" y="25" fill="#3fb950" font-size="8" text-anchor="middle">96% In-Distribution | Drift Score: 0.15</text></svg></div>'+
+'<div style="color:var(--green);">🟢 Healthy. No action needed. Serving v7.</div></div>'}
+else if(mode===1){box.innerHTML='<div style="font-family:JetBrains Mono,monospace;font-size:0.55rem;line-height:1.9;">'+
+'<div style="color:var(--red);">📊 Training distribution ≠ Production distribution</div>'+
+'<div style="color:var(--tdim);">Reference: 500 medical Q&A (diabetes, Metformin)</div>'+
+'<div style="color:var(--tdim);">Current:   50% medical + 26% web dev + 24% other</div>'+
+'<div style="margin:0.3rem 0;"><svg width="400" height="40">'+
+'<rect x="0" y="5" width="200" height="30" rx="4" fill="rgba(63,185,80,0.15)" stroke="#3fb950" stroke-width="1"/>'+
+'<rect x="200" y="5" width="104" height="30" rx="0" fill="rgba(248,81,73,0.15)" stroke="#f85149" stroke-width="1"/>'+
+'<rect x="304" y="5" width="96" height="30" rx="4" fill="rgba(255,179,71,0.12)" stroke="#ffb347" stroke-width="1"/>'+
+'<text x="100" y="25" fill="#3fb950" font-size="7" text-anchor="middle">50% Medical</text>'+
+'<text x="252" y="25" fill="#f85149" font-size="7" text-anchor="middle">26% Web</text>'+
+'<text x="352" y="25" fill="#ffb347" font-size="7" text-anchor="middle">24% Other</text></svg></div>'+
+'<div style="color:var(--red);">🔴 Drift Score: 0.62 > 0.5 → RETRAIN with new data!</div></div>'}
+else{box.innerHTML='<div style="font-family:JetBrains Mono,monospace;font-size:0.55rem;line-height:1.8;">'+
+'<div style="color:var(--cyan);">🔄 Auto-Retrain Flow:</div>'+
+'<div style="color:var(--tdim);">1. Drift alert fires (GitHub Actions, 6am UTC)</div>'+
+'<div style="color:var(--tdim);">2. Human reviews: "Users asking about DevOps tools"</div>'+
+'<div style="color:var(--amber);">3. Collect new Q&A → append to instruction_data.csv</div>'+
+'<div style="color:var(--amber);">4. dvc add + dvc push (new data version tracked)</div>'+
+'<div style="color:var(--violet);">5. dvc repro (train on old+new data, MLflow logs run)</div>'+
+'<div style="color:var(--green);">6. evaluate: drift now 0.15 → PASS</div>'+
+'<div style="color:var(--green);">7. mlflow promote → Production</div>'+
+'<div style="color:var(--tdim);margin-top:0.3rem;">Model now handles Metformin + Docker + Kubernetes. Drift resolved.</div></div>'}}
+
+let cur=0;const visited=new Set([0]);
+function render(i){cur=i;visited.add(i);
+document.getElementById('slideContainer').innerHTML=S[i].render();
+document.getElementById('stepLabel').textContent=(i+1)+'/9';
+document.getElementById('funFactText').innerHTML='<strong>'+S[i].id+':</strong> '+S[i].fact;
+document.getElementById('stepDots').innerHTML=S.map(function(_,j){return '<div class="step-dot'+(j===cur?' active':visited.has(j)?' done':'')+'" onclick="goTo('+j+')"></div>'}).join('');
+document.getElementById('topicChips').innerHTML=S.map(function(s,j){return '<span class="topic-chip'+(j===cur?' current':visited.has(j)?' visited':'')+'" onclick="goTo('+j+')">'+s.id+'</span>'}).join('');
+document.getElementById('prevBtn').disabled=i===0;
+var nb=document.getElementById('nextBtn');
+if(i===S.length-1){nb.textContent='✓ Complete';nb.style.background='var(--green)';}
+else{nb.textContent='Next →';nb.style.background='';nb.style.color=''}
+document.getElementById('slideContainer').scrollIntoView({behavior:'smooth',block:'start'})}
+function goTo(i){if(i<0||i>=S.length)return;render(i)}
+document.addEventListener('keydown',function(e){if(e.key==='ArrowRight'&&cur<S.length-1)goTo(cur+1);if(e.key==='ArrowLeft'&&cur>0)goTo(cur-1)});
 render(0);
 </script>
 </body>
