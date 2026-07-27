@@ -3,42 +3,58 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LoRA Multiplication — Step by Step Animation</title>
+<title>LoRA Multiplication — Step by Step</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f8f9fc;--card:#fff;--border:#dde0e6;--text:#1a1d23;--tdim:#4a4f5b;--tmut:#8b909b;--violet:#5b3aa8;--green:#1a6e34;--amber:#b87000;--red:#c62828;--cyan:#007a99;--frozen:#7a8591;}
+:root{--bg:#f8f9fc;--card:#fff;--border:#dde0e6;--text:#1a1d23;--tdim:#4a4f5b;--tmut:#8b909b;--violet:#5b3aa8;--green:#1a6e34;--amber:#b87000;--red:#c62828;--blue:#1565c0;--gray:#8899a6;}
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;overflow-x:hidden;}
-.app{max-width:850px;margin:0 auto;padding:1.5rem;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;min-height:100vh;}
+.app{max-width:750px;margin:0 auto;padding:1.5rem;}
 
 .header{text-align:center;padding:1.5rem 0 1rem;}
-.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--violet);}
-.header p{color:var(--tdim);font-size:0.9rem;margin-top:0.2rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.9rem;}
 
-.canvas-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:0.5rem;margin:0.5rem 0;}
-canvas{display:block;width:100%;height:auto;border-radius:8px;}
+.step-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;margin:1rem 0;text-align:center;}
+.step-box h2{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;color:var(--violet);margin-bottom:1rem;}
 
-.controls{display:flex;align-items:center;gap:0.5rem;justify-content:center;margin:0.5rem 0;flex-wrap:wrap;}
+/* Flow */
+.flow{display:flex;align-items:center;gap:1rem;justify-content:center;flex-wrap:wrap;margin:1rem 0;}
+.flow-block{border-radius:12px;padding:1rem 1.2rem;text-align:center;min-width:100px;}
+.flow-block.input{background:rgba(0,122,153,0.08);border:2px solid var(--blue);}
+.flow-block.op{background:rgba(91,58,168,0.08);border:2px solid var(--violet);}
+.flow-block.output{background:rgba(26,110,52,0.08);border:2px solid var(--green);}
+.flow-block.frozen{background:rgba(136,153,166,0.08);border:2px solid var(--gray);}
+.flow-block .ftitle{font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;}
+.flow-block .fval{font-family:'Space Grotesk',monospace;font-size:0.85rem;font-weight:700;margin-top:0.3rem;}
+.flow-block .fsize{font-size:0.55rem;color:var(--tmut);margin-top:0.1rem;}
+.flow-arrow{font-size:1.8rem;color:var(--violet);font-weight:300;}
+
+/* Number display */
+.num-grid{display:inline-grid;gap:2px;margin:0.3rem;}
+.num-cell{width:44px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px;font-family:'Space Grotesk',monospace;font-size:0.75rem;font-weight:700;}
+.num-cell.pos{background:rgba(91,58,168,0.1);color:var(--violet);border:1.5px solid rgba(91,58,168,0.3);}
+.num-cell.neg{background:rgba(198,40,28,0.08);color:var(--red);border:1.5px solid rgba(198,40,28,0.3);}
+.num-cell.froz{background:rgba(136,153,166,0.1);color:var(--gray);border:1.5px solid rgba(136,153,166,0.3);}
+.num-cell.res{background:rgba(26,110,52,0.1);color:var(--green);border:1.5px solid rgba(26,110,52,0.3);}
+
+/* Controls */
+.controls{display:flex;align-items:center;gap:0.5rem;justify-content:center;margin:0.75rem 0;flex-wrap:wrap;}
 .ctrl-btn{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;font-weight:600;padding:0.5em 1.2em;border:2px solid var(--border);border-radius:100px;background:var(--card);color:var(--text);cursor:pointer;transition:0.15s;}
 .ctrl-btn:hover{border-color:var(--violet);color:var(--violet);}
 .ctrl-btn:disabled{opacity:0.3;cursor:not-allowed;}
 .ctrl-btn.primary{background:var(--violet);border-color:var(--violet);color:#fff;}
 
-.step-indicator{display:flex;gap:0.3rem;justify-content:center;margin:0.5rem 0;flex-wrap:wrap;font-family:'Space Grotesk',sans-serif;font-size:0.6rem;}
-.step-pill{padding:0.3em 0.8em;border-radius:100px;border:2px solid var(--border);color:var(--tmut);font-weight:600;}
-.step-pill.active{border-color:var(--violet);background:var(--violet);color:#fff;}
-.step-pill.done{border-color:var(--green);color:var(--green);}
+.step-dots{display:flex;gap:0.4rem;justify-content:center;margin:0.5rem 0;}
+.step-dot{width:10px;height:10px;border-radius:50%;background:var(--border);transition:0.3s;cursor:pointer;}
+.step-dot.active{background:var(--violet);}
+.step-dot.done{background:var(--green);}
 
 .explain{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0.75rem 1rem;margin:0.5rem 0;font-size:0.82rem;color:var(--tdim);text-align:center;line-height:1.7;}
 
-.callout{background:rgba(91,58,168,0.04);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.5rem 0.75rem;margin:0.5rem 0;font-size:0.75rem;}
+.callout{background:rgba(91,58,168,0.04);border:1px solid rgba(91,58,168,0.12);border-radius:10px;padding:0.6rem 0.8rem;margin:0.5rem 0;font-size:0.75rem;text-align:center;}
 
-.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:0.4rem;margin:0.4rem 0;}
-.metric{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:0.5rem;text-align:center;}
-.metric .val{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:700;}
-.metric .lbl{font-size:0.55rem;color:var(--tmut);margin-top:0.1rem;text-transform:uppercase;letter-spacing:0.05em;}
-
-@media(max-width:768px){.app{padding:0.5rem;}}
+@media(max-width:768px){.app{padding:0.5rem;}.flow{gap:0.5rem;}.flow-block{padding:0.6rem;min-width:70px;}}
 </style>
 </head>
 <body>
@@ -46,175 +62,173 @@ canvas{display:block;width:100%;height:auto;border-radius:8px;}
 <div class="app">
 
 <header class="header">
-  <h1>How LoRA Computes: B×A×x — Step by Step</h1>
-  <p>Using a toy example: d=4, r=2. Real model: d=4096, r=8. Same math.</p>
+  <h1>How LoRA Actually Computes</h1>
+  <p>Q_output = W_q·x (frozen) + B_q·(A_q·x) (tiny side path). 4 steps. Same for V.</p>
 </header>
 
-<div class="step-indicator" id="stepInd">
-  <span class="step-pill active" id="s1">1. A·x (2×4 × 4×1)</span>
-  <span class="step-pill" id="s2">2. B·(A·x) (4×2 × 2×1)</span>
-  <span class="step-pill" id="s3">3. W·x (FROZEN, 4×4)</span>
-  <span class="step-pill" id="s4">4. ADD → Output</span>
+<div class="step-dots">
+  <div class="step-dot active" id="d1" onclick="goTo(0)"></div>
+  <div class="step-dot" id="d2" onclick="goTo(1)"></div>
+  <div class="step-dot" id="d3" onclick="goTo(2)"></div>
+  <div class="step-dot" id="d4" onclick="goTo(3)"></div>
 </div>
 
-<div class="metrics">
-  <div class="metric"><div class="val" style="color:var(--violet);">32,768</div><div class="lbl">A·x Ops (Cheap!)</div></div>
-  <div class="metric"><div class="val" style="color:var(--violet);">32,768</div><div class="lbl">B·(A·x) Ops (Cheap!)</div></div>
-  <div class="metric"><div class="val" style="color:var(--frozen);">16,777,216</div><div class="lbl">W·x Ops (Frozen)</div></div>
-</div>
-
-<div class="canvas-card">
-  <canvas id="c" width="840" height="400"></canvas>
-</div>
+<div id="content"></div>
 
 <div class="controls">
   <button class="ctrl-btn" onclick="prev()">◀ Prev</button>
-  <button class="ctrl-btn primary" id="playBtn" onclick="togglePlay()">▶ Play</button>
-  <button class="ctrl-btn" onclick="next()">Next ▶</button>
-  <button class="ctrl-btn" onclick="reset()">↺ Reset</button>
-  <span style="font-size:0.6rem;color:var(--tmut);">Step <span id="stepNum">1</span>/4</span>
+  <button class="ctrl-btn primary" onclick="next()">Next ▶</button>
+  <span style="font-size:0.6rem;color:var(--tmut);">Step <span id="sn">1</span>/4</span>
+  <button class="ctrl-btn" onclick="autoPlay()">▶ Auto</button>
 </div>
 
-<div class="explain" id="explain">
-  <strong>Step 1: A × x</strong> — Multiply the LoRA matrix A (r×d) with input x (d×1). This is CHEAP because r is tiny (r=8 in real model, shown as r=2 here). Result: r numbers.
-</div>
+<div class="explain" id="explain"></div>
 
 <div class="callout">
-  <strong>🧠 Key:</strong> B×A is <strong>NEVER</strong> computed as a full matrix. Always two cheap steps: A·x first (a few ops), then B·(A·x) (a few more ops). Total LoRA cost = 0.4% of W·x.
+  <strong>🧠 Why this matters:</strong> B×A is <strong>NEVER</strong> computed as a full 4096×4096 matrix. Always two cheap steps: A·x (32K ops) then B·(A·x) (32K ops). Total LoRA overhead = <strong>0.39%</strong>. At inference, merge B×A into W → <strong>ZERO</strong> overhead.
 </div>
 
 </div>
 
 <script>
-// ── DATA ──
-const x=[0.8, -0.3, 0.5, 0.2];  // input vector (4 dims)
-const A=[[0.6, 0.1, -0.3, 0.4], [-0.2, 0.5, 0.2, -0.1]]; // A (2×4)
-const B=[[0.3, -0.2], [-0.1, 0.4], [0.2, 0.1], [-0.3, 0.2]]; // B (4×2)
-const W=[[0.5, -0.3, 0.2, 0.1], [-0.2, 0.6, -0.1, 0.3], [0.1, -0.4, 0.5, -0.2], [-0.3, 0.2, -0.1, 0.7]]; // W (4×4, frozen)
+// Data: simplified example with d=3, r=1 for extreme clarity
+const x=[0.8, -0.3, 0.5];
+const Aq=[[0.6, 0.1, -0.3]]; // r=1, d=3
+const Bq=[[0.3], [-0.2], [0.4]]; // d=3, r=1
+const Wq=[[0.5, -0.3, 0.2], [-0.1, 0.4, -0.2], [0.3, -0.2, 0.6]]; // 3×3, frozen
 
-// Pre-compute
-const Ax=[], BAx=[], Wx=[];
-for(let i=0;i<2;i++){let s=0;for(let j=0;j<4;j++)s+=A[i][j]*x[j];Ax.push(s);}
-for(let i=0;i<4;i++){let s=0;for(let j=0;j<2;j++)s+=B[i][j]*Ax[j];BAx.push(s);}
-for(let i=0;i<4;i++){let s=0;for(let j=0;j<4;j++)s+=W[i][j]*x[j];Wx.push(s);}
-const out=Wx.map((v,i)=>v+BAx[i]);
+// Compute
+const Ax=Aq[0].reduce((s,a,i)=>s+a*x[i],0);
+const BAx=Bq.map(row=>row[0]*Ax);
+const Wx=Wq.map(row=>row.reduce((s,w,i)=>s+w*x[i],0));
+const Qout=Wx.map((v,i)=>v+BAx[i]);
 
-let step=0, playing=false, timer=null;
+const fmt=v=>v>=0?'+'+v.toFixed(2):v.toFixed(2);
 
-// ── CANVAS ──
-const c=document.getElementById('c'), ctx=c.getContext('2d');
-function draw(){
-  const Wc=840, H=400; ctx.clearRect(0,0,Wc,H); ctx.fillStyle='#f8f9fc'; ctx.fillRect(0,0,Wc,H);
+function renderCell(val, cls){return `<div class="num-cell ${cls}">${fmt(val)}</div>`;}
 
-  const cellW=48, cellH=32, gap=8;
-  const fmt=n=>n>=0?'+'+n.toFixed(2):n.toFixed(2);
+let step=0;
 
-  // ── Helper ──
-  function drawMatrix(mat, rows, cols, x, y, label, color, highlightRow){
-    ctx.fillStyle='var(--text)'; ctx.font='600 11px "Inter"'; ctx.textAlign='left';
-    ctx.fillText(label, x, y-12);
-    for(let i=0;i<rows;i++){
-      for(let j=0;j<cols;j++){
-        const val=mat[i][j];
-        const isHl=highlightRow===i;
-        const alpha=0.08+Math.abs(val)*(isHl?0.5:0.25);
-        ctx.fillStyle=val>=0?`rgba(91,58,168,${alpha})`:`rgba(198,40,40,${alpha})`;
-        ctx.strokeStyle=isHl?color:'var(--border)';
-        ctx.lineWidth=isHl?2.5:1;
-        ctx.beginPath();ctx.roundRect(x+j*cellW, y+i*cellH, cellW-2, cellH-2,4);ctx.fill();ctx.stroke();
-        ctx.fillStyle=val>=0?color:'var(--red)';
-        ctx.font='600 13px "Space Grotesk"'; ctx.textAlign='center';
-        ctx.fillText(val.toFixed(1), x+j*cellW+cellW/2-1, y+i*cellH+22);
-      }
-    }
-    return {nextX: x+cols*cellW+gap, rows, cols};
-  }
-
-  function drawVector(vec, x, y, label, color, vertical){
-    ctx.fillStyle='var(--text)'; ctx.font='600 11px "Inter"'; ctx.textAlign='left';
-    ctx.fillText(label, vertical?x-10:y-12, vertical?y-12:x);
-    for(let i=0;i<vec.length;i++){
-      const val=vec[i];
-      const vx=vertical?x:x+i*cellW, vy=vertical?y+i*cellH:y;
-      ctx.fillStyle='rgba(91,58,168,0.1)';ctx.strokeStyle=color;ctx.lineWidth=2;
-      ctx.beginPath();ctx.roundRect(vx,vy,cellW-2,cellH-2,4);ctx.fill();ctx.stroke();
-      ctx.fillStyle=color;ctx.font='700 14px "Space Grotesk"';ctx.textAlign='center';
-      ctx.fillText(fmt(val), vx+cellW/2-1, vy+22);
-    }
-    return vertical?x+cellW+gap:y+(vertical?0:cellH*vec.length+gap);
-  }
-
-  // ── LAYOUT ──
-  // Top-left: Input x
-  drawVector(x, 20, 80, 'Input x (size d=4)', 'var(--cyan)', true);
-
-  // Step 1: A · x
-  const aInfo=drawMatrix(A, 2, 4, 100, 80, 'A (r×d = 2×4)', 'var(--violet)', step===0?0:-1);
-  const axX=aInfo.nextX;
-  if(step>=0){drawVector(Ax, axX, 80, 'A·x (2 numbers)', 'var(--violet)', true);}
-
-  // Step 2: B · (A·x)
-  const bInfo=drawMatrix(B, 4, 2, 360, 80, 'B (d×r = 4×2)', 'var(--violet)', step===1?0:-1);
-  const baxX=bInfo.nextX;
-  if(step>=1){drawVector(BAx, baxX, 80, 'B·(A·x) = ΔW', 'var(--violet)', true);}
-
-  // Step 3: W · x
-  const wInfo=drawMatrix(W, 4, 4, 540, 80, 'W (d×d, FROZEN)', 'var(--frozen)', -1);
-  const wxX=wInfo.nextX;
-  if(step>=2){drawVector(Wx, wxX, 80, 'W·x', 'var(--frozen)', true);}
-
-  // Step 4: ADD
-  if(step>=3 || step>=2){
-    const addX=700, addY=240;
-    ctx.fillStyle='var(--text)';ctx.font='700 13px "Inter"';ctx.textAlign='center';
-    ctx.fillText('Output = W·x + B·(A·x)', addX-30, addY-10);
-
-    // B·(A·x) column
-    drawVector(BAx, addX-20, addY, 'ΔW (LoRA)', 'var(--violet)', true);
-    // + sign
-    ctx.fillStyle='var(--text)';ctx.font='700 22px "Space Grotesk"';ctx.textAlign='center';
-    ctx.fillText('+', addX+cellW, addY+2*cellH);
-    // W·x column
-    drawVector(Wx, addX+cellW+20, addY, 'W·x (frozen)', 'var(--frozen)', true);
-    // = sign
-    ctx.fillText('=', addX+cellW*2+20, addY+2*cellH);
-    // Result
-    drawVector(out, addX+cellW*2+40, addY, 'Result', 'var(--green)', true);
-  }
+const slides=[
+{ // Step 1: A·x
+  title:'Step 1: A_q × x → r numbers (The First Cheap Step)',
+  render:()=>`
+    <div class="step-box"><h2>${slides[0].title}</h2>
+    <p style="font-size:0.85rem;color:var(--tdim);margin-bottom:1rem;">A_q is a tiny r×d matrix. r=1 (in real LoRA r=8). Multiply with input x (d numbers).</p>
+    <div class="flow">
+      <div class="flow-block input"><div class="ftitle">Input x</div><div class="fsize">d=3 numbers</div>
+        <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${x.map(v=>renderCell(v,'pos')).join('')}</div>
+      </div>
+      <div class="flow-arrow">×</div>
+      <div class="flow-block op"><div class="ftitle">A_q</div><div class="fsize">r×d = 1×3</div>
+        <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${Aq[0].map(v=>renderCell(v,'pos')).join('')}</div>
+      </div>
+      <div class="flow-arrow">=</div>
+      <div class="flow-block output"><div class="ftitle">A_q·x</div><div class="fsize">r=1 number</div>
+        <div class="num-grid" style="grid-template-columns:repeat(1,1fr);">${renderCell(Ax,'pos')}</div>
+      </div>
+    </div>
+    <p style="font-size:0.7rem;color:var(--tmut);margin-top:0.75rem;">r×d = 3 multiplications → <strong>1 number</strong>. Real: 8×4096 = 32,768 ops.</p>
+    </div>`
+},
+{ // Step 2: B·(A·x)
+  title:'Step 2: B_q × (A_q·x) → ΔW (The Second Cheap Step)',
+  render:()=>`
+    <div class="step-box"><h2>${slides[1].title}</h2>
+    <p style="font-size:0.85rem;color:var(--tdim);margin-bottom:1rem;">B_q is d×r. Multiply with the result from Step 1 (r numbers). Output = d numbers = ΔW.</p>
+    <div class="flow">
+      <div class="flow-block input"><div class="ftitle">A_q·x</div><div class="fsize">r=1 number</div>
+        <div class="num-grid" style="grid-template-columns:repeat(1,1fr);">${renderCell(Ax,'pos')}</div>
+      </div>
+      <div class="flow-arrow">×</div>
+      <div class="flow-block op"><div class="ftitle">B_q</div><div class="fsize">d×r = 3×1</div>
+        <div class="num-grid" style="grid-template-columns:repeat(1,1fr);">${Bq.map(r=>renderCell(r[0],'pos')).join('')}</div>
+      </div>
+      <div class="flow-arrow">=</div>
+      <div class="flow-block output"><div class="ftitle">ΔW = B_q·(A_q·x)</div><div class="fsize">d=3 numbers</div>
+        <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${BAx.map(v=>renderCell(v,'pos')).join('')}</div>
+      </div>
+    </div>
+    <p style="font-size:0.7rem;color:var(--tmut);margin-top:0.75rem;">d×r = 3 multiplications → <strong>3 numbers = ΔW</strong>. Real: 4096×8 = 32,768 ops. <strong>B×A NEVER computed as full 4096×4096!</strong></p>
+    </div>`
+},
+{ // Step 3: W·x
+  title:'Step 3: W_q × x → Same Heavy Computation (FROZEN)',
+  render:()=>`
+    <div class="step-box"><h2>${slides[2].title}</h2>
+    <p style="font-size:0.85rem;color:var(--tdim);margin-bottom:1rem;">This is the SAME computation as always — the frozen weight matrix. LoRA doesn\'t change this.</p>
+    <div class="flow">
+      <div class="flow-block input"><div class="ftitle">Input x</div><div class="fsize">d=3 numbers</div>
+        <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${x.map(v=>renderCell(v,'pos')).join('')}</div>
+      </div>
+      <div class="flow-arrow">×</div>
+      <div class="flow-block frozen"><div class="ftitle">W_q (FROZEN)</div><div class="fsize">d×d = 3×3</div>
+        <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${Wq.flat().map(v=>renderCell(v,'froz')).join('')}</div>
+      </div>
+      <div class="flow-arrow">=</div>
+      <div class="flow-block frozen"><div class="ftitle">W_q·x</div><div class="fsize">d=3 numbers</div>
+        <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${Wx.map(v=>renderCell(v,'froz')).join('')}</div>
+      </div>
+    </div>
+    <p style="font-size:0.7rem;color:var(--tmut);margin-top:0.75rem;">d² = 9 multiplications. Real: 4096² = <strong>16,777,216 ops</strong>. Same with or without LoRA.</p>
+    </div>`
+},
+{ // Step 4: ADD
+  title:'Step 4: Q_output = W_q·x + ΔW → Done!',
+  render:()=>`
+    <div class="step-box"><h2>${slides[3].title}</h2>
+    <p style="font-size:0.85rem;color:var(--tdim);margin-bottom:1rem;">Add the frozen result and the tiny LoRA correction. That\'s the complete Q output.</p>
+    <div class="flow">
+      <div class="flow-block frozen"><div class="ftitle">W_q·x (frozen)</div>
+        <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${Wx.map(v=>renderCell(v,'froz')).join('')}</div>
+      </div>
+      <div style="font-size:2rem;font-weight:300;">+</div>
+      <div class="flow-block op"><div class="ftitle">ΔW (LoRA)</div>
+        <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${BAx.map(v=>renderCell(v,'pos')).join('')}</div>
+      </div>
+      <div style="font-size:2rem;font-weight:300;">=</div>
+      <div class="flow-block output"><div class="ftitle">Q_output</div><div class="fsize">d=3 numbers</div>
+        <div class="num-grid" style="grid-template-columns:repeat(3,1fr);">${Qout.map(v=>renderCell(v,'res')).join('')}</div>
+      </div>
+    </div>
+    <p style="font-size:0.8rem;color:var(--tdim);margin-top:1rem;">
+      <span style="color:var(--gray);">■ W·x = frozen (16.8M ops)</span> &nbsp;+&nbsp;
+      <span style="color:var(--violet);">■ ΔW = LoRA (65K ops, 0.39% overhead)</span> &nbsp;=&nbsp;
+      <span style="color:var(--green);">■ Q_output</span><br>
+      At inference: merge ΔW into W → <strong>zero overhead</strong>.
+    </p>
+    </div>`
 }
+];
 
-function updateUI(){
-  document.getElementById('stepNum').textContent=step+1;
-  ['s1','s2','s3','s4'].forEach((id,i)=>{
-    const el=document.getElementById(id);
-    el.classList.remove('active','done');
-    if(i<step) el.classList.add('done');
-    if(i===step) el.classList.add('active');
+const explainText=[
+  '<strong>A_q is tiny (r×d).</strong> Multiplies with x to produce r numbers. r=1 in this example (real: r=8). This is the first cheap step — only r×d = 3 multiplications.',
+  '<strong>B_q is d×r.</strong> Multiplies with the r numbers from Step 1. Produces d numbers = ΔW. Also cheap — only d×r = 3 multiplications. <strong>B×A is never computed as a full matrix!</strong>',
+  '<strong>W_q is d×d and FROZEN.</strong> This is the same heavy computation as always. LoRA doesn\'t change this. 9 multiplications here, 16.8M in the real model.',
+  '<strong>ADD the two paths.</strong> Q_output = W·x + B·(A·x). Same for V. This happens in ALL 32 layers, each with independent B and A. At inference, merge → zero overhead.'
+];
+
+function render(s){
+  step=s;
+  document.getElementById('content').innerHTML=slides[s].render();
+  document.getElementById('explain').innerHTML=explainText[s];
+  document.getElementById('sn').textContent=s+1;
+  document.querySelectorAll('.step-dot').forEach((d,i)=>{
+    d.classList.remove('active','done');
+    if(i<s) d.classList.add('done');
+    if(i===s) d.classList.add('active');
   });
-  const msgs=[
-    '<strong>Step 1: A × x</strong> — A is r×d (2×4). x is d×1 (4 numbers). Result: <span style="color:var(--violet);">2 numbers</span>. Cost: r×d = 8 multiplications. In real model: 8×4096 = <span style="color:var(--violet);">32,768 ops</span>. This is the FIRST cheap step.',
-    '<strong>Step 2: B × (A·x)</strong> — B is d×r (4×2). (A·x) is r×1 (2 numbers). Result: <span style="color:var(--violet);">4 numbers = ΔW</span>. Cost: d×r = 8 multiplications. In real model: 4096×8 = <span style="color:var(--violet);">32,768 ops</span>. B×A is NEVER computed as full matrix!',
-    '<strong>Step 3: W × x</strong> — W is the FROZEN weight matrix (4×4). Same computation as always. Cost: 16 multiplications. In real model: 4096² = <span style="color:var(--frozen);">16,777,216 ops</span>. This is the HEAVY step — but LoRA doesn\'t change it at all.',
-    '<strong>Step 4: ADD → Output</strong> — Output = <span style="color:var(--frozen);">W·x (frozen)</span> + <span style="color:var(--violet);">B·(A·x) (LoRA)</span>. LoRA adds 65K ops to 16.8M = <span style="color:var(--green);">0.39% overhead</span>. At inference, merge B×A into W → ZERO overhead.'
-  ];
-  document.getElementById('explain').innerHTML=msgs[step];
-  draw();
 }
+function next(){if(step<3){step++;render(step);}}
+function prev(){if(step>0){step--;render(step);}}
+function goTo(s){step=s;render(step);}
+function autoPlay(){
+  step=0;render(0);
+  const timer=setInterval(()=>{if(step>=3)clearInterval(timer);else{step++;render(step);}},2000);
+}
+document.addEventListener('keydown',e=>{if(e.key==='ArrowRight')next();if(e.key==='ArrowLeft')prev();});
 
-function next(){if(step<3){step++;updateUI();}}
-function prev(){if(step>0){step--;updateUI();}}
-function reset(){stopPlay();step=0;updateUI();}
-function togglePlay(){playing?stopPlay():startPlay();}
-function startPlay(){if(step>=3)reset();playing=true;document.getElementById('playBtn').textContent='⏸ Pause';runLoop();}
-function stopPlay(){playing=false;clearTimeout(timer);document.getElementById('playBtn').textContent='▶ Play';}
-function runLoop(){if(!playing)return;if(step>=3){stopPlay();return;}next();timer=setTimeout(runLoop,1500);}
-
-document.addEventListener('keydown',e=>{
-  if(e.key==='ArrowRight')next();if(e.key==='ArrowLeft')prev();
-  if(e.key===' '){e.preventDefault();togglePlay();}if(e.key==='r')reset();
-});
-
-updateUI();
+render(0);
 </script>
 </body>
 </html>
