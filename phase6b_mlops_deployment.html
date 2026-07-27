@@ -3,371 +3,377 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Phase 6B: MLOps Pipeline — Visual Explorer</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<title>Phase 6B: MLOps Pipeline — Visual Explainer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f8f9fc;--card:#fff;--raised:#eef0f5;--border:#dde0e6;--text:#1a1d23;--tdim:#4a4f5b;--tmut:#8b909b;--violet:#5b3aa8;--vbg:#f3effc;--cyan:#007a99;--cyan-bg:#e6f4f7;--amber:#b87000;--amber-bg:#fff6e5;--green:#1a6e34;--green-bg:#e6f4ea;--red:#c62828;--red-bg:#ffebe9;--magenta:#9e2a6b;--magenta-bg:#fdf0f7}
-body.dark{--bg:#06090f;--card:#0d1117;--raised:#161b22;--border:#21262d;--text:#e6edf3;--tdim:#8b949e;--tmut:#484f58;--violet:#a371f7;--vbg:#a371f710;--cyan:#39d2ff;--cyan-bg:#39d2ff10;--amber:#ffb347;--amber-bg:#ffb34710;--green:#3fb950;--green-bg:#3fb95010;--red:#f85149;--red-bg:#f8514910;--magenta:#ff6ec7;--magenta-bg:#ff6ec710}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background 0.3s,color 0.3s;overflow-x:hidden}
-.theme-btn{position:fixed;top:1rem;right:1rem;z-index:10;background:var(--raised);border:1px solid var(--border);color:var(--text);padding:0.5rem 0.9rem;border-radius:8px;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:0.75rem;font-weight:600;transition:0.2s}
-.theme-btn:hover{border-color:var(--violet);color:var(--violet)}
-.container{max-width:900px;margin:0 auto;padding:1rem;text-align:center}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;min-height:100vh}
+.app{max-width:1000px;margin:0 auto;padding:1.5rem}
+.header{text-align:center;padding:1.5rem 0 0.5rem}
+.header .title-row{display:flex;align-items:center;justify-content:center;gap:0.5rem;margin-bottom:0.3rem}
+.header .mega-emoji{font-size:2rem}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;color:var(--violet)}
+.header .subtitle{color:var(--tdim);font-size:0.8rem}
 
-/* Header */
-h1{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;color:var(--violet);margin-bottom:0.2rem}
-.subtitle{color:var(--tdim);font-size:0.82rem;margin-bottom:0.6rem}
+/* Tabs */
+.tabs{display:flex;flex-wrap:wrap;gap:0.4rem;justify-content:center;margin:1rem 0}
+.tab{font-family:'Space Grotesk',sans-serif;font-size:0.62rem;font-weight:600;letter-spacing:0.04em;padding:0.5em 1em;border-radius:100px;border:1.5px solid var(--border);background:var(--card);color:var(--tdim);cursor:pointer;transition:0.2s}
+.tab:hover{border-color:var(--violet);color:var(--violet)}
+.tab.active{border-color:var(--violet);color:var(--violet);background:var(--vbg)}
+.tab .tb-emoji{font-size:0.9rem}
 
-/* Pipeline */
-.pipe-header{display:flex;gap:0.5rem;justify-content:center;align-items:center;flex-wrap:wrap;margin:0.8rem 0}
-.pipe-step{background:var(--card);border:2px solid var(--border);border-radius:14px;padding:0.8rem 1rem;text-align:center;transition:0.3s;cursor:pointer;min-width:130px}
-.pipe-step:hover{border-color:var(--violet);transform:translateY(-3px);box-shadow:0 6px 20px rgba(91,58,168,0.1)}
-.pipe-step.active{border-color:var(--violet);background:var(--vbg);box-shadow:0 0 0 4px rgba(91,58,168,0.06)}
-.pipe-step.done{border-color:var(--green);background:var(--green-bg)}
-.pipe-step .icon{font-size:1.8rem;display:block;margin-bottom:0.2rem}
-.pipe-step .title{font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:600;color:var(--tmut);text-transform:uppercase;letter-spacing:0.08em}
-.pipe-step .stat{font-family:'Space Grotesk',sans-serif;font-size:0.8rem;font-weight:700;color:var(--violet)}
-.pipe-arrow{font-size:1.3rem;color:var(--violet)}
+/* Metrics */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.5rem;margin:0.75rem 0}
+.metric{text-align:center;padding:0.5rem}
+.metric .val{font-family:'Space Grotesk',sans-serif;font-size:1.1rem;font-weight:700}
+.metric .lbl{font-size:0.58rem;color:var(--tmut);text-transform:uppercase;letter-spacing:0.06em;margin-top:0.15rem}
 
-/* Stats */
-.stats-row{display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;margin:0.6rem 0}
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0.6rem 0.9rem;text-align:center;min-width:100px}
-.stat-card .val{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:700}
-.stat-card .lbl{font-family:'Inter',sans-serif;font-size:0.6rem;color:var(--tmut);margin-top:0.15rem;text-transform:uppercase;letter-spacing:0.05em}
+/* Perf banner */
+.perf-banner{display:flex;align-items:center;justify-content:center;gap:0.75rem;padding:0.75rem 1.5rem;background:var(--card);border:1px solid var(--border);border-radius:12px;margin:0.75rem 0;flex-wrap:wrap}
+.perf-item{text-align:center}
+.perf-item .pv{font-family:'Space Grotesk',sans-serif;font-size:1.1rem;font-weight:700}
+.perf-item .pl{font-size:0.55rem;color:var(--tmut);text-transform:uppercase;letter-spacing:0.06em}
+.perf-divider{width:1px;height:30px;background:var(--border)}
+
+/* Pipeline card */
+.pipeline-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin:0.75rem 0}
+.pipeline-label{font-family:'Space Grotesk',sans-serif;font-size:0.75rem;font-weight:700;color:var(--violet);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:1rem;text-align:center}
+
+/* Pipeline stages */
+.pipeline{display:flex;align-items:center;gap:0.3rem;justify-content:center;flex-wrap:wrap;margin:1rem 0}
+.pipe-stage{background:var(--raised);border:2px solid var(--border);border-radius:10px;padding:0.6rem 0.8rem;text-align:center;cursor:pointer;transition:0.2s;min-width:100px}
+.pipe-stage:hover{border-color:var(--violet)}
+.pipe-stage.active-stage{border-color:var(--violet);background:var(--vbg)}
+.pipe-stage .st-emoji{font-size:1.3rem;display:block;margin-bottom:0.1rem}
+.pipe-stage .st-name{font-family:'Space Grotesk',sans-serif;font-size:0.55rem;font-weight:700;letter-spacing:0.06em;color:var(--text)}
+.pipe-stage .st-time{font-size:0.5rem;color:var(--tmut);margin-top:0.1rem}
+.pipe-stage .st-desc{font-size:0.5rem;color:var(--tdim);margin-top:0.1rem}
+.pipe-arrow{font-size:1rem;color:var(--violet)}
 
 /* Substeps */
-.substeps{display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;margin:0.6rem 0}
-.substep{background:var(--card);border:2px solid var(--border);border-radius:10px;padding:0.6rem 0.9rem;text-align:center;font-family:'Inter',sans-serif;font-size:0.72rem;color:var(--tdim);min-width:110px;transition:0.3s;cursor:pointer;font-weight:500}
-.substep:hover{border-color:var(--violet)}
-.substep.current{border-color:var(--violet);background:var(--vbg);color:var(--violet);font-weight:700}
-.substep.done{border-color:var(--green);color:var(--green);background:var(--green-bg)}
+.substeps{margin-top:1rem}
+.substeps h4{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;color:var(--violet);margin-bottom:0.6rem}
+.substep-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem}
+.substep{background:var(--raised);border:1px solid var(--border);border-radius:8px;padding:0.7rem 0.9rem}
+.substep .ss-num{font-family:'Space Grotesk',sans-serif;font-size:0.52rem;font-weight:700;color:var(--violet);background:var(--vbg);padding:0.15em 0.5em;border-radius:4px;display:inline-block;margin-bottom:0.3rem}
+.substep .ss-title{font-family:'Space Grotesk',sans-serif;font-size:0.65rem;font-weight:600;margin-bottom:0.3rem}
+.substep .ss-code{background:#1e1e1e;border-radius:6px;padding:0.5rem 0.7rem;margin:0.4rem 0;font-family:'Space Grotesk',monospace;font-size:0.58rem;line-height:1.7;color:#d4d4d4;white-space:pre-wrap;overflow-x:auto}
+.substep .ss-viz{display:flex;align-items:center;gap:0.3rem;margin:0.4rem 0;font-size:0.65rem;flex-wrap:wrap}
+.ss-viz .vz-box{background:var(--card);border:1.5px solid var(--border);border-radius:6px;padding:0.25rem 0.5rem;font-weight:600;font-family:'Space Grotesk',sans-serif;font-size:0.55rem;display:flex;align-items:center;gap:0.2rem}
+.ss-viz .vz-arrow{color:var(--violet);font-weight:700}
+.ss-viz .vz-input{border-color:var(--amber);background:var(--amber-bg)}
+.ss-viz .vz-process{border-color:var(--violet);background:var(--vbg)}
+.ss-viz .vz-output{border-color:var(--green);background:var(--green-bg)}
+.ss-tag{display:inline-block;font-size:0.5rem;padding:1px 6px;border-radius:100px;margin-top:0.3rem}
+.ss-tag.mlflow{background:var(--vbg);color:var(--violet)}
+.ss-tag.dvc{background:var(--amber-bg);color:var(--amber)}
+.ss-tag.evidently{background:var(--green-bg);color:var(--green)}
+.ss-tag.vllm{background:var(--magenta-bg);color:var(--magenta)}
+.ss-tag.ci{background:var(--cyan-bg);color:var(--cyan)}
 
-/* Visual */
-.visual{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.2rem;margin:0.6rem 0;min-height:200px;display:flex;align-items:center;justify-content:center}
-.visual .vz-title{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;color:var(--tmut);margin-bottom:0.6rem;text-transform:uppercase;letter-spacing:0.08em}
-.visual .vz-box{background:var(--raised);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.8rem;text-align:center;min-width:80px}
-.visual .vz-arrow{color:var(--violet);font-size:1.1rem}
-.visual .vz-tag{font-family:'Space Grotesk',sans-serif;font-size:0.55rem;font-weight:600;padding:0.2em 0.6em;border-radius:100px;display:inline-block}
-.vz-tag.p{background:var(--vbg);color:var(--violet);border:1px solid var(--violet)}
-.vz-tag.m{background:var(--green-bg);color:var(--green);border:1px solid var(--green)}
-.vz-tag.a{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber)}
-.visual .vz-label{font-family:'Inter',sans-serif;font-size:0.65rem;color:var(--tdim);margin-top:0.2rem}
+/* Nav */
+.nav-row{display:flex;justify-content:center;align-items:center;gap:0.75rem;margin:1.25rem 0}
+.nav-btn{font-family:'Space Grotesk',sans-serif;font-size:0.65rem;font-weight:600;padding:0.45em 1.2em;border:2px solid var(--border);border-radius:100px;background:var(--card);color:var(--text);cursor:pointer;transition:0.15s}
+.nav-btn:hover{border-color:var(--violet);color:var(--violet)}
+.nav-btn:disabled{opacity:0.25;cursor:not-allowed}
 
-/* Code */
-.code{background:var(--raised);border:1px solid var(--border);border-left:4px solid var(--violet);border-radius:10px;padding:0.8rem 1rem;margin:0.6rem auto;max-width:750px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:0.7rem;line-height:1.8;color:var(--text);overflow-x:auto;white-space:pre-wrap}
+.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.6rem 1rem;margin:0.75rem 0;font-size:0.78rem;text-align:center}
 
-/* Controls */
-.ctrls{display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;margin:0.6rem 0}
-.btn{font-family:'Space Grotesk',sans-serif;font-size:0.68rem;font-weight:600;padding:0.5rem 1.1rem;border-radius:100px;border:2px solid var(--border);background:var(--card);color:var(--tdim);cursor:pointer;transition:0.2s}
-.btn:hover{border-color:var(--violet);color:var(--violet)}
-.btn.primary{background:var(--violet);border-color:var(--violet);color:#fff}
-.btn.primary:hover{opacity:0.85;color:#fff}
-.btn:disabled{opacity:0.3;cursor:not-allowed}
-
-/* File tree */
-.file-tree{text-align:left;font-family:'JetBrains Mono',monospace;font-size:0.68rem;line-height:1.7;color:var(--tdim);background:var(--raised);border:1px solid var(--border);border-radius:8px;padding:0.8rem 1rem;display:inline-block;min-width:200px}
-.file-tree .dir{color:var(--violet)}.file-tree .added{color:var(--green)}.file-tree .tracked{color:var(--amber)}
-
-.tag{font-family:'Space Grotesk',sans-serif;font-size:0.55rem;font-weight:600;padding:0.2em 0.7em;border-radius:100px;display:inline-block}
-.tag.git{background:var(--red-bg);color:var(--red)}.tag.dvc{background:var(--amber-bg);color:var(--amber)}
-.tag.ml{background:var(--vbg);color:var(--violet)}.tag.ev{background:var(--green-bg);color:var(--green)}
-
-.link-row{display:flex;gap:0.4rem;justify-content:center;flex-wrap:wrap;margin:0.5rem 0}
-.link-btn{font-family:'Inter',sans-serif;font-size:0.65rem;font-weight:600;color:var(--violet);cursor:pointer;text-decoration:underline;border:none;background:none;transition:0.2s}
-.link-btn:hover{color:var(--cyan)}
-
-.params-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0.5rem;width:100%;max-width:700px}
-.param-card{background:var(--raised);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.8rem;text-align:left}
-.param-card .p-title{font-family:'Space Grotesk',sans-serif;font-size:0.6rem;color:var(--violet);font-weight:600;text-transform:uppercase;margin-bottom:0.4rem}
-.param-card .p-row{font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--tdim);line-height:2}
-
-@media(max-width:768px){.pipe-step{min-width:100px}.stat-card{min-width:70px}.visual{min-height:160px}.params-grid{grid-template-columns:1fr}}
+@media(max-width:768px){.pipeline{flex-direction:column;align-items:center}.pipe-arrow{transform:rotate(90deg)}.substep-grid{grid-template-columns:1fr}.perf-banner{gap:0.5rem}}
 </style>
 </head>
 <body>
-<button class="theme-btn" onclick="toggleTheme()">🌙 Dark</button>
-<div class="container">
-  <h1>MLOps Pipeline — 4 Stages Visual Explorer</h1>
-  <p class="subtitle">Click a stage, then step through. <strong>One command (dvc repro) runs all 4 stages — track → version → monitor → deploy.</strong></p>
+<div class="app">
+<header class="header">
+  <div class="title-row"><span class="mega-emoji">🔧</span><h1>MLOps Pipeline Visualizer</h1></div>
+  <p class="subtitle">Click any stage, then step through its sub-operations. Track (MLflow) → Version (DVC) → Monitor (Evidently) → Deploy (vLLM)</p>
+</header>
 
-  <div class="pipe-header" id="pipeline">
-    <div class="pipe-step active" id="ps0" onclick="selectStage(0)"><div class="icon">🔬</div><div class="title">STAGE 1</div><div class="stat">TRACK (MLflow)</div></div>
-    <div class="pipe-arrow">→</div>
-    <div class="pipe-step" id="ps1" onclick="selectStage(1)"><div class="icon">📦</div><div class="title">STAGE 2</div><div class="stat">VERSION (DVC)</div></div>
-    <div class="pipe-arrow">→</div>
-    <div class="pipe-step" id="ps2" onclick="selectStage(2)"><div class="icon">📈</div><div class="title">STAGE 3</div><div class="stat">MONITOR (Evidently)</div></div>
-    <div class="pipe-arrow">→</div>
-    <div class="pipe-step" id="ps3" onclick="selectStage(3)"><div class="icon">🚀</div><div class="title">STAGE 4</div><div class="stat">DEPLOY (vLLM)</div></div>
-  </div>
+<div class="tabs">
+  <button class="tab active" onclick="switchTab(0)"><span class="tb-emoji">🔬</span> MLflow Tracking</button>
+  <button class="tab" onclick="switchTab(1)"><span class="tb-emoji">📦</span> DVC Versioning</button>
+  <button class="tab" onclick="switchTab(2)"><span class="tb-emoji">📈</span> Evidently Drift</button>
+  <button class="tab" onclick="switchTab(3)"><span class="tb-emoji">🚀</span> vLLM Deploy</button>
+  <button class="tab" onclick="switchTab(4)"><span class="tb-emoji">⚙️</span> CI/CD Pipeline</button>
+  <button class="tab" onclick="switchTab(5)"><span class="tb-emoji">💰</span> Cost Compare</button>
+</div>
 
-  <div class="stats-row">
-    <div class="stat-card" style="border-top:3px solid var(--violet)"><div class="val" style="color:var(--violet)" id="stat1">0.32</div><div class="lbl">Final Loss</div></div>
-    <div class="stat-card" style="border-top:3px solid var(--amber)"><div class="val" style="color:var(--amber)" id="stat2">5 versions</div><div class="lbl">Data Snapshots</div></div>
-    <div class="stat-card" style="border-top:3px solid var(--green)"><div class="val" style="color:var(--green)" id="stat3">0.15</div><div class="lbl">Drift Score</div></div>
-    <div class="stat-card" style="border-top:3px solid var(--cyan)"><div class="val" style="color:var(--cyan)" id="stat4">$387/mo</div><div class="lbl">Serving Cost (T4)</div></div>
-  </div>
+<div class="perf-banner">
+  <div class="perf-item"><div class="pv" style="color:var(--violet);">8 runs</div><div class="pl">MLflow Experiments</div></div>
+  <div class="perf-divider"></div>
+  <div class="perf-item"><div class="pv" style="color:var(--amber);">5 versions</div><div class="pl">DVC Data Snapshots</div></div>
+  <div class="perf-divider"></div>
+  <div class="perf-item"><div class="pv" style="color:var(--green);">Daily</div><div class="pl">Drift Monitor</div></div>
+  <div class="perf-divider"></div>
+  <div class="perf-item"><div class="pv" style="color:var(--cyan);">$387/mo</div><div class="pl">Serve Cost (T4)</div></div>
+</div>
 
-  <div class="substeps" id="substeps"></div>
-  <div class="visual" id="visual"></div>
-  <div class="code" id="codeBox"></div>
-  <div class="ctrls">
-    <button class="btn" onclick="prevSub()">◀ Prev</button>
-    <button class="btn primary" onclick="nextSub()">Next ▶</button>
-    <button class="btn" onclick="resetAll()">↺ Reset</button>
-  </div>
-  <div class="link-row">
-    <button class="link-btn" onclick="window.open('dvc.yaml')">📄 dvc.yaml</button>
-    <button class="link-btn" onclick="window.open('scripts/mlflow_tracking.py')">📄 mlflow_tracking.py</button>
-    <button class="link-btn" onclick="window.open('scripts/check_drift.py')">📄 check_drift.py</button>
-    <button class="link-btn" onclick="window.open('scripts/serve_vllm.py')">📄 serve_vllm.py</button>
-  </div>
+<div id="pipelineCard"></div>
+
+<div class="nav-row">
+  <button class="nav-btn" id="prevBtn" onclick="selectStage(currentStage-1)">◀ Prev</button>
+  <span style="font-size:0.65rem;color:var(--tmut);" id="stageLabel">Stage 1 / 3</span>
+  <button class="nav-btn" id="nextBtn" onclick="selectStage(currentStage+1)">Next ▶</button>
+  <button class="nav-btn" onclick="selectStage(0)">↺ Reset</button>
+</div>
 </div>
 
 <script>
-function toggleTheme(){document.body.classList.toggle('dark');document.querySelector('.theme-btn').textContent=document.body.classList.contains('dark')?'☀️ Light':'🌙 Dark';localStorage.setItem('p6b-theme',document.body.classList.contains('dark')?'dark':'light')}
-if(localStorage.getItem('p6b-theme')==='dark'){document.body.classList.add('dark');document.querySelector('.theme-btn').textContent='☀️ Light'}
-
-const stages=[
-  {name:'TRACK',icon:'🔬',tool:'MLflow',stat1:'0.32',stat2:'8 runs',stat3:'0.15',stat4:'v7 (Production)',subs:[
-    {name:'1. Start Run',desc:'TrackRun() context manager',detail:'Opens an MLflow run. Records start time, Python version, and GPU info automatically. Every training session gets a unique run ID like a1b2c3d4.'},
-    {name:'2. Log Everything',desc:'Params + Metrics + Adapter',detail:'Log all hyperparameters (r, alpha, lr, epochs), every loss value during training, and the final adapter as an artifact. MLflow stores it in mlruns.db — a single SQLite file.'},
-    {name:'3. Registry',desc:'None→Staging→Production',detail:'The best adapter is registered in the Model Registry. A human reviews it in Staging, then promotes it to Production. Previous Production model is auto-archived. Rollback is one command.'}
-  ]},
-  {name:'VERSION',icon:'📦',tool:'DVC',stat1:'500 rows',stat2:'5 versions',stat3:'0.15',stat4:'instruction_data.csv',subs:[
-    {name:'1. Track Data',desc:'dvc add → Git tracks pointer',detail:'DVC hashes your CSV file. It stores the file in .dvc/cache and writes a small .dvc pointer file. You commit the pointer to Git — the actual data goes to S3/GDrive.'},
-    {name:'2. Pipeline',desc:'dvc.yaml: 3 stages cached',detail:'The DVC pipeline has 3 stages: prepare_data → train → evaluate. Each stage lists its dependencies. DVC hashes every dependency. If nothing changed → CACHED. Saves GPU time.'},
-    {name:'3. Reproduce',desc:'dvc repro = one command',detail:'dvc repro walks the pipeline DAG. If instruction_data.csv changed → prepare_data re-runs → train re-runs → evaluate re-runs. Everything else uses cache. One command reproduces the entire pipeline.'}
-  ]},
-  {name:'MONITOR',icon:'📈',tool:'Evidently AI',stat1:'500 rows',stat2:'0.15',stat3:'0.15',stat4:'Daily (6am UTC)',subs:[
-    {name:'1. Compare',desc:'Training vs Live data',detail:'Evidently loads reference data (what you trained on) and current data (what users are asking). It computes drift for each column using statistical tests.'},
-    {name:'2. Detect Drift',desc:'Score > 0.5 = RETRAIN',detail:'If the drift score exceeds 0.5, users are asking about topics you never trained on. The model is silently failing — it responds, but the answers are wrong. The daily GitHub Actions job catches this within 24 hours.'},
-    {name:'3. Act',desc:'Collect new data → dvc repro',detail:'Drift detected → human reviews → appends new Q&A to instruction_data.csv → dvc add + dvc push → dvc repro → MLflow logs new run → promote to Production.'}
-  ]},
-  {name:'DEPLOY',icon:'🚀',tool:'vLLM',stat1:'5000 tok/s',stat2:'50ms',stat3:'$0.50/hr',stat4:'OpenAI-compatible',subs:[
-    {name:'1. Merge',desc:'merge_and_unload() adapter',detail:'LoRA adapter (BxA side paths) must be baked into the base model before serving. merge_and_unload() adds BxA to Wo, producing a standard model. No PeftModel dependency needed.'},
-    {name:'2. Serve',desc:'vllm serve → :8000',detail:'vLLM uses PagedAttention — virtual memory for the KV-cache. Combined with continuous batching, it achieves 100x throughput vs HuggingFace pipeline().'},
-    {name:'3. Query',desc:'OpenAI-compatible API',detail:'vLLM exposes an OpenAI-compatible /v1 endpoint. Change the base_url and your existing code works. Zero code changes. ~50ms at 5000 tokens/second.'}
-  ]}
+const tabs=[
+{ // 0: MLflow Tracking
+  name:'🔬 MLflow — Experiment Tracking', phases:'Log Every Training Run',
+  metrics:[
+    {val:'Params',lbl:'lora_r, lr, epochs',color:'var(--violet)'},
+    {val:'Metrics',lbl:'loss, accuracy',color:'var(--green)'},
+    {val:'Artifacts',lbl:'adapter.safetensors',color:'var(--amber)'},
+    {val:'Registry',lbl:'Staging→Production',color:'var(--cyan)'},
+  ],
+  banner:[
+    {val:'TrackRun()',lbl:'Context Manager',color:'var(--violet)'},
+    {val:'2 Lines',lbl:'To Log Everything',color:'var(--green)'},
+    {val:'$0',lbl:'Open Source',color:'var(--amber)'},
+    {val:'mlflow ui',lbl:'Dashboard',color:'var(--cyan)'},
+  ],
+  stages:[
+    {emoji:'📋',name:'PREPROCESS',time:'Setup',desc:'Install + Start UI',
+     substeps:[
+       {n:1,title:'Install MLflow (🤖 Automatic)',tag:'mlflow',viz:'<span class="vz-box vz-input">pip install</span><span class="vz-arrow">→</span><span class="vz-box vz-output">mlflow ready</span>',code:'pip install mlflow'},
+       {n:2,title:'Start Tracking UI (Terminal 1)',tag:'mlflow',viz:'<span class="vz-box vz-input">mlflow ui</span><span class="vz-arrow">→</span><span class="vz-box vz-output">localhost:5000</span>',code:'# Terminal 1 — leave this running\nmlflow ui --backend-store-uri sqlite:///mlruns.db\n\n# Opens http://localhost:5000\n# Shows: Experiments, Runs, Compare, Registry'},
+       {n:3,title:'Write the hands-on script',tag:'mlflow',viz:'<span class="vz-box vz-input">TrackRun()</span><span class="vz-arrow">→</span><span class="vz-box vz-process">with ctx</span><span class="vz-arrow">→</span><span class="vz-box vz-output">auto-log</span>',code:'# scripts/hands_on_stage1_mlflow.py\nfrom scripts.mlflow_tracking import TrackRun\n\nwith TrackRun("hands-on-test", {"lora_r": 8, "lr": 2e-4}) as run:\n    # Your training code here\n    run.log_metric("final_loss", 0.65)\n\n# On exit → auto-logs:\n# - Start time + duration\n# - Python version + GPU info\n# - All params + metrics + artifacts'},
+     ]},
+    {emoji:'🧠',name:'TRAIN',time:'~3 min',desc:'Run Script → See Results',
+     substeps:[
+       {n:1,title:'Run the tracking script (Terminal 2)',tag:'mlflow',viz:'<span class="vz-box vz-input">python -m</span><span class="vz-arrow">→</span><span class="vz-box vz-process">TrackRun</span><span class="vz-arrow">→</span><span class="vz-box vz-output">mlruns.db</span>',code:'# Terminal 2 — run the hands-on script\ncd c:\\Users\\ashok\\OneDrive\\NOblox\\Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1\npython -m scripts.hands_on_stage1_mlflow\n\n# Output:\n# [MLflow] Experiment: hands-on-test\n# [MLflow] Run: a1b2c3d4...\n# [MLflow] Params: {"lora_r": 8, "lr": 2e-4}\n# [MLflow] Training completed in 0m 3s\n# [MLflow] View results: mlflow ui'},
+       {n:2,title:'What MLflow Records (per run)',tag:'mlflow',viz:'<span class="vz-box vz-input">▶️ Start</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📝 Params</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🏋️ Train</span><span class="vz-arrow">→</span><span class="vz-box vz-output">💾 Artifact</span>',code:'# Each run captures:\n# PARAMETERS: lora_r=8, lr=2e-4, epochs=3, python_version=3.12\n# METRICS: loss (2.0→1.0→0.67 per step), final_loss=0.65\n# DURATION: 4.2s (auto-logged on context exit)\n# ARTIFACTS: adapter_model.safetensors (if log_adapter() called)\n# SOURCE: Which script produced this run\n# STATUS: Finished / Failed\n# All stored in mlruns.db (single SQLite file)'},
+       {n:3,title:'View in Dashboard (Browser)',tag:'mlflow',viz:'<span class="vz-box vz-input">localhost:5000</span><span class="vz-arrow">→</span><span class="vz-box vz-process">Click Run</span><span class="vz-arrow">→</span><span class="vz-box vz-output">All Details</span>',code:'# Open http://localhost:5000 → see:\n#  Experiment "hands-on-test" — 1 run\n#  Click the run → Overview tab:\n#    - Parameters: lora_r=8, lr=2e-4\n#    - Metrics: loss chart (3 steps), final_loss=0.65\n#    - Artifacts: adapter/ directory\n#    - Duration: 4.2s\n#    - Source: hands_on_stage1_mlflow.py\n#  Compare tab → select multiple runs → side-by-side'},
+     ]},
+    {emoji:'🚀',name:'POST PROCESS',time:'Registry',desc:'Model Registry + Promote',
+     substeps:[
+       {n:1,title:'Register Model (after real training)',tag:'mlflow',viz:'<span class="vz-box vz-input">run.log_adapter()</span><span class="vz-arrow">→</span><span class="vz-box vz-process">Registry</span><span class="vz-arrow">→</span><span class="vz-box vz-output">v1 (None)</span>',code:'# Inside TrackRun context:\nrun.log_adapter("./adapter")\n\n# MLflow:\n# 1. Logs adapter files as artifacts\n# 2. Registers model "instruction-ft-medical" v1\n# 3. Stage: None (not yet reviewed)'},
+       {n:2,title:'Promote: None → Staging → Production',tag:'mlflow',viz:'<span class="vz-box vz-input">v1 None</span><span class="vz-arrow">→</span><span class="vz-box vz-process">v1 Staging</span><span class="vz-arrow">→</span><span class="vz-box vz-output">v1 Production</span>',code:'# Human reviews model in Staging → promotes to Production\nmlflow models transition instruction-ft-medical 1 --stage Staging\nmlflow models transition instruction-ft-medical 1 --stage Production\n\n# Rollback (emergency):\nmlflow models transition instruction-ft-medical 0 --stage Production'},
+       {n:3,title:'What MLflow stores vs HuggingFace',tag:'mlflow',viz:'<span class="vz-box vz-input">MLflow</span><span class="vz-arrow">vs</span><span class="vz-box vz-output">HF Hub</span>',code:'# MLflow (internal team):\n#   - Private to your team\n#   - Full experiment history\n#   - Model Registry (Staging→Production)\n#   - Adapter + config + tokenizer stored\n#   - Free (open source)\n\n# HuggingFace Hub (public):\n#   - Share with the world\n#   - Model cards only (no experiment tracking)\n#   - No staging workflow\n#   - Free for public, paid for private'},
+     ]},
+  ]
+},
+{ // 1: DVC Versioning
+  name:'📦 DVC — Data Versioning', phases:'Track Which Dataset Produced Which Model',
+  metrics:[
+    {val:'dvc add',lbl:'Track Data Files',color:'var(--amber)'},
+    {val:'dvc.yaml',lbl:'Pipeline Definition',color:'var(--violet)'},
+    {val:'dvc repro',lbl:'Reproduce Pipeline',color:'var(--green)'},
+    {val:'S3/GDrive',lbl:'Remote Storage',color:'var(--cyan)'},
+  ],
+  banner:[
+    {val:'Hash-based',lbl:'Cache (not timestamps)',color:'var(--amber)'},
+    {val:'200 bytes',lbl:'Git Pointer Size',color:'var(--green)'},
+    {val:'3 Stages',lbl:'prepare→train→eval',color:'var(--violet)'},
+    {val:'$0',lbl:'Open Source',color:'var(--cyan)'},
+  ],
+  stages:[
+    {emoji:'📋',name:'PREPROCESS',time:'Setup',desc:'Init DVC + Track Data',
+     substeps:[
+       {n:1,title:'Install & Initialize DVC',tag:'dvc',viz:'<span class="vz-box vz-input">pip install</span><span class="vz-arrow">→</span><span class="vz-box vz-process">dvc init</span><span class="vz-arrow">→</span><span class="vz-box vz-output">.dvc/ created</span>',code:'# Install and initialize\npip install dvc\ncd c:\\Users\\ashok\\OneDrive\\NOblox\\Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1\ndvc init\n\n# Creates .dvc/ directory — DVC is now tracking this project\n# Creates .dvcignore — files DVC should ignore'},
+       {n:2,title:'Track your training data',tag:'dvc',viz:'<span class="vz-box vz-input">data/*.csv</span><span class="vz-arrow">→</span><span class="vz-box vz-process">dvc add</span><span class="vz-arrow">→</span><span class="vz-box vz-output">.dvc pointer</span>',code:'# Track data with DVC\ncd c:\\Users\\ashok\\OneDrive\\NOblox\\Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1\ndvc add data/instruction_data.csv\n\n# What happens:\n# 1. DVC hashes the file (MD5)\n# 2. Copies file to .dvc/cache\n# 3. Creates data/instruction_data.csv.dvc (200-byte pointer)\n# 4. Git tracks only the .dvc pointer — NOT the 5MB CSV\n\n# Push data to remote (S3/GDrive):\ndvc remote add -d myremote gdrive://your-folder-id\ndvc push'},
+       {n:3,title:'Git commits the pointer, DVC stores data',tag:'dvc',viz:'<span class="vz-box vz-input">Git</span><span class="vz-arrow">→</span><span class="vz-box vz-process">.dvc file (200B)</span><span class="vz-arrow">+</span><span class="vz-box vz-input">DVC</span><span class="vz-arrow">→</span><span class="vz-box vz-output">data (5MB)</span>',code:'# Git: tracks the small .dvc pointer file\ngit add data/instruction_data.csv.dvc\ngit commit -m "Add Q&A dataset v2 — 500 rows"\n\n# DVC: stores the actual 5MB CSV in cache/remote\ndvc push\n\n# Anyone can reproduce:\n#   git checkout <commit>    # Get the pointer\n#   dvc checkout              # Restore exact data version'},
+     ]},
+    {emoji:'🧠',name:'TRAIN',time:'Pipeline',desc:'Define & Run DVC Pipeline',
+     substeps:[
+       {n:1,title:'Define the 3-stage pipeline (dvc.yaml)',tag:'dvc',viz:'<span class="vz-box vz-input">dvc.yaml</span><span class="vz-arrow">→</span><span class="vz-box vz-process">3 stages</span><span class="vz-arrow">→</span><span class="vz-box vz-output">Cached DAG</span>',code:'# dvc.yaml — the entire pipeline in one file\nstages:\n  prepare_data:\n    cmd: python scripts/prepare_data.py\n    deps: [data/instruction_data.csv]\n    outs: [data/train_split.csv, data/val_split.csv]\n  train:\n    cmd: python scripts/train_stage.py\n    deps: [data/train_split.csv, scripts/train_stage.py]\n    outs: [models/adapter_model.safetensors]\n  evaluate:\n    cmd: python scripts/evaluate_stage.py\n    deps: [models/adapter_model.safetensors, data/val_split.csv]\n    metrics: [metrics/evaluation_metrics.json]'},
+       {n:2,title:'dvc repro — One command, full pipeline',tag:'dvc',viz:'<span class="vz-box vz-input">dvc repro</span><span class="vz-arrow">→</span><span class="vz-box vz-process">Walk DAG</span><span class="vz-arrow">→</span><span class="vz-box vz-output">Run or Skip</span>',code:'# Run the full pipeline — one command\ncd c:\\Users\\ashok\\OneDrive\\NOblox\\Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1\ndvc repro\n\n# If nothing changed → all 3 stages CACHED (skipped)\n# If data changed → prepare_data re-runs → train re-runs → evaluate re-runs\n# If only evaluate script changed → only evaluate re-runs\n\n# Dry-run (see what would run):\ndvc repro --dry'},
+       {n:3,title:'params.yaml — All hyperparameters tracked',tag:'dvc',viz:'<span class="vz-box vz-input">params.yaml</span><span class="vz-arrow">→</span><span class="vz-box vz-process">dvc repro</span><span class="vz-arrow">→</span><span class="vz-box vz-output">Reproducible</span>',code:'# params.yaml — single source of truth for all hyperparams\ntrain:\n  base_model: TinyLlama/TinyLlama-1.1B-Chat-v1.0\n  lora_r: 8\n  lora_alpha: 16\n  learning_rate: 2e-4\n  epochs: 10\n  batch_size: 4\n\n# Experiment: dvc experiments run --set-param train.lora_r=16\n# DVC tracks which params produced which results'},
+     ]},
+    {emoji:'🚀',name:'POST PROCESS',time:'Version',desc:'Checkout + Reproduce',
+     substeps:[
+       {n:1,title:'Reproduce any past experiment',tag:'dvc',viz:'<span class="vz-box vz-input">git checkout</span><span class="vz-arrow">+</span><span class="vz-box vz-input">dvc checkout</span><span class="vz-arrow">→</span><span class="vz-box vz-output">Exact state</span>',code:'# Reproduce a model from 3 months ago:\ngit checkout <commit>       # Get the exact code\ndvc checkout                  # Get the exact dataset\ndvc repro train               # Re-run training\n# Produces the EXACT same adapter\n\n# Answer: "Which data was run #7 trained on?"\n# MLflow run #7 → recorded git commit → dvc checkout that commit'},
+       {n:2,title:'Add remote storage (S3/GDrive)',tag:'dvc',viz:'<span class="vz-box vz-input">dvc remote add</span><span class="vz-arrow">→</span><span class="vz-box vz-process">S3/GDrive</span><span class="vz-arrow">→</span><span class="vz-box vz-output">dvc push</span>',code:'# Google Drive (free, 15GB):\ndvc remote add -d myremote gdrive://your-folder-id\ndvc push\n\n# AWS S3:\ndvc remote add -d myremote s3://my-bucket/dvc-store\ndvc push\n\n# Team members:\ngit clone <repo>\ndvc pull  # Downloads exact data versions'},
+       {n:3,title:'DVC vs Git LFS vs S3 alone',tag:'dvc',viz:'<span class="vz-box vz-input">DVC</span><span class="vz-arrow">vs</span><span class="vz-box vz-process">Git LFS</span><span class="vz-arrow">vs</span><span class="vz-box vz-output">S3</span>',code:'# DVC: Pipeline + data versioning + caching (best for ML)\n# Git LFS: Large file storage only (no pipeline, no caching)\n# S3 alone: No versioning link to code (which data for which model?)\n\n# DVC wins because:\n# 1. Pipeline caching (dvc repro skips unchanged stages)\n# 2. Git-integrated (pointer files in git, data in remote)\n# 3. Metrics tracking (metrics/ in dvc.yaml)\n# 4. Experiment tracking (dvc experiments)'},
+     ]},
+  ]
+},
+{ // 2: Evidently Drift
+  name:'📈 Evidently AI — Drift Monitoring', phases:'Catch Silent Degradation Before Users Notice',
+  metrics:[
+    {val:'Drift Score',lbl:'< 0.5 = Healthy',color:'var(--green)'},
+    {val:'Daily',lbl:'6am UTC Check',color:'var(--cyan)'},
+    {val:'3 Metrics',lbl:'Drift+Quality+Errors',color:'var(--amber)'},
+    {val:'$0',lbl:'Open Source',color:'var(--violet)'},
+  ],
+  banner:[
+    {val:'Data Drift',lbl:'KL Divergence',color:'var(--amber)'},
+    {val:'Response Quality',lbl:'Length + Sentiment',color:'var(--violet)'},
+    {val:'Error Rate',lbl:'Refusals + Empty',color:'var(--red)'},
+    {val:'Auto-Alert',lbl:'GitHub Actions',color:'var(--cyan)'},
+  ],
+  stages:[
+    {emoji:'📋',name:'PREPROCESS',time:'Setup',desc:'Install + Prepare Data',
+     substeps:[
+       {n:1,title:'Install Evidently AI',tag:'evidently',viz:'<span class="vz-box vz-input">pip install</span><span class="vz-arrow">→</span><span class="vz-box vz-output">evidently ready</span>',code:'pip install evidently'},
+       {n:2,title:'Reference = Training Data (Baseline)',tag:'evidently',viz:'<span class="vz-box vz-input">train_df</span><span class="vz-arrow">→</span><span class="vz-box vz-process">Baseline</span><span class="vz-arrow">→</span><span class="vz-box vz-output">Reference</span>',code:'# Reference data = what you trained on\nimport pandas as pd\ntrain_df = pd.read_csv("data/train_split.csv")\n# 500 rows: Metformin, diabetes, insulin, A1C...\n# This is the "normal" distribution'},
+       {n:3,title:'Current = Production Data (Live)',tag:'evidently',viz:'<span class="vz-box vz-input">live_df</span><span class="vz-arrow">→</span><span class="vz-box vz-process">Compare</span><span class="vz-arrow">→</span><span class="vz-box vz-output">vs Reference</span>',code:'# Current data = what users are asking NOW\nlive_df = pd.read_csv("data/live_production_sample.csv")\n# 800 rows: 50% medical + 26% web dev + 24% other\n# THIS is drift — users asking about new topics'},
+     ]},
+    {emoji:'🧠',name:'TRAIN',time:'~2s',desc:'Run Drift Check',
+     substeps:[
+       {n:1,title:'Run Evidently drift report',tag:'evidently',viz:'<span class="vz-box vz-input">Report()</span><span class="vz-arrow">→</span><span class="vz-box vz-process">DataDriftPreset</span><span class="vz-arrow">→</span><span class="vz-box vz-output">drift_report.html</span>',code:'# Run drift check (2 seconds, CPU only)\ncd c:\\Users\\ashok\\OneDrive\\NOblox\\Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1\npython scripts/check_drift.py --demo\n\n# Generates: drift_report.html\n# Shows which columns drifted and by how much'},
+       {n:2,title:'Interpret the drift score',tag:'evidently',viz:'<span class="vz-box vz-input">Score < 0.5</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🟢 Healthy</span><span class="vz-arrow">|</span><span class="vz-box vz-input">Score > 0.5</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🔴 Drifted</span>',code:'# Drift score interpretation:\n# 0.0 - 0.3: Healthy. Users asking similar questions.\n# 0.3 - 0.5: Mild drift. Monitor closely.\n# 0.5+: DRIFT DETECTED. Users asking about NEW topics.\n#         → Model responding with wrong/irrelevant answers.\n#         → Time to retrain!\n\n# Demo data intentionally shows drift (0.62)\n# 50% medical + 26% web dev + 24% cooking'},
+       {n:3,title:'What traditional monitoring MISSES',tag:'evidently',viz:'<span class="vz-box vz-input">🟢 Server UP</span><span class="vz-arrow">→</span><span class="vz-box vz-input">🟢 200 OK</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🔴 Wrong Answers</span>',code:'# Traditional monitoring checks:\n# ✅ Server is UP (HTTP 200)\n# ✅ Latency < 500ms\n# ✅ Model responds (tokens flowing)\n# ❌ But answers are WRONG (on new topics)\n\n# Evidently catches what servers CANNOT see:\n# "Is the model answering questions about topics\n#  it was actually trained on?"'},
+     ]},
+    {emoji:'🚀',name:'POST PROCESS',time:'Automate',desc:'CI/CD + Auto-Retrain',
+     substeps:[
+       {n:1,title:'GitHub Actions — Daily Drift Check',tag:'ci',viz:'<span class="vz-box vz-input">6am UTC</span><span class="vz-arrow">→</span><span class="vz-box vz-process">check_drift.py</span><span class="vz-arrow">→</span><span class="vz-box vz-output">Pass/Fail</span>',code:'# .github/workflows/test-finetune.yml\n# Runs EVERY DAY at 6am UTC:\n#   python scripts/check_drift.py --demo\n#   If drift > 0.5 → workflow FAILS → you get notified\n#   If drift < 0.5 → workflow PASSES → model is healthy'},
+       {n:2,title:'Drift → Retrain → Deploy Loop',tag:'ci',viz:'<span class="vz-box vz-input">🔴 Drift</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📝 New Q&A</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔄 dvc repro</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🚀 Deploy</span>',code:'# The complete drift→retrain loop:\n# 1. Drift alert fires (6am UTC)\n# 2. Human reviews: "Users asking about K8s + Docker"\n# 3. Collect/generate new Q&A for DevOps topics\n# 4. Append to instruction_data.csv\n# 5. dvc add + dvc push (new version tracked)\n# 6. dvc repro (train on old+new data)\n# 7. MLflow logs new run, evaluate confirms drift resolved\n# 8. Promote to Production'},
+       {n:3,title:'Monitor all 3 metrics',tag:'evidently',viz:'<span class="vz-box vz-input">Data Drift</span><span class="vz-arrow">+</span><span class="vz-box vz-input">Quality</span><span class="vz-arrow">+</span><span class="vz-box vz-input">Errors</span><span class="vz-arrow">→</span><span class="vz-box vz-output">Full Picture</span>',code:'# Three metrics to monitor continuously:\n# 1. DATA DRIFT: Are users asking about new topics?\n#    → KL divergence train vs live > 0.5 = RETRAIN\n# 2. RESPONSE QUALITY: Are answers getting worse?\n#    → Avg response length drop > 20% = investigate\n# 3. ERROR RATE: More refusals/empty responses?\n#    → > 5% of requests failing = rollback'},
+     ]},
+  ]
+},
+{ // 3: vLLM Deploy
+  name:'🚀 vLLM — Production Serving', phases:'100× Faster Than HuggingFace Pipeline',
+  metrics:[
+    {val:'5000 tok/s',lbl:'Throughput',color:'var(--green)'},
+    {val:'50ms',lbl:'Latency',color:'var(--cyan)'},
+    {val:'$0.50/hr',lbl:'T4 GPU Cost',color:'var(--amber)'},
+    {val:'OpenAI API',lbl:'Compatible',color:'var(--violet)'},
+  ],
+  banner:[
+    {val:'PagedAttention',lbl:'No KV-Cache Waste',color:'var(--green)'},
+    {val:'Continuous Batch',lbl:'Dynamic Scheduling',color:'var(--cyan)'},
+    {val:'100× vs HF',lbl:'Same Model, Different Engine',color:'var(--violet)'},
+    {val:'merge+serve',lbl:'Two Commands',color:'var(--amber)'},
+  ],
+  stages:[
+    {emoji:'📋',name:'PREPROCESS',time:'Merge',desc:'Adapter → Standard Model',
+     substeps:[
+       {n:1,title:'Why merge? vLLM needs standard model',tag:'vllm',viz:'<span class="vz-box vz-input">PeftModel</span><span class="vz-arrow">→</span><span class="vz-box vz-process">merge_and_unload()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">AutoModel</span>',code:'# vLLM expects a standard model — no LoRA side paths\n# merge_and_unload() bakes B×A into W₀, deletes B and A\n\nfrom peft import PeftModel\nmodel = AutoModelForCausalLM.from_pretrained("TinyLlama-1.1B")\nmodel = PeftModel.from_pretrained(model, "./adapter")\nmodel = model.merge_and_unload()\nmodel.save_pretrained("./merged_model")\ntokenizer.save_pretrained("./merged_model")\n\n# Result: standard model.safetensors — vLLM can serve it'},
+       {n:2,title:'Install vLLM (GPU required)',tag:'vllm',viz:'<span class="vz-box vz-input">pip install vllm</span><span class="vz-arrow">→</span><span class="vz-box vz-output">vLLM ready</span>',code:'pip install vllm\n# Requires: CUDA-capable GPU (T4, A10, A100, etc.)\n# Does NOT work on CPU-only machines'},
+       {n:3,title:'Or use our serve script (auto-merges)',tag:'vllm',viz:'<span class="vz-box vz-input">adapter/</span><span class="vz-arrow">→</span><span class="vz-box vz-process">serve_vllm.py</span><span class="vz-arrow">→</span><span class="vz-box vz-output">:8000</span>',code:'# One command: merge + serve\ncd c:\\Users\\ashok\\OneDrive\\NOblox\\Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1\npython scripts/serve_vllm.py --adapter ./models/final_adapter --port 8000\n\n# Step 1: Merges LoRA adapter into base model\n# Step 2: Starts vLLM server on port 8000\n# Step 3: Ready for queries (OpenAI-compatible API)'},
+     ]},
+    {emoji:'🧠',name:'TRAIN',time:'~1 min',desc:'Start vLLM Server',
+     substeps:[
+       {n:1,title:'Start vLLM server',tag:'vllm',viz:'<span class="vz-box vz-input">vllm serve</span><span class="vz-arrow">→</span><span class="vz-box vz-process">PagedAttention</span><span class="vz-arrow">→</span><span class="vz-box vz-output">:8000</span>',code:'# Start the server (GPU required)\ncd c:\\Users\\ashok\\OneDrive\\NOblox\\Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1\nvllm serve ./merged_model --port 8000\n\n# What vLLM auto-configures:\n# - PagedAttention: KV-cache in blocks (no fragmentation)\n# - Continuous batching: dynamic request scheduling\n# - FlashAttention: fused kernel for speed\n# - OpenAI-compatible: /v1/chat/completions endpoint'},
+       {n:2,title:'PagedAttention — Why 100× faster',tag:'vllm',viz:'<span class="vz-box vz-input">HF: ~65% waste</span><span class="vz-arrow">→</span><span class="vz-box vz-process">vLLM: ~95% used</span><span class="vz-arrow">→</span><span class="vz-box vz-output">100× throughput</span>',code:'# HuggingFace pipeline():\n#   Fixed max-size KV-cache per request\n#   ~65% of allocated VRAM is wasted (fragmentation)\n#   50 tokens/second on T4\n\n# vLLM PagedAttention:\n#   Blocks allocated on demand (like OS virtual memory)\n#   ~95% VRAM utilization\n#   5000 tokens/second on T4 (100× faster)\n\n# Same model. Same GPU. Different serving engine.'},
+       {n:3,title:'vLLM vs Alternatives',tag:'vllm',viz:'<span class="vz-box vz-input">vLLM</span><span class="vz-arrow">vs</span><span class="vz-box vz-process">TGI</span><span class="vz-arrow">vs</span><span class="vz-box vz-output">SageMaker</span>',code:'# vLLM:    5000 tok/s, $0.50/hr (T4), OpenAI-compatible, open source\n# TGI:     3000 tok/s, $0.50/hr (T4), HuggingFace-native, open source\n# SageMaker: 3000 tok/s, $0.73/hr, AWS-managed, auto-scaling\n# Foundry:  4000 tok/s, $1.70/hr, Azure-managed, no-code\n\n# vLLM wins on throughput/cost for self-hosted setups'},
+     ]},
+    {emoji:'🚀',name:'POST PROCESS',time:'Query',desc:'Test + Monitor',
+     substeps:[
+       {n:1,title:'Query your model (OpenAI-compatible)',tag:'vllm',viz:'<span class="vz-box vz-input">OpenAI Client</span><span class="vz-arrow">→</span><span class="vz-box vz-process">localhost:8000</span><span class="vz-arrow">→</span><span class="vz-box vz-output">Response</span>',code:'# Same code as OpenAI — one line changed!\nfrom openai import OpenAI\n\nclient = OpenAI(\n    base_url="http://localhost:8000/v1",  # ← Only this changes!\n    api_key="not-needed"\n)\nresponse = client.chat.completions.create(\n    model="medical-qa-v8",\n    messages=[{"role": "user", "content": "What is Metformin?"}]\n)\nprint(response.choices[0].message.content)\n# "Metformin is a biguanide..." — at 5000 tok/s'},
+       {n:2,title:'Load test your deployment',tag:'vllm',viz:'<span class="vz-box vz-input">curl /v1/chat</span><span class="vz-arrow">→</span><span class="vz-box vz-process">Benchmark</span><span class="vz-arrow">→</span><span class="vz-box vz-output">Metrics</span>',code:'# Quick test:\ncurl http://localhost:8000/v1/chat/completions \\\n  -H "Content-Type: application/json" \\\n  -d \'{"model":"./merged_model","messages":[{"role":"user","content":"Hi"}]}\'\n\n# Benchmark (requires benchmark tool):\npython -m vllm.entrypoints.openai.run_batch \\\n  --model ./merged_model \\\n  --requests 100 \\\n  --concurrency 10'},
+       {n:3,title:'Monitor production metrics',tag:'vllm',viz:'<span class="vz-box vz-input">Grafana</span><span class="vz-arrow">+</span><span class="vz-box vz-input">Evidently</span><span class="vz-arrow">→</span><span class="vz-box vz-output">Dashboard</span>',code:'# vLLM exposes Prometheus metrics on :8000/metrics\n# Monitor:\n#   - Requests per second\n#   - Tokens per second\n#   - Queue length\n#   - P50/P95/P99 latency\n\n# Pair with Evidently AI for drift detection\n# Grafana dashboard displays both operational + quality metrics'},
+     ]},
+  ]
+},
+{ // 4: CI/CD Pipeline
+  name:'⚙️ CI/CD — Automated Testing + Retraining', phases:'GitHub Actions Runs Everything',
+  metrics:[
+    {val:'3 Jobs',lbl:'PR+Drift+GPU',color:'var(--violet)'},
+    {val:'5 seconds',lbl:'PR Checks',color:'var(--green)'},
+    {val:'Daily',lbl:'Drift Monitor',color:'var(--amber)'},
+    {val:'Manual',lbl:'GPU Pipeline',color:'var(--cyan)'},
+  ],
+  banner:[
+    {val:'push/PR',lbl:'Trigger PR Checks',color:'var(--green)'},
+    {val:'6am UTC',lbl:'Scheduled Drift',color:'var(--amber)'},
+    {val:'workflow_dispatch',lbl:'Manual GPU Pipeline',color:'var(--violet)'},
+    {val:'3 jobs',lbl:'Independent',color:'var(--cyan)'},
+  ],
+  stages:[
+    {emoji:'📋',name:'PREPROCESS',time:'Trigger',desc:'What fires when',
+     substeps:[
+       {n:1,title:'Job 1: PR Checks (every push)',tag:'ci',viz:'<span class="vz-box vz-input">git push</span><span class="vz-arrow">→</span><span class="vz-box vz-process">L1+L2+L4</span><span class="vz-arrow">→</span><span class="vz-box vz-output">Pass/Fail</span>',code:'# .github/workflows/test-finetune.yml\n# Trigger: on push, on pull_request\n# Runs: ubuntu-latest (CPU, free)\n# Steps:\n#   Layer 1: pytest tests/test_data.py (15 tests, 2s)\n#   Layer 2: pytest tests/test_model.py (10 tests, 1s)\n#   Layer 4: python scripts/check_drift.py --demo (2s)\n# Total: ~5 seconds. All free. Blocks bad PRs.'},
+       {n:2,title:'Job 2: Drift Monitor (daily)',tag:'ci',viz:'<span class="vz-box vz-input">6am UTC</span><span class="vz-arrow">→</span><span class="vz-box vz-process">check_drift</span><span class="vz-arrow">→</span><span class="vz-box vz-output">Alert</span>',code:'# Trigger: on schedule (cron: "0 6 * * *")\n# Runs: ubuntu-latest (CPU, free)\n# Steps:\n#   python scripts/check_drift.py --demo --threshold 0.5\n#   If drift > 0.5 → job fails → GitHub notifies you\n#   If drift < 0.5 → job passes → model is healthy\n# Catches silent degradation within 24 hours'},
+       {n:3,title:'Job 3: GPU Pipeline (manual)',tag:'ci',viz:'<span class="vz-box vz-input">Manually trigger</span><span class="vz-arrow">→</span><span class="vz-box vz-process">dvc repro</span><span class="vz-arrow">→</span><span class="vz-box vz-output">Promote</span>',code:'# Trigger: workflow_dispatch (manual button in GitHub)\n# Runs: [self-hosted, gpu] (your machine with GPU)\n# Steps:\n#   1. dvc pull (get latest data)\n#   2. dvc repro (prepare → train → evaluate)\n#   3. pytest tests/test_pipeline.py -m "gpu"\n#   4. Upload metrics + drift report as artifacts\n#   5. Promote best model in MLflow Registry'},
+     ]},
+    {emoji:'🧠',name:'TRAIN',time:'Workflow',desc:'What each job does',
+     substeps:[
+       {n:1,title:'PR Checks: Block bad code',tag:'ci',viz:'<span class="vz-box vz-input">PR opened</span><span class="vz-arrow">→</span><span class="vz-box vz-process">5s checks</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅/⛔</span>',code:'# Every PR → 5-second check before anyone reviews\n# ✅ All passed → PR can merge\n# ⛔ Any failed → PR blocked (fix tests first)\n# Prevents:\n#   - Bad data format (nulls, empty fields)\n#   - Broken model behavior (MFT/INV/DIR)\n#   - Data drift in training set'},
+       {n:2,title:'Drift Monitor: Catch silent failures',tag:'ci',viz:'<span class="vz-box vz-input">Daily</span><span class="vz-arrow">→</span><span class="vz-box vz-process">Drift?</span><span class="vz-arrow">→</span><span class="vz-box vz-output">Alert</span>',code:'# Every day at 6am → single drift check\n# 🔴 Drift detected → workflow fails\n#    → GitHub email notification\n#    → Review drift_report.html\n#    → Decide: collect new data or fine?\n# 🟢 No drift → workflow passes silently\n#    → Model is healthy, no action needed'},
+       {n:3,title:'GPU Pipeline: Full repro on demand',tag:'ci',viz:'<span class="vz-box vz-input">Click button</span><span class="vz-arrow">→</span><span class="vz-box vz-process">dvc repro</span><span class="vz-arrow">→</span><span class="vz-box vz-output">New model</span>',code:'# When you decide to retrain:\n# 1. Go to GitHub → Actions → "Fine-Tuning CI/CD Pipeline"\n# 2. Click "Run workflow"\n# 3. Pipeline runs on your GPU machine:\n#    - Pulls latest data from DVC remote\n#    - Runs all 3 DVC stages (prepare→train→evaluate)\n#    - MLflow logs the new run\n#    - If evaluate passes → auto-promote to Staging'},
+     ]},
+    {emoji:'🚀',name:'POST PROCESS',time:'Artifacts',desc:'Upload + Promote',
+     substeps:[
+       {n:1,title:'Upload pipeline artifacts',tag:'ci',viz:'<span class="vz-box vz-input">Artifacts</span><span class="vz-arrow">→</span><span class="vz-box vz-process">GitHub</span><span class="vz-arrow">→</span><span class="vz-box vz-output">Download</span>',code:'# GPU pipeline uploads these as artifacts:\n#   metrics/ (data_validation.json, training_metrics.json, evaluation_metrics.json)\n#   drift_report.html\n# Downloadable from GitHub Actions run page\n# Kept for 90 days (GitHub default)'},
+       {n:2,title:'Auto-promote if all checks pass',tag:'ci',viz:'<span class="vz-box vz-input">All pass</span><span class="vz-arrow">→</span><span class="vz-box vz-process">Promote</span><span class="vz-arrow">→</span><span class="vz-box vz-output">Staging</span>',code:'# If all 3 DVC stages pass:\n#   python -c "from scripts.mlflow_tracking import compare_runs; compare_runs()"\n#   mlflow models transition medical-qa <version> --stage Staging\n# Human reviews in Staging → promotes to Production'},
+       {n:3,title:'Complete CI/CD flow',tag:'ci',viz:'<span class="vz-box vz-input">PR</span><span class="vz-arrow">→</span><span class="vz-box vz-input">Drift</span><span class="vz-arrow">→</span><span class="vz-box vz-input">GPU</span><span class="vz-arrow">→</span><span class="vz-box vz-output">Production</span>',code:'# The full automated pipeline:\n# 1. Developer pushes code → PR checks run (5s)\n# 2. Daily drift monitor catches degradation\n# 3. Human triggers GPU pipeline to retrain\n# 4. DVC repro runs prepare→train→evaluate\n# 5. MLflow logs new run, compares to previous\n# 6. If better → auto-promote to Staging\n# 7. Human reviews → promotes to Production\n# 8. vLLM serves the new Production model'},
+     ]},
+  ]
+},
+{ // 5: Cost Compare
+  name:'💰 Cost Comparison', phases:'Training + Serving Costs Across GPU Types',
+  metrics:[
+    {val:'FREE',lbl:'Colab T4 Training',color:'var(--green)'},
+    {val:'$0.04',lbl:'AWS T4 Training',color:'var(--amber)'},
+    {val:'$387/mo',lbl:'Serving (T4, 24/7)',color:'var(--violet)'},
+    {val:'$0.50/1M',lbl:'Serverless Tokens',color:'var(--cyan)'},
+  ],
+  banner:[
+    {val:'LoRA=76× cheaper',lbl:'vs Full Fine-Tune',color:'var(--green)'},
+    {val:'4-bit=96% less VRAM',lbl:'QLoRA vs FP16',color:'var(--amber)'},
+    {val:'Spot=60-90% off',lbl:'Preemptible GPUs',color:'var(--violet)'},
+    {val:'Serverless=$0 idle',lbl:'Pay per token',color:'var(--cyan)'},
+  ],
+  stages:[
+    {emoji:'📋',name:'PREPROCESS',time:'Training Cost',desc:'7 Configs Compared',
+     substeps:[
+       {n:1,title:'Training Cost Comparison',tag:'mlflow',viz:'<span class="vz-box vz-input">Colab FREE</span><span class="vz-arrow">vs</span><span class="vz-box vz-output">A100 $3.04</span>',code:'# Training cost (TinyLlama-1.1B, 500 Q&A, 10 epochs):\n# LoRA r=8, INT8, Colab T4:  FREE (4 min)\n# LoRA r=8, INT8, AWS T4:   $0.04 (4 min)\n# LoRA r=16, INT8, T4:       $0.04 (5 min)\n# LoRA r=8, FP16, T4:        $0.07 (8 min)\n# LoRA r=8, INT8, A100:      $0.14 (2 min)\n# Full FT, A100 (no LoRA):    $3.04 (45 min) ← 76x more!\n# LoRA r=8, INT4, T4 (QLoRA): $0.04 (5 min)\n# Run: python scripts/cost_benchmark.py'},
+       {n:2,title:'8 Cost-Saving Techniques',tag:'mlflow',viz:'<span class="vz-box vz-input">QLoRA</span><span class="vz-arrow">+</span><span class="vz-box vz-input">Spot</span><span class="vz-arrow">+</span><span class="vz-box vz-input">DVC</span><span class="vz-arrow">=</span><span class="vz-box vz-output">~FREE</span>',code:'# Stack these for maximum savings:\n# 1. 4-bit QLoRA          → 96% VRAM savings\n# 2. Gradient Accumulation → 75% VRAM savings\n# 3. Gradient Checkpointing → 60% VRAM savings\n# 4. Spot/Preemptible      → 60-90% cost savings\n# 5. KV-Cache Quantization → 50% serving VRAM\n# 6. Continuous Batching    → 100x throughput\n# 7. Serverless             → $0 idle cost\n# 8. DVC Caching            → Free GPU time'},
+       {n:3,title:'Full FT vs LoRA: Not even close',tag:'mlflow',viz:'<span class="vz-box vz-input">Full FT $3.04</span><span class="vz-arrow">→</span><span class="vz-box vz-output">LoRA $0.04</span>',code:'# Full fine-tuning on A100:\n#   Cost: $3.04 per run\n#   Time: 45 minutes\n#   Accuracy: 100% (baseline)\n\n# LoRA r=8 on T4:\n#   Cost: $0.04 per run (76x cheaper)\n#   Time: 4 minutes (11x faster)\n#   Accuracy: ~99% of full FT\n\n# For <1% accuracy difference, LoRA is the obvious choice'},
+     ]},
+    {emoji:'🧠',name:'TRAIN',time:'Serving Cost',desc:'5 Serving Methods',
+     substeps:[
+       {n:1,title:'Monthly Serving Cost (24/7)',tag:'vllm',viz:'<span class="vz-box vz-input">vLLM T4</span><span class="vz-arrow">→</span><span class="vz-box vz-output">$387/mo</span>',code:'# Serving the merged model 24/7:\n# vLLM on T4 (self-hosted):   $387/mo (5000 tok/s)\n# vLLM on A10 (self-hosted):  $562/mo (5000 tok/s)\n# AWS SageMaker (g4dn):       $531/mo (3000 tok/s)\n# Azure AI Foundry (Standard): $1241/mo (4000 tok/s)\n# Serverless (pay-per-token):  ~$0.50 per 1M tokens\n\n# vLLM on T4 wins: cheapest + fastest'},
+       {n:2,title:'Serverless vs Always-On',tag:'vllm',viz:'<span class="vz-box vz-input">< 10K req/mo</span><span class="vz-arrow">→</span><span class="vz-box vz-output">Serverless</span>',code:'# Low traffic (< 10K requests/month):\n#   → Serverless (pay per token, ~$10/mo)\n#   → No idle GPU cost\n#   → Cold start: 2-5 seconds\n\n# Medium traffic (10K-1M requests/month):\n#   → vLLM on T4 ($387/mo, 24/7)\n#   → Always ready, 50ms latency\n\n# High traffic (> 1M requests/month):\n#   → vLLM on A10 or A100\n#   → Auto-scaling with multiple replicas'},
+       {n:3,title:'Total Monthly Ops Cost',tag:'vllm',viz:'<span class="vz-box vz-input">Training</span><span class="vz-arrow">+</span><span class="vz-box vz-input">Serving</span><span class="vz-arrow">=</span><span class="vz-box vz-output">< $400/mo</span>',code:'# Complete MLOps budget for a fine-tuned LLM:\n# Training:  FREE (Colab) or ~$0.20/mo (AWS T4, 5 runs)\n# Data storage: FREE (DVC on Google Drive, 15GB)\n# Experiment tracking: FREE (MLflow, open source)\n# Drift monitoring: FREE (Evidently AI + GitHub Actions)\n# Serving:  $387/mo (vLLM T4, 24/7)\n#        or ~$10/mo (Serverless, low traffic)\n# ---------------------------------\n# TOTAL:   < $400/mo for production'},
+     ]},
+    {emoji:'🚀',name:'POST PROCESS',time:'ROI',desc:'Business Value',
+     substeps:[
+       {n:1,title:'When to pay more',tag:'vllm',viz:'<span class="vz-box vz-input">A100</span><span class="vz-arrow">→</span><span class="vz-box vz-output">When needed</span>',code:'# Upgrade from T4 when:\n# - Training dataset > 10K rows → A10 saves time\n# - Serving > 100 concurrent users → A10 or multi-GPU\n# - Full fine-tuning needed (rare) → A100\n# - Latency < 10ms required → A100 with FP8\n\n# Stay on T4 for:\n# - Learning, prototyping, small datasets\n# - < 50 concurrent users\n# - Budget < $500/mo'},
+       {n:2,title:'Free tier stacking',tag:'vllm',viz:'<span class="vz-box vz-input">Colab</span><span class="vz-arrow">+</span><span class="vz-box vz-input">GitHub</span><span class="vz-arrow">+</span><span class="vz-box vz-input">DVC</span><span class="vz-arrow">=</span><span class="vz-box vz-output">$0</span>',code:'# Complete free stack:\n# Training:  Google Colab (T4 GPU, free tier)\n# CI/CD:     GitHub Actions (2000 min/mo free)\n# Data:      Google Drive (15GB free) via DVC\n# Tracking:  MLflow (open source, local)\n# Serving:   Serverless (pay only when used)\n# \n# Total: $0/month for low-traffic projects\n# Upgrade to $387/mo vLLM when traffic grows'},
+       {n:3,title:'Run: python scripts/cost_benchmark.py',tag:'vllm',viz:'<span class="vz-box vz-input">cost_benchmark.py</span><span class="vz-arrow">→</span><span class="vz-box vz-process">Compare</span><span class="vz-arrow">→</span><span class="vz-box vz-output">Full table</span>',code:'# Run the cost comparison script:\ncd c:\\Users\\ashok\\OneDrive\\NOblox\\Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1\npython scripts/cost_benchmark.py\n\n# Output:\n# - Training cost comparison (7 configs)\n# - Monthly serving cost (5 methods)\n# - 8 cost-saving techniques\n# - Recommended stack for your budget'},
+     ]},
+  ]
+}
 ];
 
-let curStage=0,curSub=0;
+let currentTab=0, currentStage=0;
 
-function render(){
-  ['ps0','ps1','ps2','ps3'].forEach((id,i)=>{
-    let el=document.getElementById(id);
-    el.classList.remove('active','done');
-    if(i===curStage)el.classList.add('active');
-    else if(i<curStage)el.classList.add('done');
-  });
-
-  let sh='';
-  stages[curStage].subs.forEach((s,i)=>{
-    let cls=i===curSub?'current':i<curSub?'done':'';
-    sh+=`<div class="substep ${cls}" onclick="curSub=${i};render()">${s.name}<br><span style="font-size:0.6rem;color:var(--tmut)">${s.desc}</span></div>`;
-  });
-  document.getElementById('substeps').innerHTML=sh;
-
-  let st=stages[curStage];
-  document.getElementById('stat1').textContent=st.stat1;
-  document.getElementById('stat2').textContent=st.stat2;
-  document.getElementById('stat3').textContent=st.stat3;
-  document.getElementById('stat4').textContent=st.stat4;
-
-  let v='',c='';
-  // ── STAGE 0: MLflow ──
-  if(curStage===0){
-    if(curSub===0){
-      v=`<div style="text-align:center;width:100%">
-        <div class="vz-title">MLflow Run Lifecycle — What TrackRun Does</div>
-        <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;align-items:center;">
-          <div class="vz-box"><div style="font-size:1.3rem">▶️</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">START</div><div class="vz-label">Record time, GPU info</div></div>
-          <div class="vz-arrow">→</div>
-          <div class="vz-box"><div style="font-size:1.3rem">📝</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">LOG PARAMS</div><div class="vz-label">r=8, lr=2e-4, epochs=10</div></div>
-          <div class="vz-arrow">→</div>
-          <div class="vz-box"><div style="font-size:1.3rem">🏋️</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">TRAIN</div><div class="vz-label">trainer.train(), loss logged</div></div>
-          <div class="vz-arrow">→</div>
-          <div class="vz-box"><div style="font-size:1.3rem">💾</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">LOG ARTIFACT</div><div class="vz-label">adapter.safetensors (4.2 MB)</div></div>
-        </div>
-        <div style="margin-top:0.8rem;font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--green)">On exit → auto-log duration, GPU memory, register model ✅</div>
-      </div>`;
-      c='from scripts.mlflow_tracking import TrackRun\n\nwith TrackRun("instruction-ft-medical", {"r": 8, "lr": 2e-4}) as run:\n    trainer.train()\n    run.log_metric("final_loss", 0.32)\n    run.log_adapter("./adapter")';
-    }else if(curSub===1){
-      v=`<div style="text-align:center;width:100%">
-        <div class="vz-title">What MLflow Records for Each Run</div>
-        <div class="params-grid">
-          <div class="param-card"><div class="p-title">⚙️ PARAMETERS</div>
-            <div class="p-row">lora_r: 8</div><div class="p-row">lora_alpha: 16</div><div class="p-row">learning_rate: 2e-4</div><div class="p-row">epochs: 10</div><div class="p-row">base_model: TinyLlama-1.1B</div></div>
-          <div class="param-card"><div class="p-title">📊 METRICS</div>
-            <div class="p-row">final_loss: 0.32</div><div class="p-row">loss_step_0: 2.41</div><div class="p-row">loss_step_20: 0.32</div><div class="p-row">duration: 4m 12s</div><div class="p-row">gpu_memory: 4234 MB</div></div>
-          <div class="param-card"><div class="p-title">📁 ARTIFACTS</div>
-            <div class="p-row">📁 adapter/</div><div class="p-row">  adapter_config.json</div><div class="p-row">  adapter_model.safetensors</div><div class="p-row">  tokenizer.json</div><div class="p-row">📁 checkpoints/</div></div>
-        </div>
-      </div>`;
-      c='# Everything auto-logged\nrun.log_metric("final_loss", 0.32)\nrun.log_metrics({"eval_acc": 0.89, "perplexity": 12.4})\nrun.log_adapter("./adapter")  # Registers in Model Registry\n\n# View: mlflow ui → localhost:5000';
-    }else{
-      v=`<div style="text-align:center;width:100%">
-        <div class="vz-title">Model Registry — Promote Through Stages</div>
-        <div style="display:flex;gap:0.5rem;justify-content:center;align-items:center;flex-wrap:wrap;">
-          <div class="vz-box"><div style="font-size:0.65rem;color:var(--tdim)">Run 7 (new)</div><div style="font-size:0.8rem;font-weight:700">loss=0.28</div><span class="vz-tag p">None</span></div>
-          <div style="color:var(--amber);font-size:1.1rem">→</div>
-          <div class="vz-box" style="border:2px solid var(--amber)"><div style="font-size:0.65rem;color:var(--amber);font-weight:700">Run 7 (review)</div><div style="font-size:0.8rem;font-weight:700;color:var(--amber)">loss=0.28</div><span class="vz-tag a">Staging</span></div>
-          <div style="color:var(--green);font-size:1.1rem">→</div>
-          <div class="vz-box" style="border:2px solid var(--green)"><div style="font-size:0.65rem;color:var(--green);font-weight:700">Run 7 (live)</div><div style="font-size:0.8rem;font-weight:700;color:var(--green)">loss=0.28</div><span class="vz-tag m">Production</span></div>
-          <div style="color:var(--tdim);font-size:1.1rem">→</div>
-          <div class="vz-box"><div style="font-size:0.65rem;color:var(--tdim)">Run 6 (old)</div><div style="font-size:0.8rem;font-weight:700;color:var(--tdim)">loss=0.32</div><span class="vz-tag" style="background:var(--raised);color:var(--tmut)">Archived</span></div>
-        </div>
-        <div style="margin-top:0.8rem;font-size:0.7rem;color:var(--tdim)">Rollback: <span style="font-family:'JetBrains Mono',monospace;color:var(--violet);font-weight:600">mlflow models transition medical-qa 6 --stage Production</span> — one command.</div>
-      </div>`;
-      c='# Promote to Staging (human reviews here)\n$ mlflow models transition instruction-ft-medical 7 --stage Staging\n\n# After review → Production (live traffic)\n$ mlflow models transition instruction-ft-medical 7 --stage Production\n\n# Emergency rollback\n$ mlflow models transition instruction-ft-medical 6 --stage Production';
-    }
-  }
-  // ── STAGE 1: DVC ──
-  else if(curStage===1){
-    if(curSub===0){
-      v=`<div style="text-align:center;width:100%">
-        <div class="vz-title">DVC Data Versioning — Git + Cloud Storage</div>
-        <div style="display:flex;gap:1.2rem;justify-content:center;align-items:flex-start;flex-wrap:wrap;">
-          <div style="text-align:center;min-width:160px">
-            <div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;color:var(--tdim);font-weight:600;margin-bottom:0.4rem">💻 Your Laptop</div>
-            <div class="file-tree"><div class="dir">project/</div><div class="dir">  data/</div><div class="tracked">    instruction_data.csv  (5 MB)</div><div style="color:var(--tdim)">      → .dvc pointer (200 B)</div><div class="added">    train_split.csv       (output)</div><div class="dir">  models/</div><div class="added">    adapter_model.safetensors</div></div>
-            <div style="margin-top:0.4rem"><span class="tag git">Git tracks: .dvc pointer (200 B)</span></div>
-          </div>
-          <div style="text-align:center;min-width:160px">
-            <div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;color:var(--tdim);font-weight:600;margin-bottom:0.4rem">☁️ DVC Remote (S3/GDrive)</div>
-            <div class="file-tree"><div class="dir">dvc-cache/</div><div>  a1/</div><div class="tracked">    b2c3d4e5...   (5 MB)</div><div>  f6/</div><div class="tracked">    g7h8i9j0...   (5 MB)</div><div style="color:var(--tdim)">  ...5 versions total</div></div>
-            <div style="margin-top:0.4rem"><span class="tag dvc">DVC stores: actual data files</span></div>
-          </div>
-        </div>
-        <div style="margin-top:0.6rem;font-size:0.72rem;color:var(--tdim)"><strong>dvc add → hashes file → copies to cache → writes .dvc pointer → git commit the pointer, dvc push the data</strong></div>
-      </div>`;
-      c='# Add data to DVC — Git tracks the pointer, DVC stores the file\n$ dvc add data/instruction_data.csv\n$ git add data/instruction_data.csv.dvc .gitignore\n$ git commit -m "Add Q&A dataset v2 — 500 rows"\n$ dvc push  # Upload to S3/GDrive\n\n# Anyone can reproduce:\n$ git checkout <commit>\n$ dvc checkout  # Restores exact dataset version';
-    }else if(curSub===1){
-      v=`<div style="text-align:center;width:100%">
-        <div class="vz-title">DVC Pipeline — 3 Stages, Hash-Cached</div>
-        <div style="display:flex;flex-direction:column;gap:0.4rem;align-items:center">
-          <div style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap">
-            <div class="vz-box" style="border-color:var(--amber);text-align:left;min-width:150px"><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;color:var(--amber);font-weight:700">Stage 1: prepare_data</div><div class="vz-label">deps: instruction_data.csv</div><div class="vz-label">outs: train_split.csv, val_split.csv</div></div>
-            <div class="vz-arrow">→</div>
-            <div class="vz-box" style="border-color:var(--violet);text-align:left;min-width:150px"><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;color:var(--violet);font-weight:700">Stage 2: train</div><div class="vz-label">deps: train_split.csv, adapter/</div><div class="vz-label">outs: adapter_model.safetensors</div></div>
-            <div class="vz-arrow">→</div>
-            <div class="vz-box" style="border-color:var(--green);text-align:left;min-width:150px"><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;color:var(--green);font-weight:700">Stage 3: evaluate</div><div class="vz-label">deps: val_split.csv, model</div><div class="vz-label">outs: metrics.json, drift_report.html</div></div>
-          </div>
-        </div>
-        <div style="margin-top:0.6rem;font-size:0.7rem;color:var(--tdim)"><strong>dvc repro</strong> walks the DAG. If nothing changed → <span style="color:var(--green);font-weight:700">CACHED (skipped).</span></div>
-      </div>`;
-      c='# dvc.yaml — 3 stages, auto-cached\nstages:\n  prepare_data:\n    cmd: python scripts/prepare_data.py\n    deps: [data/instruction_data.csv]\n    outs: [data/train_split.csv, data/val_split.csv]\n  train:\n    cmd: python scripts/train.py\n    deps: [data/train_split.csv, adapter/]\n    outs: [adapter/adapter_model.safetensors]\n  evaluate:\n    cmd: python scripts/evaluate.py\n    deps: [data/val_split.csv, adapter/]\n    metrics: [metrics.json]';
-    }else{
-      v=`<div style="text-align:center;width:100%">
-        <div class="vz-title">dvc repro — Reproduce Everything with One Command</div>
-        <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;">
-          <div class="vz-box"><div style="font-size:1.3rem">📝</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--amber)">DATA CHANGED?</div><div class="vz-label">Hash differs → re-run</div></div>
-          <div class="vz-arrow">→</div>
-          <div class="vz-box"><div style="font-size:1.3rem">⚡</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--green)">CACHED?</div><div class="vz-label">Same hash → skip</div></div>
-          <div class="vz-arrow">→</div>
-          <div class="vz-box" style="border:2px solid var(--violet)"><div style="font-size:1.3rem">✅</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">DONE</div><div class="vz-label">All stages complete</div></div>
-        </div>
-        <div style="margin-top:0.6rem;font-size:0.7rem;color:var(--tdim)">Hashes every dependency bottom-up. <strong>Only changed stages re-run.</strong> Saves GPU hours.</div>
-      </div>`;
-      c='$ dvc repro\nRunning stage prepare_data:   → CACHED (hash matches)\nRunning stage train:          → data changed, re-running...\n  Epoch 10/10 | loss: 0.32 | GPU: 4m 12s\nRunning stage evaluate:       → model changed, re-running...\n  Accuracy: 0.89 | Perplexity: 12.4\n\n✅ Pipeline complete. 2/3 stages re-ran.';
-    }
-  }
-  // ── STAGE 2: Evidently ──
-  else if(curStage===2){
-    if(curSub===0){
-      v=`<div style="text-align:center;width:100%">
-        <div class="vz-title">Evidently AI — Compare Training vs Live Data</div>
-        <div style="display:flex;gap:0.8rem;justify-content:center;flex-wrap:wrap;align-items:center;">
-          <div class="vz-box"><div style="font-size:1.3rem">📊</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">REFERENCE</div><div class="vz-label">What you trained on</div><div class="vz-label">500 Q&A pairs</div></div>
-          <div class="vz-arrow">VS</div>
-          <div class="vz-box"><div style="font-size:1.3rem">📡</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--cyan)">CURRENT</div><div class="vz-label">What users are asking</div><div class="vz-label">Last 7 days of queries</div></div>
-          <div class="vz-arrow">→</div>
-          <div class="vz-box" style="border:2px solid var(--green)"><div style="font-size:1.3rem">📋</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--green)">DRIFT REPORT</div><div class="vz-label">Per-column drift scores</div></div>
-        </div>
-        <div style="margin-top:0.6rem;font-size:0.7rem;color:var(--tdim)">Evidently computes drift using statistical tests — <strong>KL divergence for text, Wasserstein distance for numeric.</strong></div>
-      </div>`;
-      c='from evidently.report import Report\nfrom evidently.metrics import DataDriftTable\n\nreport = Report(metrics=[DataDriftTable()])\nreport.run(reference_data=train_df, current_data=live_df)\nreport.save_html("drift_report.html")';
-    }else if(curSub===1){
-      v=`<div style="text-align:center;width:100%">
-        <div class="vz-title">Drift Score > 0.5 → RETRAIN</div>
-        <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;align-items:center;">
-          <div class="vz-box"><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--green)">✅ Normal</div><div style="font-size:1rem;font-weight:700;color:var(--green)">0.15</div><div class="vz-label">Users asking similar Q's</div></div>
-          <div class="vz-arrow">→</div>
-          <div class="vz-box" style="border:2px solid var(--amber)"><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--amber)">⚠ Warning</div><div style="font-size:1rem;font-weight:700;color:var(--amber)">0.35</div><div class="vz-label">New topics emerging</div></div>
-          <div class="vz-arrow">→</div>
-          <div class="vz-box" style="border:2px solid var(--red)"><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--red)">🔴 RETRAIN</div><div style="font-size:1rem;font-weight:700;color:var(--red)">0.62</div><div class="vz-label">Model failing silently!</div></div>
-        </div>
-        <div style="margin-top:0.6rem;font-size:0.7rem;color:var(--tdim)">The daily GitHub Actions job catches drift <strong>within 24 hours.</strong> The model responds — but the answers are wrong.</div>
-      </div>`;
-      c='if drift_score > 0.5:\n    print("🔴 RETRAIN: Users asking about untrained topics")\n    # The model is responding, but answers are wrong\n    # Trigger: collect new data → dvc repro → MLflow → deploy';
-    }else{
-      v=`<div style="text-align:center;width:100%">
-        <div class="vz-title">Drift → Act → Retrain → Deploy</div>
-        <div style="display:flex;gap:0.4rem;justify-content:center;flex-wrap:wrap;align-items:center;">
-          <div class="vz-box"><div style="font-size:1.3rem">🔍</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--red)">DRIFT</div><div class="vz-label">Detected by Evidently</div></div>
-          <div class="vz-arrow">→</div>
-          <div class="vz-box"><div style="font-size:1.3rem">👤</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--amber)">REVIEW</div><div class="vz-label">Human checks what changed</div></div>
-          <div class="vz-arrow">→</div>
-          <div class="vz-box"><div style="font-size:1.3rem">➕</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">APPEND</div><div class="vz-label">New Q&A to dataset</div></div>
-          <div class="vz-arrow">→</div>
-          <div class="vz-box"><div style="font-size:1.3rem">⚡</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--cyan)">DVC REPRO</div><div class="vz-label">Re-run pipeline</div></div>
-          <div class="vz-arrow">→</div>
-          <div class="vz-box" style="border:2px solid var(--green)"><div style="font-size:1.3rem">🚀</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--green)">DEPLOY</div><div class="vz-label">Promote to Production</div></div>
-        </div>
-        <div style="margin-top:0.6rem;font-size:0.7rem;color:var(--tdim)">The full cycle: <strong>detect → review → append → dvc repro → MLflow → promote.</strong></div>
-      </div>`;
-      c='# Drift detected → fix it\n$ python scripts/append_qa.py --new-qa new_questions.json  # Append new Q&A\n$ dvc add data/instruction_data.csv                          # Track new version\n$ dvc push                                                   # Upload to remote\n$ dvc repro                                                  # Re-run pipeline\n$ mlflow models transition instruction-ft-medical 8 --stage Production';
-    }
-  }
-  // ── STAGE 3: vLLM ──
-  else if(curStage===3){
-    if(curSub===0){
-      v=`<div style="text-align:center;width:100%">
-        <div class="vz-title">merge_and_unload() — Bake LoRA into Base Model</div>
-        <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;align-items:center;">
-          <div class="vz-box"><div style="font-size:1.3rem">🧠</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">PeftModel</div><div class="vz-label">W₀ frozen (1.1B)</div><div class="vz-label">+ B×A side paths</div></div>
-          <div class="vz-arrow">→</div>
-          <div class="vz-box" style="border:2px solid var(--violet)"><div style="font-size:1.3rem">🔀</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">merge_and_unload()</div><div class="vz-label">W_new = W₀ + B×A</div></div>
-          <div class="vz-arrow">→</div>
-          <div class="vz-box" style="border:2px solid var(--green)"><div style="font-size:1.3rem">✅</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--green)">Standard Model</div><div class="vz-label">One set of weights</div><div class="vz-label">No LoRA dependency</div></div>
-        </div>
-        <div style="margin-top:0.6rem;font-size:0.7rem;color:var(--tdim)">B and A matrices are <strong>deleted</strong> after merging. The model is now a standard transformers model — no PeftModel dependency.</div>
-      </div>`;
-      c='# Merge adapter into base model\nmodel = PeftModel.from_pretrained(base_model, "./adapter")\nmodel = model.merge_and_unload()\nmodel.save_pretrained("./merged_model")\n# Ready for vLLM!';
-    }else if(curSub===1){
-      v=`<div style="text-align:center;width:100%">
-        <div class="vz-title">vLLM — PagedAttention + Continuous Batching</div>
-        <div style="display:flex;gap:0.8rem;justify-content:center;flex-wrap:wrap;">
-          <div class="vz-box" style="min-width:180px"><div style="font-size:1.3rem">📄</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">PAGED ATTENTION</div><div class="vz-label" style="line-height:1.6">Virtual memory for KV-cache.<br>Allocates in small blocks.<br><strong>Zero fragmentation.</strong></div></div>
-          <div class="vz-box" style="min-width:180px"><div style="font-size:1.3rem">🔄</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--cyan)">CONTINUOUS BATCHING</div><div class="vz-label" style="line-height:1.6">New requests join mid-batch.<br>Finished requests don't block.<br><strong>100× vs HF pipeline.</strong></div></div>
-          <div class="vz-box" style="min-width:180px"><div style="font-size:1.3rem">⚡</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--green)">PERFORMANCE</div><div class="vz-label" style="line-height:1.6">5000 tokens/second<br>~50ms per response<br><strong>$0.50/hr on T4 GPU</strong></div></div>
-        </div>
-        <div style="margin-top:0.6rem;font-size:0.7rem;color:var(--tdim)"><strong>One command:</strong> <code style="font-family:'JetBrains Mono',monospace;background:var(--raised);padding:0.2em 0.5em;border-radius:4px;color:var(--violet)">vllm serve ./merged_model --port 8000</code></div>
-      </div>`;
-      c='$ vllm serve ./merged_model --port 8000\nINFO: Using PagedAttention with block_size=16\nINFO: Model loaded in 2.1s. Ready on :8000\n# 5000 tok/s, 50ms latency, OpenAI-compatible API';
-    }else{
-      v=`<div style="text-align:center;width:100%">
-        <div class="vz-title">OpenAI-Compatible API — Zero Code Changes</div>
-        <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;align-items:center;">
-          <div class="vz-box"><div style="font-size:1.3rem">💻</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">YOUR CODE</div><div class="vz-label">Same OpenAI client</div></div>
-          <div class="vz-arrow">→</div>
-          <div class="vz-box" style="border:2px solid var(--violet)"><div style="font-size:1.3rem">🔀</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--violet)">SWAP URL</div><div class="vz-label">api.openai.com<br>→<br>localhost:8000</div></div>
-          <div class="vz-arrow">→</div>
-          <div class="vz-box" style="border:2px solid var(--green)"><div style="font-size:1.3rem">🤖</div><div style="font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:700;color:var(--green)">YOUR MODEL</div><div class="vz-label">Fine-tuned<br>50ms response</div></div>
-        </div>
-        <div style="margin-top:0.6rem;font-size:0.7rem;color:var(--tdim)">Change <strong>one line</strong> — the base_url. Everything else works. <strong>Zero code changes.</strong></div>
-      </div>`;
-      c='# Same code. One line changed.\nfrom openai import OpenAI\n\nclient = OpenAI(\n    base_url="http://localhost:8000/v1",  # ← Only this changes\n    api_key="not-needed"\n)\nresponse = client.chat.completions.create(\n    model="medical-qa-v8",\n    messages=[{"role": "user", "content": "What is Metformin?"}]\n)';
-    }
-  }
-
-  document.getElementById('visual').innerHTML=v;
-  document.getElementById('codeBox').textContent=c;
+function switchTab(i){
+  currentTab=i; currentStage=0;
+  document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',j===i));
+  render();
 }
 
-function selectStage(i){curStage=i;curSub=0;render()}
-function nextSub(){let st=stages[curStage];curSub=(curSub+1)%st.subs.length;if(curSub===0&&curStage<3){curStage++;render();return}render()}
-function prevSub(){if(curSub>0){curSub--}else if(curStage>0){curStage--;curSub=stages[curStage].subs.length-1}render()}
-function resetAll(){curStage=0;curSub=0;render()}
+function selectStage(i){
+  const t=tabs[currentTab];
+  if(i<0||i>=t.stages.length)return;
+  currentStage=i; render();
+}
+
+function render(){
+  const t=tabs[currentTab];
+  let html=`<div class="pipeline-card"><div class="pipeline-label">${t.name} — ${t.phases}</div>
+    <div class="perf-banner">${t.banner.map((b,i)=>`${i>0?'<div class="perf-divider"></div>':''}<div class="perf-item"><div class="pv" style="color:${b.color}">${b.val}</div><div class="pl">${b.lbl}</div></div>`).join('')}</div>
+    <div class="metrics">${t.metrics.map(m=>`<div class="metric"><div class="val" style="color:${m.color}">${m.val}</div><div class="lbl">${m.lbl}</div></div>`).join('')}</div>
+    <div class="pipeline">`;
+
+  t.stages.forEach((s,i)=>{
+    const active=i===currentStage?' active-stage':'';
+    html+=`<div class="pipe-stage${active}" onclick="selectStage(${i})"><div class="st-emoji">${s.emoji}</div><div class="st-name">${s.name}</div><div class="st-time">${s.time}</div><div class="st-desc">${s.desc}</div></div>`;
+    if(i<t.stages.length-1) html+='<div class="pipe-arrow">→</div>';
+  });
+
+  html+=`</div>`;
+  const s=t.stages[currentStage];
+  html+=`<div class="substeps"><h4>${s.emoji} ${s.name} — Sub-Operations (${s.time})</h4><div class="substep-grid">`;
+  s.substeps.forEach(ss=>{
+    html+=`<div class="substep"><span class="ss-num">Step ${ss.n}</span><div class="ss-title">${ss.title}</div>${ss.viz?`<div class="ss-viz">${ss.viz}</div>`:''}<div class="ss-code">${ss.code}</div><span class="ss-tag ${ss.tag}">${ss.tag}</span></div>`;
+  });
+  html+=`</div></div></div>`;
+
+  document.getElementById('pipelineCard').innerHTML=html;
+  document.getElementById('stageLabel').textContent=`Stage ${currentStage+1} / ${t.stages.length}`;
+  document.getElementById('prevBtn').disabled=currentStage===0;
+  document.getElementById('nextBtn').disabled=currentStage===t.stages.length-1;
+}
+
 render();
 </script>
 </body>
