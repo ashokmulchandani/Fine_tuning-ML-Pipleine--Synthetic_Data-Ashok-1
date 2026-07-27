@@ -84,7 +84,14 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
       <option value="llama13b">Llama-13B</option>
       <option value="llama70b">Llama-70B</option>
       <option value="gpt3">GPT-3 175B</option>
+      <option value="gpt3">GPT-3 175B</option>
+      <option value="llava7b">LLaVA-1.5-7B (VL Model)</option>
+      <option value="---">── Vision (diff architecture) ──</option>
+      <option value="yolov8n">YOLOv8n (3.2M)</option>
+      <option value="resnet50">ResNet-50 (25M)</option>
+      <option value="vit">ViT-B/16 (86M)</option>
     </select>
+    <div class="hint" id="presetHint">Transformer LLM defaults</div>
   </div>
   <div class="ctrl-card">
     <label>Fine-Tuning Mode</label>
@@ -313,6 +320,10 @@ function applyPreset(){
     llama13b:{d:5120,ff:13824,layers:40,vocab:32000,ffRatio:'8/3 (SwiGLU)'},
     llama70b:{d:8192,ff:28672,layers:80,vocab:32000,ffRatio:'~3.5× (scaled up)'},
     gpt3:{d:12288,ff:49152,layers:96,vocab:50257,ffRatio:'4× (standard)'},
+    llava7b:{d:4096,ff:11008,layers:32,vocab:32000,ffRatio:'Llama-7B + CLIP-ViT-L (304M vision)'},
+    yolov8n:{d:0,ff:0,layers:0,vocab:0,ffRatio:'CNN — not transformer. ~3.2M total params'},
+    resnet50:{d:0,ff:0,layers:0,vocab:0,ffRatio:'CNN — not transformer. ~25M total params'},
+    vit:{d:768,ff:3072,layers:12,vocab:0,ffRatio:'Vision Transformer. ~86M total params'},
   };
   if(presets[p]){
     Object.entries(presets[p]).forEach(([k,v])=>{
@@ -322,6 +333,11 @@ function applyPreset(){
         document.getElementById(k).value=v;
       }
     });
+  } else if(p==='---'){
+    document.getElementById('ffHint').textContent='Select a model above';
+  } else if(['yolov8n','resnet50'].includes(p)){
+    document.getElementById('presetHint').textContent='⚠️ CNN architecture — LLM calculator shows estimates only';
+    document.getElementById('ffHint').textContent='CNN — different architecture';
   } else {
     document.getElementById('ffHint').textContent='Custom (manually set)';
   }
