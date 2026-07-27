@@ -143,7 +143,7 @@ const tabs=[
   stages:[
     {emoji:'📋',name:'PREPROCESS',time:'~2 min',desc:'Q&A → Alpaca template',
      substeps:[
-       {n:1,title:'Write Q&A Pairs',tag:'data',viz:'<span class="vz-box vz-input">📝 Questions</span><span class="vz-arrow">+</span><span class="vz-box vz-input">✅ Answers</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📋 Q&A List</span>',code:'data = [{"instruction": "What is Metformin?","output": "Metformin is a biguanide..."}]'},
+       {n:1,title:'Write Q&A Pairs',tag:'data',viz:'<span class="vz-box vz-input">📝 Questions</span><span class="vz-arrow">+</span><span class="vz-box vz-input">✅ Answers</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📋 instruction_data.json</span>',code:'data = [{"instruction": "What is Metformin?","output": "Metformin is a biguanide..."}]'},
        {n:2,title:'Format as Alpaca',tag:'sft',viz:'<span class="vz-box vz-input">📋 JSON</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔤 format_instruction()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📄 One String</span>',code:'"### Instruction:\\nWhat is Metformin?\\n\\n### Response:\\nMetformin is..."'},
        {n:3,title:'Tokenize',tag:'data',viz:'<span class="vz-box vz-input">📄 Text</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔢 Tokenizer</span><span class="vz-arrow">→</span><span class="vz-box vz-output">[464, 8522, 318...]</span>',code:'tokenizer(ex["text"], truncation=True, padding="max_length", max_length=512)'},
        {n:4,title:'Set Labels',tag:'data',viz:'<span class="vz-box vz-input">🔢 Input IDs</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📋 .copy()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🎯 Labels = Same!</span>',code:'ex["labels"] = ex["input_ids"].copy()  # Self-supervised!'},
@@ -157,8 +157,8 @@ const tabs=[
      ]},
     {emoji:'🚀',name:'DEPLOY',time:'~1 min',desc:'Save → Merge → Serve',
      substeps:[
-       {n:1,title:'Save Adapter (4 MB)',tag:'lora',viz:'<span class="vz-box vz-input">🧠 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">💾 save_pretrained()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📁 adapter (4MB)</span>',code:'model.save_pretrained("./my_adapter")'},
-       {n:2,title:'Merge for Production',tag:'lora',viz:'<span class="vz-box vz-input">W₀ + B×A</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔀 merge_and_unload()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🧠 One Model</span>',code:'model = model.merge_and_unload()'},
+       {n:1,title:'Save Adapter (4 MB)',tag:'lora',viz:'<span class="vz-box vz-input">🧠 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">💾 save_pretrained()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📁 adapter_model.safetensors (4MB)</span>',code:'model.save_pretrained("./my_adapter")  # → adapter_model.safetensors (4MB) + adapter_config.json (1KB)'},
+       {n:2,title:'Merge for Production',tag:'lora',viz:'<span class="vz-box vz-input">W₀ + B×A</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔀 merge_and_unload()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🧠 merged_model.safetensors (2.2GB)</span>',code:'model = model.merge_and_unload()  # Bakes B×A into W₀ → one merged_model.safetensors (2.2GB)'},
        {n:3,title:'Serve with vLLM',tag:'dpo',viz:'<span class="vz-box vz-input">🧠 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ vLLM (5000 tok/s)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌐 API :8000</span>',code:'vllm serve ./merged_model --port 8000'},
        {n:4,title:'Monitor & Retrain',tag:'sft',viz:'<span class="vz-box vz-input">📊 Metrics</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔍 Evidently AI</span><span class="vz-arrow">→</span><span class="vz-box vz-output">⚠️ Drift? → Retrain!</span>',code:'Evidently AI drift check → auto-retrain trigger'},
      ]},
@@ -181,7 +181,7 @@ const tabs=[
   stages:[
     {emoji:'📋',name:'PREPROCESS',time:'~1 min',desc:'CSV → Sentences',
      substeps:[
-       {n:1,title:'Load CSV',tag:'data',viz:'<span class="vz-box vz-input">📊 CSV File</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🐼 pd.read_csv()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📋 DataFrame</span>',code:'df = pd.read_csv("medical_records.csv")'},
+       {n:1,title:'Load CSV',tag:'data',viz:'<span class="vz-box vz-input">📊 medical_records.csv</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🐼 pd.read_csv()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📋 DataFrame</span>',code:'df = pd.read_csv("medical_records.csv")'},
        {n:2,title:'Row → Sentence',tag:'data',viz:'<span class="vz-box vz-input">📊 Row</span><span class="vz-arrow">→</span><span class="vz-box vz-process">✍️ f-string</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 "Age: 45, BP: 140..."</span>',code:'input = f"Age: {row.age}, BP: {row.bp}, Glucose: {row.glucose}"'},
        {n:3,title:'Create Q&A Format',tag:'sft',viz:'<span class="vz-box vz-input">📝 Sentence</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📋 JSON</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Q&A Pair</span>',code:'{"instruction": "Diagnose", "input": input, "output": row.diagnosis}'},
        {n:4,title:'Tokenize + Labels',tag:'data',viz:'<span class="vz-box vz-input">📝 Text</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔢 Tokenizer</span><span class="vz-arrow">→</span><span class="vz-box vz-output">[464, 8522...]</span>',code:'tokenizer(ex["text"], truncation=True, max_length=512)'},
@@ -233,8 +233,8 @@ const tabs=[
      ]},
     {emoji:'🚀',name:'DEPLOY',time:'~1 min',desc:'Export → TensorRT',
      substeps:[
-       {n:1,title:'Export ONNX',tag:'lora',viz:'<span class="vz-box vz-input">🧠 PyTorch</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📦 export()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📄 model.onnx</span>',code:'model.export(format="onnx")'},
-       {n:2,title:'TensorRT Engine',tag:'lora',viz:'<span class="vz-box vz-input">📄 ONNX</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ TensorRT</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🚀 .engine (Fastest)</span>',code:'model.export(format="engine")  # Fastest'},
+       {n:1,title:'Export ONNX',tag:'lora',viz:'<span class="vz-box vz-input">🧠 PyTorch</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📦 export()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📄 model.onnx (~25MB, cross-platform)</span>',code:'model.export(format="onnx")  # → model.onnx (cross-platform, ~25MB)'},
+       {n:2,title:'TensorRT Engine',tag:'lora',viz:'<span class="vz-box vz-input">📄 ONNX</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ TensorRT</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🚀 model.engine (GPU-optimized)</span>',code:'model.export(format="engine")  # → model.engine (TensorRT, fastest, GPU-specific)'},
        {n:3,title:'Deploy',tag:'dpo',viz:'<span class="vz-box vz-input">🚀 Engine</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🐳 Docker + Triton</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌐 Production API</span>',code:'Docker + Triton Inference Server'},
        {n:4,title:'Monitor',tag:'sft',viz:'<span class="vz-box vz-input">📊 Metrics</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📈 Prometheus</span><span class="vz-arrow">→</span><span class="vz-box vz-output">⚠️ Alert if drift</span>',code:'Prometheus metrics + drift detection'},
      ]},
@@ -271,7 +271,7 @@ const tabs=[
      ]},
     {emoji:'🚀',name:'DEPLOY',time:'~1 min',desc:'Save → HF Hub → Serve',
      substeps:[
-       {n:1,title:'Save Adapter',tag:'lora',viz:'<span class="vz-box vz-input">🧠 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">💾 save_pretrained()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📁 adapter (4MB)</span>',code:'model.save_pretrained("./medical_vlm")'},
+       {n:1,title:'Save Adapter',tag:'lora',viz:'<span class="vz-box vz-input">🧠 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">💾 save_pretrained()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📁 adapter_model.safetensors (4MB)</span>',code:'model.save_pretrained("./medical_vlm")'},
        {n:2,title:'Push to HF Hub',tag:'lora',viz:'<span class="vz-box vz-input">📁 Local</span><span class="vz-arrow">→</span><span class="vz-box vz-process">☁️ push_to_hub()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌐 HF Hub</span>',code:'model.push_to_hub("username/medical-xray-vlm")'},
        {n:3,title:'Serve',tag:'dpo',viz:'<span class="vz-box vz-input">🧠 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ vLLM / TGI</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌐 API Ready</span>',code:'vLLM or HuggingFace TGI'},
        {n:4,title:'Query',tag:'sft',viz:'<span class="vz-box vz-input">🖼️ New X-ray</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🤖 Medical VLM</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 "No acute finding."</span>',code:'pipe("xray_002.jpg", "Any abnormality?") → "No acute finding."'},
