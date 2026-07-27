@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG + Fine-Tuning — Sensor FT Example</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8f9fc;--card:#fff;--border:#dde0e6;--text:#1a1d23;--tdim:#4a4f5b;--tmut:#8b909b;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--red:#c62828;--cyan:#007a99;--blue:#2979ff;--orange:#e65100;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;min-height:100vh;}
+.app{max-width:850px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:1.5rem 0 1rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.9rem;}
+
+.step{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.25rem;margin:1rem 0;}
+.step h2{font-family:'Space Grotesk',sans-serif;font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;}
+
+/* Flow */
+.flow{display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;justify-content:center;margin:0.75rem 0;font-family:'Space Grotesk',sans-serif;font-size:0.6rem;}
+.flow-box{padding:0.5rem 0.7rem;border-radius:8px;text-align:center;font-weight:600;border:2px solid;}
+.flow-box.ft{border-color:var(--violet);background:var(--vbg);color:var(--violet);}
+.flow-box.rag{border-color:var(--amber);background:rgba(184,112,0,0.06);color:var(--amber);}
+.flow-box.combined{border-color:var(--green);background:rgba(26,110,52,0.06);color:var(--green);}
+.flow-box.input{border-color:var(--blue);background:rgba(21,101,192,0.04);}
+.flow-arrow{font-size:1.2rem;color:var(--tmut);}
+
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:0.5rem 0;}
+.cmp-box{padding:0.7rem;border-radius:8px;font-size:0.72rem;}
+.cmp-box.ft{border:2px solid var(--violet);background:var(--vbg);}
+.cmp-box.rag{border:2px solid var(--amber);background:rgba(184,112,0,0.04);}
+.cmp-box h4{font-size:0.7rem;margin-bottom:0.3rem;}
+
+.prompt-box{background:#1e1e1e;color:#d4d4d4;font-family:'Space Grotesk',monospace;font-size:0.7rem;padding:0.6rem 0.8rem;border-radius:8px;line-height:1.6;margin:0.5rem 0;white-space:pre-wrap;}
+
+table{width:100%;border-collapse:collapse;font-size:0.7rem;margin:0.5rem 0;}
+th{font-size:0.55rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);padding:0.3rem;border-bottom:2px solid var(--border);text-align:left;}
+td{padding:0.3rem;border-bottom:1px solid var(--border);}
+
+.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.12);border-radius:8px;padding:0.5rem 0.7rem;margin:0.5rem 0;font-size:0.72rem;text-align:center;}
+
+@media(max-width:768px){.app{padding:0.5rem;}.cmp{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>RAG + Fine-Tuning — Working Together</h1>
+  <p>Sensor FT example: Pump-A vibration detected. How both systems collaborate.</p>
+</header>
+
+<!-- THE PROBLEM -->
+<div class="step">
+  <h2>📈 Incoming: Pump-A Vibration Spike</h2>
+  <div class="prompt-box">
+Sensor reading: Pump-A, 2025-07-27 14:30
+  RMS: 4.2 mm/s (elevated)
+  Kurtosis: 8.2 (>3 = impulsive fault!)
+  Crest Factor: 5.3
+  Dominant Frequency: 147 Hz
+  Sideband spacing: 12 Hz</div>
+  <p style="font-size:0.72rem;color:var(--tdim);text-align:center;">Something is wrong with Pump-A. But WHAT exactly? And HOW to fix it?</p>
+</div>
+
+<!-- TWO PATHS -->
+<div class="step">
+  <h2>🔀 Two Systems Answer Together</h2>
+
+  <div class="cmp">
+    <div class="cmp-box ft">
+      <h4 style="color:var(--violet);">🧠 Fine-Tuned Model</h4>
+      <p style="font-size:0.68rem;color:var(--tdim);">
+        <strong>What it knows:</strong> Pattern recognition from 10,000 maintenance examples.<br><br>
+        Kurtosis 8.2 + 147Hz + 12Hz sidebands → <strong style="color:var(--violet);">"Bearing inner race fault."</strong><br><br>
+        <strong style="color:var(--green);">Trained skill:</strong> Diagnose from vibration patterns.<br>
+        <strong style="color:var(--red);">Cannot do:</strong> Access latest repair manual, check parts inventory, see recent repairs.
+      </p>
+    </div>
+    <div class="cmp-box rag">
+      <h4 style="color:var(--amber);">📚 RAG System</h4>
+      <p style="font-size:0.68rem;color:var(--tdim);">
+        <strong>What it retrieves:</strong> Documents from vector database.<br><br>
+        🔍 "Pump-A bearing replacement procedure"<br>
+        🔍 "SKF 6205 bearing specs: inner race freq = 147Hz"<br>
+        🔍 "Last repair: Pump-A bearing replaced 18 months ago"<br>
+        🔍 "Inventory: 2× SKF 6205 bearings in stock"<br><br>
+        <strong style="color:var(--green);">Can do:</strong> Look up any document instantly.<br>
+        <strong style="color:var(--red);">Cannot do:</strong> Diagnose from raw vibration data.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- COMBINED PROMPT -->
+<div class="step">
+  <h2>📝 What the LLM Actually Receives</h2>
+  <p style="font-size:0.72rem;color:var(--tdim);margin-bottom:0.5rem;">The fine-tuned model sees the sensor data. RAG adds retrieved documents as context. Both go into ONE prompt:</p>
+
+  <div class="prompt-box">
+<span style="color:#ce9178;">### Retrieved Documents (RAG):</span>
+<span style="color:#6a9955;">[Doc 1] Pump-A repair manual: Bearing replacement procedure. Step 1: Shut down pump. Step 2: Remove housing bolts (torque 45 Nm). Step 3: Press out old bearing using tool T-223. Step 4: Install new bearing, preload to 120 N...</span>
+<span style="color:#6a9955;">[Doc 2] Inventory system: SKF 6205 bearing — 2 units in stock, Warehouse B, Bin 14-C.</span>
+<span style="color:#6a9955;">[Doc 3] Maintenance log: Pump-A bearing last replaced 2024-01-15 (18 months ago). Expected life: 12-18 months under normal load.</span>
+
+<span style="color:#ce9178;">### Instruction (Fine-Tuned):</span>
+<span style="color:#6a9955;">Diagnose this machine based on vibration data and provide repair guidance.</span>
+
+<span style="color:#ce9178;">### Sensor Data:</span>
+<span style="color:#6a9955;">Machine Pump-A at 2025-07-27 14:30. RMS: 4.2 mm/s. Kurtosis: 8.2. Crest Factor: 5.3. Dominant Freq: 147 Hz. Sideband: 12 Hz.</span>
+
+<span style="color:#ce9178;">### Response:</span></div>
+</div>
+
+<!-- THE RESULT -->
+<div class="step">
+  <h2>✅ Combined Output — Better Than Either Alone</h2>
+
+  <div class="prompt-box" style="border-left:3px solid var(--green);">
+<span style="color:#ce9178;">Diagnosis:</span> Bearing inner race fault detected on Pump-A. Kurtosis of 8.2 confirms repetitive impacts. Dominant frequency at 147 Hz matches SKF 6205 bearing inner race defect frequency. Sideband spacing of 12 Hz indicates early stage wear — still operable but degrading.
+
+<span style="color:#ce9178;">Recommended Action:</span> Schedule replacement within 48 hours. SKF 6205 bearings are IN STOCK (2 units, Warehouse B, Bin 14-C). Use tool T-223 for extraction. Preload to 120 N. This bearing was last replaced 18 months ago and is approaching end of expected life (12-18 months).
+
+<span style="color:#ce9178;">Risk if not addressed:</span> Catastrophic failure within 1-2 weeks. Estimated downtime: 3 days. Estimated cost: $45,000 in lost production.</div>
+</div>
+
+<!-- WHO DOES WHAT -->
+<div class="step">
+  <h2>🧠 Who Provided What in the Answer</h2>
+  <table>
+    <tr><th>Part of Answer</th><th>Source</th><th>Why</th></tr>
+    <tr><td>"Bearing inner race fault"</td><td style="color:var(--violet);">🧠 Fine-Tuned</td><td>Pattern: kurtosis>5 + 147Hz = bearing fault</td></tr>
+    <tr><td>"147 Hz matches SKF 6205"</td><td style="color:var(--amber);">📚 RAG</td><td>Retrieved bearing specs from database</td></tr>
+    <tr><td>"2 units in stock, Bin 14-C"</td><td style="color:var(--amber);">📚 RAG</td><td>Live inventory lookup — model can't know this</td></tr>
+    <tr><td>"Use tool T-223, preload 120 N"</td><td style="color:var(--amber);">📚 RAG</td><td>Repair manual — changes with new equipment</td></tr>
+    <tr><td>"48 hours, $45,000 risk"</td><td style="color:var(--violet);">🧠 Fine-Tuned</td><td>Reasoning from training on similar cases</td></tr>
+    <tr><td>"Last replaced 18 months ago"</td><td style="color:var(--amber);">📚 RAG</td><td>Maintenance log — historical data, always changing</td></tr>
+  </table>
+</div>
+
+<!-- SUMMARY -->
+<div class="step">
+  <h2>📊 The Division of Labor</h2>
+  <table>
+    <tr><th>Task</th><th>Fine-Tuning</th><th>RAG</th></tr>
+    <tr><td>Diagnose from vibration patterns</td><td class="cmp-box ft" style="padding:0.3rem;text-align:center;">✅ Trained</td><td class="cmp-box rag" style="padding:0.3rem;text-align:center;">❌ Can't do</td></tr>
+    <tr><td>Look up bearing specs (147Hz = SKF 6205)</td><td class="cmp-box ft" style="padding:0.3rem;text-align:center;">❌ Outdated</td><td class="cmp-box rag" style="padding:0.3rem;text-align:center;">✅ Latest doc</td></tr>
+    <tr><td>Check parts inventory (2 in stock)</td><td class="cmp-box ft" style="padding:0.3rem;text-align:center;">❌ No access</td><td class="cmp-box rag" style="padding:0.3rem;text-align:center;">✅ Live query</td></tr>
+    <tr><td>Retrieve repair procedure (Tool T-223, 120N)</td><td class="cmp-box ft" style="padding:0.3rem;text-align:center;">❌ Static</td><td class="cmp-box rag" style="padding:0.3rem;text-align:center;">✅ Retrieved</td></tr>
+    <tr><td>Assess urgency (48h, $45K risk)</td><td class="cmp-box ft" style="padding:0.3rem;text-align:center;">✅ Trained</td><td class="cmp-box rag" style="padding:0.3rem;text-align:center;">❌ No reasoning</td></tr>
+    <tr><td>Historical context (last repair 18mo ago)</td><td class="cmp-box ft" style="padding:0.3rem;text-align:center;">❌ Forgotten</td><td class="cmp-box rag" style="padding:0.3rem;text-align:center;">✅ Retrieved</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>🧠 Fine-Tuning = "how to think"</strong> (diagnose from patterns, assess urgency).<br>
+    <strong>📚 RAG = "what to know"</strong> (bearing specs, inventory, repair manuals, history).<br><br>
+    <strong>Together:</strong> The model reasons like an expert AND has access to the latest facts.<br>
+    Neither can do the job alone. Both together = the full solution.
+  </div>
+</div>
+
+</div>
+</body>
+</html>
