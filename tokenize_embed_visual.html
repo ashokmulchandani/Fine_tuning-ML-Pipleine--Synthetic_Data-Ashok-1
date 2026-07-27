@@ -184,6 +184,24 @@ td{padding:0.3rem;border-bottom:1px solid var(--border);}
     <div style="width:61.5%;background:var(--amber);" title="315 text tokens"></div>
   </div>
   <p style="font-size:0.65rem;color:var(--tmut);text-align:center;"><span style="color:var(--cyan);">■ 197 visual (38.5%)</span> <span style="color:var(--amber);">■ 315 text (61.5%)</span> = <strong>512 tokens total</strong></p>
+
+  <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1.2rem 0 0.5rem;">How Image "Embeddings" Work vs Text Embeddings</h3>
+
+  <table>
+    <tr><th></th><th>📝 Text Token</th><th>🖼️ Image Patch</th></tr>
+    <tr><td><strong>Input</strong></td><td>Integer ID (e.g., 464 = "Met")</td><td>256 pixel values (16×16 patch)</td></tr>
+    <tr><td><strong>Embedding Method</strong></td><td><strong>LOOKUP TABLE</strong>: Row 464 of 32K×4096 matrix → 4096-dim vector</td><td><strong>ViT ENCODER</strong>: 256 pixels → CLIP-ViT-L → 1024-dim → Projection → 4096-dim vector</td></tr>
+    <tr><td><strong>Is there an embedding matrix?</strong></td><td>✅ YES — 32K rows × 4096 cols = 131M params</td><td>❌ NO — No lookup. ViT computes the vector from scratch for each patch.</td></tr>
+    <tr><td><strong>Result</strong></td><td>4096-dim vector (learned during pre-training)</td><td>4096-dim vector (computed by ViT + projection)</td></tr>
+    <tr><td><strong>Analogy</strong></td><td>Dictionary: word → definition</td><td>Camera: pixels → description</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>🧠 Why no embedding matrix for images?</strong> There are infinite possible images (unlike 32K fixed words). You can't have a lookup table for every possible image patch. Instead, CLIP-ViT <strong>computes</strong> the vector from the pixel values — it's a function, not a lookup. Same idea as how a camera converts light into pixels: there's no "lookup table" for every possible scene.
+  </div>
+
+  <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1.2rem 0 0.5rem;">After This: Visual + Text Tokens Go Through Transformer ×32 Together</h3>
+  <p style="font-size:0.8rem;color:var(--tdim);">Once combined into 512×4096, the Transformer processes visual and text tokens <strong>identically</strong>. Same Q/K/V attention. Same feed-forward. Same LoRA on Q+V. The model doesn't know which token came from where.</p>
   <p style="font-size:0.85rem;color:var(--tdim);">Vision-Language models (LLaVA, GPT-4V) process images the same way — by converting them into tokens. But the tokenizer is different.</p>
 
   <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin:1rem 0 0.5rem;">Step 1: Split Image into Patches</h3>
