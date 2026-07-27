@@ -1,0 +1,11 @@
+instruction,output
+"### Instruction: What is Metformin?
+### Response:",Metformin is a biguanide medication used to treat type 2 diabetes by reducing hepatic glucose production.
+"### Instruction: List side effects of Metformin.
+### Response:","Common side effects include nausea, diarrhea, stomach upset, and metallic taste. Rare: lactic acidosis."
+"### Instruction: What is the maximum daily dose?
+### Response:","Maximum recommended daily dose is 2,550 mg for adults, divided into 2-3 doses with meals."
+"### Instruction: How does Metformin work?
+### Response:",Metformin decreases glucose production in the liver and improves peripheral insulin sensitivity.
+"### Instruction: What is type 2 diabetes?
+### Response:","Type 2 diabetes is a chronic condition where cells become resistant to insulin, causing high blood sugar."

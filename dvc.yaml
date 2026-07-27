@@ -1,0 +1,66 @@
+# DVC Pipeline — Reproducible ML workflow
+# Run: dvc repro
+# Each stage is cached. Only re-runs if dependencies change.
+
+stages:
+  prepare_data:
+    desc: "Validate and version the training dataset"
+    cmd: python scripts/prepare_data.py
+    params:
+      - prepare.dataset_path
+      - prepare.format
+      - prepare.test_split
+    deps:
+      - scripts/prepare_data.py
+      - data/instruction_data.csv
+    outs:
+      - data/train_split.csv
+      - data/val_split.csv
+    metrics:
+      - metrics/data_validation.json:
+          cache: false
+
+  train:
+    desc: "Fine-tune model with LoRA + SFT, log to MLflow"
+    cmd: python scripts/train_stage.py
+    params:
+      - train.base_model
+      - train.lora_r
+      - train.lora_alpha
+      - train.lora_dropout
+      - train.target_modules
+      - train.quantization
+      - train.epochs
+      - train.batch_size
+      - train.gradient_accumulation_steps
+      - train.learning_rate
+      - train.lr_scheduler
+      - train.warmup_steps
+      - train.max_seq_length
+      - train.seed
+    deps:
+      - scripts/train_stage.py
+      - data/train_split.csv
+    outs:
+      - models/adapter_model.safetensors
+      - models/adapter_config.json
+    metrics:
+      - metrics/training_metrics.json:
+          cache: false
+
+  evaluate:
+    desc: "Behavioral tests + drift check + MLflow model registry"
+    cmd: python scripts/evaluate_stage.py
+    params:
+      - evaluate.drift_threshold
+      - evaluate.min_keyword_overlap
+      - evaluate.max_response_time_ms
+    deps:
+      - scripts/evaluate_stage.py
+      - models/adapter_model.safetensors
+      - data/val_split.csv
+    metrics:
+      - metrics/evaluation_metrics.json:
+          cache: false
+    plots:
+      - metrics/drift_report.html

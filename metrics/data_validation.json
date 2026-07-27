@@ -1,0 +1,11 @@
+{
+  "total_rows": 5,
+  "missing_columns": [],
+  "null_instructions": 0,
+  "null_outputs": 0,
+  "empty_instructions": 0,
+  "empty_outputs": 0,
+  "valid": true,
+  "train_rows": 4,
+  "val_rows": 1
+}

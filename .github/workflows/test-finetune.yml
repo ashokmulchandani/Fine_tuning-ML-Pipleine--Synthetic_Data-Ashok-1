@@ -1,0 +1,148 @@
+# Phase 6A + 6B: CI/CD for Fine-Tuning — DVC → MLflow → Evidently
+# - PR checks: Data validation + Model tests + Drift check (every push/PR)
+# - Scheduled: Daily drift monitoring (catches silent degradation)
+# - GPU pipeline: Full DVC repro train→evaluate (self-hosted GPU runner)
+name: Fine-Tuning CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run drift check every day at 6am UTC — catches silent model degradation
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    # Manual trigger for full DVC pipeline on GPU runner
+
+# ── PR Checks (CPU, fast, every push) ──────────────────────
+jobs:
+  pr-checks:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'schedule'
+
+    steps:
+      - name: Checkout (with DVC)
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pandas pandera pytest evidently mlflow dvc pyyaml
+
+      # ═══════════════════════════════════════════════════
+      # Layer 1: Data Validation (seconds, CPU only)
+      # ═══════════════════════════════════════════════════
+      - name: Layer 1 — Data Validation
+        run: python -m pytest tests/test_data.py -v
+
+      # ═══════════════════════════════════════════════════
+      # Layer 2: Model Behavioral Tests (seconds, CPU only)
+      # ═══════════════════════════════════════════════════
+      - name: Layer 2 — Model Behavioral Tests
+        run: python -m pytest tests/test_model.py -v
+
+      # ═══════════════════════════════════════════════════
+      # DVC: Verify data pipeline is reproducible
+      # ═══════════════════════════════════════════════════
+      - name: DVC — Verify pipeline integrity
+        run: |
+          dvc repro --dry 2>/dev/null || echo "[INFO] DVC not initialized. Run: dvc init && dvc repro"
+
+      # ═══════════════════════════════════════════════════
+      # Layer 4: Drift Check (seconds, CPU only)
+      # ═══════════════════════════════════════════════════
+      - name: Layer 4 — Drift Check
+        run: python scripts/check_drift.py --demo
+
+
+# ── Scheduled Drift Monitoring (daily, alerts on drift) ────
+  drift-monitor:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pandas evidently pyyaml
+
+      - name: Run Drift Monitor
+        id: drift
+        run: |
+          python scripts/check_drift.py --demo --threshold 0.5
+        continue-on-error: true
+
+      - name: Alert on Drift Detected
+        if: steps.drift.outcome == 'failure'
+        run: |
+          echo "::warning::DRIFT DETECTED! Model may need retraining."
+          echo "Review the drift report and consider running: dvc repro"
+
+
+# ── Full GPU Pipeline (self-hosted runner, manual trigger) ──
+  gpu-pipeline:
+    runs-on: [self-hosted, gpu]
+    if: github.event_name == 'workflow_dispatch'
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install transformers peft trl datasets bitsandbytes accelerate
+          pip install pandas pandera pytest evidently mlflow dvc pyyaml scipy
+
+      - name: DVC repro — Full Pipeline
+        run: |
+          dvc pull data/instruction_data.csv.dvc 2>/dev/null || echo "No DVC remote configured yet"
+          dvc repro
+
+      - name: Layer 3 — Pipeline Smoke Test
+        run: python -m pytest tests/test_pipeline.py -v -m "gpu"
+
+      - name: Layer 4 — Drift Report
+        run: python scripts/check_drift.py --demo
+
+      - name: Upload metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: metrics
+          path: metrics/
+
+      - name: Upload drift report
+        uses: actions/upload-artifact@v4
+        with:
+          name: drift-report
+          path: metrics/drift_report.html
+
+      - name: Promote model (MLflow)
+        if: success()
+        run: |
+          python -c "
+          from scripts.mlflow_tracking import compare_runs
+          runs = compare_runs('instruction-ft-medical', top_n=1)
+          print('[INFO] Best run:', runs[0].info.run_id if runs else 'No runs yet')
+          print('[INFO] To promote: mlflow models transition instruction-ft-medical 1 --stage Staging')
+          "

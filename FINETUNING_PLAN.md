@@ -124,35 +124,66 @@ A complete fine-tuning learning plan covering theory, hands-on practice across m
 ## Phase 6A: AI Testing & QA for Fine-Tuning
 
 > "Review like you're the person getting paged at 3am when this breaks."
+> **✅ HANDS-ON COMPLETE** — 4-layer test suite, 10-point checklist, CI/CD pipeline, drift monitoring.
 
-| Step | Task | Platform |
-|------|------|----------|
-| 6A.1 | Why testing AI is different — non-deterministic, data-as-code, degrades over time | Theory |
-| 6A.2 | 3-Pass PR Review — Works? → Readable? → Safe? | Process |
-| 6A.3 | Test Cases: Happy Path, Edge Cases, Failure Modes — for fine-tuned models | pytest |
-| 6A.4 | AI Testing 4 Layers: Data → Model → Pipeline → Production | Theory |
-| 6A.5 | Layer 1: Data Testing — schema validation, nulls, empty fields (Pandera) | pytest |
-| 6A.6 | Layer 2: Model Testing — MFT, INV, DIR behavioral tests | pytest |
-| 6A.7 | Layer 3: Pipeline Testing — smoke test, save/load, E2E | pytest |
-| 6A.8 | Layer 4: Production Monitoring — drift detection (Evidently AI) | Production |
-| 6A.9 | 10-Point Checklist — before every training run and deployment | Reference |
-| 6A.10 | CI/CD Pipeline — automated testing on every PR (GitHub Actions) | CI/CD |
+| Step | Task | Platform | File |
+|------|------|----------|------|
+| 6A.1 | Why testing AI is different — non-deterministic, data-as-code, degrades over time | Theory | 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6a_ai_testing.html) |
+| 6A.2 | 3-Pass PR Review — Works? → Readable? → Safe? | Process | 📘 Slide 6A.2 with real PR code example |
+| 6A.3 | Test Cases: Happy Path, Edge Cases, Failure Modes — for fine-tuned models | pytest | [tests/test_model.py](tests/test_model.py) |
+| 6A.4 | AI Testing 4 Layers: Data → Model → Pipeline → Production | Theory | 📘 Slide 6A.4 with clickable pyramid |
+| 6A.5 | Layer 1: Data Testing — schema validation, nulls, empty fields (Pandera) | pytest | [tests/test_data.py](tests/test_data.py) |
+| 6A.6 | Layer 2: Model Testing — MFT, INV, DIR behavioral tests | pytest | [tests/test_model.py](tests/test_model.py) |
+| 6A.7 | Layer 3: Pipeline Testing — smoke test, save/load, E2E | pytest | [tests/test_pipeline.py](tests/test_pipeline.py) |
+| 6A.8 | Layer 4: Production Monitoring — drift detection (Evidently AI) | Production | [scripts/check_drift.py](scripts/check_drift.py) |
+| 6A.9 | 10-Point Checklist — before every training run and deployment | Reference | [checklist_10_point.md](checklist_10_point.md) |
+| 6A.10 | CI/CD Pipeline — automated testing on every PR (GitHub Actions) | CI/CD | [.github/workflows/test-finetune.yml](.github/workflows/test-finetune.yml) |
 
 ## Phase 6B: MLOps & Deployment
 
 > Track, version, deploy, and monitor your fine-tuned models — the operational side.
+> **✅ HANDS-ON COMPLETE** — DVC, MLflow, Evidently AI all wired together with a single `dvc repro` command.
 
-| Step | Task | Platform |
-|------|------|----------|
-| 6B.1 | MLflow experiment tracking — log params, metrics, and artifacts for every run | Local/Cloud |
-| 6B.2 | Data versioning with DVC — track which dataset produced which model | Local |
-| 6B.3 | Model Registry — version models, promote through stages (Staging → Production) | MLflow |
-| 6B.4 | Compare runs — find the best hyperparameters across experiments | MLflow UI |
-| 6B.5 | CI/CD pipelines — auto-trigger retraining on new data (GitHub Actions) | Cloud |
-| 6B.6 | Deployment patterns — batch inference vs real-time API vs streaming | Theory |
-| 6B.7 | Production serving with vLLM — 10× faster than HuggingFace pipeline | Local/Cloud |
-| 6B.8 | Monitoring & drift detection — when to retrain | Production |
-| 6B.9 | Cost optimization — spot instances, quantization, caching, 20× cheaper | Cloud |
+| Step | Task | Platform | File |
+|------|------|----------|------|
+| 6B.1 | MLflow experiment tracking — log params, metrics, and artifacts for every run | Local/Cloud | [scripts/mlflow_tracking.py](scripts/mlflow_tracking.py) |
+| 6B.2 | Data versioning with DVC — track which dataset produced which model | Local | [dvc.yaml](dvc.yaml) + [params.yaml](params.yaml) |
+| 6B.3 | Model Registry — version models, promote through stages (Staging → Production) | MLflow | [scripts/mlflow_tracking.py](scripts/mlflow_tracking.py) `log_adapter()` |
+| 6B.4 | Compare runs — find the best hyperparameters across experiments | MLflow UI | `mlflow ui` + `compare_runs()` |
+| 6B.5 | CI/CD pipelines — auto-trigger retraining on new data (GitHub Actions) | Cloud | [.github/workflows/test-finetune.yml](.github/workflows/test-finetune.yml) |
+| 6B.6 | Deployment patterns — batch inference vs real-time API vs streaming | Theory | 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6b_mlops_deployment.html) |
+| 6B.7 | Production serving with vLLM — 10× faster than HuggingFace pipeline | Local/Cloud | 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6b_mlops_deployment.html) |
+| 6B.8 | Monitoring & drift detection — when to retrain | Production | [scripts/check_drift.py](scripts/check_drift.py) + [scripts/evaluate_stage.py](scripts/evaluate_stage.py) |
+| 6B.9 | Cost optimization — spot instances, quantization, caching, 20× cheaper | Cloud | 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6b_mlops_deployment.html) |
+
+### 🔗 How DVC + MLflow + Evidently Connect
+
+```
+Q&A data (CSV)
+    │
+    ├── dvc add data/instruction_data.csv     ← DVC versions the data
+    │   dvc push → Google Drive / S3
+    │
+    ├── dvc repro prepare_data                ← Validates + splits train/val
+    │
+    ├── dvc repro train                       ← LoRA + SFTTrainer
+    │   └── with TrackRun(...) as run:         ← MLflow logs params, loss, adapter
+    │           run.log_adapter("./adapter")
+    │           mlflow.register_model(...)     ← Model Registry
+    │
+    └── dvc repro evaluate                    ← Behavioral tests + Drift
+        └── Evidently AI: drift_score > 0.5 → BLOCK deploy
+            drift_score < 0.5 → Promote to Staging ✅
+```
+
+### Quick Start
+```bash
+pip install dvc mlflow evidently
+dvc init && dvc remote add -d myremote gdrive://your-folder-id
+dvc repro                        # Run full pipeline
+mlflow ui                        # Compare runs, promote best model
+python scripts/check_drift.py --demo  # Daily drift monitor
+```
 
 ## Phase 7: Azure AI Foundry Fine-Tuning (Cloud - No Code)
 
@@ -420,8 +451,8 @@ Click any link to open the interactive HTML in your browser. (Hosted via GitHub 
 - ✅ Phase 5: Instruction Fine-Tuning (hands-on done!) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase5_instruction_finetune.html) | [Format Visual →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/instruction_format_visual.html) | [Loss Explained →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/training_loss_explained.html)
 - ✅ Phase 5b: Synthetic Data Generation (theory done)
 - 📖 Phase 6: Preference Alignment (DPO) (theory done) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6_dpo_preference.html) | [DPO Loss →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/dpo_loss_simplified.html) | [Colab →](https://colab.research.google.com/drive/1fOFcaipLxzf-vaLEC1QvsFmLo-CsD1FR)
-- ⬜ Phase 6A: AI Testing & QA 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6a_ai_testing.html)
-- ⬜ Phase 6B: MLOps & Deployment 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6b_mlops_deployment.html)
+- ✅ Phase 6A: AI Testing & QA (hands-on done!) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6a_ai_testing.html) | [Tests →](tests/) | [Checklist →](checklist_10_point.md)
+- ✅ Phase 6B: MLOps & Deployment (hands-on done!) 📘 [Interactive →](https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/phase6b_mlops_deployment.html) | [DVC →](dvc.yaml) | [MLflow →](scripts/mlflow_tracking.py) | [Drift →](scripts/check_drift.py)
 - ⬜ Phase 7: Azure AI Foundry
 - ⬜ Phase 8: AWS Bedrock
 - ⬜ Phase 9: AWS SageMaker

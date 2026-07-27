@@ -1,0 +1,42 @@
+# DVC — ignore large/generated files that don't need versioning
+# These are tracked by DVC, not Git
+
+# Models (large binary files — tracked by DVC)
+/models/
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.h5
+*.keras
+
+# Data (tracked by DVC, not Git)
+/data/*.csv
+/data/*.json
+/data/*.parquet
+/data/*.jsonl
+!data/.gitkeep
+
+# Python cache
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Notebook outputs
+.ipynb_checkpoints/
+
+# MLflow artifacts
+/mlruns/
+/mlflow.db
+
+# Evidently reports
+/drift_report*.html
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
