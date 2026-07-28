@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -151,6 +151,27 @@ const tabs=[
        {n:3,title:'Tokenize (🤖 Automatic)',tag:'data',viz:'<span class="vz-box vz-input">📄 Alpaca String</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔢 AutoTokenizer<br>32K vocab</span><span class="vz-arrow">→</span><span class="vz-box vz-output">[1, 464, 8522...]<br>512 integers</span>',code:'# Convert text → integers the model can process\n# Each word/subword maps to an integer (vocab of 32,000)\n\ndef tokenize(examples):\n    return tokenizer(\n        examples["text"],\n        truncation=True,         # Cut if > 512 tokens\n        padding="max_length",    # Pad shorter to 512\n        max_length=512           # Standard context window\n    )\n\ntokenized = dataset.map(tokenize, batched=True)\n# Now each example has: input_ids, attention_mask\n# "Metformin" → [464, 8522] (subword: Met + formin)'},
        {n:4,title:'Set Labels (🤖 Automatic)',tag:'data',viz:'<span class="vz-box vz-input">🔢 input_ids<br>[1, 464, 8522...]</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📋 .copy()<br>Self-Supervised!</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🎯 labels<br>IDENTICAL to input</span>',code:'# 🎯 THE MAGIC: labels = input_ids.copy()\n# No human labeling! The text IS the label.\n# Model learns: predict next token from previous tokens\n\ndef add_labels(examples):\n    examples["labels"] = examples["input_ids"].copy()\n    return examples\n\ntokenized = tokenized.map(add_labels, batched=True)\n\n# Input:  "### Instruction: What is Metformin? ### Response:"\n# Label:  "Metformin is a biguanide antihyperglycemic agent..."\n# Model sees input, must predict label — ONE token at a time.\n# Loss computed ONLY on the response part (instruction masked).'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
     {emoji:'🧠',name:'TRAIN',time:'~3 min',desc:'LoRA → SFT → DPO',
      substeps:[
        {n:1,title:'Quantize Base Model (🤖 Auto)',tag:'lora',viz:'<span class="vz-box vz-input">🧠 FP16 (2.2GB)</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⬇ BitsAndBytes 8-bit</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🧠 INT8 (1.1GB)</span>',code:'# Phase 2 in action! Quantization reduces memory.\nfrom transformers import BitsAndBytesConfig\nimport torch\n\nbnb_config = BitsAndBytesConfig(load_in_8bit=True)\n\nmodel = AutoModelForCausalLM.from_pretrained(\n    "TinyLlama/TinyLlama-1.1B-Chat-v1.0",\n    quantization_config=bnb_config,\n    device_map="auto",\n    torch_dtype=torch.float16\n)\nmodel.config.use_cache = False  # Saves memory during training\n\n# 2.2GB (FP16) → 1.1GB (INT8). Fits on free Colab T4!'},
@@ -158,6 +179,27 @@ const tabs=[
        {n:3,title:'SFT — Supervised Fine-Tuning (Phase 5)',tag:'sft',viz:'<span class="vz-box vz-input">📋 tokenized Q&A pairs</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🎓 SFTTrainer<br>lr=2e-4, epochs=10</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🤖 Instruction Model<br>+ adapter_model.safetensors</span>',code:'# SFT teaches the model WHAT to say (content)\n# Response-only masking: model learns ONLY the answer part\nfrom transformers import TrainingArguments\nfrom trl import SFTTrainer\n\ntraining_args = TrainingArguments(\n    output_dir="./instruction_tuned",\n    num_train_epochs=10,               # 10 epochs (small dataset)\n    per_device_train_batch_size=4,\n    gradient_accumulation_steps=4,      # Effective batch=16\n    learning_rate=2e-4,                 # 0.0002 — standard QLoRA lr\n    lr_scheduler_type="cosine",\n    warmup_steps=100,\n    logging_steps=5,\n    save_steps=200,\n    save_total_limit=2,\n)\n\ntrainer = SFTTrainer(\n    model=model,\n    train_dataset=tokenized_dataset,\n    formatting_func=format_instruction,  # Alpaca template\n    args=training_args,\n)\ntrainer.train()  # Forward→Loss→Backward(STE)→Adam→Repeat\n\n# Output: instruction_tuned/adapter_model.safetensors (4MB)'},
        {n:4,title:'DPO — Direct Preference Optimization (Phase 6)',tag:'dpo',viz:'<span class="vz-box vz-input">👍 Chosen (good)<br>vs<br>👎 Rejected (bad)</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚖️ DPOTrainer<br>beta=0.1, lr=5e-5</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🤖 Aligned Model<br>(thorough, helpful)</span>',code:'# DPO teaches the model HOW to deliver (tone, thoroughness)\n# "Be more like chosen, less like rejected"\nfrom trl import DPOTrainer\n\n# Preference data: prompt + chosen (good) + rejected (bad)\npreference_data = [{\n    "prompt": "What is Metformin?",\n    "chosen": "Metformin is an oral medication used to treat...",\n    "rejected": "Metformin is a drug. It helps with sugar."\n}]\n\ndpo_args = TrainingArguments(\n    output_dir="./dpo_aligned",\n    num_train_epochs=3,\n    per_device_train_batch_size=4,\n    learning_rate=5e-5,    # Smaller than SFT (2e-4)\n    logging_steps=5,\n)\n\ntrainer = DPOTrainer(\n    model=model,          # MUST merge SFT adapter first!\n    train_dataset=Dataset.from_list(preference_data),\n    args=dpo_args,\n    beta=0.1,             # Preference strength (0.1=gentle)\n)\ntrainer.train()\n\n# Output: dpo_aligned/adapter_model.safetensors (4MB)'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
     {emoji:'🚀',name:'DEPLOY',time:'~1 min',desc:'Save → Merge → Serve',
      substeps:[
        {n:1,title:'Save Adapter (4 MB)',tag:'lora',viz:'<span class="vz-box vz-input">🧠 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">💾 save_pretrained()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📁 adapter_model.safetensors (4MB)</span>',code:'# Save the trained LoRA adapter (4MB only — NOT the base model)\nmodel.save_pretrained("./instruction_tuned_adapter")\ntokenizer.save_pretrained("./instruction_tuned_adapter")\n\n# 📁 Files created:\n#   adapter_model.safetensors (4MB) — B_q×A_q + B_v×A_v weights\n#   adapter_config.json (1KB) — r=8, alpha=16, config\n#   tokenizer.json — needed for text→IDs\n\n# Anyone with TinyLlama can use your 4MB adapter!'},
@@ -165,6 +207,27 @@ const tabs=[
        {n:3,title:'Serve with vLLM',tag:'dpo',viz:'<span class="vz-box vz-input">🧠 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ vLLM (5000 tok/s)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌐 API :8000</span>',code:'vllm serve ./merged_model --port 8000'},
        {n:4,title:'Monitor & Retrain',tag:'sft',viz:'<span class="vz-box vz-input">📊 Metrics</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔍 Evidently AI</span><span class="vz-arrow">→</span><span class="vz-box vz-output">⚠️ Drift? → Retrain!</span>',code:'Evidently AI drift check → auto-retrain trigger'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
   ]
 },
 { // 1: TABULAR
@@ -189,6 +252,27 @@ const tabs=[
        {n:3,title:'Create Q&A Format',tag:'sft',viz:'<span class="vz-box vz-input">📝 Sentence</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📋 JSON</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Q&A Pair</span>',code:'# Step 3: Wrap each sentence into a Q&A pair (Alpaca format)\n# Same format as text FT! Just different content.\n\ninstruction_data = []\nfor _, row in df.iterrows():\n    instruction_data.append({\n        "instruction": "Diagnose this patient based on the following data",\n        "input": row_to_sentence(row),       # From Step 2\n        "output": row["diagnosis"]            # The label (from CSV)\n    })\n\n# Example output (one Q&A pair):\n# {\n#   "instruction": "Diagnose this patient based on the following data",\n#   "input": "Age: 45. Blood Pressure: 140 mmHg. Glucose: 110 mg/dL. Cholesterol: 220 mg/dL.",\n#   "output": "Diabetic"\n# }\n# ─── instruction_data passed to Step 4 ───→'},
        {n:4,title:'Tokenize + Labels',tag:'data',viz:'<span class="vz-box vz-input">📝 Text</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔢 Tokenizer</span><span class="vz-arrow">→</span><span class="vz-box vz-output">[464, 8522...]</span>',code:'# Step 4: Format to Alpaca string → Tokenize → Add Labels\n# IDENTICAL to text FT from here onwards!\n\nfrom datasets import Dataset\nfrom transformers import AutoTokenizer\n\ntokenizer = AutoTokenizer.from_pretrained("TinyLlama/TinyLlama-1.1B-Chat-v1.0")\ntokenizer.pad_token = tokenizer.eos_token\n\n# Format each Q&A into Alpaca string (SAME function as text FT!)\ndef format_instruction(example):\n    text = "Below is an instruction. Write a response.\\n\\n"\n    text += "### Instruction:\\n" + example["instruction"] + "\\n\\n"\n    if example["input"]:  # Tabular data HAS input (the patient data)\n        text += "### Input:\\n" + example["input"] + "\\n\\n"\n    text += "### Response:\\n" + example["output"]\n    return {"text": text}\n\n# Create dataset\ndataset = Dataset.from_list(instruction_data)\ndataset = dataset.map(format_instruction)\n\n# Tokenize\ndef tokenize(examples):\n    return tokenizer(examples["text"], truncation=True,\n                     padding="max_length", max_length=512)\ndataset = dataset.map(tokenize, batched=True)\n\n# Add labels\ndef add_labels(examples):\n    examples["labels"] = examples["input_ids"].copy()\n    return examples\ndataset = dataset.map(add_labels, batched=True)\n\n# ✅ "dataset" ready for TRAIN Step 3 (SFTTrainer)!'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
     {emoji:'🧠',name:'TRAIN',time:'~3 min',desc:'LoRA → SFTTrainer',
      substeps:[
        {n:1,title:'Quantize (🤖 Auto)',tag:'lora',viz:'<span class="vz-box vz-input">🧠 FP16</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⬇ BitsAndBytes 8-bit</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🧠 INT8</span>',code:'from transformers import BitsAndBytesConfig\nbnb_config = BitsAndBytesConfig(load_in_8bit=True)\nmodel = AutoModelForCausalLM.from_pretrained(\n    "TinyLlama/TinyLlama-1.1B-Chat-v1.0",\n    quantization_config=bnb_config, device_map="auto"\n)\nmodel.config.use_cache = False'},
@@ -196,6 +280,27 @@ const tabs=[
        {n:3,title:'SFTTrainer (formatting done in PREPROCESS)',tag:'sft',viz:'<span class="vz-box vz-input">📋 tokenized dataset</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🎓 SFTTrainer</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🤖 Diagnosis Model</span>',code:'# 📥 "dataset" already formatted & tokenized (PREPROCESS Step 4)\n# 📥 format_instruction already applied (PREPROCESS Step 4)\nfrom transformers import TrainingArguments\nfrom trl import SFTTrainer\ntraining_args = TrainingArguments(\n    output_dir="./tabular_diagnosis",\n    num_train_epochs=10, per_device_train_batch_size=4,\n    learning_rate=2e-4, logging_steps=5,\n)\ntrainer = SFTTrainer(model=model, train_dataset=dataset,\n    formatting_func=format_instruction, args=training_args)\ntrainer.train()'},
        {n:4,title:'Model Now Diagnoses Patients',tag:'sft',viz:'<span class="vz-box vz-input">📊 New Patient</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🤖 Trained Model</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 "Diabetic"</span>',code:'# Model learned: Age>60+Glucose>120+BP>140 → Diabetic\npipe = pipeline("text-generation", model=model)\nprompt = "### Instruction: Diagnose\\n### Input: Age: 67, BP: 160, Glucose: 130\\n### Response:"\nresult = pipe(prompt, max_new_tokens=50)\n# → "Diabetic. Recommend HbA1c test and lifestyle changes."'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
     {emoji:'🚀',name:'DEPLOY',time:'~1 min',desc:'Save → Diagnose',
      substeps:[
        {n:1,title:'Save Adapter',tag:'lora',code:'model.save_pretrained("./diagnosis_adapter")'},
@@ -203,6 +308,27 @@ const tabs=[
        {n:3,title:'Query: New Patient',tag:'sft',code:'pipe("Age: 67, BP: 160, Glucose: 130") → "Diabetic"'},
        {n:4,title:'Monitor',tag:'dpo',code:'Evidently AI → drift check on new patient data'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
   ]
 },
 { // 2: IMAGE
@@ -227,6 +353,27 @@ const tabs=[
        {n:3,title:'Create data.yaml',tag:'data',viz:'<span class="vz-box vz-input">📁 Paths</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📝 YAML Config</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Ready to Train</span>',code:'# Step 3: data.yaml — ✍️ YOU write this (one small config file)\n# Tells YOLO where your images are and what classes to detect\n\n# 📁 File: chicken_disease.yaml (you create this once)\n# Content:\npath: ./dataset           # Root folder\ntrain: images/train       # Training images\nval: images/val           # Validation images\n\nnc: 4                     # Number of classes\nnames: [\'healthy\', \'cocci\', \'salmo\', \'ncd\']  # Class names\n\n# That\'s it! YOLO reads this → knows where data is → ready to train.\n# 📁 Output: chicken_disease.yaml (tiny text file on disk)'},
        {n:4,title:'Load Pre-trained',tag:'data',viz:'<span class="vz-box vz-input">🌐 COCO Dataset</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🧠 YOLOv8n.pt</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Model Ready</span>',code:'# Load pre-trained model (trained on COCO: 80 classes, 118K images)\nfrom ultralytics import YOLO\n\nmodel = YOLO("yolov8n.pt")  # 3.2M params, nano version — fastest\n# Also available: yolov8s.pt (11M), yolov8m.pt (26M), yolov8l.pt (44M)\n# Backbone already knows: edges, shapes, textures, objects'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
     {emoji:'🧠',name:'TRAIN',time:'~30 min',desc:'Freeze backbone → New head',
      substeps:[
        {n:1,title:'Freeze Backbone',tag:'lora',viz:'<span class="vz-box vz-input">🧠 Full Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔒 Freeze (like W₀)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Frozen Backbone</span>',code:'# Same idea as LoRA! Backbone = W₀ (frozen), Head = B×A (trained)\n# Backbone learned general features from COCO (edges, shapes, textures)\n# We keep it frozen and only train the NEW detection head\n# YOLO does this automatically when you call model.train()'},
@@ -234,6 +381,27 @@ const tabs=[
        {n:3,title:'Train',tag:'sft',viz:'<span class="vz-box vz-input">🖼️ Your Images</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🏋️ model.train()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📉 Loss ↓ mAP ↑</span>',code:'# Train! Backbone frozen, head trained from scratch.\nmodel.train(\n    data="chicken_disease.yaml",  # Your dataset config\n    epochs=50,                     # Number of passes\n    imgsz=640,                     # Image size\n    batch=16,                      # Batch size\n    lr=0.001,                      # Learning rate\n    device=0,                      # GPU device\n    patience=10,                   # Early stopping\n)\n# 📤 Output: runs/detect/train/weights/best.pt (best model)\n#           runs/detect/train/weights/last.pt (last checkpoint)'},
        {n:4,title:'Evaluate',tag:'sft',viz:'<span class="vz-box vz-input">🧠 Trained Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📊 model.val()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📈 mAP, P, R</span>',code:'model.val() → mAP@0.5, precision, recall'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
     {emoji:'🚀',name:'DEPLOY',time:'~1 min',desc:'Export → TensorRT',
      substeps:[
        {n:1,title:'Export ONNX',tag:'lora',viz:'<span class="vz-box vz-input">🧠 PyTorch</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📦 export()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📄 model.onnx (~25MB, cross-platform)</span>',code:'# Export to ONNX — cross-platform, runs anywhere\nmodel.export(format="onnx")\n# 📤 Output: best.onnx (~25MB for YOLOv8n)\n# ONNX = Open Neural Network Exchange. Works on CPU, GPU, edge.'},
@@ -241,6 +409,27 @@ const tabs=[
        {n:3,title:'Deploy',tag:'dpo',viz:'<span class="vz-box vz-input">🚀 Engine</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🐳 Docker + Triton</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌐 Production API</span>',code:'# Deploy: TensorRT engine → Triton → Docker → K8s\n# Build Docker image with Triton + your model.engine\n# Deploy to Kubernetes on GPU EC2 instances.\n# Triton handles: dynamic batching, multi-model serving, HTTP/gRPC'},
        {n:4,title:'Monitor',tag:'sft',viz:'<span class="vz-box vz-input">📊 Metrics</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📈 Prometheus</span><span class="vz-arrow">→</span><span class="vz-box vz-output">⚠️ Alert if drift</span>',code:'Prometheus metrics + drift detection'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
   ]
 },
 { // 3: VISION-LANGUAGE
@@ -265,6 +454,27 @@ const tabs=[
        {n:3,title:'Format as Text',tag:'sft',viz:'<span class="vz-box vz-input">📋 JSON</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔤 format_instruction()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📄 One String</span>',code:'# 🔑 The image and text take TWO SEPARATE paths. They meet only at the LLM.\n\n# YOU write this JSON:\n# {\n#   "image": "chest_xray_001.jpg",\n#   "instruction": "What does this chest X-ray show?",\n#   "output": "Bilateral pneumonia in the right lower lobe."\n# }\n\n# ┌── PATH 1: Image ──────────────────────────────────┐\n# │ "chest_xray_001.jpg" → CLIP-ViT-L → [■ ■ ■ ... ■] │  197 visual tokens\n# └────────────────────────────────────────────────────┘\n#                                                      │\n# ┌── PATH 2: Text (Alpaca) ──────────────────────────┐│\n# │ format_instruction() turns JSON into this string:  ││\n# │ "Below is an instruction. Write a response.\\n\\n"   ││\n# │ "### Instruction:\\n"                               ││\n# │ "What does this chest X-ray show?\\n\\n"             ││\n# │ "### Response:\\n"                                  ││\n# │ "Bilateral pneumonia in the right lower lobe."     ││\n# │ → tokenizer → [1, 464, 8522, ...]                 ││  ~300 text tokens\n# └────────────────────────────────────────────────────┘│\n#                                                      │\n#              COMBINED before LLM:  ◄─────────────────┘\n#  [■][■][■]...[■] [1][464][8522]...[###][Resp]\n#   ← 197 visual →  ←──── ~300 text ────→\n#   The LLM sees ONE flat list of ~500 tokens. It does NOT know which is which.'},
        {n:4,title:'Tokenize',tag:'data',viz:'<span class="vz-box vz-input">🖼️📝 Image+Text</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔢 Vision Tokenizer</span><span class="vz-arrow">→</span><span class="vz-box vz-output">[img tokens, text tokens]</span>',code:'# Step 4: Tokenize → creates "dataset" variable used by TRAIN\n# 📥 Input: "data" from Step 1, via format_instruction() from Step 3\n# 📤 Output: "dataset" → passed to train_dataset=dataset in TRAIN Step 2\n\nfrom datasets import Dataset\n\ndataset = Dataset.from_list(data)              # Step 1\'s data\ndataset = dataset.map(format_instruction)       # Step 3\'s function\ndataset = dataset.map(tokenize, batched=True)   # Step 4: tokenize\n\n# ✅ "dataset" is ready! Used as: SFTTrainer(..., train_dataset=dataset, ...)\n#    ↑ This is the SAME "dataset" variable from TRAIN Step 2\n\n# Vision tokenizer + Text tokenizer work together\n# CLIP processes image → 197 visual tokens\n# Llama tokenizer processes text → ~300 text tokens (variable)\n# Combined: [visual_tokens] + [text_tokens] → model input\n\ndef tokenize(examples):\n    return tokenizer(\n        examples["text"],\n        truncation=True, padding="max_length", max_length=512\n    )\n# Vision tokens handled automatically by LLaVA processor'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
     {emoji:'🧠',name:'TRAIN',time:'~5 min',desc:'LoRA → SFTTrainer',
      substeps:[
        {n:1,title:'Quantize + LoRA (LLaVA)',tag:'lora',viz:'<span class="vz-box vz-input">🧠 LLaVA-1.5-7B</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⬇ 8-bit + LoRA(r=8)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ 0.4% trainable</span>',code:'# LLaVA-1.5-7B = CLIP-ViT-L/14 (frozen, 304M) + Llama-7B (LoRA)\n# Same code as text FT! LoRA on the LLM part only.\nfrom transformers import BitsAndBytesConfig, AutoModelForCausalLM\nfrom peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training\nimport torch\n\nbnb_config = BitsAndBytesConfig(load_in_8bit=True)\nmodel = AutoModelForCausalLM.from_pretrained(\n    "llava-hf/llava-1.5-7b-hf",\n    quantization_config=bnb_config,\n    device_map="auto", torch_dtype=torch.float16\n)\nmodel = prepare_model_for_kbit_training(model)\nlora_config = LoraConfig(r=8, lora_alpha=16,\n    target_modules=["q_proj","v_proj"])\nmodel = get_peft_model(model, lora_config)\n# Vision encoder (CLIP-ViT-L): FROZEN. LLM (Llama-7B): LoRA on Q+V only.'},
@@ -272,6 +482,27 @@ const tabs=[
        {n:3,title:'Vision Encoder',tag:'lora',viz:'<span class="vz-box vz-input">🖼️ Image</span><span class="vz-arrow">→</span><span class="vz-box vz-process">👁️ CLIP-ViT-L (304M)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🔢 576 image tokens</span>',code:'# Runs INSIDE model.forward() during training. You never call this.\n# For each image in the batch:\n# 1. Load from disk (e.g., "chest_xray_001.jpg")\n# 2. Split into 14×14 patches = 196 + [CLS] = 197 total\n# 3. CLIP-ViT-L (304M, FROZEN) → 1024-dim per patch\n# 4. Project 1024→4096 → now each patch matches LLM input\n# Output: [197 tokens, each 4096-dim]\n# This encoder is FROZEN. Only the LLM gets LoRA on Q+V.'},
        {n:4,title:'LLM Decoder',tag:'sft',viz:'<span class="vz-box vz-input">🔢 Image tokens + 📝 Text</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🧠 Llama-7B / Mistral-7B</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 Medical answer</span>',code:'# Step 4: LLM Decoder — the MOMENT both streams combine\n# Inside model.forward(), ONE line of code:\n# combined = torch.cat([visual_tokens, text_tokens], dim=1)\n#           ← 197 tokens →  ← ~300 tokens →\n#           = ~500 total tokens, each 4096-dim\n\n# Then through 32 Transformer layers:\n# Layer 1: Q/K/V attention between ALL tokens (image+text)\n# Layer 2: ...\n# Layer 32: ...\n# LoRA on Q+V (0.4% trainable) adjusts behavior\n\n# Final: lm_head → predicts next word\n# The LLM has NO IDEA which tokens are image vs text.\n# It just sees ~500 vectors of 4096 numbers.'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
     {emoji:'🚀',name:'DEPLOY',time:'~1 min',desc:'Save → HF Hub → Serve',
      substeps:[
        {n:1,title:'Save Adapter',tag:'lora',viz:'<span class="vz-box vz-input">🧠 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">💾 save_pretrained()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📁 adapter_model.safetensors (4MB)</span>',code:'# Save adapter (4MB) — same as text FT\nmodel.save_pretrained("./medical_vlm_adapter")\ntokenizer.save_pretrained("./medical_vlm_adapter")\n# 📁 Files: adapter_model.safetensors (4MB) + adapter_config.json (1KB)'},
@@ -279,6 +510,27 @@ const tabs=[
        {n:3,title:'Serve',tag:'dpo',viz:'<span class="vz-box vz-input">🧠 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ vLLM / TGI</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌐 API Ready</span>',code:'# Serve with vLLM (5000 tok/s, OpenAI-compatible API)\n# One command: engine + server combined\npython -m vllm.entrypoints.openai.api_server \\\n    --model ./medical_vlm_adapter --port 8000\n# Now call via OpenAI client at http://localhost:8000/v1'},
        {n:4,title:'Query',tag:'sft',viz:'<span class="vz-box vz-input">🖼️ New X-ray</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🤖 Medical VLM</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 "No acute finding."</span>',code:'# Query your Medical VLM with new X-rays\nfrom transformers import pipeline\npipe = pipeline("image-text-to-text", model=model, tokenizer=tokenizer)\nresult = pipe("chest_xray_002.jpg", "Is there any abnormality?")\n# → "No acute cardiopulmonary abnormality is seen."\n# Model sees the image AND reads the question — answers both together!'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
   ]
 },
 { // 4: LIFECYCLE
@@ -304,6 +556,27 @@ const tabs=[
        {n:3,title:'Prepare Data',tag:'data',viz:'<span class="vz-box vz-input">📄 PDF</span><span class="vz-arrow">→</span><span class="vz-box vz-process">✂️ Chunks</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔢 Tokenize</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📊 Dataset</span>',code:'PDF → chunks → Dataset → tokenize → labels'},
        {n:4,title:'Train',tag:'sft',viz:'<span class="vz-box vz-input">📊 Data</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🎓 SFT / ⚖️ DPO</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🤖 Fine-Tuned</span>',code:'SFTTrainer / DPOTrainer → train()'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
     {emoji:'🧪',name:'TEST',time:'Phase 6A',desc:'4 Testing Layers',
      substeps:[
        {n:1,title:'Layer 1: Data',tag:'data',viz:'<span class="vz-box vz-input">📊 Dataset</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔍 Pandera</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Valid</span>',code:'Pandera schema — instruction + output not null'},
@@ -311,6 +584,27 @@ const tabs=[
        {n:3,title:'Layer 3: Pipeline',tag:'lora',viz:'<span class="vz-box vz-input">🔄 Pipeline</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🚂 Smoke Test</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Train→Save→Load</span>',code:'Smoke test — train 1 epoch → save → load → predict'},
        {n:4,title:'Layer 4: Production',tag:'dpo',viz:'<span class="vz-box vz-input">📊 Live Data</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔍 Evidently AI</span><span class="vz-arrow">→</span><span class="vz-box vz-output">⚠️ Drift? → Retrain</span>',code:'Evidently AI — drift detection, response quality'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
     {emoji:'🚀',name:'DEPLOY',time:'Phase 6B',desc:'MLflow → vLLM → API',
      substeps:[
        {n:1,title:'Register Model',tag:'lora',viz:'<span class="vz-box vz-input">📊 MLflow Run</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📦 register_model()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🏷️ Version 1</span>',code:'mlflow.register_model("runs:/abc123/adapter")'},
@@ -318,6 +612,27 @@ const tabs=[
        {n:3,title:'Serve with vLLM',tag:'dpo',viz:'<span class="vz-box vz-input">🧠 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ vLLM (5000 tok/s)</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌐 API :8000</span>',code:'vllm serve ./merged_model --port 8000'},
        {n:4,title:'CI/CD Auto-retrain',tag:'sft',viz:'<span class="vz-box vz-input">📄 New Data</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔄 GitHub Actions</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🤖 Auto-retrain → Deploy</span>',code:'GitHub Actions → new data → auto-trigger retraining'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
   ]
 },
 { // 5: DEPLOY COMPARISON
@@ -342,6 +657,27 @@ const tabs=[
        {n:3,title:'Load Triton',tag:'sft',viz:'<span class="vz-box vz-input">🚀 .engine</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🌐 Triton Server</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📡 REST/gRPC</span>',code:'Triton loads .engine → dynamic batching → HTTP/gRPC'},
        {n:4,title:'Containerize',tag:'dpo',viz:'<span class="vz-box vz-input">🌐 Triton</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🐳 Docker→K8s→EC2</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌍 Production</span>',code:'Same Dockerfile→K8s pod→EC2 GPU node'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
     {emoji:'⚡',name:'LLM PATH',time:'1 step (no compile)',desc:'Safetensors→vLLM→API',
      substeps:[
        {n:1,title:'Save Weights',tag:'data',viz:'<span class="vz-box vz-input">🤖 FT Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">💾 save_pretrained()</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📁 .safetensors</span>',code:'model.save_pretrained("./weights")\n# NO .onnx export. NO .engine compile.'},
@@ -349,6 +685,27 @@ const tabs=[
        {n:3,title:'GPU Auto-Detect',tag:'lora',viz:'<span class="vz-box vz-input">🔌 T4/A100/H100</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔍 JIT kernel select</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Optimized</span>',code:'vLLM detects GPU → picks best CUDA kernels.\nSame container works on ALL GPUs.'},
        {n:4,title:'Containerize',tag:'dpo',viz:'<span class="vz-box vz-input">🌐 vLLM API</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🐳 Docker→K8s→EC2</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🌍 Production</span>',code:'Same K8s as Triton! Only container internals differ.'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
     {emoji:'📊',name:'WHY DIFFERENT',time:'Architecture',desc:'Static vs Autoregressive',
      substeps:[
        {n:1,title:'YOLO=Static',tag:'data',viz:'<span class="vz-box vz-input">🖼️ Image</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⚡ 1 Pass</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📦 Output</span>',code:'Fixed graph. Predictable memory. AOT compile works.'},
@@ -356,6 +713,27 @@ const tabs=[
        {n:3,title:'KV=PagedAttention',tag:'lora',viz:'<span class="vz-box vz-input">🧠 KV grows</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📄 PagedAttention</span><span class="vz-arrow">→</span><span class="vz-box vz-output">✅ Dynamic VRAM</span>',code:'PagedAttention = OS virtual memory for GPU. 2-4× more users.'},
        {n:4,title:'GPU Compat',tag:'dpo',viz:'<span class="vz-box vz-input">📦 .engine(HW)</span><span class="vz-arrow">vs</span><span class="vz-box vz-input">📁 .safetensors</span>',code:'.engine = locked to GPU. .safetensors = universal. Same Docker image.'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
   ]
 },
 { // 6: SENSOR / IoT
@@ -382,6 +760,27 @@ const tabs=[
        {n:5,title:'Format as Alpaca (🤖 Automatic) — SAME as Text FT!',tag:'sft',viz:'<span class="vz-box vz-input">📋 instruction_data.json<br>3 fields per row</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔤 format_instruction()<br>SAME function!</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📄 One long string<br>with ### markers</span>',code:'# 🔑 JSON → Alpaca Training String (LLMs read ONE string)\n# EXACT SAME function as Text FT (Phase 5.3)!\ndef format_instruction(example):\n    text = "Below is an instruction. Write a response.\\n\\n"\n    text += "### Instruction:\\n" + example["instruction"] + "\\n\\n"\n    if example["input"]:  # Sensor data HAS input (the features-as-text)\n        text += "### Input:\\n" + example["input"] + "\\n\\n"\n    text += "### Response:\\n" + example["output"]\n    return {"text": text}\n\n# BEFORE (JSON):\n# {"instruction":"Diagnose machine...",\n#  "input":"Machine Pump-A. RMS:4.2. Kurtosis:8.2...",\n#  "output":"Bearing inner race fault. Replace bearing."}\n\n# AFTER (Alpaca String):\n# "Below is an instruction. Write a response.\n#  ### Instruction:\\nDiagnose machine from vibration\n#  ### Input:\\nMachine Pump-A. RMS:4.2. Kurtosis:8.2...\n#  ### Response:\\nBearing inner race fault. Replace bearing."\n\n# 🤖 This function is called by SFTTrainer for EVERY row!'},
        {n:'📖',title:'Feature→Fault Mapping',tag:'data',viz:'<span class="vz-box vz-input">🔢+⚙️ Specs</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📐 Physics</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🎯 Fault</span>',code:'# Domain knowledge from mechanical engineering:\n# Kurtosis>5+Crest>4→Bearing fault | RMS↑→Unbalance\n# 1×RPM→Unbalance | 2×RPM→Misalignment\n# Gear_mesh±sidebands→Gear wear'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
     {emoji:'🧠',name:'TRAIN',time:'Same as Text',desc:'LoRA→SFTTrainer',
      substeps:[
        {n:1,title:'Quantize',tag:'lora',viz:'<span class="vz-box vz-input">🧠 FP16</span><span class="vz-arrow">→</span><span class="vz-box vz-process">⬇ 8-bit</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🧠 INT8</span>',code:'BitsAndBytesConfig(load_in_8bit=True)'},
@@ -389,6 +788,27 @@ const tabs=[
        {n:3,title:'SFTTrainer',tag:'sft',viz:'<span class="vz-box vz-input">📋 Q&A</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🎓 SFTTrainer</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🤖 Model</span>',code:'trainer=SFTTrainer(model,dataset,formatting_func).train()\n# SAME 3 LINES as text FT'},
        {n:4,title:'Model Learns',tag:'sft',viz:'<span class="vz-box vz-input">📊 New Data</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🤖 LLM</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📝 Diagnosis</span>',code:'Model learns: kurtosis>5+crest>4=bearing fault in 48h'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
     {emoji:'🚀',name:'DEPLOY',time:'vLLM→API→Dashboard',desc:'Real-time diagnosis',
      substeps:[
        {n:1,title:'Save Adapter',tag:'lora',viz:'<span class="vz-box vz-input">🤖 Model</span><span class="vz-arrow">→</span><span class="vz-box vz-process">💾 save</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📁 .safetensors</span>',code:'model.save_pretrained("./predictive_maintenance")'},
@@ -396,6 +816,27 @@ const tabs=[
        {n:3,title:'Dashboard',tag:'sft',viz:'<span class="vz-box vz-input">📝 Diagnosis</span><span class="vz-arrow">→</span><span class="vz-box vz-process">📊 Grafana</span><span class="vz-arrow">→</span><span class="vz-box vz-output">📱 Alert</span>',code:'Grafana/Streamlit shows real-time trends + LLM diagnosis'},
        {n:4,title:'Monitor+Retrain',tag:'dpo',viz:'<span class="vz-box vz-input">📊 Live Data</span><span class="vz-arrow">→</span><span class="vz-box vz-process">🔍 Drift?</span><span class="vz-arrow">→</span><span class="vz-box vz-output">🔄 Retrain</span>',code:'Evidently AI→drift→auto-retrain on new machine types'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
   ]
 },
 { // 7: LIDAR / POINT CLOUD
@@ -423,6 +864,27 @@ const tabs=[
        {n:5,title:'Create Q&A from Labeled Scenes (🤖 Automatic)',tag:'data',viz:'<span class="vz-box vz-input">📝 Scene Desc<br>+<br>🏷️ GIS Database<br>(Labels)</span><span class="vz-arrow">-></span><span class="vz-box vz-process">🔗 JOIN by<br>ClusterID</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📋 instruction_data.json<br>(1000s of Q&A)</span>',code:'# 🏷️ LABELS FROM: GIS database or manual annotation\n# "Building #3 = Office tower, 12 floors, built 2018"\n\ngis_db = pd.read_csv("building_inventory.csv")\nfor _, row in features_df.iterrows():\n    match = gis_db[gis_db.cluster_id == row.cluster_id]\n    if len(match) > 0:\n        instruction_data.append({\n            "instruction": "Identify this LIDAR object",\n            "input": features_to_text(row),\n            "output": f"{match.iloc[0].building_type}. "\n                      f"{match.iloc[0].num_floors} floors."\n        })\n\n# 🔧 Labels = real GIS records, NOT manual labeling!'},
        {n:6,title:'Format as Alpaca (🤖 Automatic) — SAME as Text FT!',tag:'sft',viz:'<span class="vz-box vz-input">📋 instruction_data.json</span><span class="vz-arrow">-></span><span class="vz-box vz-process">🔤 format_instruction()<br>SAME function!</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📄 Alpaca String</span>',code:'# 🔑 EXACT SAME function as Text FT, Tabular FT, Sensor FT!\ndef format_instruction(example):\n    text = "Below is an instruction. Write a response.\\n\\n"\n    text += "### Instruction:\\n" + example["instruction"] + "\\n\\n"\n    if example["input"]:  # LIDAR data HAS input (features-as-text)\n        text += "### Input:\\n" + example["input"] + "\\n\\n"\n    text += "### Response:\\n" + example["output"]\n    return {"text": text}\n\n# Same pattern. Same function. Different data modality.'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
     {emoji:'🧠',name:'TRAIN',time:'Same as Text',desc:'LoRA->SFTTrainer',
      substeps:[
        {n:1,title:'Quantize',tag:'lora',viz:'<span class="vz-box vz-input">🧠 FP16</span><span class="vz-arrow">-></span><span class="vz-box vz-process">⬇ 8-bit</span><span class="vz-arrow">-></span><span class="vz-box vz-output">🧠 INT8</span>',code:'BitsAndBytesConfig(load_in_8bit=True)'},
@@ -430,6 +892,27 @@ const tabs=[
        {n:3,title:'SFTTrainer',tag:'sft',viz:'<span class="vz-box vz-input">📋 Q&A</span><span class="vz-arrow">-></span><span class="vz-box vz-process">🎓 SFTTrainer</span><span class="vz-arrow">-></span><span class="vz-box vz-output">🤖 Model</span>',code:'trainer=SFTTrainer(model,dataset,formatting_func).train()\n# SAME 3 LINES as text/tabular/sensor FT'},
        {n:4,title:'Model Learns 3D Scene Understanding',tag:'sft',viz:'<span class="vz-box vz-input">☁️ New Scenes</span><span class="vz-arrow">-></span><span class="vz-box vz-process">🤖 LLM</span><span class="vz-arrow">-></span><span class="vz-box vz-output">🏗️ 3D Description</span>',code:'Model learns:\n- height>10m+vert>0.8+area>20m2 = multistory building\n- height<3m+area>50m2+vert<0.2 = flat ground/parking\n- height>2m+vert>0.9+pts<100 = street light/pole'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
     {emoji:'🚀',name:'DEPLOY',time:'TensorRT->CloudCompare->API',desc:'Real-time 3D perception',
      substeps:[
        {n:1,title:'Save Adapter',tag:'lora',viz:'<span class="vz-box vz-input">🤖 Model</span><span class="vz-arrow">-></span><span class="vz-box vz-process">💾 save</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📁 .safetensors</span>',code:'model.save_pretrained("./lidar_perception_adapter")'},
@@ -437,6 +920,27 @@ const tabs=[
        {n:3,title:'3D Visualization',tag:'sft',viz:'<span class="vz-box vz-input">☁️ Raw LIDAR</span><span class="vz-arrow">+</span><span class="vz-box vz-input">🤖 Model Output</span><span class="vz-arrow">-></span><span class="vz-box vz-output">🌍 CloudCompare</span>',code:'# Visualize in CloudCompare/Open3D:\n# - Load original .las point cloud\n# - Overlay predicted labels (building, tree, vehicle)\n# - Export 3D mesh (.ply/.obj) for Blender/Unreal'},
        {n:4,title:'Monitor+Retrain',tag:'dpo',viz:'<span class="vz-box vz-input">📊 New Scenes</span><span class="vz-arrow">-></span><span class="vz-box vz-process">🔍 Drift?</span><span class="vz-arrow">-></span><span class="vz-box vz-output">🔄 Retrain</span>',code:'Evidently AI -> drift on new LIDAR sensor models/environments\n-> auto-retrain with new labeled scenes'},
      ]},
+       {n:'📖',title:'Visual: What a LIDAR Cluster Looks Like',tag:'data',viz:'<span class="vz-box vz-input">☁️ Points</span><span class="vz-arrow">-></span><span class="vz-box vz-process">📦 Bounding Box</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📐 Features</span>',code:'# VISUAL: One cluster = one detected object
+#
+# TOP-DOWN (X-Y, bird eye view):
+#   ┌──────────────────┐
+#   │  · · ·  ···  · · │  1,240 points
+#   │ ·  ·  ·  ·· ··· ·│  on the roof
+#   └──────────────────┘
+#        ^ centroid (12.3, 4.5)
+#   dimensions: 3.2m x 2.8m
+#
+# SIDE VIEW (X-Z, elevation):
+#   ┌──────────────────┐ roof 14.5m
+#   │··················│
+#   │ · · · · · · · · │ height=12.4m
+#   └──────────────────┘ ground 2.1m
+#
+# centroid=(12.3,4.5,2.1) — WHERE
+# dimensions=(3.2,2.8,14.5) — HOW BIG
+# points=1240 — HOW DENSE (buildings:1000s, poles:10-50)
+# verticality=0.95 — 1.0=pole, 0.0=ground
+# footprint=45.2m2 — ground area covered'},
   ]
 }
 ];
