@@ -110,7 +110,7 @@ def run_drift_check() -> dict:
 
     try:
         from evidently import Report
-        from evidently.metric_preset import DataDriftPreset
+        from evidently.presets import DataDriftPreset
         import pandas as pd
 
         train_df = pd.read_csv("data/train_split.csv")

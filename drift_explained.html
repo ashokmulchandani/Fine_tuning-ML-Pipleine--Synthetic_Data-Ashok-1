@@ -3,44 +3,43 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Data Drift — What It Is & How to Read It</title>
+<title>Data Drift — What It Is & How It Works</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f8f9fc;--card:#fff;--border:#dde0e6;--text:#1a1d23;--tdim:#4a4f5b;--tmut:#8b909b;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--red:#c62828;}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;min-height:100vh;}
-.app{max-width:800px;margin:0 auto;padding:1.5rem;}
-
-.header{text-align:center;padding:2rem 0 1.5rem;}
-.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;color:var(--violet);}
-.header p{color:var(--tdim);font-size:0.95rem;}
-
-.step{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin:1.2rem 0;}
-.step h2{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;color:var(--violet);margin-bottom:0.5rem;}
-
-/* Bar chart for drift */
-.drift-bars{display:flex;align-items:flex-end;gap:0.5rem;justify-content:center;margin:1rem 0;height:150px;}
-.drift-col{display:flex;flex-direction:column;align-items:center;gap:0.2rem;width:60px;}
-.drift-col .bar-pair{display:flex;gap:2px;align-items:flex-end;}
-.drift-col .bar{width:25px;border-radius:3px 3px 0 0;transition:height 0.5s;}
-.drift-col .bar.train{background:var(--violet);opacity:0.7;}
-.drift-col .bar.live{background:var(--amber);}
-.drift-col .label{font-size:0.55rem;color:var(--tmut);text-align:center;margin-top:0.2rem;}
-
-.cmp{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:0.5rem 0;}
-.cmp-box{padding:0.75rem;border-radius:8px;text-align:center;font-size:0.78rem;}
-.cmp-box.ok{border:2px solid var(--green);background:rgba(26,110,52,0.04);}
-.cmp-box.drift{border:2px solid var(--red);background:rgba(198,40,28,0.04);}
-
-table{width:100%;border-collapse:collapse;font-size:0.78rem;margin:0.5rem 0;}
-th{font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);padding:0.3rem;border-bottom:2px solid var(--border);text-align:left;}
-td{padding:0.3rem;border-bottom:1px solid var(--border);}
-
-.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.75rem 1rem;margin:0.5rem 0;font-size:0.82rem;}
+:root{--bg:#f8f9fc;--card:#fff;--border:#dde0e6;--text:#1a1d23;--tdim:#4a4f5b;--tmut:#8b909b;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--red:#c62828;--cyan:#007a99}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;min-height:100vh}
+.app{max-width:850px;margin:0 auto;padding:1.5rem}
+.header{text-align:center;padding:2rem 0 1.5rem}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;color:var(--violet)}
+.header p{color:var(--tdim);font-size:0.95rem}
+.step{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin:1.2rem 0}
+.step h2{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;color:var(--violet);margin-bottom:0.5rem}
+.drift-bars{display:flex;align-items:flex-end;gap:0.5rem;justify-content:center;margin:1rem 0;height:150px}
+.drift-col{display:flex;flex-direction:column;align-items:center;gap:0.2rem;width:70px}
+.drift-col .bar-pair{display:flex;gap:2px;align-items:flex-end}
+.drift-col .bar{width:25px;border-radius:3px 3px 0 0;transition:height 0.5s}
+.drift-col .bar.train{background:var(--violet);opacity:0.7}
+.drift-col .bar.live{background:var(--amber)}
+.drift-col .label{font-size:0.52rem;color:var(--tmut);text-align:center;margin-top:0.2rem}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:0.5rem 0}
+.cmp-box{padding:0.75rem;border-radius:8px;text-align:center;font-size:0.78rem}
+.cmp-box.ok{border:2px solid var(--green);background:rgba(26,110,52,0.04)}
+.cmp-box.drift{border:2px solid var(--red);background:rgba(198,40,28,0.04)}
+table{width:100%;border-collapse:collapse;font-size:0.78rem;margin:0.5rem 0}
+th{font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);padding:0.3rem;border-bottom:2px solid var(--border);text-align:left}
+td{padding:0.35rem;border-bottom:1px solid var(--border)}
+.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.75rem 1rem;margin:0.5rem 0;font-size:0.82rem}
+.code-block{background:#1e1e1e;border-radius:10px;padding:1rem 1.2rem;margin:1rem 0;font-family:monospace;font-size:0.68rem;line-height:2;color:#d4d4d4;overflow-x:auto}
+.pval-grid{display:flex;gap:0.8rem;justify-content:center;flex-wrap:wrap;margin:1rem 0}
+.pval-card{text-align:center;background:var(--card);border-radius:12px;padding:1rem;min-width:130px}
+.pval-card .num{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700}
+.pval-card .desc{font-size:0.65rem;color:var(--tdim);margin-top:0.3rem}
+.pval-card .tag{font-size:0.55rem;margin-top:0.3rem;font-weight:600}
+@media(max-width:768px){.cmp{grid-template-columns:1fr}.drift-col{width:55px}}
 </style>
 </head>
 <body>
-
 <div class="app">
 
 <header class="header">
@@ -48,109 +47,228 @@ td{padding:0.3rem;border-bottom:1px solid var(--border);}
   <p>Detect when user questions change — before your model gives wrong answers</p>
 </header>
 
-<!-- What is drift -->
+<!-- What drift looks like -->
 <div class="step">
-  <h2>📊 What Drift Looks Like</h2>
-  <p style="font-size:0.85rem;color:var(--tdim);">You trained on Metformin Q&A. Now users are asking about something NEW. The model doesn't know this topic. Its answers will be wrong. Drift detects this BEFORE users complain.</p>
+  <h2>1. What Drift Looks Like</h2>
+  <p style="font-size:0.85rem;color:var(--tdim)">You trained on Metformin Q&A. Now users are asking about something NEW. The model was never trained on these topics. Its answers will be wrong. Drift detects this BEFORE users complain.</p>
 
   <div class="drift-bars">
     <div class="drift-col">
-      <div class="label" style="font-weight:600;">Metformin</div>
+      <div class="label" style="font-weight:600">Metformin</div>
       <div class="bar-pair">
-        <div class="bar train" style="height:80px;" title="Training: 800 questions"></div>
-        <div class="bar live" style="height:75px;" title="Live: 720 questions"></div>
+        <div class="bar train" style="height:85px" title="Training: 800 questions"></div>
+        <div class="bar live" style="height:78px" title="Live: 720 questions"></div>
       </div>
-      <div class="label">800 vs 720<br><span style="color:var(--green);">Similar ✅</span></div>
+      <div class="label">800 vs 720<br><span style="color:var(--green)">OK</span></div>
     </div>
     <div class="drift-col">
-      <div class="label" style="font-weight:600;">COVID</div>
+      <div class="label" style="font-weight:600">Kubernetes</div>
       <div class="bar-pair">
-        <div class="bar train" style="height:5px;" title="Training: 0 questions"></div>
-        <div class="bar live" style="height:60px;" title="Live: 450 questions"></div>
+        <div class="bar train" style="height:5px" title="Training: 0 questions"></div>
+        <div class="bar live" style="height:65px" title="Live: 300 questions"></div>
       </div>
-      <div class="label">0 vs 450<br><span style="color:var(--red);">DRIFT! ❌</span></div>
+      <div class="label">0 vs 300<br><span style="color:var(--red)">DRIFT!</span></div>
     </div>
     <div class="drift-col">
-      <div class="label" style="font-weight:600;">Diabetes</div>
+      <div class="label" style="font-weight:600">Diabetes</div>
       <div class="bar-pair">
-        <div class="bar train" style="height:60px;" title="Training: 500 questions"></div>
-        <div class="bar live" style="height:55px;" title="Live: 480 questions"></div>
+        <div class="bar train" style="height:65px" title="Training: 500 questions"></div>
+        <div class="bar live" style="height:58px" title="Live: 480 questions"></div>
       </div>
-      <div class="label">500 vs 480<br><span style="color:var(--green);">Similar ✅</span></div>
+      <div class="label">500 vs 480<br><span style="color:var(--green)">OK</span></div>
     </div>
     <div class="drift-col">
-      <div class="label" style="font-weight:600;">Weight Loss</div>
+      <div class="label" style="font-weight:600">Docker</div>
       <div class="bar-pair">
-        <div class="bar train" style="height:3px;" title="Training: 0 questions"></div>
-        <div class="bar live" style="height:40px;" title="Live: 300 questions"></div>
+        <div class="bar train" style="height:3px" title="Training: 0 questions"></div>
+        <div class="bar live" style="height:45px" title="Live: 250 questions"></div>
       </div>
-      <div class="label">0 vs 300<br><span style="color:var(--red);">DRIFT! ❌</span></div>
+      <div class="label">0 vs 250<br><span style="color:var(--red)">DRIFT!</span></div>
     </div>
   </div>
-  <p style="font-size:0.65rem;color:var(--tmut);text-align:center;">🟣 Training data (what model knows) &nbsp; 🟠 Live data (what users ask now)</p>
+  <p style="font-size:0.6rem;color:var(--tmut);text-align:center">Purple = Training data (what model knows) &nbsp; Orange = Live data (what users ask now)</p>
 </div>
 
-<!-- How to read it -->
+<!-- How text becomes features -->
 <div class="step">
-  <h2>🔍 How to Read the Drift Report</h2>
+  <h2>2. How "Columns" Work — Text Becomes Measurable Features</h2>
+  <p style="font-size:0.85rem;color:var(--tdim)">You don't drift-check raw English sentences word-by-word. First, Evidently converts text into <strong>numbers</strong> — features you CAN measure and run statistical tests on.</p>
 
-  <div class="cmp">
-    <div class="cmp-box ok">
-      <strong style="color:var(--green);">✅ No Drift (bars match)</strong><br>
-      Users still ask what the model trained on.<br>
-      Model answers are reliable.<br>
-      <strong>Do nothing. Keep monitoring.</strong>
-    </div>
-    <div class="cmp-box drift">
-      <strong style="color:var(--red);">❌ Drift Detected (bars mismatched)</strong><br>
-      Users asking about new topics (COVID, weight loss).<br>
-      Model was NOT trained on this. Answers will be WRONG.<br>
-      <strong>Action: RETRAIN with new data.</strong>
+  <div class="code-block">
+    <div style="color:#569cd6;margin-bottom:0.5rem">Step 1: Convert Text into Measurable Features</div>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:flex-start">
+      <div style="background:#2d2d2d;border-radius:8px;padding:0.6rem;min-width:180px">
+        <div style="color:#ce9178;font-size:0.6rem">Raw Text:</div>
+        <div>"Metformin is a<br>biguanide medication<br>for type 2 diabetes"</div>
+      </div>
+      <div style="color:#39d2ff;font-size:1.2rem;align-self:center">-></div>
+      <div style="background:#2d2d2d;border-radius:8px;padding:0.6rem;min-width:260px">
+        <div style="color:#4ec9b0;font-size:0.6rem">Measurable Features (each = a "column"):</div>
+        <div>Feature 1: word_count = <span style="color:#ce9178">9</span></div>
+        <div>Feature 2: medical_term_ratio = <span style="color:#ce9178">0.67</span></div>
+        <div>Feature 3: contains_drug_name = <span style="color:#ce9178">1.0</span></div>
+        <div>Feature 4: avg_word_length = <span style="color:#ce9178">6.3</span></div>
+        <div>Feature 5: sentiment_score = <span style="color:#ce9178">0.2</span></div>
+        <div style="color:#6a9955">...100s more features auto-extracted</div>
+      </div>
     </div>
   </div>
 
+  <p style="font-size:0.82rem;color:var(--tdim);margin-top:0.8rem"><strong>Each feature is a "column."</strong> When Evidently says "check each column for drift," it means check each feature — not each word. These features become numbers in a spreadsheet, and THAT is what gets tested for drift.</p>
+
+  <div class="cmp" style="margin-top:0.8rem">
+    <div class="cmp-box ok" style="font-size:0.7rem">
+      <strong style="color:var(--green)">No Drift: medical_term_ratio</strong><br>
+      Training: 0.67 | Live: 0.62<br>
+      Medical words still appear at the same rate.
+    </div>
+    <div class="cmp-box drift" style="font-size:0.7rem">
+      <strong style="color:var(--red)">DRIFT: contains_deploy</strong><br>
+      Training: 0% | Live: 60%<br>
+      Words like "deploy", "container", "kubernetes" never appeared in training.
+    </div>
+  </div>
+</div>
+
+<!-- Statistical Tests -->
+<div class="step">
+  <h2>3. Which Statistical Test for Which Data Type?</h2>
+  <p style="font-size:0.85rem;color:var(--tdim)">Evidently auto-selects the right test per feature. You don't pick — it detects the data type (text, number, category) and applies the correct math.</p>
+
   <table>
-    <tr><th>Drift Score</th><th>Meaning</th><th>Action</th></tr>
-    <tr><td>< 0.1</td><td style="color:var(--green);">No drift — model is fine</td><td>😊 Relax</td></tr>
-    <tr><td>0.1–0.3</td><td style="color:var(--amber);">Mild drift — monitor closely</td><td>👀 Watch weekly</td></tr>
-    <tr><td>> 0.3</td><td style="color:var(--red);">Strong drift — model degrading</td><td>🚨 Retrain now</td></tr>
+    <tr><th style="width:90px">Data Type</th><th style="width:170px">Test Used</th><th>What It Checks</th></tr>
+    <tr>
+      <td style="color:var(--violet);font-weight:700">Text</td>
+      <td><strong>ROC-AUC Domain Classifier</strong></td>
+      <td style="font-size:0.75rem">Can a tiny ML model tell training text apart from production text? If yes (ROC-AUC > 0.7) -> the distributions are different -> DRIFT. Evidently trains a TF-IDF + LogisticRegression classifier internally.</td>
+    </tr>
+    <tr>
+      <td style="color:var(--violet);font-weight:700">Numeric</td>
+      <td><strong>Kolmogorov-Smirnov (KS) Test</strong></td>
+      <td style="font-size:0.75rem">Are these two samples from the same underlying distribution? Checks if the entire shape of the distribution changed — not just the average, but variance, tails, everything.</td>
+    </tr>
+    <tr>
+      <td style="color:var(--violet);font-weight:700">Categorical</td>
+      <td><strong>Chi-Squared Test</strong></td>
+      <td style="font-size:0.75rem">Are the category proportions the same? Compares observed frequencies vs expected frequencies. If the proportions changed significantly -> drift.</td>
+    </tr>
   </table>
+
+  <div style="background:var(--vbg);border-left:4px solid var(--violet);border-radius:0 8px 8px 0;padding:0.7rem 1rem;margin-top:0.8rem;font-size:0.78rem">
+    <strong>Chi-squared formula in plain English:</strong><br>
+    chi2 = sum of (observed_count - expected_count)^2 / expected_count<br><br>
+    Big chi2 -> observed frequencies are very different from expected -> drift.<br>
+    Small chi2 -> observed and expected are similar -> no drift.
+  </div>
+</div>
+
+<!-- p-value -->
+<div class="step">
+  <h2>4. p-value — How Confident Are We It's Real Drift?</h2>
+  <p style="font-size:0.85rem;color:var(--tdim)">The p-value answers one question: <strong>"Could this difference just be random noise?"</strong> Lower p-value = more confident it's real.</p>
+
+  <div class="pval-grid">
+    <div class="pval-card" style="border:2px solid var(--red)">
+      <div class="num" style="color:var(--red)">p = 0.001</div>
+      <div class="desc">"99.9% sure<br>this is real drift"</div>
+      <div class="tag" style="color:var(--red)">DEFINITELY DRIFT</div>
+    </div>
+    <div class="pval-card" style="border:2px solid var(--amber)">
+      <div class="num" style="color:var(--amber)">p = 0.05</div>
+      <div class="desc">"95% sure<br>this is real"</div>
+      <div class="tag" style="color:var(--amber)">BORDERLINE</div>
+    </div>
+    <div class="pval-card" style="border:2px solid var(--green)">
+      <div class="num" style="color:var(--green)">p = 0.50</div>
+      <div class="desc">"50/50 — could<br>just be random"</div>
+      <div class="tag" style="color:var(--green)">NOT REAL DRIFT</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>p less than 0.05 is the standard scientific threshold.</strong> It means: "There's less than a 5% chance this difference is random noise." If p less than 0.05 AND drift score greater than 0.5, you retrain. If p greater than 0.05, the difference might be random — don't act on it yet.
+  </div>
+</div>
+
+<!-- Drift score thresholds -->
+<div class="step">
+  <h2>5. How to Read the Drift Score</h2>
+
+  <table>
+    <tr><th style="width:100px">Drift Score</th><th>Meaning</th><th>Action</th></tr>
+    <tr><td><strong>0.0 - 0.3</strong></td><td style="color:var(--green)">No drift — model is fine. Distribution matches training.</td><td>Keep monitoring daily</td></tr>
+    <tr><td><strong>0.3 - 0.5</strong></td><td style="color:var(--amber)">Mild drift — some new topics appearing. Monitor closely.</td><td>Check weekly. Prepare new data.</td></tr>
+    <tr><td><strong>0.5+</strong></td><td style="color:var(--red)">DRIFT DETECTED. Users asking about topics you never trained on.</td><td>Collect new Q&A -> retrain with dvc repro</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>Drift score = percentage of features that drifted.</strong> A score of 0.62 means 62% of measurable features show statistically significant difference from training. That's bad — more than half the input data has changed.
+  </div>
 </div>
 
 <!-- Concrete example -->
 <div class="step">
-  <h2>📝 Concrete Example — Your Metformin Model</h2>
+  <h2>6. Concrete Example — Your Metformin Model</h2>
 
   <table>
-    <tr><th>What You Trained On</th><th>What Users Ask Today</th><th>Drift?</th></tr>
-    <tr><td>"What is Metformin?"</td><td>"What is Metformin?"</td><td style="color:var(--green);">✅ No</td></tr>
-    <tr><td>"Side effects of Metformin?"</td><td>"Side effects of Metformin?"</td><td style="color:var(--green);">✅ No</td></tr>
-    <tr><td>"How does Metformin work?"</td><td>"Does Metformin help with weight loss?"</td><td style="color:var(--amber);">⚠️ Partial</td></tr>
-    <tr><td>— (never trained on this)</td><td>"What vaccine should I get?"</td><td style="color:var(--red);">❌ Complete drift</td></tr>
-    <tr><td>— (never trained on this)</td><td>"Is Paxlovid better than Metformin?"</td><td style="color:var(--red);">❌ Complete drift</td></tr>
+    <tr><th>Training Data (Reference)</th><th>Production Data (Current)</th><th>Drift?</th></tr>
+    <tr><td>"Metformin is a biguanide medication..."</td><td>"Metformin is a biguanide medication..."</td><td style="color:var(--green)">No — same topic</td></tr>
+    <tr><td>"Insulin helps absorb glucose from blood..."</td><td>"Insulin helps absorb glucose from blood..."</td><td style="color:var(--green)">No — same topic</td></tr>
+    <tr><td>"Side effects include nausea, diarrhea..."</td><td>"Kubernetes orchestrates containers across..."</td><td style="color:var(--red)">DRIFT! — completely new topic</td></tr>
+    <tr><td>"Normal A1C is below 5.7%..."</td><td>"Use create-react-app or Vite, then deploy..."</td><td style="color:var(--red)">DRIFT! — web development topic</td></tr>
+    <tr><td>"Starting dose 500mg twice daily..."</td><td>"Boil water, cook pasta 8-10 minutes..."</td><td style="color:var(--red)">DRIFT! — cooking topic</td></tr>
   </table>
 
   <div class="callout">
-    <strong>🧠 Drift = the DISTRIBUTION of questions changed.</strong> It's not that users ask one new question. It's that the PATTERN of questions shifted — e.g., from "mostly Metformin" to "mostly COVID." The model was never trained on COVID. Its answers will be hallucinated or wrong. Drift catches this BEFORE it becomes a problem.
+    <strong>Drift = the DISTRIBUTION of questions changed.</strong> It's not that users ask one new question. It's that the PATTERN of questions shifted — from "mostly medical" to "50% medical + 26% web dev + 24% cooking." The model was never trained on web dev or cooking. Its answers will be hallucinated or wrong. Drift catches this BEFORE it becomes a problem.
   </div>
 </div>
 
-<!-- How Evidently shows it -->
+<!-- The full quality stack -->
 <div class="step">
-  <h2>🛠️ How Evidently AI Detects Drift</h2>
-  <p style="font-size:0.85rem;color:var(--tdim);">Evidently compares your training data distribution to live data using statistical tests (KL divergence, Jensen-Shannon).</p>
+  <h2>7. The Complete Data Quality Stack</h2>
+  <p style="font-size:0.85rem;color:var(--tdim)">No single tool catches everything. Each layer catches failures the others miss.</p>
 
   <table>
-    <tr><th>Feature</th><th>Training Distribution</th><th>Live Distribution</th><th>Drift Detected?</th></tr>
-    <tr><td>Avg question length</td><td>8.2 words</td><td>12.5 words</td><td style="color:var(--amber);">⚠️ Mild</td></tr>
-    <tr><td>Topic: Metformin</td><td>85% of queries</td><td>40% of queries</td><td style="color:var(--red);">❌ Yes</td></tr>
-    <tr><td>Topic: COVID</td><td>0% of queries</td><td>45% of queries</td><td style="color:var(--red);">❌ Yes</td></tr>
-    <tr><td>Avg response rating</td><td>4.2/5</td><td>2.1/5</td><td style="color:var(--red);">❌ Yes (quality dropped!)</td></tr>
+    <tr><th style="width:70px">Layer</th><th style="width:90px">Tool</th><th>What It Checks</th><th>When</th></tr>
+    <tr>
+      <td style="color:var(--red);font-weight:700">Schema</td>
+      <td><strong>Pandera</strong></td>
+      <td style="font-size:0.75rem">Are all columns present? Any nulls? Correct types? Empty strings?</td>
+      <td style="font-size:0.7rem;color:var(--red)">BEFORE training</td>
+    </tr>
+    <tr>
+      <td style="color:var(--amber);font-weight:700">Behavior</td>
+      <td><strong>pytest</strong></td>
+      <td style="font-size:0.75rem">Does model know basic facts (MFT)? Robust to paraphrasing (INV)? Refuse harm (DIR)?</td>
+      <td style="font-size:0.7rem;color:var(--amber)">AFTER training</td>
+    </tr>
+    <tr>
+      <td style="color:var(--violet);font-weight:700">Trends</td>
+      <td><strong>DVC</strong></td>
+      <td style="font-size:0.75rem">Is the dataset growing? Shrinking? New nulls appearing? Vocabulary changing?</td>
+      <td style="font-size:0.7rem;color:var(--violet)">EVERY dvc repro</td>
+    </tr>
+    <tr>
+      <td style="color:var(--green);font-weight:700">Drift</td>
+      <td><strong>Evidently AI</strong></td>
+      <td style="font-size:0.75rem">Are users asking about NEW topics? Has the distribution shifted? Response quality dropping?</td>
+      <td style="font-size:0.7rem;color:var(--green)">DAILY (6am UTC)</td>
+    </tr>
   </table>
 
   <div class="callout">
-    <strong>🚨 When average response rating drops from 4.2 → 2.1, users are telling you something is wrong.</strong> Drift detection catches the CAUSE (topic shift) before the SYMPTOM (ratings drop) becomes obvious. That's the whole point.
+    <strong>Each layer feeds the next.</strong> Pandera catches bad data -> DVC shows trends over time -> Evidently catches distribution shifts -> pytest validates the model still works. All four together = complete quality coverage. None replaces the others.
   </div>
+</div>
+
+<!-- Navigation -->
+<div style="text-align:center;margin-top:1.5rem;padding:1rem;border-top:1px solid var(--border)">
+  <a href="finetuning_plan_dashboard.html" style="color:var(--tmut);font-size:0.7rem;text-decoration:none;margin:0 0.5rem">Dashboard</a>
+  <span style="color:var(--tmut);margin:0 0.3rem">|</span>
+  <a href="phase6a_ai_testing.html" style="color:var(--violet);font-size:0.7rem;text-decoration:none;margin:0 0.5rem;font-weight:700">Phase 6A</a>
+  <span style="color:var(--tmut);margin:0 0.3rem">|</span>
+  <a href="phase6b_mlops_deployment.html" style="color:var(--violet);font-size:0.7rem;text-decoration:none;margin:0 0.5rem;font-weight:700">Phase 6B</a>
 </div>
 
 </div>
