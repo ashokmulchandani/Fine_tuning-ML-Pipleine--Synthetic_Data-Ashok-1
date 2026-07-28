@@ -726,7 +726,7 @@ else{nb.textContent='Next →';nb.style.background='';nb.style.color=''}
 document.getElementById('slideContainer').scrollIntoView({behavior:'smooth',block:'start'})}
 function goTo(i){if(i<0||i>=S.length)return;render(i)}
 document.addEventListener('keydown',function(e){if(e.key==='ArrowRight'&&cur<S.length-1)goTo(cur+1);if(e.key==='ArrowLeft'&&cur>0)goTo(cur-1)});
-render(0);
+try{render(0)}catch(err){document.getElementById('slideContainer').innerHTML='<div class="card" style="color:var(--red);padding:2rem"><h2>Error loading slides</h2><pre style="font-size:0.7rem;white-space:pre-wrap">'+err.message+'</pre></div>';console.error(err)}
 </script>
 <div style="text-align:center;padding:1.5rem;border-top:1px solid var(--border);margin-top:2rem">
 <a href="finetuning_plan_dashboard.html" style="color:var(--tmut);font-family:Inter,sans-serif;font-size:0.7rem;text-decoration:none;margin:0 0.6rem">Dashboard</a>
