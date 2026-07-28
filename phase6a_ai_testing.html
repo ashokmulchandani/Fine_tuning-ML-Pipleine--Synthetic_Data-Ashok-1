@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Phase 6A: AI Testing &amp; QA — For Fine-Tuning</title>
+<title>Phase 6A: AI Testing & QA — For Fine-Tuning</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#06090f;--card:#0d1117;--raised:#161b22;--border:#21262d;--text:#e6edf3;--tdim:#8b949e;--tmut:#484f58;--violet:#a371f7;--vbg:#a371f715;--cyan:#39d2ff;--cyan-bg:#39d2ff15;--amber:#ffb347;--amber-bg:#ffb34715;--green:#3fb950;--green-bg:#3fb95015;--magenta:#ff6ec7;--magenta-bg:#ff6ec715;--red:#f85149;--radius:14px;--radius-sm:8px;--transition:0.3s cubic-bezier(0.4,0,0.2,1)}
@@ -94,12 +94,6 @@ table.param2 td{padding:0.5rem 0.8rem;border-bottom:1px solid var(--border);font
 <div class="fun-fact" id="funFact"><span class="bulb">💡</span><span class="fact-text" id="funFactText"></span></div>
 <div id="slideContainer"></div>
 <div class="nav-row"><button class="nav-btn" id="prevBtn" onclick="goTo(cur-1)">← Previous</button><button class="nav-btn primary" id="nextBtn" onclick="goTo(cur+1)">Next →</button></div>
-<div class="link-row" style="margin-top:1rem">
-  <a href="finetuning_plan_dashboard.html" style="color:var(--tdim);font-family:'JetBrains Mono',monospace;font-size:0.55rem;text-decoration:none;margin:0 0.5rem">↑ Dashboard</a>
-  <a href="phase5_instruction_finetune.html" style="color:var(--tdim);font-family:'JetBrains Mono',monospace;font-size:0.55rem;text-decoration:none;margin:0 0.5rem">← Phase 5</a>
-  <a href="phase6_dpo_preference.html" style="color:var(--tdim);font-family:'JetBrains Mono',monospace;font-size:0.55rem;text-decoration:none;margin:0 0.5rem">← Phase 6</a>
-  <a href="phase6b_mlops_deployment.html" style="color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:0.55rem;text-decoration:none;margin:0 0.5rem;font-weight:700">Phase 6B →</a>
-</div>
 </div>
 
 <script>
@@ -734,5 +728,10 @@ function goTo(i){if(i<0||i>=S.length)return;render(i)}
 document.addEventListener('keydown',function(e){if(e.key==='ArrowRight'&&cur<S.length-1)goTo(cur+1);if(e.key==='ArrowLeft'&&cur>0)goTo(cur-1)});
 render(0);
 </script>
+<div style="text-align:center;padding:1.5rem;border-top:1px solid var(--border);margin-top:2rem">
+<a href="finetuning_plan_dashboard.html" style="color:var(--tmut);font-family:Inter,sans-serif;font-size:0.7rem;text-decoration:none;margin:0 0.6rem">Dashboard</a>
+<a href="phase6_dpo_preference.html" style="color:var(--tmut);font-family:Inter,sans-serif;font-size:0.7rem;text-decoration:none;margin:0 0.6rem">Phase 6</a>
+<a href="phase6b_mlops_deployment.html" style="color:var(--violet);font-family:Inter,sans-serif;font-size:0.7rem;text-decoration:none;margin:0 0.6rem;font-weight:700">Phase 6B</a>
+</div>
 </body>
 </html>
