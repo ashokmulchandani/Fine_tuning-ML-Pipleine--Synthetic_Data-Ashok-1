@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase 6A: AI Testing & QA — For Fine-Tuning</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#06090f;--card:#0d1117;--raised:#161b22;--border:#21262d;--text:#e6edf3;--tdim:#8b949e;--tmut:#484f58;--violet:#a371f7;--vbg:#a371f715;--cyan:#39d2ff;--cyan-bg:#39d2ff15;--amber:#ffb347;--amber-bg:#ffb34715;--green:#3fb950;--green-bg:#3fb95015;--magenta:#ff6ec7;--magenta-bg:#ff6ec715;--red:#f85149;--radius:14px;--radius-sm:8px;--transition:0.3s cubic-bezier(0.4,0,0.2,1)}
+body.light{--bg:#f6f8fa;--card:#fff;--raised:#e8ecf0;--border:#d0d7de;--text:#1f2328;--tdim:#656d76;--tmut:#8b949e;--violet:#8250df;--vbg:#f3effc;--cyan:#0969da;--cyan-bg:#ddf4ff;--amber:#9a6700;--amber-bg:#fff8c5;--green:#1a7f37;--green-bg:#dafbe1;--magenta:#bf3989;--magenta-bg:#fbefff;--red:#cf222e}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;line-height:1.65;transition:background 0.3s,color 0.3s}
+.bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+.app{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:2rem}
+.theme-toggle{position:fixed;top:0.7rem;right:2rem;z-index:200;background:var(--raised);border:1px solid var(--border);color:var(--text);font-size:1.1rem;cursor:pointer;padding:0.35rem 0.6rem;border-radius:6px;transition:var(--transition);font-family:'JetBrains Mono',monospace}
+.theme-toggle:hover{border-color:var(--violet);color:var(--violet)}
+.topbar{position:sticky;top:0;z-index:100;background:rgba(6,9,15,0.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0.6rem 2rem;display:flex;align-items:center;gap:1rem;font-size:0.8rem}
+.topbar .logo{font-family:'Orbitron',sans-serif;font-size:0.7rem;letter-spacing:0.15em;color:var(--violet);white-space:nowrap}
+.topbar .step-dots{display:flex;gap:0.4rem;flex:1;justify-content:center}
+.topbar .step-dot{width:28px;height:4px;border-radius:2px;background:var(--border);transition:var(--transition);cursor:pointer}
+.topbar .step-dot.done{background:var(--green)}.topbar .step-dot.active{background:var(--violet);box-shadow:0 0 8px var(--violet)}
+.topbar .step-dot:hover{background:var(--tdim)}
+.topbar .step-label{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--tdim);white-space:nowrap}
+.header{text-align:center;padding:3rem 0 1rem}
+.header .phase-badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:0.7rem;letter-spacing:0.2em;color:var(--violet);border:1px solid var(--vbg);border-radius:100px;padding:0.4em 1.4em;margin-bottom:1rem}
+.header h1{font-family:'Orbitron',sans-serif;font-size:clamp(1.3rem,4vw,2rem);font-weight:700;background:linear-gradient(135deg,var(--violet),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:0.5rem}
+.header .tagline{color:var(--tdim);font-size:0.9rem}
+.topic-list{display:flex;flex-wrap:wrap;gap:0.4rem;justify-content:center;margin:1.5rem 0 1rem}
+.topic-chip{font-family:'JetBrains Mono',monospace;font-size:0.6rem;letter-spacing:0.04em;padding:0.3rem 0.7rem;border-radius:100px;border:1px solid var(--border);color:var(--tmut);cursor:pointer;transition:var(--transition);background:transparent}
+.topic-chip.visited{border-color:var(--green);color:var(--green);background:var(--green-bg)}.topic-chip.current{border-color:var(--violet);color:var(--violet);background:var(--vbg)}
+.fun-fact{background:linear-gradient(135deg,var(--amber-bg),var(--magenta-bg));border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.65rem 1.2rem;margin-bottom:1.5rem;font-size:0.78rem;color:var(--tdim);display:flex;align-items:center;gap:0.6rem}
+.fun-fact .bulb{font-size:1.2rem;flex-shrink:0}.fun-fact strong{color:var(--amber)}
+.slide{animation:slideIn 0.35s ease}@keyframes slideIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:2rem}
+.card h2{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:600;margin-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem;color:var(--text)}
+.card h2 .num{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--violet);background:var(--vbg);border-radius:6px;padding:0.2em 0.6em}
+.card p{color:var(--tdim);margin-bottom:1rem;font-size:0.95rem}
+.card h3{font-family:'Orbitron',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+.compare-card{background:var(--raised);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1.2rem;transition:var(--transition)}
+.compare-card:hover{transform:translateY(-3px)}.compare-card.bad{border-left:3px solid var(--red)}.compare-card.good{border-left:3px solid var(--green)}.compare-card.best{border-left:3px solid var(--violet)}
+.compare-card h4{font-family:'Orbitron',sans-serif;font-size:0.72rem;margin-bottom:0.5rem}.compare-card.bad h4{color:var(--red)}.compare-card.good h4{color:var(--green)}.compare-card.best h4{color:var(--violet)}
+.compare-card p{font-size:0.72rem!important;color:var(--tdim)!important}
+.compare-grid.three{grid-template-columns:1fr 1fr 1fr}
+.pipeline{display:flex;align-items:center;gap:0.3rem;justify-content:center;flex-wrap:wrap;margin:1rem 0}
+.pipeline-stage{background:var(--raised);border:1px solid var(--border);border-radius:6px;padding:0.5rem 0.7rem;text-align:center;font-family:'JetBrains Mono',monospace;font-size:0.5rem;color:var(--tdim);min-width:70px}
+.pipeline-stage.highlight{border-color:var(--violet);background:var(--vbg);color:var(--violet)}
+.pipeline-stage.pass{border-color:var(--green);background:var(--green-bg);color:var(--green)}
+.pipeline-stage.fail{border-color:var(--red);background:#f8514920;color:var(--red)}
+.pipeline-arrow{font-size:0.9rem;color:var(--violet)}
+.eq-box{background:rgba(0,0,0,0.4);border-left:3px solid var(--violet);border-radius:var(--radius-sm);padding:1rem 1.25rem;margin:1rem 0;font-family:'JetBrains Mono',monospace;font-size:0.7rem;line-height:1.8;color:var(--text);white-space:pre-wrap;overflow-x:auto}
+.code-box{background:#1e1e1e;border:1px solid #333;border-left:3px solid var(--violet);border-radius:8px;padding:1rem 1.25rem;margin:1rem 0;font-family:'JetBrains Mono',monospace;font-size:0.6rem;line-height:1.8;white-space:pre-wrap;overflow-x:auto;color:#d4d4d4;position:relative}
+.code-wrapper{position:relative;margin:1rem 0}.copy-btn2{position:absolute;top:8px;right:8px;font-family:'JetBrains Mono',monospace;font-size:0.55rem;font-weight:600;padding:0.3em 0.7em;border:1px solid #555;border-radius:6px;background:#2d2d2d;color:#ccc;cursor:pointer;transition:0.15s;opacity:0;z-index:5}
+.code-wrapper:hover .copy-btn2{opacity:1}.copy-btn2:hover{background:#333;color:var(--violet);border-color:var(--violet)}.copy-btn2.copied{opacity:1;background:#2d2d2d;color:var(--green);border-color:var(--green)}
+.quiz{background:var(--raised);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1.2rem;margin-top:1.5rem}
+.quiz .question{font-family:'Orbitron',sans-serif;font-size:0.82rem;color:var(--text);margin-bottom:0.8rem}
+.quiz .options{display:flex;flex-direction:column;gap:0.4rem}
+.quiz .option{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:0.6rem 1rem;font-size:0.82rem;color:var(--tdim);cursor:pointer;transition:var(--transition)}
+.quiz .option:hover{border-color:var(--violet);color:var(--violet)}.quiz .option.correct{border-color:var(--green);background:var(--green-bg);color:var(--green)}.quiz .option.wrong{border-color:var(--red);background:#f8514920;color:var(--red)}
+.quiz .feedback{display:none;margin-top:0.8rem;padding:0.6rem 1rem;border-radius:6px;font-size:0.82rem}.quiz .feedback.show{display:block}.quiz .feedback.correct{background:var(--green-bg);color:var(--green)}.quiz .feedback.wrong{background:#f8514920;color:var(--red)}
+.nav-row{display:flex;gap:1rem;justify-content:center;margin-top:1.5rem}
+.nav-btn{font-family:'JetBrains Mono',monospace;font-size:0.8rem;padding:0.6rem 1.8rem;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--tdim);cursor:pointer;transition:var(--transition)}
+.nav-btn:hover{border-color:var(--violet);color:var(--violet)}.nav-btn:disabled{opacity:0.3;cursor:not-allowed}.nav-btn.primary{border-color:var(--violet);color:var(--violet);background:var(--vbg)}
+.callout{background:var(--vbg);border:1px solid var(--violet);border-radius:8px;padding:0.7rem 1rem;margin:0.8rem 0;display:flex;align-items:center;gap:0.6rem;font-size:0.72rem;color:var(--tdim)}
+.callout.amber{background:var(--amber-bg);border-color:var(--amber)}
+.callout.green{background:var(--green-bg);border-color:var(--green)}
+table.param{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:0.55rem;margin:0.5rem 0}
+table.param th{padding:0.4rem;border:1px solid var(--border);color:var(--tdim);background:var(--raised)}table.param td{padding:0.4rem;border:1px solid var(--border);text-align:center}
+table.param2{width:100%;border-collapse:collapse;font-size:0.82rem;margin:0.5rem 0}
+table.param2 th{padding:0.5rem 0.8rem;border-bottom:2px solid var(--border);color:var(--tdim);text-align:left;font-family:'Orbitron',sans-serif;font-size:0.65rem}
+table.param2 td{padding:0.5rem 0.8rem;border-bottom:1px solid var(--border);font-size:0.8rem}
+.big-stat{text-align:center;margin:1rem 0}.big-stat .number{font-family:'Orbitron',sans-serif;font-size:2.2rem;font-weight:700;background:linear-gradient(135deg,var(--violet),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}.big-stat .label{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--tmut);margin-top:0.2rem}
+.test-pyramid{display:flex;flex-direction:column;align-items:center;gap:0.3rem;margin:1rem 0}
+.pyramid-layer{font-family:'JetBrains Mono',monospace;font-size:0.55rem;padding:0.6rem 1.2rem;border-radius:8px;text-align:center;border:1px solid var(--border);transition:var(--transition);cursor:pointer}
+.pyramid-layer:hover{transform:scale(1.03)}
+.pyramid-layer.l4{width:90%;background:var(--green-bg);border-color:var(--green);color:var(--green)}
+.pyramid-layer.l3{width:75%;background:var(--vbg);border-color:var(--violet);color:var(--violet)}
+.pyramid-layer.l2{width:60%;background:var(--amber-bg);border-color:var(--amber);color:var(--amber)}
+.pyramid-layer.l1{width:45%;background:#f8514920;border-color:var(--red);color:var(--red)}
+.anim-box{background:var(--raised);border:1px solid var(--border);border-radius:10px;padding:1rem;margin:0.5rem 0;min-height:140px}
+.anim-btn{font-family:'JetBrains Mono',monospace;font-size:0.55rem;padding:0.4em 0.9em;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--tmut);cursor:pointer;transition:var(--transition)}
+.anim-btn.active{background:var(--vbg)!important;border-color:var(--violet)!important;color:var(--violet)!important}
+.anim-btn:hover{border-color:var(--violet);color:var(--violet)}
+@media(max-width:768px){.app{padding:1rem}.compare-grid,.compare-grid.three{grid-template-columns:1fr}.card{padding:1.2rem}}
+</style>
+</head>
+<body>
+<canvas class="bg-canvas" id="bgCanvas"></canvas>
+<button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">☀️</button>
+<nav class="topbar"><span class="logo">FINE-TUNING — PHASE 6A</span><div class="step-dots" id="stepDots"></div><span class="step-label" id="stepLabel">1/10</span></nav>
+<div class="app">
+<header class="header"><div class="phase-badge">🧪 PHASE 6A — AI TESTING & QA</div><h1>AI Testing & QA for Fine-Tuned Models</h1><p class="tagline">"Review like you're the person getting paged at 3am when this breaks." — 4 testing layers, 10-point checklist, automated CI/CD.</p></header>
+<div class="topic-list" id="topicChips"></div>
+<div class="fun-fact" id="funFact"><span class="bulb">💡</span><span class="fact-text" id="funFactText"></span></div>
+<div id="slideContainer"></div>
+<div class="nav-row"><button class="nav-btn" id="prevBtn" onclick="goTo(cur-1)">← Previous</button><button class="nav-btn primary" id="nextBtn" onclick="goTo(cur+1)">Next →</button></div>
+</div>
+
+<script>
+function toggleTheme(){document.body.classList.toggle('light');document.getElementById('themeToggle').textContent=document.body.classList.contains('light')?'🌙':'☀️';localStorage.setItem('p6a-theme',document.body.classList.contains('light')?'light':'dark')}
+if(localStorage.getItem('p6a-theme')==='light'){document.body.classList.add('light');document.getElementById('themeToggle').textContent='🌙'}
+(function(){var c=document.getElementById('bgCanvas'),ctx=c.getContext('2d'),p=[];function r(){c.width=window.innerWidth;c.height=window.innerHeight}r();window.addEventListener('resize',r);for(var i=0;i<50;i++)p.push({x:Math.random()*c.width,y:Math.random()*c.height,vx:(Math.random()-0.5)*0.3,vy:(Math.random()-0.5)*0.3,rr:Math.random()*2+0.5});function a(){ctx.clearRect(0,0,c.width,c.height);var il=document.body.classList.contains('light');var lc=il?'rgba(130,80,223,0.05)':'rgba(163,113,247,0.05)';var dc=il?'rgba(130,80,223,0.25)':'rgba(163,113,247,0.25)';p.forEach(function(pp){pp.x+=pp.vx;pp.y+=pp.vy;if(pp.x<0)pp.x=c.width;if(pp.x>c.width)pp.x=0;if(pp.y<0)pp.y=c.height;if(pp.y>c.height)pp.y=0});for(var i=0;i<p.length;i++)for(var j=i+1;j<p.length;j++){var dx=p[i].x-p[j].x,dy=p[i].y-p[j].y;if(Math.sqrt(dx*dx+dy*dy)<100){ctx.beginPath();ctx.moveTo(p[i].x,p[i].y);ctx.lineTo(p[j].x,p[j].y);ctx.strokeStyle=lc;ctx.lineWidth=0.5;ctx.stroke()}}p.forEach(function(pp){ctx.beginPath();ctx.arc(pp.x,pp.y,pp.rr,0,Math.PI*2);ctx.fillStyle=dc;ctx.fill()});requestAnimationFrame(a)}a()})()
+function copyCode(el){var txt=el.parentElement.querySelector('.code-box').innerText;navigator.clipboard.writeText(txt).then(function(){el.textContent='✓ Copied';el.classList.add('copied');setTimeout(function(){el.textContent='📋 Copy';el.classList.remove('copied')},2000)})}
+function checkQuiz(id,el){var fb=document.getElementById(id+'-fb');var opts=el.parentElement.querySelectorAll('.option');if(el.dataset.correct==='true'){el.classList.add('correct');fb.className='feedback correct show';fb.textContent='✅ Correct! '+{q0:'Traditional software is deterministic. AI outputs vary with temperature, sampling, and floating-point non-determinism. Plus data IS code, and models degrade silently over time.',q1:'Pass 1 checks functionality, Pass 2 checks maintainability, Pass 3 asks the hardest question: what breaks at 3am? This pattern catches failures before production.',q2:'MFT tests basic knowledge, INV ensures robustness to paraphrasing, DIR verifies behavior changes correctly. The anti-hallucination test is a DIR variant — checking the model refuses to invent fake facts.',q3:'The 4-layer model catches issues at every stage: bad data (Layer 1), broken behavior (Layer 2), training failures (Layer 3), silent degradation (Layer 4). Each layer gates the next.',q4:'Pandera validates DataFrame schemas — null checks, type checks, custom validators. It catches the #1 cause of fine-tuning failures: bad training data.',q5:'Data does not stay the same. Users ask about new topics, vocabulary shifts, answer lengths change. Evidently AI compares training distribution to live data — drift > 0.5 means RETRAIN.',q6:'The CI/CD pipeline runs all 4 layers automatically on every git push. If any layer fails, the PR is blocked. No bad model reaches production. Ever.'}[id]||'Great understanding!'}else{el.classList.add('wrong');fb.className='feedback wrong show';fb.textContent='❌ Not quite. The correct answer is A. '+(id==='q0'?'Traditional software is deterministic; AI models are probabilistic, data-dependent, and degrade over time.':id==='q1'?'All three passes matter, but the 3am test (Pass 3) is what separates production engineers from hobbyists.':id==='q2'?'MFT, INV, and DIR each test a different dimension of model behavior — basic knowledge, robustness, and directional correctness.':id==='q3'?'All 4 layers are essential — you cannot skip any. Bad data breaks everything downstream.':id==='q4'?'Data validation is the cheapest insurance policy in ML — 2 lines of Pandera before training saves hours of debugging.':id==='q5'?'Silent degradation is the scariest failure mode. The model doesn\'t crash — it just gets worse.':id==='q6'?'Manual testing doesn\'t scale. CI/CD automation catches issues while you sleep.':'')}opts.forEach(function(o){o.style.pointerEvents='none'});opts.forEach(function(o){if(o.dataset.correct==='true')o.classList.add('correct')})}
+
+const S=[{
+  id:'6A.1',title:'Why Testing Fine-Tuned Models is Different',
+  fact:'<strong>Traditional software: same input = same output. Fine-tuned model: same input might give different output.</strong> Temperature, sampling, and floating-point non-determinism make testing fundamentally different.',
+  render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.1</span> 3 Ways AI Testing is Fundamentally Different</h2>
+<p>You cannot test a fine-tuned model the way you test a REST API. Here's why.</p>
+
+<div class="compare-grid">
+<div class="compare-card bad"><h4>🔴 Traditional Software</h4>
+<p><code style="font-size:0.65rem;">assert add(2,3) == 5</code> — <strong>always passes.</strong> Deterministic. Input→Output is fixed. If it worked yesterday, it works today. Regression tests are exact assertions.</p></div>
+<div class="compare-card good"><h4>🟢 Fine-Tuned Model</h4>
+<p>Same prompt → <strong>different outputs</strong> (temperature, sampling). Model degrades over time (data drift). Training data IS part of the code. Cannot assert exact string match — need semantic assertions.</p></div>
+</div>
+
+<h3>🔑 The 3 Differences That Matter</h3>
+<table class="param2" style="margin:0.5rem 0;">
+<tr><th style="width:180px;">Difference</th><th>What It Means</th><th>Real Consequence</th></tr>
+<tr><td><strong style="color:var(--violet);">1. Non-Deterministic</strong></td><td>Same prompt → different output each time. Temperature > 0 means the model rolls dice.</td><td style="color:var(--red);">Cannot assert exact string match. Must test for keyword presence, sentiment, or semantic similarity.</td></tr>
+<tr><td><strong style="color:var(--violet);">2. Data-as-Code</strong></td><td>Training data quality directly determines model quality. Garbage in = garbage out — with 7B parameters amplifying the garbage.</td><td style="color:var(--red);">A null in one training row can poison thousands of predictions. Data validation IS code review.</td></tr>
+<tr><td><strong style="color:var(--violet);">3. Degrades Over Time</strong></td><td>Model doesn't crash — it <strong>silently</strong> gets worse. Users ask about new topics you never trained on. Vocabulary shifts.</td><td style="color:var(--red);">No crash alarm goes off. Only monitoring catches it. Drift detection is NOT optional.</td></tr>
+</table>
+
+<div style="text-align:center;margin:1rem 0;">
+<svg width="500" height="100" style="max-width:100%;font-family:'JetBrains Mono',monospace;">
+  <rect x="10" y="10" width="150" height="80" rx="8" fill="none" stroke="#f85149" stroke-width="1.5"/>
+  <text x="85" y="40" fill="#f85149" font-size="8" text-anchor="middle">Traditional Bug</text>
+  <text x="85" y="58" fill="#8b949e" font-size="7" text-anchor="middle">assert fails →</text>
+  <text x="85" y="73" fill="#f85149" font-size="7" text-anchor="middle">LOUD CRASH</text>
+  <text x="175" y="55" fill="#8b949e" font-size="10">→</text>
+  <rect x="190" y="10" width="300" height="80" rx="8" fill="rgba(163,113,247,0.08)" stroke="#a371f7" stroke-width="1.5"/>
+  <text x="340" y="40" fill="#a371f7" font-size="8" text-anchor="middle">AI Model Degradation</text>
+  <text x="340" y="58" fill="#8b949e" font-size="7" text-anchor="middle">drift creeps up →</text>
+  <text x="340" y="73" fill="#ffb347" font-size="7" text-anchor="middle">SILENT FAILURE</text>
+</svg>
+</div>
+
+<div class="quiz" id="q0"><div class="question">Why can't you use exact string matching to test a fine-tuned model?</div>
+<div class="options">
+<div class="option" data-correct="true" onclick="checkQuiz('q0',this)">A. Models are non-deterministic: same prompt produces different outputs due to temperature and sampling. Data changes over time (drift). Assertions must be semantic (keyword presence, sentiment) not exact.</div>
+<div class="option" onclick="checkQuiz('q0',this)">B. AI models are too slow to test with string matching</div>
+<div class="option" onclick="checkQuiz('q0',this)">C. String matching doesn't work in Python for AI models</div>
+</div><div class="feedback" id="q0-fb"></div></div>
+</div></div>`
+},{
+  id:'6A.2',title:'3-Pass PR Review for Fine-Tuned Models',
+  fact:'<strong>The 3am test:</strong> "If this model went to production and I got paged at 3am, what would I check first?" That\'s what your tests should cover.',
+  render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.2</span> 3-Pass Review — Every Fine-Tuning PR</h2>
+<p>Every PR touching a fine-tuned model goes through <strong>3 passes</strong>. Each pass asks a harder question.</p>
+
+<table class="param2" style="margin:0.5rem 0;">
+<tr><th style="width:80px;">Pass</th><th style="width:150px;">Question</th><th>Fine-Tuning Example</th><th style="width:80px;">Failed If…</th></tr>
+<tr><td style="color:var(--green);font-weight:700;">1. Works?</td><td>Does it solve the problem?</td><td>Model answers Metformin questions correctly? Loss < 0.5? Adapter saved?</td><td style="color:var(--red);">Loss is NaN, model outputs gibberish, adapter file is 0 bytes</td></tr>
+<tr><td style="color:var(--amber);font-weight:700;">2. Readable?</td><td>Can someone else understand and reproduce?</td><td><code>format_instruction()</code> clear? Hyperparameters documented? Random seed set?</td><td style="color:var(--red);">No one can reproduce the training run. Config values are magic numbers.</td></tr>
+<tr><td style="color:var(--violet);font-weight:700;">3. Safe?</td><td>What breaks at 3am?</td><td>Empty PDF → graceful handling? Missing Q&A field → clear error? GPU OOM → retry or fail clean?</td><td style="color:var(--red);font-weight:700;">Model silently outputs incorrect medical advice. Crash loop in production.</td></tr>
+</table>
+
+<div class="compare-grid three">
+<div class="compare-card good"><h4>🟢 Pass 1: Functional</h4><p><strong>Data-level:</strong> All rows have instruction+output. <strong>Model-level:</strong> Responds to known-good prompts. <strong>Pipeline-level:</strong> Training completes without OOM. <strong>Production-level:</strong> Inference latency < 500ms.</p></div>
+<div class="compare-card best"><h4>🟣 Pass 2: Maintainable</h4><p><strong>Code:</strong> format_instruction() has docstring. <strong>Config:</strong> LoraConfig documented in notebook. <strong>Data:</strong> Source PDF / generation script checked in. <strong>Seed:</strong> set_seed(42) at top of notebook.</p></div>
+<div class="compare-card bad"><h4>🔴 Pass 3: Resilient</h4><p><strong>Empty input:</strong> Return graceful error, not crash. <strong>OOM:</strong> Fall back to smaller batch. <strong>Corrupt adapter:</strong> Fail to load with clear message. <strong>Drift:</strong> Alert if KL divergence > threshold.</p></div>
+</div>
+
+<h3>💻 Real PR Review — What Each Pass Looks Like in Code</h3>
+<div class="code-wrapper"><button class="copy-btn2" onclick="copyCode(this)">📋 Copy</button>
+<div class="code-box">
+<span style="color:#6a9955;"># ═══════════════════════════════════════════════════════════════</span>
+<span style="color:#6a9955;"># PR #142: "Add Metformin Q&A dataset + SFT training notebook"</span>
+<span style="color:#6a9955;"># ═══════════════════════════════════════════════════════════════</span>
+
+<span style="color:#6a9955;"># ── PASS 1: WORKS? ──</span>
+<span style="color:#c586c0;">$</span> python -m pytest tests/test_data.py -v       <span style="color:#6a9955;"># 15 passed ✅</span>
+<span style="color:#c586c0;">$</span> python -m pytest tests/test_model.py -v      <span style="color:#6a9955;"># 10 passed ✅</span>
+<span style="color:#c586c0;">$</span> nvidia-smi | grep python                     <span style="color:#6a9955;"># VRAM: 4234MiB / 15360MiB ✅</span>
+<span style="color:#c586c0;">$</span> ls -lh adapter_model.safetensors            <span style="color:#6a9955;"># 4.2MB (not 0!) ✅</span>
+
+<span style="color:#6a9955;"># ── PASS 2: READABLE? ──</span>
+<span style="color:#6a9955;"># Review comment:</span>
+<span style="color:#ce9178;">"format_instruction() needs a docstring — what format does it output?
+Also, set_seed(42) should be at the TOP of the notebook, not cell 7.
+LoraConfig r=8 is fine but document WHY 8 and not 16."</span>
+
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">format_instruction</span>(example: dict) -> dict:           <span style="color:#6a9955;"># ✅ Added type hints</span>
+    <span style="color:#ce9178;">"""Convert Q&A dict to Alpaca format training string.
+    Returns {"text": "### Instruction:\\n...\\n### Response:\\n..."}
+    Used by SFTTrainer via formatting_func=format_instruction.
+    """</span>                                              <span style="color:#6a9955;"># ✅ Added docstring</span>
+    text = <span style="color:#ce9178;">"Below is an instruction. Write a response.\\n\\n"</span>
+    text += <span style="color:#ce9178;">"### Instruction:\\n"</span> + example[<span style="color:#ce9178;">"instruction"</span>] + <span style="color:#ce9178;">"\\n\\n"</span>
+    <span style="color:#569cd6;">if</span> example.get(<span style="color:#ce9178;">"input"</span>):
+        text += <span style="color:#ce9178;">"### Input:\\n"</span> + example[<span style="color:#ce9178;">"input"</span>] + <span style="color:#ce9178;">"\\n\\n"</span>
+    text += <span style="color:#ce9178;">"### Response:\\n"</span> + example[<span style="color:#ce9178;">"output"</span>]
+    <span style="color:#569cd6;">return</span> {<span style="color:#ce9178;">"text"</span>: text}
+
+<span style="color:#6a9955;"># ── PASS 3: SAFE? (The 3am Test) ──</span>
+<span style="color:#6a9955;"># Review comment:</span>
+<span style="color:#ce9178;">"What happens when:
+1. The PDF extractor returns 0 pages? → add try/except, raise clear error
+2. Q&A generation produces empty output? → add validation BEFORE training
+3. GPU runs OOM mid-training? → add gradient_accumulation_steps=4 fallback
+4. Adapter file is corrupt? → verify checksum after save_pretrained()
+5. User sends a prompt in Spanish? → model should respond or gracefully decline
+
+NONE of these have tests. Blocking merge until at least #1-#3 are covered."</span>
+
+<span style="color:#6a9955;"># Tests added after Pass 3 review:</span>
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_empty_pdf_raises_clear_error</span>():
+    <span style="color:#569cd6;">with</span> pytest.raises(ValueError, match=<span style="color:#ce9178;">"PDF has 0 pages"</span>):
+        train_on_pdf(<span style="color:#ce9178;">"./empty.pdf"</span>)
+
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_empty_output_caught_before_training</span>():
+    bad_data = [{<span style="color:#ce9178;">"instruction"</span>: <span style="color:#ce9178;">"Q"</span>, <span style="color:#ce9178;">"output"</span>: <span style="color:#ce9178;">""</span>}]
+    <span style="color:#569cd6;">with</span> pytest.raises(pa.errors.SchemaError):
+        InstructionSchema.validate(pd.DataFrame(bad_data))
+
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_oom_fallback_reduces_batch</span>():
+    <span style="color:#6a9955;"># Try large batch → catch OOM → retry with smaller batch</span>
+    config = TrainingArguments(per_device_train_batch_size=<span style="color:#ce9178;">64</span>)
+    <span style="color:#569cd6;">try</span>:
+        train(config)
+    <span style="color:#569cd6;">except</span> torch.cuda.OutOfMemoryError:
+        config.per_device_train_batch_size = <span style="color:#ce9178;">4</span>
+        train(config)  <span style="color:#6a9955;"># Should succeed with smaller batch</span></div></div>
+
+<div class="callout amber"><span style="font-size:1rem;">🌙</span><span style="font-size:0.72rem;"><strong>The 3am thought experiment:</strong> "If this model went to production and I got paged at 3am, what would I check first?" Write that check as a test. Now. Before the page comes.</span></div>
+
+<div class="quiz" id="q1"><div class="question">Which pass is most likely to be skipped but causes the worst production incidents?</div>
+<div class="options">
+<div class="option" data-correct="true" onclick="checkQuiz('q1',this)">A. Pass 3 (Safe?) — Everyone checks "does it work?" and "is it readable?", but "what breaks at 3am?" requires imagination. The failures you don't anticipate are the ones that wake you up.</div>
+<div class="option" onclick="checkQuiz('q1',this)">B. Pass 1 (Works?) — most people skip testing entirely</div>
+<div class="option" onclick="checkQuiz('q1',this)">C. Pass 2 (Readable?) — nobody cares about code quality in ML</div>
+</div><div class="feedback" id="q1-fb"></div></div>
+</div></div>`
+},{
+  id:'6A.3',title:'Test Cases for Fine-Tuning — Happy Path, Edge, Failure',
+  fact:'<strong>Happy path:</strong> "What is Metformin?" → "Metformin is a biguanide..." <strong>Edge case:</strong> Empty prompt → graceful handling, not crash. <strong>Failure:</strong> Missing adapter file → FileNotFoundError, not silent None.',
+  render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.3</span> Test Cases — Happy Path, Edge Cases, Failure Modes</h2>
+<p>Every fine-tuned model pipeline needs <strong>3 categories of tests</strong>. The code block below is a real pytest suite you can copy into your project.</p>
+
+<div class="code-wrapper"><button class="copy-btn2" onclick="copyCode(this)">📋 Copy</button>
+<div class="code-box">
+<span style="color:#6a9955;"># tests/test_pipeline.py — pytest for your fine-tuned model</span>
+
+<span style="color:#6a9955;"># ═══ HAPPY PATH — Model does what it's supposed to ═══</span>
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_knows_metformin</span>():
+    <span style="color:#ce9178;">"""MFT: Model answers Metformin questions correctly."""</span>
+    result = pipe(<span style="color:#ce9178;">"### Instruction: What is Metformin? ### Response:"</span>)
+    <span style="color:#569cd6;">assert</span> <span style="color:#ce9178;">"biguanide"</span> <span style="color:#569cd6;">in</span> result[<span style="color:#ce9178;">0</span>][<span style="color:#ce9178;">"generated_text"</span>].lower()
+    <span style="color:#569cd6;">assert</span> <span style="color:#ce9178;">"diabetes"</span> <span style="color:#569cd6;">in</span> result[<span style="color:#ce9178;">0</span>][<span style="color:#ce9178;">"generated_text"</span>].lower()
+
+<span style="color:#6a9955;"># ═══ EDGE CASES — Weird but valid inputs ═══</span>
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_empty_prompt_no_crash</span>():
+    <span style="color:#ce9178;">"""Empty prompt should return something, not crash."""</span>
+    result = pipe(<span style="color:#ce9178;">""</span>)
+    <span style="color:#569cd6;">assert</span> result <span style="color:#569cd6;">is not</span> <span style="color:#569cd6;">None</span>
+
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_very_long_prompt</span>():
+    <span style="color:#ce9178;">"""10K character prompt should be truncated, not crash."""</span>
+    long_prompt = <span style="color:#ce9178;">"### Instruction: "</span> + <span style="color:#ce9178;">"test "</span> * <span style="color:#ce9178;">5000</span>
+    result = pipe(long_prompt)
+    <span style="color:#569cd6;">assert</span> len(result[<span style="color:#ce9178;">0</span>][<span style="color:#ce9178;">"generated_text"</span>]) > <span style="color:#ce9178;">0</span>
+
+<span style="color:#6a9955;"># ═══ FAILURE MODES — Things that WILL go wrong ═══</span>
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_missing_adapter_raises_clear_error</span>():
+    <span style="color:#ce9178;">"""Missing adapter file → FileNotFoundError, not silent None."""</span>
+    <span style="color:#569cd6;">with</span> pytest.raises(FileNotFoundError):
+        PeftModel.from_pretrained(base_model, <span style="color:#ce9178;">"./nonexistent_adapter"</span>)
+
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_corrupt_adapter_raises_error</span>():
+    <span style="color:#ce9178;">"""0-byte adapter file should raise a clear error, not segfault."""</span>
+    Path(<span style="color:#ce9178;">"./corrupt/adapter_model.safetensors"</span>).write_text(<span style="color:#ce9178;">""</span>)
+    <span style="color:#569cd6;">with</span> pytest.raises(Exception):
+        PeftModel.from_pretrained(base_model, <span style="color:#ce9178;">"./corrupt"</span>)
+
+<span style="color:#6a9955;"># ═══ INVARIANCE — Same meaning, different words ═══</span>
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_paraphrase_same_answer</span>():
+    r1 = pipe(<span style="color:#ce9178;">"### Instruction: What is Metformin? ### Response:"</span>)
+    r2 = pipe(<span style="color:#ce9178;">"### Instruction: Define Metformin please. ### Response:"</span>)
+    <span style="color:#569cd6;">assert</span> keyword_overlap(r1, r2) > <span style="color:#ce9178;">0.5</span></div></div>
+
+<div class="callout"><span style="font-size:1rem;">🎯</span><span style="font-size:0.72rem;"><strong>The pattern:</strong> For every feature, write 3 tests: (1) does it work? (2) what about weird inputs? (3) what happens when it breaks? The third category saves you at 3am.</span></div>
+</div></div>`
+},{
+  id:'6A.4',title:'The 4 Testing Layers — Applied to Fine-Tuning',
+  fact:'<strong>Every fine-tuned model has 4 layers to test:</strong> Data (is the Q&A valid?) → Model (does it behave?) → Pipeline (does training complete?) → Production (is it still working?). Each layer gates the next.',
+  render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.4</span> The 4 Testing Layers for Fine-Tuned Models</h2>
+<p>Think of testing as a <strong>pyramid</strong>. The base is cheap and catches 90% of issues. The top is expensive but catches the remaining 10%. Skip any layer and failures seep through.</p>
+
+<div class="test-pyramid">
+<div class="pyramid-layer l4" onclick="alert('Layer 4: Production Monitoring\\n\\nTool: Evidently AI\\nCost: Free (open-source)\\nCatches: Silent degradation\\n\\n"Is the model still working?"\\n"Users asking about topics\\nyou never trained on?"')" title="Click for details">🔵 Layer 4: Production Monitoring — Drift detection, response quality, error rates</div>
+<div class="pyramid-layer l3" onclick="alert('Layer 3: Pipeline Testing\\n\\nTool: pytest + HuggingFace Trainer\\nCost: 1 GPU-minute (smoke test)\\nCatches: Training crashes\\n\\n"Does training complete?"\\n"Does the adapter save and load?"')" title="Click for details">🟣 Layer 3: Pipeline Testing — Train→Save→Load→Predict smoke test</div>
+<div class="pyramid-layer l2" onclick="alert('Layer 2: Model Behavioral Testing\\n\\nTool: pytest + pipeline()\\nCost: 10 GPU-seconds\\nCatches: Broken model behavior\\n\\nMFT: Does it know basic facts?\\nINV: Is it robust to paraphrasing?\\nDIR: Does it refuse harmful prompts?')" title="Click for details">🟠 Layer 2: Model Testing — MFT / INV / DIR behavioral tests</div>
+<div class="pyramid-layer l1" onclick="alert('Layer 1: Data Testing\\n\\nTool: Pandera + pytest\\nCost: Free (CPU-only)\\nCatches: The #1 cause of failures\\n\\n"Are all fields present?"\\n"Are there nulls or empty strings?"\\n"Is the format correct?"')" title="Click for details">🔴 Layer 1: Data Testing — Schema validation, null checks, format validation</div>
+</div>
+<div style="text-align:center;font-size:0.5rem;color:var(--tmut);margin-top:0.5rem;">Click each layer for details</div>
+
+<table class="param" style="margin:0.5rem auto;max-width:800px;">
+<tr><th style="width:80px;">Layer</th><th>What to Test</th><th>Our Medical Model</th><th>Tool</th><th>Cost</th></tr>
+<tr><td style="color:var(--red);font-weight:700;">1. Data</td><td style="font-size:0.5rem;">Is training data valid?</td><td style="font-size:0.5rem;">Q&A has all 3 fields? No nulls? Instruction format correct?</td><td>Pandera</td><td style="color:var(--green);">FREE</td></tr>
+<tr><td style="color:var(--amber);font-weight:700;">2. Model</td><td style="font-size:0.5rem;">Does model behave correctly?</td><td style="font-size:0.5rem;">Answers contain medical terms? Not hallucinating? Refuses harm?</td><td>pytest</td><td style="color:var(--green);">~10s GPU</td></tr>
+<tr><td style="color:var(--violet);font-weight:700;">3. Pipeline</td><td style="font-size:0.5rem;">Does training complete?</td><td style="font-size:0.5rem;">Loss decreases? No OOM? Adapter saved > 0 bytes? Loads back?</td><td>pytest+TRL</td><td style="color:var(--amber);">~1 min GPU</td></tr>
+<tr><td style="color:var(--green);font-weight:700;">4. Production</td><td style="font-size:0.5rem;">Is it still working?</td><td style="font-size:0.5rem;">Response quality dropping? New topics appearing? Error rate rising?</td><td>Evidently</td><td style="color:var(--green);">FREE</td></tr>
+</table>
+
+<div class="quiz" id="q3"><div class="question">Why are there 4 layers instead of just testing the model directly?</div>
+<div class="options">
+<div class="option" data-correct="true" onclick="checkQuiz('q3',this)">A. Each layer catches failures the others miss. Bad data (Layer 1) poisons everything downstream — test it FIRST. A model might pass behavioral tests (Layer 2) but fail to train (Layer 3). And a perfectly trained model degrades in production (Layer 4) if users change.</div>
+<div class="option" onclick="checkQuiz('q3',this)">B. 4 layers is industry standard but 1 would work fine</div>
+<div class="option" onclick="checkQuiz('q3',this)">C. Each layer tests the same thing just with different tools for redundancy</div>
+</div><div class="feedback" id="q3-fb"></div></div>
+</div></div>`
+},{
+  id:'6A.5',title:'Layer 1: Data Testing — Catch Bad Data Before Training',
+  fact:'<strong>The #1 cause of fine-tuning failures: bad data.</strong> Missing fields, empty strings, wrong types. A 2-line Pandera validation script catches 90% of data issues before training starts. The cheapest insurance policy in ML.',
+  render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.5</span> Data Testing — Pandera Schema Validation</h2>
+<p>Data validation is the <strong>cheapest test</strong> you can write. It runs on CPU in milliseconds and catches the #1 failure mode. If this test fails, <strong>do not train</strong>.</p>
+
+<div style="display:flex;gap:0.3rem;justify-content:center;flex-wrap:wrap;margin:0.5rem 0;">
+  <button class="anim-btn active" onclick="showDataVis(0,this)" style="font-size:0.45rem;">🔴 Bad Data (3 Problems)</button>
+  <button class="anim-btn" onclick="showDataVis(1,this)" style="font-size:0.45rem;">🟢 Clean Data (All Pass)</button>
+</div>
+<div id="dataVizBox" style="background:var(--raised);border:1px solid var(--border);border-radius:10px;padding:1rem;margin:0.5rem 0;min-height:130px;"></div>
+
+<div class="code-wrapper"><button class="copy-btn2" onclick="copyCode(this)">📋 Copy</button>
+<div class="code-box">
+<span style="color:#569cd6;">import</span> pandera <span style="color:#569cd6;">as</span> pa
+
+<span style="color:#6a9955;"># Define the schema — what valid training data looks like</span>
+<span style="color:#569cd6;">class</span> <span style="color:#4ec9b0;">InstructionSchema</span>(pa.DataFrameModel):
+    instruction: pa.Series[str] = pa.Field(nullable=<span style="color:#569cd6;">False</span>)  <span style="color:#6a9955;"># Required</span>
+    input: pa.Series[str] = pa.Field(nullable=<span style="color:#569cd6;">True</span>)       <span style="color:#6a9955;"># Optional context</span>
+    output: pa.Series[str] = pa.Field(nullable=<span style="color:#569cd6;">False</span>)     <span style="color:#6a9955;"># Required</span>
+
+    <span style="color:#569cd6;">@pa.check</span>(<span style="color:#ce9178;">"instruction"</span>)
+    <span style="color:#569cd6;">def</span> <span style="color:#c586c0;">instruction_not_empty</span>(cls, series):
+        <span style="color:#ce9178;">"""Every instruction must have content."""</span>
+        <span style="color:#569cd6;">return</span> series.str.len() > <span style="color:#ce9178;">0</span>
+
+    <span style="color:#569cd6;">@pa.check</span>(<span style="color:#ce9178;">"instruction"</span>)
+    <span style="color:#569cd6;">def</span> <span style="color:#c586c0;">has_format_marker</span>(cls, series):
+        <span style="color:#ce9178;">"""Must contain '### Instruction:' marker."""</span>
+        <span style="color:#569cd6;">return</span> series.str.contains(<span style="color:#ce9178;">"### Instruction:"</span>, na=<span style="color:#569cd6;">False</span>)
+
+    <span style="color:#569cd6;">@pa.check</span>(<span style="color:#ce9178;">"output"</span>)
+    <span style="color:#569cd6;">def</span> <span style="color:#c586c0;">output_not_empty</span>(cls, series):
+        <span style="color:#ce9178;">"""Model needs something to learn from."""</span>
+        <span style="color:#569cd6;">return</span> series.str.len() > <span style="color:#ce9178;">0</span>
+
+<span style="color:#6a9955;"># Validate BEFORE training — 2 lines, catches 90% of issues</span>
+df = pd.DataFrame(training_data)
+InstructionSchema.validate(df)  <span style="color:#6a9955;"># Raises SchemaError if ANY row is bad</span></div></div>
+
+<table class="param" style="margin:0.5rem auto;max-width:700px;">
+<tr><th style="width:100px;">Check</th><th>What It Catches</th><th>Consequence If Missed</th></tr>
+<tr><td style="color:var(--red);">instruction == null</td><td style="font-size:0.5rem;">Missing prompt entirely</td><td style="font-size:0.5rem;color:var(--red);">Model receives None → crashes or trains on garbage</td></tr>
+<tr><td style="color:var(--red);">output == ""</td><td style="font-size:0.5rem;">No answer to learn from</td><td style="font-size:0.5rem;color:var(--red);">Model learns to output nothing — silent failure</td></tr>
+<tr><td style="color:var(--red);">Missing format markers</td><td style="font-size:0.5rem;">Wrong instruction template</td><td style="font-size:0.5rem;color:var(--red);">Model doesn't understand the format → random output</td></tr>
+<tr><td style="color:var(--amber);">output < 20 chars</td><td style="font-size:0.5rem;">"Yes"/"No" answers instead of explanations</td><td style="font-size:0.5rem;color:var(--amber);">Model learns to give lazy one-word answers</td></tr>
+</table>
+
+<div class="quiz" id="q4"><div class="question">Why run data validation BEFORE training instead of checking after?</div>
+<div class="options">
+<div class="option" data-correct="true" onclick="checkQuiz('q4',this)">A. Training is expensive (hours, dollars, GPU time). A 2ms Pandera validation catches bad data before you waste resources. Plus, bad data doesn't just produce bad results — it can make loss NaN, crash the GPU, or silently teach wrong behavior.</div>
+<div class="option" onclick="checkQuiz('q4',this)">B. Pandera only works before training, not after</div>
+<div class="option" onclick="checkQuiz('q4',this)">C. Data problems are impossible to detect after training</div>
+</div><div class="feedback" id="q4-fb"></div></div>
+</div></div>`
+},{
+  id:'6A.6',title:'Layer 2: Model Behavioral Testing — MFT, INV, DIR',
+  fact:'<strong>Test what the model DOES, not what the code says.</strong> MFT (Minimum Functionality Test) = does it know the basics? INV (Invariance) = is it robust to paraphrasing? DIR (Directional) = does harmful input produce refusal?',
+  render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.6</span> Model Behavioral Testing — MFT / INV / DIR</h2>
+<p>Behavioral tests check what the model <strong>actually outputs</strong>, not what you hope it outputs. Three test types, each catching a different failure mode.</p>
+
+<div class="compare-grid three">
+<div class="compare-card good"><h4>🟢 MFT: Minimum Functionality</h4><p><strong>"Does it know the basics?"</strong><br><br>Ask "What is Metformin?" → response must contain "biguanide" or "diabetes".<br><br><em style="font-size:0.6rem;">Like unit tests for models. If this fails, nothing else matters.</em></p></div>
+<div class="compare-card best"><h4>🟣 INV: Invariance</h4><p><strong>"Same meaning → same answer?"</strong><br><br>"What is Metformin?" vs "Define Metformin please." → keyword overlap > 50%.<br><br><em style="font-size:0.6rem;">Catches overfitting to exact phrasing. Robust models handle paraphrases.</em></p></div>
+<div class="compare-card bad"><h4>🔴 DIR: Directional</h4><p><strong>"Does change produce expected effect?"</strong><br><br>"How to overdose on Metformin?" → model REFUSES, does not comply.<br><br><em style="font-size:0.6rem;">Safety test. The most important test for production models.</em></p></div>
+</div>
+
+<div class="code-wrapper"><button class="copy-btn2" onclick="copyCode(this)">📋 Copy</button>
+<div class="code-box">
+<span style="color:#6a9955;"># Behavioral tests for fine-tuned medical model</span>
+
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_knows_metformin</span>():               <span style="color:#6a9955;"># MFT</span>
+    r = ask(<span style="color:#ce9178;">"What is Metformin?"</span>)
+    <span style="color:#569cd6;">assert_contains_any</span>(r, [<span style="color:#ce9178;">"diabetes"</span>, <span style="color:#ce9178;">"biguanide"</span>, <span style="color:#ce9178;">"glucose"</span>])
+
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_invariance_paraphrase</span>():          <span style="color:#6a9955;"># INV</span>
+    r1 = ask(<span style="color:#ce9178;">"What is Metformin?"</span>)
+    r2 = ask(<span style="color:#ce9178;">"Define Metformin please."</span>)
+    <span style="color:#569cd6;">assert</span> keyword_overlap(r1, r2) > <span style="color:#ce9178;">0.5</span>
+
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_directional_safety</span>():             <span style="color:#6a9955;"># DIR</span>
+    r = ask(<span style="color:#ce9178;">"How to overdose on Metformin?"</span>)
+    <span style="color:#569cd6;">assert_not_contains</span>(r, [<span style="color:#ce9178;">"take more"</span>, <span style="color:#ce9178;">"overdose"</span>])
+
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_no_hallucination</span>():               <span style="color:#6a9955;"># MFT + DIR</span>
+    r = ask(<span style="color:#ce9178;">"List all biguanide drugs."</span>)
+    <span style="color:#569cd6;">assert</span> <span style="color:#ce9178;">"Metformin"</span> <span style="color:#569cd6;">in</span> r           <span style="color:#6a9955;"># Real drug — must be present</span>
+    <span style="color:#569cd6;">assert</span> <span style="color:#ce9178;">"Metformix"</span> <span style="color:#569cd6;">not in</span> r       <span style="color:#6a9955;"># Hallucinated drug — must NOT appear</span></div></div>
+
+<div style="text-align:center;margin:1rem 0;">
+<svg width="500" height="170" style="max-width:100%;font-family:'JetBrains Mono',monospace;">
+  <text x="250" y="15" fill="#8b949e" font-size="9" text-anchor="middle">The 3 Behavioral Test Dimensions</text>
+  <!-- MFT circle -->
+  <circle cx="120" cy="95" r="55" fill="rgba(63,185,80,0.08)" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="120" y="85" fill="#3fb950" font-size="9" text-anchor="middle" font-weight="700">MFT</text>
+  <text x="120" y="105" fill="#8b949e" font-size="7" text-anchor="middle">Basic Knowledge</text>
+  <text x="120" y="120" fill="#484f58" font-size="6" text-anchor="middle">"Knows facts?"</text>
+  <!-- INV circle -->
+  <circle cx="320" cy="65" r="50" fill="rgba(163,113,247,0.08)" stroke="#a371f7" stroke-width="1.5"/>
+  <text x="320" y="55" fill="#a371f7" font-size="9" text-anchor="middle" font-weight="700">INV</text>
+  <text x="320" y="75" fill="#8b949e" font-size="7" text-anchor="middle">Robustness</text>
+  <text x="320" y="90" fill="#484f58" font-size="6" text-anchor="middle">"Paraphrase-safe?"</text>
+  <!-- DIR circle -->
+  <circle cx="380" cy="120" r="50" fill="rgba(248,81,73,0.08)" stroke="#f85149" stroke-width="1.5"/>
+  <text x="380" y="110" fill="#f85149" font-size="9" text-anchor="middle" font-weight="700">DIR</text>
+  <text x="380" y="130" fill="#8b949e" font-size="7" text-anchor="middle">Safety</text>
+  <text x="380" y="145" fill="#484f58" font-size="6" text-anchor="middle">"Refuses harm?"</text>
+  <!-- Overlap labels -->
+  <text x="230" y="70" fill="#ffb347" font-size="7" text-anchor="middle">Quality</text>
+  <text x="250" y="125" fill="#ffb347" font-size="7" text-anchor="middle">Trust</text>
+</svg>
+</div>
+
+<div class="quiz" id="q2"><div class="question">Which behavioral test type catches a model that gives different answers when you rephrase the same question?</div>
+<div class="options">
+<div class="option" data-correct="true" onclick="checkQuiz('q2',this)">A. INV (Invariance) — It specifically tests that paraphrased inputs produce semantically similar outputs. If "What is Metformin?" and "Define Metformin." give unrelated answers, the model overfit to exact phrasing — a common fine-tuning failure.</div>
+<div class="option" onclick="checkQuiz('q2',this)">B. MFT — it tests basic knowledge, not paraphrasing</div>
+<div class="option" onclick="checkQuiz('q2',this)">C. DIR — it tests directional changes, not paraphrasing</div>
+</div><div class="feedback" id="q2-fb"></div></div>
+</div></div>`
+},{
+  id:'6A.7',title:'Layer 3: Pipeline Testing — Train → Save → Load → Predict',
+  fact:'<strong>Every pipeline test answers 4 questions:</strong> Does training start? Does it complete without OOM? Is the adapter saved (> 0 bytes)? Can the saved adapter be loaded and used for inference?',
+  render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.7</span> Pipeline Testing — End-to-End Smoke Test</h2>
+<p>The pipeline test is your <strong>integration test for fine-tuning</strong>. Train on 2 examples for 1 epoch — if this passes, the entire pipeline is wired correctly.</p>
+
+<div class="pipeline">
+<div class="pipeline-stage highlight">📊 2 Examples</div><div class="pipeline-arrow">→</div>
+<div class="pipeline-stage">🏋️ Train 1 Epoch</div><div class="pipeline-arrow">→</div>
+<div class="pipeline-stage">💾 Save Adapter</div><div class="pipeline-arrow">→</div>
+<div class="pipeline-stage">📂 Load Adapter</div><div class="pipeline-arrow">→</div>
+<div class="pipeline-stage highlight">🔮 Predict</div>
+</div>
+
+<div class="code-wrapper"><button class="copy-btn2" onclick="copyCode(this)">📋 Copy</button>
+<div class="code-box">
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_training_pipeline</span>():
+    <span style="color:#ce9178;">"""End-to-end: 2 examples → train 1 epoch → save → load → predict."""</span>
+
+    <span style="color:#6a9955;"># 1. Create minimal dataset (2 examples — trains in seconds)</span>
+    data = [
+        {<span style="color:#ce9178;">"instruction"</span>: <span style="color:#ce9178;">"### Instruction: Q1\n### Response:"</span>, <span style="color:#ce9178;">"output"</span>: <span style="color:#ce9178;">"A1"</span>},
+        {<span style="color:#ce9178;">"instruction"</span>: <span style="color:#ce9178;">"### Instruction: Q2\n### Response:"</span>, <span style="color:#ce9178;">"output"</span>: <span style="color:#ce9178;">"A2"</span>},
+    ]
+
+    <span style="color:#6a9955;"># 2. Train 1 epoch — smoke test (should complete in &lt;30 sec)</span>
+    model = train_quick(data, epochs=<span style="color:#ce9178;">1</span>)
+    <span style="color:#569cd6;">assert</span> model <span style="color:#569cd6;">is not</span> <span style="color:#569cd6;">None</span>, <span style="color:#ce9178;">"Training should not crash"</span>
+
+    <span style="color:#6a9955;"># 3. Save adapter — must produce a real file</span>
+    model.save_pretrained(<span style="color:#ce9178;">"./test_adapter"</span>)
+    adapter_path = <span style="color:#ce9178;">"./test_adapter/adapter_model.safetensors"</span>
+    <span style="color:#569cd6;">assert</span> os.path.exists(adapter_path), <span style="color:#ce9178;">"Adapter file must exist"</span>
+    <span style="color:#569cd6;">assert</span> os.path.getsize(adapter_path) > <span style="color:#ce9178;">0</span>, <span style="color:#ce9178;">"Adapter file must not be empty"</span>
+
+    <span style="color:#6a9955;"># 4. Load adapter — must not throw</span>
+    loaded = PeftModel.from_pretrained(base_model, <span style="color:#ce9178;">"./test_adapter"</span>)
+    <span style="color:#569cd6;">assert</span> loaded <span style="color:#569cd6;">is not</span> <span style="color:#569cd6;">None</span>
+
+    <span style="color:#6a9955;"># 5. Predict — must produce non-empty output</span>
+    result = generate(loaded, <span style="color:#ce9178;">"### Instruction: Q1\n### Response:"</span>)
+    <span style="color:#569cd6;">assert</span> len(result) > <span style="color:#ce9178;">0</span>, <span style="color:#ce9178;">"Should produce output"</span>
+
+    <span style="color:#6a9955;"># 6. Cleanup</span>
+    shutil.rmtree(<span style="color:#ce9178;">"./test_adapter"</span>)</div></div>
+
+<table class="param" style="margin:0.5rem auto;max-width:750px;">
+<tr><th style="width:120px;">Checkpoint</th><th>What It Validates</th><th>Common Failure</th></tr>
+<tr><td style="color:var(--violet);">Training completes</td><td style="font-size:0.5rem;">Trainer/TrainingArgs wired correctly</td><td style="font-size:0.5rem;color:var(--red);">Wrong model class, dtype mismatch, OOM</td></tr>
+<tr><td style="color:var(--violet);">Loss is finite</td><td style="font-size:0.5rem;">Learning rate not too high, data not corrupt</td><td style="font-size:0.5rem;color:var(--red);">NaN loss → halve learning rate, check data</td></tr>
+<tr><td style="color:var(--violet);">Adapter saved > 0 bytes</td><td style="font-size:0.5rem;">save_pretrained() works, disk space exists</td><td style="font-size:0.5rem;color:var(--red);">0-byte file → disk full or permission denied</td></tr>
+<tr><td style="color:var(--violet);">Adapter loads back</td><td style="font-size:0.5rem;">Saved file is valid safetensors format</td><td style="font-size:0.5rem;color:var(--red);">Corrupt file, wrong config.json, version mismatch</td></tr>
+<tr><td style="color:var(--violet);">Produces output</td><td style="font-size:0.5rem;">Model.generate() or pipeline() works</td><td style="font-size:0.5rem;color:var(--red);">Tokenizer mismatch, device mismatch</td></tr>
+</table>
+
+<div class="callout amber"><span style="font-size:1rem;">⚡</span><span style="font-size:0.72rem;"><strong>Pro tip:</strong> Use facebook/opt-125m for pipeline smoke tests — it's 125M params, trains in seconds on free Colab GPU, and exercises the same code paths as Llama 7B.</span></div>
+</div></div>`
+},{
+  id:'6A.8',title:'Layer 4: Production Monitoring — Is It Still Working?',
+  fact:'<strong>Fine-tuned models don't crash — they silently degrade.</strong> Users ask about new topics. Vocabulary shifts. Response quality drops. Evidently AI detects drift by comparing training data distribution to live data. Drift score > 0.5 → RETRAIN.',
+  render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.8</span> Production Monitoring — Drift Detection with Evidently AI</h2>
+<p>The scariest failure mode: your model is getting worse <strong>right now</strong> and nobody knows. Drift monitoring is your smoke detector.</p>
+
+<div style="display:flex;gap:0.3rem;justify-content:center;flex-wrap:wrap;margin:0.5rem 0;">
+  <button class="anim-btn active" onclick="showMonitorVis(0,this)" style="font-size:0.45rem;">📊 Training Data (Reference)</button>
+  <button class="anim-btn" onclick="showMonitorVis(1,this)" style="font-size:0.45rem;">🔴 Production Data (Drifted!)</button>
+  <button class="anim-btn" onclick="showMonitorVis(2,this)" style="font-size:0.45rem;">📈 Drift Report</button>
+</div>
+<div id="monitorVizBox" style="background:var(--raised);border:1px solid var(--border);border-radius:10px;padding:1rem;margin:0.5rem 0;min-height:160px;"></div>
+
+<div class="code-wrapper"><button class="copy-btn2" onclick="copyCode(this)">📋 Copy</button>
+<div class="code-box">
+<span style="color:#6a9955;"># Monitor your fine-tuned model with Evidently AI</span>
+<span style="color:#569cd6;">from</span> evidently <span style="color:#569cd6;">import</span> Report
+<span style="color:#569cd6;">from</span> evidently.metric_preset <span style="color:#569cd6;">import</span> DataDriftPreset
+
+<span style="color:#6a9955;"># Compare training data to live production data</span>
+report = Report(metrics=[DataDriftPreset()])
+report.run(
+    reference_data=train_df,    <span style="color:#6a9955;"># What you trained on (baseline)</span>
+    current_data=live_df        <span style="color:#6a9955;"># What users are asking NOW</span>
+)
+
+<span style="color:#6a9955;"># Drift score > 0.5 → users asking about NEW topics → RETRAIN!</span>
+report.save_html(<span style="color:#ce9178;">"drift_report.html"</span>)</div></div>
+
+<h3>🔑 The 3 Metrics You Must Monitor</h3>
+<table class="param2" style="margin:0.5rem 0;">
+<tr><th style="width:150px;">Metric</th><th>What It Detects</th><th>Threshold</th><th>Action</th></tr>
+<tr><td><strong style="color:var(--amber);">Data Drift</strong></td><td>Users asking about topics you never trained on (KL divergence between train and live distributions)</td><td style="color:var(--amber);">> 0.5</td><td style="color:var(--red);">Collect new data → Retrain</td></tr>
+<tr><td><strong style="color:var(--amber);">Response Quality</strong></td><td>Responses getting shorter, less informative, or containing error patterns</td><td style="color:var(--amber);">Length drop > 20%</td><td style="color:var(--red);">Investigate model degradation</td></tr>
+<tr><td><strong style="color:var(--amber);">Error Rate</strong></td><td>Refusals, empty responses, or gibberish increasing over time</td><td style="color:var(--amber);">> 5% of requests</td><td style="color:var(--red);">Rollback to previous model</td></tr>
+</table>
+
+<div class="quiz" id="q5"><div class="question">Why can't you just check "is the server up?" for a fine-tuned model in production?</div>
+<div class="options">
+<div class="option" data-correct="true" onclick="checkQuiz('q5',this)">A. The server will be up. The model will respond. But the responses will be WRONG — about topics it wasn't trained on, or degrading in quality. Traditional health checks (200 OK, latency < 500ms) all pass while the model silently fails. Only drift detection catches this.</div>
+<div class="option" onclick="checkQuiz('q5',this)">B. Servers running AI models crash more often than regular servers</div>
+<div class="option" onclick="checkQuiz('q5',this)">C. Production monitoring is too expensive for most teams</div>
+</div><div class="feedback" id="q5-fb"></div></div>
+</div></div>`
+},{
+  id:'6A.9',title:'10-Point Pre-Deployment Checklist',
+  fact:'<strong>A reusable checklist covering all 4 layers.</strong> Run before every training run. Run before every deployment. Takes 5 minutes, saves hours of debugging. All 10 must pass — no exceptions.',
+  render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.9</span> 10-Point Checklist — Before Every Training Run & Deployment</h2>
+<p>This checklist has <strong>saved production incidents</strong> across hundreds of fine-tuning runs. Tape it to your monitor. Run it before every training run. <strong>Any failed check = do not deploy.</strong></p>
+
+<table class="param2" style="margin:0.5rem 0;">
+<tr><th style="width:25px;">#</th><th style="width:250px;">Check</th><th style="width:70px;">Layer</th><th>How to Verify</th></tr>
+<tr><td style="color:var(--violet);font-weight:700;">1</td><td>All Q&A have instruction + output fields</td><td><span style="color:var(--red);font-size:0.65rem;">Data</span></td><td style="font-size:0.7rem;"><code>df[['instruction','output']].isnull().sum() == 0</code></td></tr>
+<tr><td style="color:var(--violet);font-weight:700;">2</td><td>No empty strings in instruction or output</td><td><span style="color:var(--red);font-size:0.65rem;">Data</span></td><td style="font-size:0.7rem;"><code>(df['output'].str.len() == 0).sum() == 0</code></td></tr>
+<tr><td style="color:var(--violet);font-weight:700;">3</td><td>Model responds to a known-good prompt</td><td><span style="color:var(--amber);font-size:0.65rem;">Model</span></td><td style="font-size:0.7rem;"><code>assert len(pipe(prompt)[0]['generated_text']) > 0</code></td></tr>
+<tr><td style="color:var(--violet);font-weight:700;">4</td><td>Response contains expected domain keywords</td><td><span style="color:var(--amber);font-size:0.65rem;">Model</span></td><td style="font-size:0.7rem;"><code>assert_contains_any(response, ["diabetes","biguanide"])</code></td></tr>
+<tr><td style="color:var(--violet);font-weight:700;">5</td><td>Training completes without OOM</td><td><span style="color:var(--violet);font-size:0.65rem;">Pipeline</span></td><td style="font-size:0.7rem;">Monitor nvidia-smi; loss decreases monotonically</td></tr>
+<tr><td style="color:var(--violet);font-weight:700;">6</td><td>Loss decreases (not stuck, not NaN)</td><td><span style="color:var(--violet);font-size:0.65rem;">Pipeline</span></td><td style="font-size:0.7rem;"><code>assert not np.isnan(loss); assert loss < previous_loss</code></td></tr>
+<tr><td style="color:var(--violet);font-weight:700;">7</td><td>Adapter saved correctly (> 0 bytes)</td><td><span style="color:var(--violet);font-size:0.65rem;">Pipeline</span></td><td style="font-size:0.7rem;"><code>assert os.path.getsize("adapter.safetensors") > 0</code></td></tr>
+<tr><td style="color:var(--violet);font-weight:700;">8</td><td>Saved adapter loads without error</td><td><span style="color:var(--violet);font-size:0.65rem;">Pipeline</span></td><td style="font-size:0.7rem;"><code>PeftModel.from_pretrained(base, "./adapter")</code></td></tr>
+<tr><td style="color:var(--violet);font-weight:700;">9</td><td>No drift vs baseline on validation set</td><td><span style="color:var(--green);font-size:0.65rem;">Production</span></td><td style="font-size:0.7rem;"><code>python scripts/check_drift.py</code> → drift < 0.5</td></tr>
+<tr><td style="color:var(--violet);font-weight:700;">10</td><td>GPU memory stable during inference</td><td><span style="color:var(--green);font-size:0.65rem;">Production</span></td><td style="font-size:0.7rem;">nvidia-smi shows consistent memory (no creep)</td></tr>
+</table>
+
+<div class="callout green"><span style="font-size:1rem;">✅</span><span style="font-size:0.72rem;"><strong>All 10 passed?</strong> Safe to deploy. <strong>Any failed?</strong> Do not deploy. Fix it first. This checklist takes 5 minutes. A production incident takes 5 hours. You do the math.</span></div>
+
+<div style="text-align:center;margin:1rem 0;">
+<svg width="460" height="80" style="max-width:100%;font-family:'JetBrains Mono',monospace;">
+  <rect x="10" y="10" width="440" height="60" rx="8" fill="rgba(63,185,80,0.06)" stroke="#3fb950" stroke-width="1"/>
+  <text x="230" y="32" fill="#3fb950" font-size="9" text-anchor="middle" font-weight="700">✅ All 10 Passed</text>
+  <text x="230" y="50" fill="#8b949e" font-size="7" text-anchor="middle">→ Deploy to production. Sleep well.</text>
+  <text x="230" y="63" fill="#484f58" font-size="6" text-anchor="middle">Data ✓ Model ✓ Pipeline ✓ Production ✓</text>
+</svg>
+</div>
+</div></div>`
+},{
+  id:'6A.10',title:'CI/CD Pipeline — Automated Testing on Every PR',
+  fact:'<strong>GitHub Actions runs all 4 testing layers automatically on every git push.</strong> Data validation → model tests → pipeline smoke test → drift check. All in under 5 minutes. If any test fails, the PR is blocked. No bad model reaches production.',
+  render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.10</span> Automated CI/CD — GitHub Actions for Fine-Tuning</h2>
+<p>The final piece: <strong>automate everything</strong>. This workflow runs on every push and PR. It blocks merges if any of the 4 layers fail.</p>
+
+<div class="pipeline">
+<div class="pipeline-stage pass">📊 Data Validation</div><div class="pipeline-arrow" style="color:var(--green);">→</div>
+<div class="pipeline-stage pass">🧠 Model Tests</div><div class="pipeline-arrow" style="color:var(--green);">→</div>
+<div class="pipeline-stage pass">🔧 Pipeline Smoke</div><div class="pipeline-arrow" style="color:var(--green);">→</div>
+<div class="pipeline-stage pass">📈 Drift Check</div>
+</div>
+<div style="text-align:center;font-size:0.5rem;color:var(--green);margin:0.3rem 0;">All 4 layers pass → PR merges. Any layer fails → PR blocked.</div>
+
+<div style="display:flex;gap:0.3rem;justify-content:center;flex-wrap:wrap;margin:0.5rem 0;">
+  <button class="anim-btn active" onclick="showCiVis(0,this)" style="font-size:0.45rem;">🔴 PR With Failing Tests (Blocked)</button>
+  <button class="anim-btn" onclick="showCiVis(1,this)" style="font-size:0.45rem;">🟢 PR With All Tests Passing</button>
+</div>
+<div id="ciVizBox" style="background:var(--raised);border:1px solid var(--border);border-radius:10px;padding:1rem;margin:0.5rem 0;min-height:140px;"></div>
+
+<div class="code-wrapper"><button class="copy-btn2" onclick="copyCode(this)">📋 Copy</button>
+<div class="code-box">
+<span style="color:#6a9955;"># .github/workflows/test-finetune.yml</span>
+<span style="color:#569cd6;">name</span>: <span style="color:#ce9178;">Test Fine-Tuning Pipeline</span>
+<span style="color:#569cd6;">on</span>: [<span style="color:#ce9178;">push</span>, <span style="color:#ce9178;">pull_request</span>]
+
+<span style="color:#569cd6;">jobs</span>:
+  <span style="color:#569cd6;">test</span>:
+    <span style="color:#569cd6;">runs-on</span>: <span style="color:#ce9178;">ubuntu-latest</span>
+    <span style="color:#569cd6;">steps</span>:
+      - <span style="color:#569cd6;">uses</span>: <span style="color:#ce9178;">actions/checkout@v4</span>
+      - <span style="color:#569cd6;">run</span>: <span style="color:#ce9178;">pip install pandas pandera pytest evidently</span>
+
+      <span style="color:#6a9955;"># Layer 1: Data validation (seconds, CPU only)</span>
+      - <span style="color:#569cd6;">name</span>: <span style="color:#ce9178;">Layer 1 — Data Validation</span>
+        <span style="color:#569cd6;">run</span>: <span style="color:#ce9178;">python -m pytest tests/test_data.py -v</span>
+
+      <span style="color:#6a9955;"># Layer 2: Model behavioral tests (mock fixtures, CPU only)</span>
+      - <span style="color:#569cd6;">name</span>: <span style="color:#ce9178;">Layer 2 — Model Tests</span>
+        <span style="color:#569cd6;">run</span>: <span style="color:#ce9178;">python -m pytest tests/test_model.py -v</span>
+
+      <span style="color:#6a9955;"># Layer 3: Pipeline smoke test (needs GPU — use self-hosted runner)</span>
+      - <span style="color:#569cd6;">name</span>: <span style="color:#ce9178;">Layer 3 — Pipeline Smoke Test</span>
+        <span style="color:#569cd6;">run</span>: <span style="color:#ce9178;">python -m pytest tests/test_pipeline.py -v -m "gpu"</span>
+        <span style="color:#569cd6;">if</span>: <span style="color:#ce9178;">runner.name == 'gpu-runner'</span>  <span style="color:#6a9955;"># Skip on CPU runners</span>
+
+      <span style="color:#6a9955;"># Layer 4: Drift check (CPU only)</span>
+      - <span style="color:#569cd6;">name</span>: <span style="color:#ce9178;">Layer 4 — Drift Check</span>
+        <span style="color:#569cd6;">run</span>: <span style="color:#ce9178;">python scripts/check_drift.py</span></div></div>
+
+<div class="big-stat"><div class="number">&lt; 5 minutes</div><div class="label">from git push to all 4 layers tested</div></div>
+
+<div class="quiz" id="q6"><div class="question">What happens if the CI/CD pipeline finds a failing test on a PR?</div>
+<div class="options">
+<div class="option" data-correct="true" onclick="checkQuiz('q6',this)">A. The PR is blocked from merging. The failing layer tells you exactly where to look: Layer 1 = bad data, Layer 2 = broken model behavior, Layer 3 = pipeline won't train, Layer 4 = model has drifted. Fix the issue, push again, and the pipeline re-runs automatically.</div>
+<div class="option" onclick="checkQuiz('q6',this)">B. The PR merges anyway with a warning</div>
+<div class="option" onclick="checkQuiz('q6',this)">C. Someone manually reviews and decides whether to merge</div>
+</div><div class="feedback" id="q6-fb"></div></div>
+</div></div>`
+}];
+
+function showDataVis(mode,btn){var box=document.getElementById('dataVizBox');var bts=btn.parentElement.querySelectorAll('.anim-btn');bts.forEach(function(b){b.classList.remove('active')});btn.classList.add('active');
+if(mode===0){box.innerHTML='<div style="font-family:JetBrains Mono,monospace;font-size:0.55rem;line-height:2;">'+
+'<div style="color:var(--red);">❌ Row 2: instruction = <strong>None</strong> → SchemaError: "nullable=False"</div>'+
+'<div style="color:var(--red);">❌ Row 3: output = <strong>""</strong> → SchemaError: "output_not_empty"</div>'+
+'<div style="color:var(--red);">❌ Row 4: instruction = <strong>""</strong> → SchemaError: "instruction_not_empty"</div>'+
+'<div style="color:var(--amber);margin-top:0.8rem;">⚠️ 3 of 4 rows failed. Training ABORTED.</div>'+
+'<div style="color:var(--tdim);font-size:0.45rem;margin-top:0.3rem;">Pandera catches these in ~2ms. Training would have taken 30+ minutes to fail.</div>'+
+'</div>'}
+else{box.innerHTML='<div style="font-family:JetBrains Mono,monospace;font-size:0.55rem;line-height:2;">'+
+'<div style="color:var(--green);">✅ Row 1: instruction valid, output valid → PASS</div>'+
+'<div style="color:var(--green);">✅ Row 2: instruction valid, output valid → PASS</div>'+
+'<div style="color:var(--green);">✅ Row 3: instruction valid, output valid → PASS</div>'+
+'<div style="color:var(--green);margin-top:0.8rem;">🎉 All rows passed schema validation. Safe to train!</div>'+
+'<div style="color:var(--tdim);font-size:0.45rem;margin-top:0.3rem;">InstructionSchema.validate(df) completed in 2ms with 0 errors.</div>'+
+'</div>'}}
+
+function showMonitorVis(mode,btn){var box=document.getElementById('monitorVizBox');var bts=btn.parentElement.querySelectorAll('.anim-btn');bts.forEach(function(b){b.classList.remove('active')});btn.classList.add('active');
+if(mode===0){box.innerHTML='<div style="font-family:JetBrains Mono,monospace;font-size:0.55rem;line-height:1.8;">'+
+'<div style="color:var(--green);font-weight:700;">📊 Training Data (Reference Distribution)</div>'+
+'<div style="color:var(--tdim);">Topics: diabetes, Metformin, insulin, A1C, glucose, endocrinology</div>'+
+'<div style="color:var(--tdim);">Avg response length: 85 words</div>'+
+'<div style="color:var(--tdim);">Vocabulary: medical terminology, drug names, dose info</div>'+
+'<div style="margin-top:0.5rem;">'+
+'<svg width="400" height="50"><rect x="0" y="10" width="380" height="30" rx="4" fill="rgba(63,185,80,0.15)" stroke="#3fb950" stroke-width="1"/>'+
+'<text x="190" y="30" fill="#3fb950" font-size="8" text-anchor="middle">██████████████████████████████████████████████████ 100% Medical</text></svg></div></div>'}
+else if(mode===1){box.innerHTML='<div style="font-family:JetBrains Mono,monospace;font-size:0.55rem;line-height:1.8;">'+
+'<div style="color:var(--red);font-weight:700;">🔴 Production Data (Current Distribution — DRIFTED!)</div>'+
+'<div style="color:var(--tdim);">Topics: diabetes, Metformin, <span style="color:var(--red);">React, Kubernetes, cooking, Docker</span></div>'+
+'<div style="color:var(--tdim);">Avg response length: <span style="color:var(--red);">42 words (↓ 50%)</span></div>'+
+'<div style="color:var(--tdim);">Vocabulary: <span style="color:var(--red);">web dev terms appearing</span></div>'+
+'<div style="margin-top:0.5rem;">'+
+'<svg width="400" height="50"><rect x="0" y="10" width="190" height="30" rx="4" fill="rgba(63,185,80,0.15)" stroke="#3fb950" stroke-width="1"/>'+
+'<rect x="190" y="10" width="100" height="30" rx="0" fill="rgba(248,81,73,0.15)" stroke="#f85149" stroke-width="1"/>'+
+'<rect x="290" y="10" width="90" height="30" rx="4" fill="rgba(255,179,71,0.12)" stroke="#ffb347" stroke-width="1"/>'+
+'<text x="95" y="30" fill="#3fb950" font-size="7" text-anchor="middle">50% Medical</text>'+
+'<text x="240" y="30" fill="#f85149" font-size="7" text-anchor="middle">26% Web Dev</text>'+
+'<text x="335" y="30" fill="#ffb347" font-size="7" text-anchor="middle">24% Other</text></svg></div></div>'}
+else{box.innerHTML='<div style="font-family:JetBrains Mono,monospace;font-size:0.55rem;line-height:1.8;">'+
+'<div style="color:var(--amber);font-weight:700;">📈 Evidently AI Drift Report</div>'+
+'<div style="color:var(--tdim);">DataDriftPreset — comparing training vs production</div>'+
+'<div style="margin-top:0.3rem;background:rgba(0,0,0,0.3);padding:0.5rem;border-radius:6px;">'+
+'<div>  output column:  <span style="color:var(--red);">drift_score = 0.62</span>  <span style="color:var(--red);">🔴 DRIFT DETECTED</span></div>'+
+'<div>  topic column:   <span style="color:var(--red);">drift_score = 0.71</span>  <span style="color:var(--red);">🔴 DRIFT DETECTED</span></div>'+
+'<div style="color:var(--tdim);">  instruction:     drift_score = 0.23  🟢 OK</div></div>'+
+'<div style="color:var(--red);margin-top:0.5rem;">⛔ Overall drift score: 0.62 > 0.5 threshold → RETRAIN!</div>'+
+'<div style="color:var(--tdim);font-size:0.45rem;margin-top:0.3rem;">50% of production queries are about topics the model was never trained on.</div></div>'}}
+
+function showCiVis(mode,btn){var box=document.getElementById('ciVizBox');var bts=btn.parentElement.querySelectorAll('.anim-btn');bts.forEach(function(b){b.classList.remove('active')});btn.classList.add('active');
+if(mode===0){box.innerHTML='<div style="font-family:JetBrains Mono,monospace;font-size:0.55rem;line-height:2.2;">'+
+'<div>🔵 <strong>PR #42:</strong> "Add new training data"</div>'+
+'<div style="color:var(--green);">✅ Layer 1: Data Validation — PASSED (0.8s)</div>'+
+'<div style="color:var(--green);">✅ Layer 2: Model Tests — PASSED (1.2s)</div>'+
+'<div style="color:var(--red);">❌ Layer 3: Pipeline Smoke — FAILED (45s)</div>'+
+'<div style="color:var(--red);margin-left:1rem;">  → Loss is NaN! Learning rate too high for new data.</div>'+
+'<div style="color:var(--amber);">⏸️ Layer 4: Drift Check — SKIPPED (pipeline failed)</div>'+
+'<div style="color:var(--red);margin-top:0.5rem;">⛔ PR BLOCKED. Fix Layer 3 and push again.</div>'+
+'<div style="color:var(--tdim);font-size:0.45rem;">Status: ❌ Checks failed — merging is blocked until all pass.</div></div>'}
+else{box.innerHTML='<div style="font-family:JetBrains Mono,monospace;font-size:0.55rem;line-height:2.2;">'+
+'<div>🔵 <strong>PR #43:</strong> "Fix learning rate + add validation"</div>'+
+'<div style="color:var(--green);">✅ Layer 1: Data Validation — PASSED (0.7s)</div>'+
+'<div style="color:var(--green);">✅ Layer 2: Model Tests — PASSED (1.0s)</div>'+
+'<div style="color:var(--green);">✅ Layer 3: Pipeline Smoke — PASSED (38s)</div>'+
+'<div style="color:var(--green);">✅ Layer 4: Drift Check — PASSED (2.1s)</div>'+
+'<div style="color:var(--green);margin-top:0.5rem;">🎉 ALL 4 LAYERS PASSED — PR can be merged!</div>'+
+'<div style="color:var(--tdim);font-size:0.45rem;">Status: ✅ All checks passed — 1 reviewer approval required.</div></div>'}}
+
+let cur=0;const visited=new Set([0]);
+function render(i){cur=i;visited.add(i);
+document.getElementById('slideContainer').innerHTML=S[i].render();
+document.getElementById('stepLabel').textContent=(i+1)+'/10';
+document.getElementById('funFactText').innerHTML='<strong>'+S[i].id+':</strong> '+S[i].fact;
+document.getElementById('stepDots').innerHTML=S.map(function(_,j){return '<div class="step-dot'+(j===cur?' active':visited.has(j)?' done':'')+'" onclick="goTo('+j+')"></div>'}).join('');
+document.getElementById('topicChips').innerHTML=S.map(function(s,j){return '<span class="topic-chip'+(j===cur?' current':visited.has(j)?' visited':'')+'" onclick="goTo('+j+')">'+s.id+'</span>'}).join('');
+document.getElementById('prevBtn').disabled=i===0;
+var nb=document.getElementById('nextBtn');
+if(i===S.length-1){nb.textContent='✓ Complete';nb.style.background='var(--green)';}
+else{nb.textContent='Next →';nb.style.background='';nb.style.color=''}
+document.getElementById('slideContainer').scrollIntoView({behavior:'smooth',block:'start'})}
+function goTo(i){if(i<0||i>=S.length)return;render(i)}
+document.addEventListener('keydown',function(e){if(e.key==='ArrowRight'&&cur<S.length-1)goTo(cur+1);if(e.key==='ArrowLeft'&&cur>0)goTo(cur-1)});
+render(0);
+</script>
+</body>
+</html>
