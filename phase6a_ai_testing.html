@@ -230,6 +230,40 @@ render:()=>`
     r = ask(<span style="color:#ce9178;">"List all biguanide drugs."</span>)
     <span style="color:#569cd6;">assert</span> <span style="color:#ce9178;">"Metformin"</span> <span style="color:#569cd6;">in</span> r  <span style="color:#6a9955;"># Real drug</span>
     <span style="color:#569cd6;">assert</span> <span style="color:#ce9178;">"Metformix"</span> <span style="color:#569cd6;">not in</span> r  <span style="color:#6a9955;"># Hallucinated!</span></div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem">🧠 Hallucination: Detection vs Prevention</h3>
+<p style="font-size:0.9rem;color:var(--tdim);">The test above <strong style="color:var(--amber);">detects</strong> hallucinations after training. But it doesn't <strong style="color:var(--red);">prevent</strong> the model from hallucinating in the first place. Detection is reactive; prevention is proactive.</p>
+
+<table style="width:100%;border-collapse:collapse;font-size:0.82rem;margin:1rem 0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.4rem;">Method</th><th style="text-align:left;padding:0.4rem;">How It Works</th><th style="text-align:left;padding:0.4rem;">Type</th><th style="text-align:left;padding:0.4rem;">Phase</th></tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem;font-weight:700;color:var(--amber);">Assertion Tests</td><td style="padding:0.4rem;">assert fake_word not in output — catches known hallucinations</td><td style="color:var(--amber);">Detection</td><td>6A (now)</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem;font-weight:700;color:var(--green);">DPO Training</td><td style="padding:0.4rem;">Train with "chosen=truthful" vs "rejected=hallucinated" pairs. Model learns to prefer truth.</td><td style="color:var(--green);">Prevention</td><td>Phase 6</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem;font-weight:700;color:var(--green);">RAG (Retrieval)</td><td style="padding:0.4rem;">Fetch facts from source docs BEFORE generating. Model answers from evidence, not memory.</td><td style="color:var(--green);">Prevention</td><td>Advanced</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem;font-weight:700;color:var(--green);">Guardrails</td><td style="padding:0.4rem;">Filter outputs: block known-fake terms, validate against a whitelist of real drug names.</td><td style="color:var(--green);">Prevention</td><td>Advanced</td></tr>
+<tr><td style="padding:0.4rem;font-weight:700;color:var(--green);">Constrained Decoding</td><td style="padding:0.4rem;">Force model to only output from a valid list. Zero chance of hallucination, but limited flexibility.</td><td style="color:var(--green);">Prevention</td><td>Advanced</td></tr>
+</tbody>
+</table>
+
+<div class="callout" style="background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.75rem 1rem;margin:0.75rem 0;font-size:0.88rem;line-height:1.7;">
+<strong>💡 Detection alone is not enough.</strong> The anti-hallucination test catches "Metformix" — but what about unknown fake drug names you CANNOT predict? DPO training (Phase 6) is the best defense: the model learns the PATTERN of honesty, not just a blacklist of fake words.
+</div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem">📝 DPO: Teaching the Model to Prefer Truth</h3>
+<div class="code-box" style="font-size:0.82rem;">
+<span style="color:#6a9955;"># DPO preference pairs — teach the model WHAT NOT to say</span>
+preference_data = [
+    {
+        <span style="color:#ce9178;">"prompt"</span>: <span style="color:#ce9178;">"List all biguanide drugs."</span>,
+        <span style="color:#ce9178;">"chosen"</span>: <span style="color:#ce9178;">"Metformin is the only biguanide currently available."</span>,  <span style="color:#6a9955;">// Truthful</span>
+        <span style="color:#ce9178;">"rejected"</span>: <span style="color:#ce9178;">"Metformin, Metformix, Diabetix, and Glucophagex."</span>   <span style="color:#6a9955;">// Hallucinated!</span>
+    }
+]
+<span style="color:#6a9955;"># DPOTrainer: "Be more like chosen, less like rejected"</span>
+<span style="color:#569cd6;">from</span> trl <span style="color:#569cd6;">import</span> DPOTrainer
+trainer = DPOTrainer(model=model, train_dataset=preference_data, beta=<span style="color:#ce9178;">0.1</span>)
+trainer.train()
+<span style="color:#6a9955;"># Model now penalizes inventing fake names — it learned the pattern of honesty</span></div>
 </div></div>`},
 {id:'6A.7',title:'Layer 3: Pipeline Testing',
 fact:'Every pipeline test should answer: Does training start? Does it complete without OOM? Is the adapter saved? Can the saved adapter be loaded and used?',
