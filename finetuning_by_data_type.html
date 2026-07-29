@@ -567,6 +567,22 @@ function render(){
 <div class="callout" style="margin-top:0.5rem;"><strong>🎯 Match model size to dataset size.</strong> Small data + big model = memorizes, not learns. LoRA trains only 0.4% of parameters — but that 0.4% is 6x larger on Llama-7B vs TinyLlama. Each LoRA parameter gets fewer training examples on a bigger model. Start with TinyLlama. Upgrade only when you have 5,000+ Q&A pairs.</div>
 <div class="callout" style="margin-top:0.5rem;background:rgba(184,112,0,0.06);border:1px solid rgba(184,112,0,0.2);"><strong>*Training time:</strong> 500 Q&A, 10 epochs, T4 GPU, 8-bit quantization. With 5,000 Q&A, multiply time by ~10. With A100, divide time by ~3.</div>
 
+<h3 style="margin-top:1.5rem;">📡 Why Preprocessing Matters — The LLM Never Sees Raw Data</h3>
+<div style="overflow-x:auto;">
+<table class="tbl">
+<thead><tr><th></th><th>📸 Camera</th><th>🛰️ LIDAR</th><th>🔧 Sensor</th></tr></thead>
+<tbody>
+<tr style="background:rgba(26,110,52,0.04);"><td><strong>RAW Data/sec</strong></td><td><strong>72 MB</strong><br>640x640x3ch, 60FPS</td><td><strong>56 MB</strong><br>3.5M pts x 16 bytes</td><td><strong>1 MB</strong><br>10K rows x 12 features</td></tr>
+<tr><td><strong>Bottleneck</strong></td><td>6-8 cameras = 500 MB/sec<br>PCIe upload + CPU decode</td><td>112M pts per scan<br>Too many for real-time</td><td>Raw vibration signal<br>Meaningless numbers</td></tr>
+<tr style="background:rgba(26,110,52,0.04);"><td><strong>Preprocess</strong></td><td>Resize 640x640, normalize, HWC->CHW</td><td>Voxel downsample (0.5m), DBSCAN cluster</td><td>FFT, RMS, Kurtosis, Crest Factor</td></tr>
+<tr><td><strong>After Preprocess</strong></td><td>1.2M floats (normalized)</td><td>~500K pts -> 47 clusters</td><td>12 features per window</td></tr>
+<tr style="background:rgba(91,58,168,0.06);"><td><strong>What LLM Receives</strong></td><td colspan="3" style="text-align:center;font-size:0.8rem;"><strong>"Object cluster 3. Height: 12.4m. Area: 45.2m2. Verticality: 0.95."</strong><br>~1 KB of text per observation<br><span style="color:var(--violet);font-weight:700">72,000x reduction from raw sensor data to LLM input</span></td></tr>
+</tbody></table>
+</div>
+
+<div class="callout" style="margin-top:0.5rem;"><strong>💡 The LLM's context window is 2,048 tokens (~8,000 characters).</strong> You physically CANNOT feed it raw sensor data. The entire preprocessing pipeline exists for ONE reason: compress the physical world into a sentence the LLM can read. Same pattern across Camera, LIDAR, Sensor, Tabular — different data, same conversion to text.</div>
+
+
 
 <h3 style="margin-top:1.5rem;">🧩 Design Patterns in Our Fine-Tuning Code</h3>
 <div style="overflow-x:auto;">
