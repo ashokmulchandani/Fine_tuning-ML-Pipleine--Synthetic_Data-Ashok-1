@@ -98,7 +98,22 @@ def main():
         df.to_csv(data_path, index=False)
         print(f"[INFO] Created demo dataset: {data_path} ({len(df)} rows)")
 
-    df = pd.read_csv(data_path)
+    # Load data — supports BOTH JSON (from notebooks) and CSV
+    if str(data_path).endswith('.json'):
+        import json
+        with open(data_path) as f:
+            data = json.load(f)
+        df = pd.DataFrame(data)
+        # Ensure required columns exist
+        if 'instruction' not in df.columns and 'prompt' in df.columns:
+            df['instruction'] = df['prompt']  # DPO format compatibility
+        if 'output' not in df.columns and 'chosen' in df.columns:
+            df['output'] = df['chosen']       # DPO format compatibility
+        # Add input column if missing
+        if 'input' not in df.columns:
+            df['input'] = ''
+    else:
+        df = pd.read_csv(data_path)
     print(f"Loaded {len(df)} rows from {DATASET_PATH}")
 
     # Validate

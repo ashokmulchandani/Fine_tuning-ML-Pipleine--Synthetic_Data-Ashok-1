@@ -13,6 +13,7 @@ stages:
     deps:
       - scripts/prepare_data.py
       - data/instruction_data.csv
+      - data/instruction_data.json
     outs:
       - data/train_split.csv
       - data/val_split.csv
