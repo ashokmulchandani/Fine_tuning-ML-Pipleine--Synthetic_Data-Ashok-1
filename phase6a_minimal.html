@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phase 6A Minimal Test</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#06090f;--card:#0d1117;--raised:#161b22;--border:#21262d;--text:#e6edf3;--tdim:#8b949e;--violet:#a371f7;--vbg:#a371f715;--green:#3fb950}
+body.light{--bg:#f6f8fa;--card:#fff;--raised:#e8ecf0;--border:#d0d7de;--text:#1f2328;--tdim:#656d76;--violet:#8250df;--vbg:#f3effc;--green:#1a7f37}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:0.3s}
+.app{max-width:1000px;margin:0 auto;padding:2rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:2rem}
+.topbar{position:sticky;top:0;z-index:100;background:rgba(6,9,15,0.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0.6rem 2rem;display:flex;align-items:center;gap:1rem}
+.topbar .logo{font-family:'Orbitron',sans-serif;font-size:0.7rem;letter-spacing:0.15em;color:var(--violet)}
+.topbar .step-label{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--tdim)}
+</style>
+</head>
+<body>
+<nav class="topbar"><span class="logo">FINE-TUNING - PHASE 6A</span><span class="step-label">1/10</span></nav>
+<div class="app">
+<header style="text-align:center;padding:2rem 0">
+<h1 style="font-family:'Orbitron',sans-serif;font-size:1.5rem;color:var(--violet)">AI Testing & QA for Fine-Tuned Models</h1>
+</header>
+<div id="test" class="card"><p>Loading...</p></div>
+<div id="slideContainer" class="card"></div>
+</div>
+<script>
+// Test 1: Basic DOM access
+document.getElementById('test').innerHTML = '<p style="color:var(--green)">Test 1 PASSED: JS is executing</p>';
+
+// Test 2: Simple slide render
+var slide = '<h2>Slide 6A.1: Why AI Testing is Different</h2><p>Same prompt, different output. Data-as-code. Silent degradation.</p>';
+document.getElementById('slideContainer').innerHTML = slide;
+document.getElementById('test').innerHTML += '<p style="color:var(--green)">Test 2 PASSED: Slide rendered</p>';
+</script>
+</body>
+</html>
