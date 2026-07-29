@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fine-Tuning Pipeline — By Data Type</title><!-- cache-bust-20260729 -->
+<title>Fine-Tuning Pipeline — By Data Type</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f8f9fc;--card:#fff;--border:#dde0e6;--text:#1a1d23;--tdim:#4a4f5b;--tmut:#8b909b;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--red:#c62828;--cyan:#007a99;--magenta:#9e2a6b;--blue:#2979ff;}
@@ -118,7 +118,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
   <button class="tab" onclick="switchTab(5)"><span class="tb-emoji">🚀</span> Deploy: YOLO vs LLM</button>
   <button class="tab" onclick="switchTab(6)"><span class="tb-emoji">🔧</span> Sensor FT</button>
   <button class="tab" onclick="switchTab(7)"><span class="tb-emoji">🛰️</span> LIDAR FT</button>
-  <button class="tab" onclick="switchTab(8)"><span class="tb-emoji">🆚</span> LLM vs Classic ML</button>
 </div>
 
 <div id="app"></div>
@@ -437,60 +436,6 @@ const tabs=[
        {n:2,title:'TensorRT / vLLM Deploy',tag:'dpo',viz:'<span class="vz-box vz-input">☁️ LIDAR Stream</span><span class="vz-arrow">-></span><span class="vz-box vz-process">⚡ TensorRT/vLLM</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📝 3D Labels</span>',code:'# Two deployment paths:\n# 1. PointNet + TensorRT -> real-time 3D detection\n# 2. vLLM API -> text-based scene descriptions\n# Both: merge_and_unload() adapter first (Phase 3.10 rule)'},
        {n:3,title:'3D Visualization',tag:'sft',viz:'<span class="vz-box vz-input">☁️ Raw LIDAR</span><span class="vz-arrow">+</span><span class="vz-box vz-input">🤖 Model Output</span><span class="vz-arrow">-></span><span class="vz-box vz-output">🌍 CloudCompare</span>',code:'# Visualize in CloudCompare/Open3D:\n# - Load original .las point cloud\n# - Overlay predicted labels (building, tree, vehicle)\n# - Export 3D mesh (.ply/.obj) for Blender/Unreal'},
        {n:4,title:'Monitor+Retrain',tag:'dpo',viz:'<span class="vz-box vz-input">📊 New Scenes</span><span class="vz-arrow">-></span><span class="vz-box vz-process">🔍 Drift?</span><span class="vz-arrow">-></span><span class="vz-box vz-output">🔄 Retrain</span>',code:'Evidently AI -> drift on new LIDAR sensor models/environments\n-> auto-retrain with new labeled scenes'},
-     ]},
-  ]
-},
-{ // 8: LLM vs Classic ML
-  name:'🆚 LLM FT vs Classic ML', phases:'Different Patterns for Different ML',
-  metrics:[
-    {val:'Text->LLM',lbl:'Our Approach',color:'var(--violet)'},
-    {val:'Numbers->Model',lbl:'Classic ML',color:'var(--amber)'},
-    {val:'Behavioral',lbl:'Our Evaluation',color:'var(--green)'},
-    {val:'RMSE/R2',lbl:'Classic Eval',color:'var(--cyan)'},
-  ],
-  banner:[
-    {val:'Different World',lbl:'Different Pipeline',color:'var(--violet)'},
-    {val:'Same Goal',lbl:'Quality Output',color:'var(--green)'},
-    {val:'Pandera',lbl:'DataFrame Validation',color:'var(--amber)'},
-    {val:'MFT/INV/DIR',lbl:'Behavioral Tests',color:'var(--cyan)'},
-  ],
-  stages:[
-    {emoji:'📋',name:'COMPARE',time:'Side by Side',desc:'Classic ML vs LLM Fine-Tuning',
-     substeps:[
-       {n:1,title:'Classic ML Pipeline vs LLM Fine-Tuning — Why Different Patterns',tag:'data',code:'CLASSIC ML (tabular, scikit-learn)          OUR LLM FINE-TUNING (text, HuggingFace)
-  ─────────────────────────────────────        ───────────────────────────────────────
-  ingest_data.py  FACTORY -> Zip/CSV          format_instruction()  ONE format: Alpaca
-    "Which file format? Pick ingestor."          "Everything becomes ### Instruction:..."
-
-  handle_missing_values.py  STRATEGY          prepare_data.py — Pandera schema validation
-    "Drop nulls or fill with mean?"              "Any null? REJECT the row. Fix it first."
-    Pandera = DataFrame validation library       Catches 90% of data issues. 2ms on CPU.
-    Like pydantic but for pandas DataFrames.     Checks: columns present, types correct,
-    pip install pandera                           nulls forbidden, empty strings forbidden.
-
-  feature_engineering.py  STRATEGY            features_to_text()  SAME function everywhere
-    "Log, Scale, OneHot encode..."              "RMS:4.2 Kurtosis:8.2 -> Machine Pump-A..."
-    Numbers -> scaled numbers                   Numbers -> English sentences
-                                                LLMs read TEXT, not scaled floats!
-
-  outlier_detection.py  STRATEGY              DBSCAN clustering (LIDAR), noise label -1
-    "ZScore > 3? IQR outside range? Remove."    "Points too far from any cluster? label=-1."
-
-  data_splitter.py  STRATEGY                  prepare_data.py — SAME!
-    Train/Test split (80/20)                     Train/Val split (90/10)
-    Only shared pattern between both worlds.
-
-  model_building.py  STRATEGY                 train_stage.py — SAME MODEL always
-    "Swap LinearRegression for RandomForest"     TinyLlama/Llama + LoRA. Same model.
-    Multiple swappable algorithms                One LLM. LoRA adapts it to any domain.
-
-  model_evaluator.py  STRATEGY                evaluate_stage.py — BEHAVIORAL TESTS
-    "RMSE=2.3, R2=0.87"                         MFT: "Does it know Metformin?"
-    Numbers tell you accuracy.                   INV: "Same answer when rephrased?"
-                                                 DIR: "Refuses harmful prompts?"
-                                                 LLMs need behavior tests, not just metrics.
-
-  BOTTOM LINE: Same goal (quality output). Different data world. Different tools needed.'},
      ]},
   ]
 }
