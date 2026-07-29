@@ -552,6 +552,22 @@ function render(){
   <div style="background:rgba(0,122,153,0.06);border:1px solid rgba(0,122,153,0.2);border-radius:8px;padding:0.5rem;"><strong style="color:var(--cyan);">MFT/INV/DIR = Behavioral Tests</strong><br>MFT: Knows facts? INV: Robust to phrasing? DIR: Refuses harm?<br><span style="color:var(--tmut);">Phase 6A slide 6.6 | tests/test_model.py | 10 tests</span></div>
 </div>
 
+<h3 style="margin-top:1.5rem;">🧩 Design Patterns in Our Fine-Tuning Code</h3>
+<div style="overflow-x:auto;">
+<table class="tbl">
+<thead><tr><th>Pattern</th><th>Where in Our Code</th><th>How It Works</th></tr></thead>
+<tbody>
+<tr style="background:rgba(26,110,52,0.04);"><td><strong>Adapter</strong></td><td>LoRA (PEFT library)</td><td style="font-size:0.7rem;">Adapts TinyLlama to any domain without changing base weights. <code>LoraConfig(r=8, target_modules=["q_proj","v_proj"])</code>. Same model, different domains.</td></tr>
+<tr><td><strong>Context Manager</strong></td><td>scripts/mlflow_tracking.py</td><td style="font-size:0.7rem;"><code>with TrackRun(...) as run:</code> — auto-opens/closes MLflow run. Logs params, metrics, adapter on exit. Like <code>with open()</code>.</td></tr>
+<tr style="background:rgba(26,110,52,0.04);"><td><strong>Pipeline / DAG</strong></td><td>dvc.yaml</td><td style="font-size:0.7rem;"><code>prepare_data -> train -> evaluate</code>. Each stage independent. Hash-based caching. <code>dvc repro</code> walks the DAG.</td></tr>
+<tr><td><strong>Template Method</strong></td><td>format_instruction()</td><td style="font-size:0.7rem;">Fixed structure: <code>### Instruction:</code> / <code>### Response:</code>. Content varies by data type. Same function for Text, Tabular, Sensor, LIDAR.</td></tr>
+<tr style="background:rgba(26,110,52,0.04);"><td><strong>Decorator</strong></td><td>TrackRun wrapping trainer.train()</td><td style="font-size:0.7rem;">Adds logging/monitoring without changing training code. <code>trainer.train()</code> runs unchanged. TrackRun wraps around it.</td></tr>
+<tr><td><strong>Observer</strong></td><td>MLflow + Evidently AI</td><td style="font-size:0.7rem;">MLflow watches training (loss, params). Evidently watches production (drift, daily 6am). Neither modifies what it observes.</td></tr>
+</tbody></table>
+</div>
+<div class="callout" style="margin-top:0.75rem;"><strong>💡 No Factory.py or Strategy.py needed.</strong> Patterns emerge from composing 3 key files: format_instruction(), with TrackRun(...), and dvc.yaml. LLM fine-tuning is simpler — one model, one format, one pipeline.</div>
+
+
 
 <h3 style="margin-top:1.5rem;">🔓 Model Licensing — Are They Free?</h3>
 <div style="overflow-x:auto;">
