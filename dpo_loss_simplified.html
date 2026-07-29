@@ -200,6 +200,67 @@ function updateBeta(){
   </p>
 </div>
 
+<div class="card" style="margin-top:2rem">
+  <h2>🧠 All 5 Fine-Tuning Trainers — What, When & Code</h2>
+  <p style="font-size:0.82rem;color:var(--tdim);">Same model (TinyLlama). Same LoRA. Different trainers teach different skills. Here is every trainer, when to use it, and the exact code.</p>
+
+  <div style="overflow-x:auto;margin-top:1rem">
+  <table style="width:100%;border-collapse:collapse;font-size:0.78rem">
+  <thead>
+  <tr style="border-bottom:2px solid var(--border)">
+    <th style="text-align:left;padding:0.4rem 0.6rem;color:var(--violet);font-size:0.65rem">Trainer</th>
+    <th style="text-align:left;padding:0.4rem 0.6rem;color:var(--violet);font-size:0.65rem">What It Teaches</th>
+    <th style="text-align:left;padding:0.4rem 0.6rem;color:var(--violet);font-size:0.65rem">When to Use</th>
+    <th style="text-align:left;padding:0.4rem 0.6rem;color:var(--violet);font-size:0.65rem">Usage</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr style="border-bottom:1px solid var(--border);background:rgba(26,110,52,0.03)">
+    <td style="padding:0.3rem 0.6rem;font-weight:700;font-family:'Space Grotesk',sans-serif;font-size:0.7rem">Trainer</td>
+    <td style="padding:0.3rem 0.6rem;font-size:0.72rem">Domain knowledge — words, facts, style</td>
+    <td style="padding:0.3rem 0.6rem;font-size:0.72rem">You have raw text (PDFs, docs, Wikipedia). No Q&A format.</td>
+    <td style="padding:0.3rem 0.6rem;color:var(--green);font-weight:700;font-size:0.7rem">Phase 4</td>
+  </tr>
+  <tr style="border-bottom:1px solid var(--border)">
+    <td colspan="4" style="padding:0.2rem 0.6rem"><code style="background:rgba(91,58,168,0.06);padding:0.15em 0.4em;border-radius:4px;font-size:0.65rem">Trainer(model=model, args=training_args, train_dataset=chunks).train()</code></td>
+  </tr>
+  <tr style="border-bottom:1px solid var(--border);background:rgba(91,58,168,0.03)">
+    <td style="padding:0.3rem 0.6rem;font-weight:700;font-family:'Space Grotesk',sans-serif;font-size:0.7rem;color:var(--violet)">SFTTrainer</td>
+    <td style="padding:0.3rem 0.6rem;font-size:0.72rem">Follow instructions — Q → A mapping</td>
+    <td style="padding:0.3rem 0.6rem;font-size:0.72rem">You have Q&A pairs. Model needs to answer questions.</td>
+    <td style="padding:0.3rem 0.6rem;color:var(--violet);font-weight:700;font-size:0.7rem">Phase 5 ★</td>
+  </tr>
+  <tr style="border-bottom:1px solid var(--border)">
+    <td colspan="4" style="padding:0.2rem 0.6rem"><code style="background:rgba(91,58,168,0.06);padding:0.15em 0.4em;border-radius:4px;font-size:0.65rem">SFTTrainer(model=model, train_dataset=ds, formatting_func=format_instruction, args=args).train()</code></td>
+  </tr>
+  <tr style="border-bottom:1px solid var(--border);background:rgba(184,112,0,0.03)">
+    <td style="padding:0.3rem 0.6rem;font-weight:700;font-family:'Space Grotesk',sans-serif;font-size:0.7rem;color:var(--amber)">DPOTrainer</td>
+    <td style="padding:0.3rem 0.6rem;font-size:0.72rem">HOW to deliver — tone, safety, thoroughness</td>
+    <td style="padding:0.3rem 0.6rem;font-size:0.72rem">You want better answers (thorough vs lazy, safe vs harmful).</td>
+    <td style="padding:0.3rem 0.6rem;color:var(--amber);font-weight:700;font-size:0.7rem">Phase 6</td>
+  </tr>
+  <tr style="border-bottom:1px solid var(--border)">
+    <td colspan="4" style="padding:0.2rem 0.6rem"><code style="background:rgba(91,58,168,0.06);padding:0.15em 0.4em;border-radius:4px;font-size:0.65rem">DPOTrainer(model=model, train_dataset=prefs, beta=0.1, args=args).train()</code></td>
+  </tr>
+  <tr style="border-bottom:1px solid var(--border);background:rgba(198,40,40,0.03)">
+    <td style="padding:0.3rem 0.6rem;font-weight:700;font-family:'Space Grotesk',sans-serif;font-size:0.7rem;color:var(--red)">RewardTrainer</td>
+    <td style="padding:0.3rem 0.6rem;font-size:0.72rem">Score responses — "How good is this answer?"</td>
+    <td style="padding:0.3rem 0.6rem;font-size:0.72rem">RLHF step 1. Needs human-ranked comparisons.</td>
+    <td style="padding:0.3rem 0.6rem;color:var(--red);font-weight:700;font-size:0.7rem">< 1% usage</td>
+  </tr>
+  <tr style="border-bottom:1px solid var(--border);background:rgba(198,40,40,0.03)">
+    <td style="padding:0.3rem 0.6rem;font-weight:700;font-family:'Space Grotesk',sans-serif;font-size:0.7rem;color:var(--red)">PPOTrainer</td>
+    <td style="padding:0.3rem 0.6rem;font-size:0.72rem">Maximize reward — reinforce good responses</td>
+    <td style="padding:0.3rem 0.6rem;font-size:0.72rem">RLHF step 2. Needs RewardTrainer output.</td>
+    <td style="padding:0.3rem 0.6rem;color:var(--red);font-weight:700;font-size:0.7rem">< 1% usage</td>
+  </tr>
+  </tbody>
+  </table>
+  </div>
+
+  <p style="font-size:0.72rem;color:var(--tdim);margin-top:1rem"><strong>★ SFT = 90% of fine-tuning projects.</strong> DPO polishes the last 10% (tone, safety). RLHF (Reward+PPO) is overkill for most — big labs only. Start with SFT. Add DPO when you need the model to be more specific about HOW it answers, not just WHAT it answers.</p>
+</div>
+
 </div>
 </body>
 </html>
