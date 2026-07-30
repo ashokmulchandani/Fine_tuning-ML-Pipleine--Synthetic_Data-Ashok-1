@@ -349,6 +349,27 @@ render:()=>`
 </tbody>
 </table>
 <div class="callout"><strong>✅ All 10 passed?</strong> Safe to deploy. <strong>Any failed?</strong> Don't deploy. Fix it first.</div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem">🔗 How Each Checklist Item Maps to Our Test Suite</h3>
+<p style="font-size:0.88rem;color:var(--tdim);">Every checklist item is automated by a specific file in our project. Nothing is manual.</p>
+
+<table style="width:100%;border-collapse:collapse;font-size:0.75rem;margin:0.5rem 0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.3rem 0.5rem;">#</th><th style="text-align:left;padding:0.3rem 0.5rem;">Checklist</th><th style="text-align:left;padding:0.3rem 0.5rem;">Layer</th><th style="text-align:left;padding:0.3rem 0.5rem;">Pyramid Layer</th><th style="text-align:left;padding:0.3rem 0.5rem;">Automated By</th></tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--border);background:rgba(198,40,40,0.03);"><td style="padding:0.3rem 0.5rem;">1</td><td style="padding:0.3rem 0.5rem;">No nulls in Q&A</td><td style="color:var(--red);">Data</td><td style="padding:0.3rem 0.5rem;">L1 (Unit) + L8 (Validation)</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;"><code>tests/test_data.py</code> — Pandera schema</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(198,40,40,0.03);"><td style="padding:0.3rem 0.5rem;">2</td><td style="padding:0.3rem 0.5rem;">No empty strings</td><td style="color:var(--red);">Data</td><td style="padding:0.3rem 0.5rem;">L1 (Unit) + L8 (Validation)</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;"><code>tests/test_data.py</code> — same schema</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(184,112,0,0.03);"><td style="padding:0.3rem 0.5rem;">3</td><td style="padding:0.3rem 0.5rem;">Model responds</td><td style="color:var(--amber);">Model</td><td style="padding:0.3rem 0.5rem;">L2 (Prompt Testing)</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;"><code>tests/test_model.py</code> — MFT test</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(184,112,0,0.03);"><td style="padding:0.3rem 0.5rem;">4</td><td style="padding:0.3rem 0.5rem;">Keywords in response</td><td style="color:var(--amber);">Model</td><td style="padding:0.3rem 0.5rem;">L2 (Prompt Testing)</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;"><code>assert_contains_any()</code> in test_model.py</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(91,58,168,0.03);"><td style="padding:0.3rem 0.5rem;">5</td><td style="padding:0.3rem 0.5rem;">Training no OOM</td><td style="color:var(--violet);">Pipeline</td><td style="padding:0.3rem 0.5rem;">L10 (End-to-End)</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;"><code>dvc repro</code> + GPU monitoring</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(91,58,168,0.03);"><td style="padding:0.3rem 0.5rem;">6</td><td style="padding:0.3rem 0.5rem;">Loss decreases</td><td style="color:var(--violet);">Pipeline</td><td style="padding:0.3rem 0.5rem;">L9 (ML Validation)</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;">MLflow UI — loss curve</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(91,58,168,0.03);"><td style="padding:0.3rem 0.5rem;">7</td><td style="padding:0.3rem 0.5rem;">Adapter saved > 0B</td><td style="color:var(--violet);">Pipeline</td><td style="padding:0.3rem 0.5rem;">L10 (End-to-End)</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;"><code>train_stage.py</code> — os.path.getsize()</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(91,58,168,0.03);"><td style="padding:0.3rem 0.5rem;">8</td><td style="padding:0.3rem 0.5rem;">Adapter loads</td><td style="color:var(--violet);">Pipeline</td><td style="padding:0.3rem 0.5rem;">L10 (End-to-End)</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;"><code>tests/test_pipeline.py</code> — GPU test</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(26,110,52,0.03);"><td style="padding:0.3rem 0.5rem;">9</td><td style="padding:0.3rem 0.5rem;">No drift vs baseline</td><td style="color:var(--green);">Production</td><td style="padding:0.3rem 0.5rem;">L3 (Eval) + L9 (Validation)</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;"><code>check_drift.py</code> + <code>dvc metrics show</code></td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(26,110,52,0.03);"><td style="padding:0.3rem 0.5rem;">10</td><td style="padding:0.3rem 0.5rem;">GPU memory stable</td><td style="color:var(--green);">Production</td><td style="padding:0.3rem 0.5rem;">L9 (ML Validation)</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;">MLflow auto-logs <code>gpu_memory_mb</code></td></tr>
+</tbody>
+</table>
+
+<div class="callout" style="background:rgba(91,58,168,0.06);border:1px solid rgba(91,58,168,0.2);"><strong>🔗 The overlap:</strong> The 10-point checklist is the HUMAN checklist you run before every deployment. The pyramid is the AUTOMATED test suite that runs on every git push. Same checks, different execution — one manual, one automated.</div>
 </div></div>`},
 {id:'6A.10',title:'CI/CD Pipeline for Fine-Tuning Tests',
 fact:'GitHub Actions can run all 10 checks automatically on every PR. Data validation, model smoke test, pipeline test — all in under 5 minutes on a free runner.',
