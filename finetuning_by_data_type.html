@@ -582,6 +582,22 @@ function render(){
 
 <div class="callout" style="margin-top:0.5rem;"><strong>💡 The LLM's context window is 2,048 tokens (~8,000 characters).</strong> You physically CANNOT feed it raw sensor data. The entire preprocessing pipeline exists for ONE reason: compress the physical world into a sentence the LLM can read. Same pattern across Camera, LIDAR, Sensor, Tabular — different data, same conversion to text.</div>
 
+<h3 style="margin-top:1.5rem;">🏗️ What is Under the Hood — Model Architecture Per Data Type</h3>
+<div style="overflow-x:auto;">
+<table class="tbl">
+<thead><tr><th>Tab</th><th>Data Type</th><th>Model</th><th>Architecture</th><th>How It Works</th></tr></thead>
+<tbody>
+<tr style="background:rgba(91,58,168,0.04);"><td>📝 Text FT</td><td>Q&A pairs</td><td>TinyLlama/Llama</td><td><strong>Decoder-only Transformer</strong></td><td style="font-size:0.7rem;">Autoregressive: predicts next token from previous tokens. Like GPT. 32 layers of self-attention + FFN.</td></tr>
+<tr><td>📊 Tabular FT</td><td>Rows → sentences</td><td>TinyLlama/Llama</td><td><strong>Decoder-only Transformer</strong></td><td style="font-size:0.7rem;">Same as Text FT. CSV data becomes sentences via format_instruction(). Same model, different input.</td></tr>
+<tr style="background:rgba(91,58,168,0.04);"><td>🔧 Sensor FT</td><td>Vibration → text</td><td>TinyLlama/Llama</td><td><strong>Decoder-only Transformer</strong></td><td style="font-size:0.7rem;">Same as Text FT. Accelerometer data becomes sentences via features_to_text().</td></tr>
+<tr style="background:rgba(91,58,168,0.04);"><td>🛰️ LIDAR FT</td><td>Point cloud → text</td><td>TinyLlama/Llama</td><td><strong>Decoder-only Transformer</strong></td><td style="font-size:0.7rem;">Same as Text FT. 3D points become sentences via features_to_text(). Identical model, identical training.</td></tr>
+<tr><td>🖼️ Image FT</td><td>Images + labels</td><td>YOLOv8 / ResNet-50</td><td><strong>CNN (Convolutional)</strong></td><td style="font-size:0.7rem;">Sliding filters detect edges, shapes, objects. 225 layers of Conv+BatchNorm+SiLU. Outputs bounding boxes + class scores.</td></tr>
+<tr style="background:rgba(0,122,153,0.04);"><td>🖼️📝 Vision-Lang FT</td><td>Images + questions</td><td>LLaVA / GPT-4V</td><td><strong>Vision Encoder (CNN/ViT) + Language Decoder</strong></td><td style="font-size:0.7rem;">Image → CNN → feature vector. Question → tokenizer → tokens. Both → LLM decoder → text answer. Hybrid architecture.</td></tr>
+</tbody></table>
+</div>
+<div class="callout" style="margin-top:0.5rem;"><strong>💡 4 of 6 tabs use the EXACT SAME decoder-only transformer.</strong> Text, Tabular, Sensor, and LIDAR all convert their raw data to text, then feed it to the same TinyLlama model with LoRA. Only Image (CNN) and Vision-Lang (Encoder+Decoder) use different architectures — because images are 2D pixels, not 1D text.</div>
+
+
 
 
 <h3 style="margin-top:1.5rem;">🧩 Design Patterns in Our Fine-Tuning Code</h3>
