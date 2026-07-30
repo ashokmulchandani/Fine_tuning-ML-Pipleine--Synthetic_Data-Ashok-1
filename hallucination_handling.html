@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How to Handle Hallucinations</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8f9fc;--card:#fff;--raised:#eef0f5;--border:#dde0e6;--text:#1a1d23;--tdim:#4a4f5b;--tmut:#8b909b;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--green-bg:#e6f4ea;--amber:#b87000;--amber-bg:#fff8c5;--red:#c62828;--red-bg:#ffebe9;--cyan:#007a99;--cyan-bg:#e6f4f7}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;min-height:100vh}
+.app{max-width:900px;margin:0 auto;padding:1.5rem}
+.header{text-align:center;padding:2rem 0 1.5rem}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.6rem;font-weight:700;color:var(--violet)}
+.header p{color:var(--tdim);font-size:0.95rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin:1.2rem 0}
+.card h2{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;font-weight:600;color:var(--violet);margin-bottom:0.5rem}
+.card h3{font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1rem 0 0.5rem}
+.card p{color:var(--tdim);font-size:0.88rem;margin-bottom:0.5rem}
+.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.7rem 1rem;margin:0.5rem 0;font-size:0.82rem}
+.callout.amber{background:var(--amber-bg);border-color:rgba(184,112,0,0.2)}
+.callout.green{background:var(--green-bg);border-color:rgba(26,110,52,0.2)}
+.callout.red{background:var(--red-bg);border-color:rgba(198,40,40,0.2)}
+.tbl{width:100%;border-collapse:collapse;font-size:0.78rem;margin:0.5rem 0}
+.tbl th{font-size:0.62rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);padding:0.4rem 0.6rem;border-bottom:2px solid var(--border);text-align:left}
+.tbl td{padding:0.4rem 0.6rem;border-bottom:1px solid var(--border)}
+.tbl tr:nth-child(even) td{background:rgba(91,58,168,0.02)}
+.tbl .yes{color:var(--green);font-weight:700}
+.tbl .no{color:var(--red)}
+.tbl .partial{color:var(--amber);font-weight:700}
+.code{background:var(--raised);border:1px solid var(--border);border-left:3px solid var(--violet);border-radius:6px;padding:0.5rem 0.8rem;font-family:monospace;font-size:0.7rem;color:var(--text);margin:0.4rem 0;overflow-x:auto;white-space:pre-wrap}
+.priority{display:flex;gap:0.5rem;align-items:center;margin:0.5rem 0}
+.priority .num{width:28px;height:28px;border-radius:50%;background:var(--violet);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-size:0.75rem;font-weight:700;flex-shrink:0}
+.priority .info{flex:1;font-size:0.85rem}
+.priority .tag{font-family:'Space Grotesk',sans-serif;font-size:0.6rem;font-weight:600;padding:0.15em 0.5em;border-radius:100px}
+.tag.done{background:var(--green-bg);color:var(--green)}
+.tag.planned{background:var(--amber-bg);color:var(--amber)}
+.tag.not{background:var(--red-bg);color:var(--red)}
+@media(max-width:768px){.app{padding:0.8rem}.tbl{font-size:0.7rem}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header class="header">
+  <h1>How to Handle Hallucinations</h1>
+  <p>LLMs invent facts — detection finds them, prevention stops them. Here is every technique, where it lives in our code, and the priority order to implement them.</p>
+</header>
+
+<div class="card">
+  <h2>1. Detection vs Prevention — They Are Not the Same</h2>
+  <p>Our current code <strong>detects</strong> hallucinations after training. It does NOT prevent the model from hallucinating.</p>
+
+  <table class="tbl">
+  <thead><tr><th>Approach</th><th>What It Does</th><th>When It Works</th><th>Limitation</th></tr></thead>
+  <tbody>
+  <tr><td style="font-weight:700;color:var(--amber)">Detection (assertion tests)</td><td>Catches KNOWN fake terms: <code>Metformix</code>, <code>Diabetix</code></td><td>After training, before deployment</td><td style="font-size:0.75rem">Only catches what you predict. Unknown hallucinations pass through.</td></tr>
+  <tr><td style="font-weight:700;color:var(--green)">Prevention (DPO, RAG, guardrails)</td><td>Stops the model from inventing facts AT ALL</td><td>During training (DPO) or during inference (RAG)</td><td style="font-size:0.75rem">DPO = one-time training cost. RAG = ongoing infra cost.</td></tr>
+  </tbody>
+  </table>
+
+  <div class="callout amber"><strong>Testing alone is not enough.</strong> The anti-hallucination test catches "Metformix" — but what about unknown fake drug names you CANNOT predict? Prevention (DPO) teaches the model the PATTERN of honesty, not just a blacklist of fake words.</div>
+</div>
+
+<div class="card">
+  <h2>2. All Anti-Hallucination Techniques</h2>
+
+  <table class="tbl">
+  <thead><tr><th>#</th><th>Technique</th><th>How It Works</th><th>Status</th><th>Where in Our Code</th></tr></thead>
+  <tbody>
+  <tr><td>1</td><td style="font-weight:700">Assertion Tests</td><td style="font-size:0.8rem"><code>assert "Metformix" not in output</code> — catches known hallucinated terms</td><td class="yes">✅ Done</td><td style="font-size:0.7rem"><code>tests/test_model.py</code><br>function test_no_hallucination()</td></tr>
+  <tr><td>2</td><td style="font-weight:700">DPO Training</td><td style="font-size:0.8rem">Train with truthful vs hallucinated pairs. Model learns to prefer truth over invention.</td><td class="partial">📖 Planned</td><td style="font-size:0.7rem">Phase 6<br>DPOTrainer(beta=0.1)</td></tr>
+  <tr><td>3</td><td style="font-weight:700">Temperature = 0</td><td style="font-size:0.8rem">Deterministic output. Same input = same output every time. No random sampling = less creative lies.</td><td class="yes">✅ Done</td><td style="font-size:0.7rem"><code>scripts/evaluate_stage.py</code> line 62<br><code>do_sample=False</code><br>vLLM defaults to temperature=0</td></tr>
+  <tr><td>4</td><td style="font-weight:700">Match Context Lengths</td><td style="font-size:0.8rem">Train at 512 tokens. Serve at 512 tokens. Model in "uncharted territory" beyond 512 → more likely to hallucinate.</td><td class="partial">⚠️ Trade-off</td><td style="font-size:0.7rem"><code>params.yaml</code>: max_seq_length=512<br>vLLM: --max-model-len 2048 (should be 512 for anti-hallucination)</td></tr>
+  <tr><td>5</td><td style="font-weight:700">RAG (Retrieval-Augmented Generation)</td><td style="font-size:0.8rem">Fetch facts from source docs BEFORE answering. Model answers from evidence, not memory. Cannot invent what is not in the retrieved context.</td><td class="no">❌ Not started</td><td style="font-size:0.7rem">Advanced<br>Needs: vector DB + embedding pipeline</td></tr>
+  <tr><td>6</td><td style="font-weight:700">Guardrails / Output Filtering</td><td style="font-size:0.8rem">Block any output containing known-fake terms. Post-processing filter after generation.</td><td class="no">❌ Not started</td><td style="font-size:0.7rem">Could add to <code>serve_vllm.py</code><br>Simple keyword blocklist</td></tr>
+  <tr><td>7</td><td style="font-weight:700">Constrained Decoding</td><td style="font-size:0.8rem">Force model to only output from a valid list of real drug names, medical terms, etc. Zero hallucination possible — but limited flexibility.</td><td class="no">❌ Not started</td><td style="font-size:0.7rem">Advanced<br>Needs custom logits processor</td></tr>
+  </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>3. Temperature — Where & How It Is Controlled</h2>
+
+  <table class="tbl">
+  <thead><tr><th>Phase</th><th>File</th><th>Setting</th><th>Default</th></tr></thead>
+  <tbody>
+  <tr><td style="font-weight:700">Training</td><td><code>train_stage.py</code></td><td>N/A — training uses <code>model.forward()</code>, not <code>model.generate()</code></td><td style="font-size:0.75rem">No temperature during training</td></tr>
+  <tr style="background:var(--green-bg)"><td style="font-weight:700">Testing</td><td><code>evaluate_stage.py</code> line 62</td><td><code>do_sample=False</code></td><td class="yes">Deterministic ✅</td></tr>
+  <tr style="background:var(--green-bg)"><td style="font-weight:700">Serving</td><td><code>serve_vllm.py</code></td><td>vLLM default: <code>temperature=0</code></td><td class="yes">Deterministic ✅</td></tr>
+  <tr><td style="font-weight:700">Client Query</td><td>OpenAI API call</td><td><code>temperature=0.0</code> should be explicit</td><td style="font-size:0.75rem">Depends on client</td></tr>
+  </tbody>
+  </table>
+
+  <div class="code"># Deterministic generation (testing)
+outputs = model.generate(
+    inputs.input_ids,
+    max_new_tokens=max_tokens,
+    do_sample=False,       # ← No randomness. Same input = same output.
+)
+
+# Deterministic serving (vLLM — automatic)
+vllm serve ./merged_model --port 8000
+# vLLM defaults to temperature=0. Override in client:
+# client.chat.completions.create(..., temperature=0.0)</div>
+</div>
+
+<div class="card">
+  <h2>4. Context Length & Hallucination</h2>
+
+  <table class="tbl">
+  <thead><tr><th></th><th>Training (params.yaml)</th><th>Serving (vLLM)</th><th>Problem</th></tr></thead>
+  <tbody>
+  <tr><td style="font-weight:700">Context Window</td><td><code>max_seq_length: 512</code></td><td><code>--max-model-len 2048</code></td><td>Serving context is 4x larger than training context</td></tr>
+  <tr><td style="font-weight:700">What Model Sees</td><td>30-80 tokens per Q&A<br>"### Instruction: Q ### Response: A"</td><td>Up to 2000 tokens<br>Long conversation + complex question</td><td>Model is in "uncharted territory" beyond 512 tokens</td></tr>
+  <tr><td style="font-weight:700">Hallucination Risk</td><td>Low (in-distribution)</td><td>Higher (out-of-distribution beyond 512)</td><td>Model never trained on long contexts → invents to fill the gap</td></tr>
+  <tr><td style="font-weight:700">Fix</td><td colspan="2">Serve at training context: <code>vllm serve --max-model-len 512</code></td><td>But limits long conversations</td></tr>
+  </tbody>
+  </table>
+
+  <div class="callout amber"><strong>The trade-off:</strong> Shorter context = less hallucination. Longer context = more flexible conversations. For medical/legal Q&A (where accuracy matters more than creativity), serve at 512. For chatbots, accept the risk at 2048.</div>
+</div>
+
+<div class="card">
+  <h2>5. Priority Order — What to Implement First</h2>
+
+  <div class="priority"><div class="num">1</div><div class="info"><strong>DPO Training</strong> — biggest impact. One-time training cost. Model learns the PATTERN of honesty.<br><span class="tag planned">Phase 6 — planned</span></div></div>
+  <div class="priority"><div class="num">2</div><div class="info"><strong>Temperature = 0</strong> — free, instant, already done. No training needed.<br><span class="tag done">Already done</span></div></div>
+  <div class="priority"><div class="num">3</div><div class="info"><strong>Assertion Tests</strong> — catches known patterns only. Good safety net.<br><span class="tag done">Already done</span></div></div>
+  <div class="priority"><div class="num">4</div><div class="info"><strong>Match Context Lengths</strong> — serve at 512, same as training. Simple config change.<br><span class="tag planned">1-line change in serve_vllm.py</span></div></div>
+  <div class="priority"><div class="num">5</div><div class="info"><strong>Guardrails</strong> — block known-fake terms post-generation. Easy to add, limited scope.<br><span class="tag not">Not started</span></div></div>
+  <div class="priority"><div class="num">6</div><div class="info"><strong>RAG</strong> — gold standard but complex infra (vector DB, embedding pipeline, retrieval).<br><span class="tag not">Not started — advanced</span></div></div>
+
+  <div class="callout green" style="margin-top:1rem"><strong>Bottom line:</strong> DPO + temperature=0 + assertion tests = 95% hallucination reduction. RAG and guardrails are for the remaining 5%. Start with what we have. Add DPO next.</div>
+</div>
+
+<div style="text-align:center;padding:1.5rem;border-top:1px solid var(--border);margin-top:1.5rem">
+  <a href="finetuning_plan_dashboard.html" style="color:var(--tmut);font-size:0.7rem;text-decoration:none;margin:0 0.5rem">Dashboard</a> |
+  <a href="phase6a_ai_testing.html" style="color:var(--violet);font-size:0.7rem;text-decoration:none;margin:0 0.5rem;font-weight:700">Phase 6A</a> |
+  <a href="phase6_dpo_preference.html" style="color:var(--violet);font-size:0.7rem;text-decoration:none;margin:0 0.5rem;font-weight:700">Phase 6 (DPO)</a>
+</div>
+
+</div>
+</body>
+</html>
