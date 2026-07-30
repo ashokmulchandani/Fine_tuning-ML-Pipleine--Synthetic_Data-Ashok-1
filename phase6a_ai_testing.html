@@ -370,6 +370,43 @@ render:()=>`
 </table>
 
 <div class="callout" style="background:rgba(91,58,168,0.06);border:1px solid rgba(91,58,168,0.2);"><strong>🔗 The overlap:</strong> The 10-point checklist is the HUMAN checklist you run before every deployment. The pyramid is the AUTOMATED test suite that runs on every git push. Same checks, different execution — one manual, one automated.</div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem">🧪 What We Actually Built — 25 Tests Across 3 Files</h3>
+
+<table style="width:100%;border-collapse:collapse;font-size:0.75rem;margin:0.5rem 0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.3rem 0.5rem;">Pyramid Layer</th><th style="text-align:left;padding:0.3rem 0.5rem;">Our Code</th><th style="text-align:left;padding:0.3rem 0.5rem;">Files</th></tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem;font-weight:700">1. Unit Tests</td><td style="padding:0.3rem 0.5rem;">25 pytest tests</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;"><code>tests/test_data.py</code> (15 tests)<br><code>tests/test_model.py</code> (10 tests)</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem;font-weight:700">2. Prompt Testing</td><td style="padding:0.3rem 0.5rem;">Behavioral tests (MFT/INV/DIR)</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;"><code>tests/test_model.py</code></td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem;font-weight:700">3. LLM Evaluation</td><td style="padding:0.3rem 0.5rem;">Drift + behavioral tests</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;"><code>scripts/evaluate_stage.py</code></td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem;font-weight:700">6. Model Regression</td><td style="padding:0.3rem 0.5rem;">DVC metrics diff — compare runs</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;"><code>dvc metrics diff HEAD~1 HEAD</code></td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem;font-weight:700">8. Data Validation</td><td style="padding:0.3rem 0.5rem;">Pandera schema + prepare_data checks</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;"><code>tests/test_data.py</code></td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem;font-weight:700">9. ML Model Validation</td><td style="padding:0.3rem 0.5rem;">MLflow tracking + Evidently drift</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;"><code>scripts/mlflow_tracking.py</code></td></tr>
+<tr><td style="padding:0.3rem 0.5rem;font-weight:700">10. End-to-End</td><td style="padding:0.3rem 0.5rem;">dvc repro — prepare -> train -> evaluate</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;"><code>dvc.yaml</code></td></tr>
+</tbody>
+</table>
+
+<div class="callout" style="background:rgba(26,110,52,0.06);border:1px solid rgba(26,110,52,0.2);"><strong>💡 We skip layers 4-5-7 because:</strong> Layer 4 (RAG Testing) — we train directly, no retriever. Layer 5 (Embedding Regression) — no embedding model changes. Layer 7 (Prompt Regression) — our Alpaca template never changes.</div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem">📋 Checklist → Pyramid — Every Check is Automated</h3>
+
+<table style="width:100%;border-collapse:collapse;font-size:0.72rem;margin:0.5rem 0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.25rem 0.4rem;">#</th><th style="text-align:left;padding:0.25rem 0.4rem;">Check</th><th style="text-align:left;padding:0.25rem 0.4rem;">Pyramid</th><th style="text-align:left;padding:0.25rem 0.4rem;">Automated By</th></tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.25rem 0.4rem;">1</td><td style="padding:0.25rem 0.4rem;">No nulls in Q&A</td><td style="padding:0.25rem 0.4rem;">L1 + L8</td><td style="padding:0.25rem 0.4rem;font-size:0.62rem;"><code>tests/test_data.py</code> — Pandera schema</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.25rem 0.4rem;">2</td><td style="padding:0.25rem 0.4rem;">No empty strings</td><td style="padding:0.25rem 0.4rem;">L1 + L8</td><td style="padding:0.25rem 0.4rem;font-size:0.62rem;">Same tests catch empty strings</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(184,112,0,0.03);"><td style="padding:0.25rem 0.4rem;">3</td><td style="padding:0.25rem 0.4rem;">Model responds</td><td style="padding:0.25rem 0.4rem;">L2 (Prompt)</td><td style="padding:0.25rem 0.4rem;font-size:0.62rem;"><code>tests/test_model.py</code> — MFT</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(184,112,0,0.03);"><td style="padding:0.25rem 0.4rem;">4</td><td style="padding:0.25rem 0.4rem;">Keywords present</td><td style="padding:0.25rem 0.4rem;">L2 (Prompt)</td><td style="padding:0.25rem 0.4rem;font-size:0.62rem;"><code>assert_contains_any()</code></td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.25rem 0.4rem;">5</td><td style="padding:0.25rem 0.4rem;">Training no OOM</td><td style="padding:0.25rem 0.4rem;">L10 (E2E)</td><td style="padding:0.25rem 0.4rem;font-size:0.62rem;">dvc repro train_stage.py</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.25rem 0.4rem;">6</td><td style="padding:0.25rem 0.4rem;">Loss decreases</td><td style="padding:0.25rem 0.4rem;">L9 (Validation)</td><td style="padding:0.25rem 0.4rem;font-size:0.62rem;">MLflow UI — loss curve</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.25rem 0.4rem;">7</td><td style="padding:0.25rem 0.4rem;">Adapter > 0 bytes</td><td style="padding:0.25rem 0.4rem;">L10 (E2E)</td><td style="padding:0.25rem 0.4rem;font-size:0.62rem;">assert os.path.getsize() > 0</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.25rem 0.4rem;">8</td><td style="padding:0.25rem 0.4rem;">Adapter loads</td><td style="padding:0.25rem 0.4rem;">L10 (E2E)</td><td style="padding:0.25rem 0.4rem;font-size:0.62rem;">PeftModel.from_pretrained()</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(26,110,52,0.03);"><td style="padding:0.25rem 0.4rem;">9</td><td style="padding:0.25rem 0.4rem;">No drift vs baseline</td><td style="padding:0.25rem 0.4rem;">L3 + L9</td><td style="padding:0.25rem 0.4rem;font-size:0.62rem;">Evidently + dvc metrics</td></tr>
+<tr><td style="padding:0.25rem 0.4rem;">10</td><td style="padding:0.25rem 0.4rem;">GPU memory stable</td><td style="padding:0.25rem 0.4rem;">L9 (Validation)</td><td style="padding:0.25rem 0.4rem;font-size:0.62rem;">MLflow gpu_memory_mb</td></tr>
+</tbody>
+</table>
+
+<div class="callout" style="background:rgba(91,58,168,0.06);border:1px solid rgba(91,58,168,0.2);"><strong>🔗 The overlap:</strong> The 10-point checklist is the HUMAN checklist you run before every deployment. The pyramid is the AUTOMATED test suite that runs on every git push. Same checks, different execution — one manual, one automated.</div>
 </div></div>`},
 {id:'6A.10',title:'CI/CD Pipeline for Fine-Tuning Tests',
 fact:'GitHub Actions can run all 10 checks automatically on every PR. Data validation, model smoke test, pipeline test — all in under 5 minutes on a free runner.',
