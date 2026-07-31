@@ -3542,88 +3542,119 @@ function drawMatMul() {
   const W = canvas.width, H = canvas.height;
   ctx.clearRect(0, 0, W, H);
 
-  const cellW = 80, cellH = 32, gap = 4;
+  const cellW = 78, cellH = 34, gap = 3;
   const featNames = matFeatures.map(f => f.name);
   const featVals = matFeatures.map(f => f.val);
   const featUseful = matFeatures.map(f => f.useful);
   const featDesc = matFeatures.map(f => f.desc);
 
-  // ── Feature vector (top-right, horizontal) ──
-  const fvX = 280, fvY = 50;
-  ctx.fillStyle = '#6b6b80';
-  ctx.font = 'bold 10px monospace';
-  ctx.fillText('Feature Vector f (5×1)', fvX + 10, fvY - 12);
+  // ── Feature vector (vertical, right side) ──
+  const fvX = 580, fvY = 50;
+  ctx.fillStyle = '#c8c8d4';
+  ctx.font = 'bold 12px monospace';
+  ctx.fillText('Feature Vector f', fvX + 10, fvY - 12);
 
-  // "f =" label
+  // "f =" label — vertically centered
+  const fTotalH = MAT_NUM_FEATURES * (cellH + gap) - gap;
+  const fMidY = fvY + fTotalH / 2;
   ctx.fillStyle = '#b388ff';
-  ctx.font = 'bold 14px monospace';
-  ctx.fillText('f =', fvX - 35, fvY + 20 + MAT_NUM_CLASSES * (cellH + gap) / 2);
+  ctx.font = 'bold 16px monospace';
+  ctx.fillText('f =', fvX - 48, fMidY + 6);
 
   for (let j = 0; j < MAT_NUM_FEATURES; j++) {
-    const cx = fvX + j * (cellW + gap), cy = fvY + MAT_NUM_CLASSES * (cellH + gap) / 2;
+    const cy = fvY + j * (cellH + gap);
     const isActive = matMulCol === j;
-    // Color by usefulness
-    ctx.fillStyle = featUseful[j] ? '#69f0ae33' : '#ff525233';
-    ctx.strokeStyle = isActive ? '#ffb300' : (featUseful[j] ? '#69f0ae55' : '#ff525255');
-    ctx.lineWidth = isActive ? 2.5 : 1;
-    ctx.beginPath(); ctx.roundRect(cx, cy, cellW, cellH, 5); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 9px monospace';
-    ctx.fillText(featNames[j], cx + 6, cy + 13);
-    ctx.fillStyle = '#ffffffaa'; ctx.font = '8px monospace';
-    ctx.fillText(featVals[j].toFixed(2), cx + 6, cy + 25);
+    // Solid colors — no transparency
+    ctx.fillStyle = featUseful[j] ? '#1a3a20' : '#3a1515';
+    ctx.strokeStyle = isActive ? '#ffb300' : (featUseful[j] ? '#3fb950' : '#f85149');
+    ctx.lineWidth = isActive ? 3 : 1.5;
+    ctx.beginPath(); ctx.roundRect(fvX, cy, cellW, cellH, 4); ctx.fill(); ctx.stroke();
+    // Name
+    ctx.fillStyle = featUseful[j] ? '#69f0ae' : '#ff5252';
+    ctx.font = 'bold 11px monospace';
+    ctx.fillText(featNames[j], fvX + 8, cy + 15);
+    // Value
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 10px monospace';
+    ctx.fillText(featVals[j].toFixed(2), fvX + 8, cy + 28);
   }
 
   // ── Weight matrix (left) ──
-  const wmX = 60, wmY = fvY;
+  const wmX = 30, wmY = fvY + 60;
+  const wTotalH = MAT_NUM_CLASSES * (cellH + gap) - gap;
+  const wMidY = wmY + wTotalH / 2;
+
+  ctx.fillStyle = '#c8c8d4';
+  ctx.font = 'bold 12px monospace';
+  ctx.fillText('Weight Matrix W', wmX, wmY - 30);
   ctx.fillStyle = '#6b6b80';
-  ctx.font = 'bold 10px monospace';
-  ctx.fillText('Weight Matrix W (3×5)', wmX + 10, wmY - 12);
-  ctx.font = '9px monospace';
-  ctx.fillText('Each row = one class', wmX + 10, wmY);
+  ctx.font = '10px monospace';
+  ctx.fillText('Each row = weights for one bird class', wmX, wmY - 14);
+
+  // Column labels (feature names)
+  for (let j = 0; j < MAT_NUM_FEATURES; j++) {
+    ctx.fillStyle = featUseful[j] ? '#69f0ae' : '#ff5252';
+    ctx.font = 'bold 9px monospace';
+    ctx.fillText(featNames[j], wmX + j * (cellW + gap) + 4, wmY - 4);
+  }
 
   // "W =" label
   ctx.fillStyle = '#b388ff';
-  ctx.font = 'bold 14px monospace';
-  ctx.fillText('W =', wmX - 40, wmY + 35 + MAT_NUM_CLASSES * (cellH + gap) / 2);
+  ctx.font = 'bold 16px monospace';
+  ctx.fillText('W =', wmX - 48, wMidY + 6);
 
   let wRows = [];
   for (let i = 0; i < MAT_NUM_CLASSES; i++) {
+    // Row label
+    ctx.fillStyle = '#c8c8d4';
+    ctx.font = 'bold 10px monospace';
+    ctx.fillText(matClassNames[i], wmX + MAT_NUM_FEATURES * (cellW + gap) + 12, wmY + i * (cellH + gap) + 22);
+
     for (let j = 0; j < MAT_NUM_FEATURES; j++) {
-      const cx = wmX + j * (cellW + gap), cy = wmY + 30 + i * (cellH + gap);
+      const cx = wmX + j * (cellW + gap), cy = wmY + i * (cellH + gap);
       const val = matWeights[i][j];
       const isActive = (matMulRow === i && matMulCol === j);
       const absW = Math.abs(val);
-      // Color intensity by |W|: near 0 = red/gray, large = green
       const intensity = Math.min(1, absW / 2.5);
-      const r = Math.floor(255 * (1 - intensity)), g = Math.floor(100 + 155 * intensity), b = Math.floor(80);
-      ctx.fillStyle = `rgba(${r},${g},${b},${0.3 + intensity * 0.5})`;
-      ctx.strokeStyle = isActive ? '#ffb300' : `rgba(${r},${g},${b},0.5)`;
-      ctx.lineWidth = isActive ? 2.5 : 1;
-      if (isActive) { ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 10; }
-      ctx.beginPath(); ctx.roundRect(cx, cy, cellW, cellH, 5); ctx.fill(); ctx.stroke();
-      ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
-      ctx.fillStyle = isActive ? '#ffb300' : '#fff';
-      ctx.font = 'bold 9px monospace';
-      ctx.fillText((val >= 0 ? '+' : '') + val.toFixed(2), cx + 8, cy + 20);
+
+      // Solid background: dark red for W≈0, dark green for large |W|
+      const bgR = Math.floor(50 + 5 * (1 - intensity));
+      const bgG = Math.floor(15 + 35 * intensity);
+      const bgB = Math.floor(15 + 5 * (1 - intensity));
+      ctx.fillStyle = `rgb(${bgR},${bgG},${bgB})`;
+
+      // Border
+      ctx.strokeStyle = isActive ? '#ffb300' : (intensity > 0.5 ? '#3fb950' : '#f85149');
+      ctx.lineWidth = isActive ? 3 : 1.5;
+
+      ctx.beginPath(); ctx.roundRect(cx, cy, cellW, cellH, 4); ctx.fill(); ctx.stroke();
+
+      // Value — always white, bold, larger
+      ctx.fillStyle = isActive ? '#ffb300' : '#ffffff';
+      ctx.font = (isActive ? 'bold ' : '') + '11px monospace';
+      const sign = val >= 0 ? '+' : '';
+      ctx.fillText(sign + val.toFixed(2), cx + 8, cy + 22);
     }
-    // Class name label
-    ctx.fillStyle = '#c8c8d4';
-    ctx.font = '9px monospace';
-    ctx.fillText(matClassNames[i], wmX + MAT_NUM_FEATURES * (cellW + gap) + 8, wmY + 30 + i * (cellH + gap) + 20);
-    wRows.push({ i, y: wmY + 30 + i * (cellH + gap) });
+    wRows.push({ i, y: wmY + i * (cellH + gap) });
   }
 
-  // ── Equals sign & Result vector (right of feature vector) ──
-  const resX = fvX + MAT_NUM_FEATURES * (cellW + gap) + 50, resY = fvY;
+  // ── EQUALS sign ──
+  const eqX = fvX - 30;
   ctx.fillStyle = '#b388ff';
-  ctx.font = 'bold 20px monospace';
-  ctx.fillText('=', fvX + MAT_NUM_FEATURES * (cellW + gap) + 15, wRows[1].y + 10);
+  ctx.font = 'bold 24px monospace';
+  ctx.fillText('=', eqX, fMidY + 8);
 
-  ctx.fillStyle = '#6b6b80';
-  ctx.font = 'bold 10px monospace';
-  ctx.fillText('Logits (3×1)', resX, resY - 12);
+  // ── Result vector (right of feature vector) ──
+  const resX = fvX + cellW + 40;
+  ctx.fillStyle = '#c8c8d4';
+  ctx.font = 'bold 12px monospace';
+  ctx.fillText('Logits', resX, fvY - 12);
 
-  // Compute each row's dot product
+  // "logits =" label
+  ctx.fillStyle = '#b388ff';
+  ctx.font = 'bold 16px monospace';
+  ctx.fillText('y =', resX - 50, fMidY + 6);
+
   for (let i = 0; i < MAT_NUM_CLASSES; i++) {
     let sum = 0;
     const terms = [];
@@ -3632,62 +3663,58 @@ function drawMatMul() {
       sum += term;
       terms.push(term);
     }
-    const cy = resY + 30 + i * (cellH + gap);
+    const cy = fvY + i * (cellH + gap);
     const isActive = matMulRow === i;
 
-    // Show computation breakdown for active row
+    // Computation breakdown above active row
     if (isActive && matMulCol >= 0) {
       let compText = '';
       for (let j = 0; j <= matMulCol; j++) {
         if (j > 0) compText += ' + ';
-        const term = matWeights[i][j] * featVals[j];
         compText += `(${matWeights[i][j].toFixed(2)}×${featVals[j].toFixed(2)})`;
       }
       if (matMulCol < MAT_NUM_FEATURES - 1) compText += ' + ...';
-      ctx.fillStyle = '#ffb30088';
-      ctx.font = '9px monospace';
-      ctx.fillText(compText, resX + 10, cy - 8);
+      ctx.fillStyle = '#ffb300';
+      ctx.font = 'bold 9px monospace';
+      ctx.fillText(compText, resX + 4, cy - 8);
     }
 
-    ctx.fillStyle = '#14141f';
-    ctx.strokeStyle = isActive ? '#ffb300' : '#ffffff22';
-    ctx.lineWidth = isActive ? 2.5 : 1;
-    if (isActive) { ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 10; }
-    ctx.beginPath(); ctx.roundRect(resX + 10, cy + 2, 140, cellH, 5); ctx.fill(); ctx.stroke();
-    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
-    ctx.fillStyle = isActive ? '#ffb300' : '#fff';
-    ctx.font = 'bold 10px monospace';
+    // Result cell — solid background
+    ctx.fillStyle = isActive ? '#2a2000' : '#14141f';
+    ctx.strokeStyle = isActive ? '#ffb300' : '#ffffff33';
+    ctx.lineWidth = isActive ? 3 : 1.5;
+    ctx.beginPath(); ctx.roundRect(resX, cy, 130, cellH, 4); ctx.fill(); ctx.stroke();
+
     const partialSum = terms.slice(0, matMulCol + 1).reduce((a, b) => a + b, 0);
-    ctx.fillText(isActive ? partialSum.toFixed(2) + '...' : sum.toFixed(2), resX + 18, cy + 22);
+    ctx.fillStyle = isActive ? '#ffb300' : '#ffffff';
+    ctx.font = (isActive ? 'bold ' : '') + '11px monospace';
+    ctx.fillText(isActive ? (partialSum >= 0 ? '+' : '') + partialSum.toFixed(2) + '...' : (sum >= 0 ? '+' : '') + sum.toFixed(2), resX + 10, cy + 22);
 
     // Class label
     ctx.fillStyle = '#c8c8d4';
-    ctx.font = '9px monospace';
-    ctx.fillText(matClassNames[i], resX + 160, cy + 22);
+    ctx.font = 'bold 10px monospace';
+    ctx.fillText(matClassNames[i], resX + 140, cy + 22);
   }
 
   // ── Bottom: Computation formula ──
-  const bottomY = resY + 30 + MAT_NUM_CLASSES * (cellH + gap) + 20;
+  const bottomY = fvY + fTotalH + 30;
   if (matMulRow >= 0 && matMulCol >= 0) {
     const wVal = matWeights[matMulRow][matMulCol];
     const fVal = featVals[matMulCol];
     const term = wVal * fVal;
     ctx.fillStyle = '#b388ff';
-    ctx.font = 'bold 11px monospace';
-    ctx.fillText(`Step ${matMulCol + 1}: W[${matMulRow}][${matMulCol}] × f[${matMulCol}] = (${wVal.toFixed(2)}) × (${fVal.toFixed(2)}) = ${term >= 0 ? '+' : ''}${term.toFixed(3)}`, 60, bottomY);
-    ctx.fillStyle = '#6b6b8077';
-    ctx.font = '10px monospace';
-    ctx.fillText(`Feature: ${featDesc[matMulCol]} — ${featUseful[matMulCol] ? 'USEFUL (large |W| → drives prediction)' : 'IRRELEVANT (W≈0 → contributes nothing)'}`, 60, bottomY + 20);
+    ctx.font = 'bold 12px monospace';
+    ctx.fillText(`Step ${matMulCol + 1}:  W[${matMulRow},${matMulCol}] × f[${matMulCol}]  =  ${wVal.toFixed(2)} × ${fVal.toFixed(2)}  =  ${term >= 0 ? '+' : ''}${term.toFixed(3)}`, wmX, bottomY);
+    ctx.fillStyle = featUseful[matMulCol] ? '#69f0ae' : '#ff5252';
+    ctx.font = 'bold 10px monospace';
+    ctx.fillText(`Feature: ${featDesc[matMulCol]} — ${featUseful[matMulCol] ? '✓ USEFUL — large |W| drives prediction' : '✗ IRRELEVANT — W≈0 contributes ~nothing'}`, wmX, bottomY + 22);
   }
 
-  // ── Color legend for features ──
-  const legY = H - 30;
-  ctx.fillStyle = '#69f0ae'; ctx.font = 'bold 9px monospace';
-  ctx.fillText('■ Useful features (large W)', 60, legY);
-  ctx.fillStyle = '#ff5252'; ctx.fillText('■ Irrelevant (W≈0)', 280, legY);
-  ctx.fillStyle = '#6b6b8077';
-  ctx.font = '9px monospace';
-  ctx.fillText('Full formula: logit_indigo = 0.01×0.91 + 2.30×0.65 + 0.02×0.88 + 1.50×0.22 + 0.01×0.73 = 1.82', 470, legY);
+  // ── Full formula ──
+  const legY = H - 24;
+  ctx.fillStyle = '#c8c8d4';
+  ctx.font = 'bold 11px monospace';
+  ctx.fillText('Full: logit_Indigo = 0.01×0.91 + 2.30×0.65 + 0.02×0.88 + 1.50×0.22 + 0.01×0.73 = 1.82', wmX, legY);
 }
 
 function matMulStep(dir) {
