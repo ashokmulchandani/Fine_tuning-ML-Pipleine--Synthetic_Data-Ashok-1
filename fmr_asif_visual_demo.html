@@ -1499,6 +1499,79 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
   </div>
 </div>
 
+<!-- SECTION 10: FMR for Vision-Language Fine-Tuning -->
+<div class="learn-section">
+  <div class="section-num">Section 10</div>
+  <h4>🔗 Applying FMR to Your Vision-Language Fine-Tuning Work</h4>
+  <p>You're doing <strong>Vision-Language fine-tuning with Q&A pairs</strong> — images + questions → answers. Your pipeline uses a pretrained vision encoder feeding into an LLM/transformer. This is <strong>exactly where FMR helps</strong>.</p>
+
+  <div class="insight-callout">
+    <strong>🎯 The Connection:</strong> Your vision encoder (ResNet/ViT/CNN) was pretrained on ImageNet or COCO — general images. When you fine-tune it on <strong>your specific Q&A dataset</strong> with limited examples, the pretrained feature magnitude bias kicks in. Loud-but-irrelevant features (background textures, sky, grass) can dominate, causing the LLM to answer based on <strong>spurious visual patterns</strong> rather than the actual subject of the question.
+  </div>
+
+  <div class="compare-grid">
+    <div class="compare-card bad">
+      <h5>❌ WITHOUT FMR — What Can Go Wrong</h5>
+      <ul>
+        <li><strong>Q: "What color is the bird's beak?"</strong><br>Model sees loud "green foliage" feature (0.91) → distracted by background → answers based on surrounding vegetation instead of the beak</li>
+        <li><strong>Q: "How many cars in the image?"</strong><br>Model latches onto "blue sky" detector (0.87) → misses small distant cars because sky feature dominates</li>
+        <li><strong>Limited Q&A pairs</strong> → model memorizes spurious correlations ("all bird photos with blue sky = Indigo Bunting") instead of learning actual visual concepts</li>
+      </ul>
+    </div>
+    <div class="compare-card good">
+      <h5>✅ WITH FMR — During Fine-Tuning</h5>
+      <ul>
+        <li><strong>Feature magnitudes equalized</strong> → quiet but crucial features (object shape, color, texture details) get equal attention as loud background detectors</li>
+        <li><strong>CE loss protects answer-relevant features</strong> — if "beak curvature" helps answer questions correctly, its classifier weight stays large</li>
+        <li><strong>Dynamic λ auto-decays</strong> — strong regularization early when bias is worst, fades as the model adapts to your domain</li>
+        <li><strong>Better generalization</strong> — model answers based on the actual visual content, not pretrained biases</li>
+      </ul>
+    </div>
+  </div>
+
+  <h5 style="color:#b388ff; margin-top:14px;">Your Pipeline — Where FMR Plugs In</h5>
+  <div class="formula-box" style="font-size:0.82rem; line-height:2;">
+    <span class="dim">Input: Image + Question ("What color is the bird?")</span><br>
+    <span class="dim"> ↓</span><br>
+    <span class="hl-cyan">Vision Encoder (e.g., ResNet, ViT, YOLO backbone)</span> <span class="dim">← Pretrained on ImageNet/COCO</span><br>
+    <span class="dim"> ↓</span><br>
+    <span class="hl-purple">Feature Vector f ∈ ℝᴰ &nbsp;—&nbsp; ⚡ FMR APPLIED HERE ⚡</span><br>
+    <span class="dim"> │ &nbsp; FMR equalizes magnitudes across all D visual features</span><br>
+    <span class="dim"> │ &nbsp; Prevents loud-background features from dominating</span><br>
+    <span class="dim"> ↓</span><br>
+    <span class="dim">Visual Features + Text Embeddings → Transformer/LLM</span><br>
+    <span class="dim"> ↓</span><br>
+    <span class="hl-amber">Answer: "The bird has a yellow beak"</span>
+  </div>
+
+  <div class="compare-grid" style="margin-top:14px;">
+    <div class="compare-card" style="border-color:#ffb30033;">
+      <h5 style="color:#ffb300;">🔧 Practical Implementation</h5>
+      <p style="font-size:0.82rem;">
+        <strong>1. Extract features</strong> from your frozen/pretrained vision encoder<br>
+        <strong>2. Add FMR loss</strong> alongside your standard cross-entropy/LLM loss:<br>
+        <code style="font-size:0.75rem;">L_total = L_LLM + λ × (−Entropy(softmax(f_vision)))</code><br>
+        <strong>3. Dynamic λ</strong> auto-tunes — no manual hyperparameter search<br>
+        <strong>4. Train normally</strong> — FMR is just one extra loss term, negligible compute cost<br>
+        <strong>5. Works with LoRA/QLoRA</strong> — FMR regularizes features, LoRA handles weight efficiency — they're complementary
+      </p>
+    </div>
+    <div class="compare-card" style="border-color:#69f0ae33;">
+      <h5 style="color:#69f0ae;">📊 Expected Benefits for Your Use Case</h5>
+      <p style="font-size:0.82rem;">
+        <strong>Small Q&A datasets</strong> (hundreds, not millions): +5-12% accuracy (matches paper's low-data regime results)<br>
+        <strong>Fine-grained questions</strong> ("what color is the beak?"): Model attends to object details, not background<br>
+        <strong>Domain shift</strong> (ImageNet → your images): FMR removes pretrained bias, helping adaptation<br>
+        <strong>Overfitting prevention</strong>: Dynamic λ provides strongest regularization when you need it most (early training)
+      </p>
+    </div>
+  </div>
+
+  <div class="insight-callout" style="margin-top:12px;">
+    <strong>🔗 The Big Picture:</strong> Your existing work — YOLO pipelines, CNN sliding filters, maxpool animations — all involve <strong>pretrained vision backbones extracting features</strong>. FMR is a <strong>drop-in regularization technique</strong> that improves any fine-tuning workflow where a pretrained vision encoder feeds into a downstream task (classification, detection, VQA, captioning). It's one extra line in your loss function, zero architectural changes, and the dynamic λ means no hyperparameter tuning. Given you're working with <strong>limited annotated Q&A data</strong>, this is exactly the low-data regime where FMR shows its biggest gains (+10.4% on CUB200 at 15% data).
+  </div>
+</div>
+
 </div><!-- /panelLearn -->
 
 </div><!-- /main-container -->
