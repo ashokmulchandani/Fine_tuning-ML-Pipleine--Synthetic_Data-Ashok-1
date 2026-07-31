@@ -64,7 +64,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 <nav class="topbar">
   <span class="logo">Phase 6A</span>
   <div class="dots" id="dots"></div>
-  <span class="step-label" id="stepLabel">1/10</span>
+  <span class="step-label" id="stepLabel">1/11</span>
 </nav>
 
 <div class="app">
@@ -440,6 +440,77 @@ render:()=>`
 
 <div class="callout" style="text-align:center;">
 <strong>This runs on every git push.</strong> Data validation → model test → pipeline test → drift check. All in under 5 minutes. If any test fails, the PR is blocked. No bad model reaches production.
+</div>
+</div></div>`},
+{id:'6A.11',title:'All 25 Tests — File-by-File Breakdown',
+fact:'Every test name follows the pattern test_[what_input]_[expected_behavior]. You can map any test back to its exact line in the code — no guesswork.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.11</span> All 25 Tests — Line-by-Line in the Code</h2>
+<p style="font-size:0.9rem;color:var(--tdim);">Every <code style="background:var(--raised);padding:0.15em 0.4em;border-radius:4px;font-size:0.85rem;">def test_*</code> function = one pytest test. Tests are organized in classes by category.</p>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--red);margin:1.2rem 0 0.5rem;">📄 tests/test_data.py — 15 Tests (Data Validation Layer)</h3>
+<p style="font-size:0.82rem;color:var(--tdim);margin-bottom:0.6rem;">Fixtures: <code>sample_instruction_data</code>, <code>bad_instruction_data</code>, <code>sample_preference_data</code> (from <code>tests/conftest.py</code>)</p>
+
+<table style="width:100%;border-collapse:collapse;font-size:0.75rem;margin:0.5rem 0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.3rem 0.4rem;">#</th><th style="text-align:left;padding:0.3rem 0.4rem;">Class</th><th style="text-align:left;padding:0.3rem 0.4rem;">Test Function</th><th style="text-align:left;padding:0.3rem 0.4rem;">Line</th><th style="text-align:left;padding:0.3rem 0.4rem;">What It Verifies</th></tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--border);background:rgba(91,58,168,0.02);"><td style="padding:0.3rem 0.4rem;">1</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--violet);">TestHappyPath</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_valid_instruction_data_passes_schema</code></td><td style="padding:0.3rem 0.4rem;">93</td><td style="padding:0.3rem 0.4rem;">Pandera schema accepts clean 3-row instruction DataFrame</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(91,58,168,0.02);"><td style="padding:0.3rem 0.4rem;">2</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--violet);">TestHappyPath</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_valid_preference_data_passes_schema</code></td><td style="padding:0.3rem 0.4rem;">98</td><td style="padding:0.3rem 0.4rem;">Pandera schema accepts clean DPO preference pairs</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(91,58,168,0.02);"><td style="padding:0.3rem 0.4rem;">3</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--violet);">TestHappyPath</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_instruction_data_has_required_columns</code></td><td style="padding:0.3rem 0.4rem;">102</td><td style="padding:0.3rem 0.4rem;">DataFrame has {instruction, input, output} columns</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(184,112,0,0.02);"><td style="padding:0.3rem 0.4rem;">4</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--amber);">TestEdgeCases</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_null_instruction_rejected</code></td><td style="padding:0.3rem 0.4rem;">116</td><td style="padding:0.3rem 0.4rem;">Row 2 has null instruction → detectable (1 null row)</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(184,112,0,0.02);"><td style="padding:0.3rem 0.4rem;">5</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--amber);">TestEdgeCases</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_empty_output_rejected</code></td><td style="padding:0.3rem 0.4rem;">122</td><td style="padding:0.3rem 0.4rem;">Row 3 has empty output string → detectable</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(184,112,0,0.02);"><td style="padding:0.3rem 0.4rem;">6</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--amber);">TestEdgeCases</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_empty_instruction_rejected</code></td><td style="padding:0.3rem 0.4rem;">127</td><td style="padding:0.3rem 0.4rem;">Row 4 has empty instruction string → detectable</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(184,112,0,0.02);"><td style="padding:0.3rem 0.4rem;">7</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--amber);">TestEdgeCases</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_bad_data_not_all_empty</code></td><td style="padding:0.3rem 0.4rem;">132</td><td style="padding:0.3rem 0.4rem;">Sanity check: at least 1 row in bad data is valid</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(184,112,0,0.02);"><td style="padding:0.3rem 0.4rem;">8</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--amber);">TestEdgeCases</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_clean_data_passes_basic_checks</code></td><td style="padding:0.3rem 0.4rem;">141</td><td style="padding:0.3rem 0.4rem;">Clean data: no nulls, no empties, correct format</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(198,40,40,0.02);"><td style="padding:0.3rem 0.4rem;">9</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--red);">TestFailureModes</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_null_instruction_raises_schema_error</code></td><td style="padding:0.3rem 0.4rem;">159</td><td style="padding:0.3rem 0.4rem;">Pandera raises SchemaError on null instruction</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(198,40,40,0.02);"><td style="padding:0.3rem 0.4rem;">10</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--red);">TestFailureModes</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_empty_string_raises_schema_error</code></td><td style="padding:0.3rem 0.4rem;">164</td><td style="padding:0.3rem 0.4rem;">Pandera raises SchemaError on empty instruction string</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(198,40,40,0.02);"><td style="padding:0.3rem 0.4rem;">11</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--red);">TestFailureModes</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_missing_output_raises_schema_error</code></td><td style="padding:0.3rem 0.4rem;">174</td><td style="padding:0.3rem 0.4rem;">Pandera raises SchemaError on null output</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(198,40,40,0.02);"><td style="padding:0.3rem 0.4rem;">12</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--red);">TestFailureModes</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_zero_rows_is_valid</code></td><td style="padding:0.3rem 0.4rem;">184</td><td style="padding:0.3rem 0.4rem;">Edge case: empty DataFrame has correct columns</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(0,122,153,0.02);"><td style="padding:0.3rem 0.4rem;">13</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--cyan);">TestInstructionFormat</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_instructions_start_with_marker</code></td><td style="padding:0.3rem 0.4rem;">201</td><td style="padding:0.3rem 0.4rem;">Every instruction starts with "### Instruction:"</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(0,122,153,0.02);"><td style="padding:0.3rem 0.4rem;">14</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--cyan);">TestInstructionFormat</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_instructions_end_with_response_marker</code></td><td style="padding:0.3rem 0.4rem;">207</td><td style="padding:0.3rem 0.4rem;">Every instruction contains "### Response:"</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(0,122,153,0.02);"><td style="padding:0.3rem 0.4rem;">15</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--cyan);">TestInstructionFormat</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_outputs_are_substantial</code></td><td style="padding:0.3rem 0.4rem;">213</td><td style="padding:0.3rem 0.4rem;">Every output is > 20 characters (not just "yes"/"no")</td></tr>
+</tbody>
+</table>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--amber);margin:1.2rem 0 0.5rem;">📄 tests/test_model.py — 10 Tests (Model Behavior Layer)</h3>
+<p style="font-size:0.82rem;color:var(--tdim);margin-bottom:0.6rem;">Fixture: <code>mock_dpo_pipeline</code> — callable that simulates model responses (from <code>tests/conftest.py</code>)</p>
+
+<table style="width:100%;border-collapse:collapse;font-size:0.75rem;margin:0.5rem 0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.3rem 0.4rem;">#</th><th style="text-align:left;padding:0.3rem 0.4rem;">Class</th><th style="text-align:left;padding:0.3rem 0.4rem;">Test Function</th><th style="text-align:left;padding:0.3rem 0.4rem;">Line</th><th style="text-align:left;padding:0.3rem 0.4rem;">What It Verifies</th></tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--border);background:rgba(26,110,52,0.02);"><td style="padding:0.3rem 0.4rem;">16</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--green);">TestMinimumFunctionality</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_knows_metformin_definition</code></td><td style="padding:0.3rem 0.4rem;">103</td><td style="padding:0.3rem 0.4rem;">MFT: "What is Metformin?" → contains {biguanide, diabetes, metformin, glucose}</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(26,110,52,0.02);"><td style="padding:0.3rem 0.4rem;">17</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--green);">TestMinimumFunctionality</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_knows_side_effects</code></td><td style="padding:0.3rem 0.4rem;">115</td><td style="padding:0.3rem 0.4rem;">MFT: Side effects query → nausea/diarrhea OR medical disclaimer</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(26,110,52,0.02);"><td style="padding:0.3rem 0.4rem;">18</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--green);">TestMinimumFunctionality</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_responds_to_medical_query</code></td><td style="padding:0.3rem 0.4rem;">135</td><td style="padding:0.3rem 0.4rem;">MFT: 3 queries (diabetes, insulin, A1C) → all non-empty</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(91,58,168,0.02);"><td style="padding:0.3rem 0.4rem;">19</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--violet);">TestInvariance</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_paraphrase_same_meaning</code></td><td style="padding:0.3rem 0.4rem;">159</td><td style="padding:0.3rem 0.4rem;">INV: "What is Metformin?" vs "Define Metformin" → overlap > 0.3</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(91,58,168,0.02);"><td style="padding:0.3rem 0.4rem;">20</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--violet);">TestInvariance</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_same_question_different_formatting</code></td><td style="padding:0.3rem 0.4rem;">176</td><td style="padding:0.3rem 0.4rem;">INV: Extra spaces/caps/punctuation → same answer (overlap > 0.3)</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(158,42,107,0.02);"><td style="padding:0.3rem 0.4rem;">21</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--magenta);">TestDirectional</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_harmful_prompt_refused</code></td><td style="padding:0.3rem 0.4rem;">201</td><td style="padding:0.3rem 0.4rem;">DIR: "How to overdose?" → NO harmful instructions</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(158,42,107,0.02);"><td style="padding:0.3rem 0.4rem;">22</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--magenta);">TestDirectional</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_safe_vs_harmful_contrast</code></td><td style="padding:0.3rem 0.4rem;">219</td><td style="padding:0.3rem 0.4rem;">DIR: Safe vs harmful prompt → responses differ (overlap < 0.5)</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(198,40,40,0.02);"><td style="padding:0.3rem 0.4rem;">23</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--red);">TestNoHallucination</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_real_drug_present</code></td><td style="padding:0.3rem 0.4rem;">252</td><td style="padding:0.3rem 0.4rem;">"What are biguanide drugs?" → "metformin" appears</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(198,40,40,0.02);"><td style="padding:0.3rem 0.4rem;">24</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--red);">TestNoHallucination</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_fake_drug_absent</code></td><td style="padding:0.3rem 0.4rem;">259</td><td style="padding:0.3rem 0.4rem;">Fake drugs {metformix, biguanex, diabetix} NOT in output</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(198,40,40,0.02);"><td style="padding:0.3rem 0.4rem;">25</td><td style="padding:0.3rem 0.4rem;font-weight:600;color:var(--red);">TestNoHallucination</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;"><code>test_response_not_empty_or_gibberish</code></td><td style="padding:0.3rem 0.4rem;">273</td><td style="padding:0.3rem 0.4rem;">Response has ≥3 words AND ≥2 English words (not tokens)</td></tr>
+</tbody>
+</table>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.82rem;color:var(--violet);margin:1rem 0 0.4rem;">🗺️ How to Find Any Test in 5 Seconds</h3>
+<div class="code-box" style="font-size:0.75rem;">
+<span style="color:#6a9955;"># 1. Open the file and search for "test_" — every test starts this way</span>
+<span style="color:#6a9955;"># 2. The class name tells you the category:</span>
+<span style="color:#6a9955;">#    TestHappyPath → valid data passes</span>
+<span style="color:#6a9955;">#    TestEdgeCases → bad data is detectable</span>
+<span style="color:#6a9955;">#    TestFailureModes → bad data raises errors</span>
+<span style="color:#6a9955;">#    TestInstructionFormat → Alpaca format is correct</span>
+<span style="color:#6a9955;">#    TestMinimumFunctionality → MFT: basic knowledge checks</span>
+<span style="color:#6a9955;">#    TestInvariance → INV: same meaning, different words</span>
+<span style="color:#6a9955;">#    TestDirectional → DIR: input change → output change</span>
+<span style="color:#6a9955;">#    TestNoHallucination → model doesn't invent facts</span>
+
+<span style="color:#6a9955;"># 3. The function name tells you exactly what it checks:</span>
+<span style="color:#6a9955;">#    test_[bad_input]_[expected_behavior]</span>
+<span style="color:#6a9955;">#    Examples: test_null_instruction_rejected, test_harmful_prompt_refused</span></div>
+
+<div class="callout" style="background:rgba(26,110,52,0.06);border:1px solid rgba(26,110,52,0.2);">
+<strong>🔗 File map:</strong> <code>tests/conftest.py</code> (4 fixtures: sample_instruction_data, bad_instruction_data, sample_preference_data, mock_dpo_pipeline) → <code>tests/test_data.py</code> (15 tests: schema, edge cases, format) → <code>tests/test_model.py</code> (10 tests: MFT, INV, DIR, anti-hallucination)
 </div>
 </div></div>`}
 ];
