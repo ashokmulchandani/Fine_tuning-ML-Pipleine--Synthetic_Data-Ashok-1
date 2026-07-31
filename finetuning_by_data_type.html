@@ -499,6 +499,7 @@ function switchTab(i){
 
 function render(){
   const t=tabs[currentTab];
+  console.log('RENDER tab',currentTab,'t=',t?'OK':'UNDEFINED','stages=',t?.stages?.length);
 
   let html=`
     <div class="pipeline-card">
