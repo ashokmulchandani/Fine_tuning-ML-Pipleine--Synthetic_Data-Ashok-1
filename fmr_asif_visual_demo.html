@@ -1269,9 +1269,9 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
       <div>
         <div style="font-family:var(--font-display); font-size:0.85rem; color:#ff5252; margin-bottom:6px;">🔴 f<sub>sky</sub> — Irrelevant (Blue Sky) &nbsp;<span style="font-size:0.65rem; color:var(--text-dim);" id="wtSkyRange">W: 0.0500 → 0.0500</span></div>
         <div class="wt-tbl-wrap">
-          <table class="wt-tbl" id="wtSkyTable">
+          <table class="wt-tbl">
             <thead><tr><th>#</th><th>Sample</th><th>f</th><th>ŷ</th><th>Error</th><th>CE ∂W</th><th>W Decay</th><th>η·Net</th><th>W</th></tr></thead>
-            <tbody></tbody>
+            <tbody id="wtSkyTbody"></tbody>
           </table>
         </div>
         <div style="font-size:0.6rem; color:var(--text-dim); margin-top:4px; font-family:var(--font-mono);">
@@ -1282,9 +1282,9 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
       <div>
         <div style="font-family:var(--font-display); font-size:0.85rem; color:#69f0ae; margin-bottom:6px;">🟢 f<sub>beak</sub> — Useful (Beak Curve) &nbsp;<span style="font-size:0.65rem; color:var(--text-dim);" id="wtBeakRange">W: 0.0300 → 2.3000</span></div>
         <div class="wt-tbl-wrap">
-          <table class="wt-tbl" id="wtBeakTable">
+          <table class="wt-tbl">
             <thead><tr><th>#</th><th>Sample</th><th>f</th><th>ŷ</th><th>Error</th><th>CE ∂W</th><th>W Decay</th><th>η·Net</th><th>W</th></tr></thead>
-            <tbody></tbody>
+            <tbody id="wtBeakTbody"></tbody>
           </table>
         </div>
       </div>
@@ -3307,8 +3307,8 @@ function drawWeightTable() {
   const ep = weightTableEpoch;
   const skyRows = skyTraj.filter(r => r.epoch === ep);
   const beakRows = beakTraj.filter(r => r.epoch === ep);
-  populateTable('wtSkyTable', skyRows, true);
-  populateTable('wtBeakTable', beakRows, false);
+  populateTable('wtSkyTbody', skyRows, true);
+  populateTable('wtBeakTbody', beakRows, false);
   // Update range labels
   const skyStart = skyTraj.filter(r => r.epoch === ep-1).pop()?.W ?? skyTraj[0].W;
   const skyEnd = skyRows.length > 0 ? skyRows[skyRows.length-1].W : skyStart;
