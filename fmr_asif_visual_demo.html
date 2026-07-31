@@ -420,6 +420,43 @@
   .takeaway-card h5 { font-family: var(--font-mono); font-size: 0.78rem; color: #b388ff; margin-bottom: 4px; }
   .takeaway-card p { font-size: 0.78rem; color: var(--text-dim); line-height: 1.5; }
 
+  /* === WEIGHT TABLE STYLES (matches LR Estimator design) === */
+  .wt-btn {
+    padding: 6px 14px; border: 1px solid #b388ff44; border-radius: 6px;
+    background: transparent; color: #b388ff; cursor: pointer;
+    font-family: var(--font-mono); font-size: 0.72rem;
+    transition: all 0.25s;
+  }
+  .wt-btn:hover { background: #b388ff15; border-color: #b388ff88; }
+  .wt-epoch-label { color: var(--text); font-family: var(--font-mono); font-size: 0.9rem; min-width: 70px; text-align: center; display: inline-block; }
+  .wt-slider { width: 100px; accent-color: #b388ff; }
+  .wt-tbl-wrap {
+    max-height: 340px; overflow-y: auto;
+    border: 1px solid var(--border); border-radius: 10px;
+    background: var(--deep);
+  }
+  .wt-tbl { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+  .wt-tbl th {
+    font-family: var(--font-display); font-size: 0.58rem;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--text-dim); padding: 0.45rem 0.5rem;
+    border-bottom: 2px solid var(--border); text-align: center;
+    background: var(--surface); position: sticky; top: 0; z-index: 1;
+  }
+  .wt-tbl td {
+    text-align: center; padding: 0.35rem 0.45rem;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono); font-size: 0.68rem;
+  }
+  .wt-tbl tbody tr:hover { background: #b388ff0a; }
+  .wt-tbl tbody tr.summary-row { background: #b388ff0d; border-top: 2px solid #b388ff44; font-weight: bold; }
+  .wt-tbl .wt-red { color: var(--red); }
+  .wt-tbl .wt-green { color: var(--green); }
+  .wt-tbl .wt-amber { color: var(--amber); }
+  .wt-tbl .wt-cyan { color: var(--cyan); }
+  .wt-tbl .wt-purple { color: #b388ff; }
+  body.light .wt-tbl-wrap { background: #f8f8fc; }
+
   /* === MAIN CONTAINER === */
   .main-container {
     position: relative;
@@ -1216,21 +1253,43 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
       <h5 style="color:#b388ff; font-family:var(--font-display); font-weight:400; margin:0;">🔢 Live Weight Calculation Table — Step Through Epochs</h5>
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <button onclick="weightTableStep(-1)" style="padding:6px 14px; border:1px solid #b388ff44; border-radius:6px; background:transparent; color:#b388ff; cursor:pointer; font-family:var(--font-mono); font-size:0.75rem;">◀◀ Prev</button>
-        <span style="color:var(--text); font-family:var(--font-mono); font-size:0.85rem; min-width:70px; text-align:center;" id="weightTableEpochLabel">Epoch 1</span>
-        <button onclick="weightTableStep(1)" style="padding:6px 14px; border:1px solid #b388ff44; border-radius:6px; background:transparent; color:#b388ff; cursor:pointer; font-family:var(--font-mono); font-size:0.75rem;">Next ▶▶</button>
-        <button onclick="weightTablePlay()" style="padding:6px 14px; border:1px solid #b388ff44; border-radius:6px; background:transparent; color:#b388ff; cursor:pointer; font-family:var(--font-mono); font-size:0.75rem;" id="weightTablePlayBtn">▶ Auto-Play</button>
-        <input type="range" id="weightTableSlider" min="1" max="50" value="1" oninput="weightTableSetEpoch(this.value)" style="width:120px; accent-color:#b388ff;">
+        <button onclick="weightTableStep(-1)" class="wt-btn">◀◀ Prev</button>
+        <span id="weightTableEpochLabel" class="wt-epoch-label">Epoch 1</span>
+        <button onclick="weightTableStep(1)" class="wt-btn">Next ▶▶</button>
+        <button onclick="weightTablePlay()" class="wt-btn" id="weightTablePlayBtn">▶ Auto-Play</button>
+        <input type="range" id="weightTableSlider" min="1" max="50" value="1" oninput="weightTableSetEpoch(this.value)" class="wt-slider">
       </div>
     </div>
-    <div class="learn-canvas-wrap" style="margin-top:10px;">
-      <canvas id="learnWeightTableCanvas" width="1200" height="400"></canvas>
+
+    <!-- Two tables side by side -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:10px;">
+      <!-- f_sky table -->
+      <div>
+        <div style="font-family:var(--font-display); font-size:0.85rem; color:#ff5252; margin-bottom:6px;">🔴 f<sub>sky</sub> — Irrelevant (Blue Sky) &nbsp;<span style="font-size:0.65rem; color:var(--text-dim);" id="wtSkyRange">W: 0.0500 → 0.0500</span></div>
+        <div class="wt-tbl-wrap">
+          <table class="wt-tbl" id="wtSkyTable">
+            <thead><tr><th>Batch</th><th>Sample</th><th>f_val</th><th>CE ∂W</th><th>W Decay</th><th>Net ΔW</th><th>W</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- f_beak table -->
+      <div>
+        <div style="font-family:var(--font-display); font-size:0.85rem; color:#69f0ae; margin-bottom:6px;">🟢 f<sub>beak</sub> — Useful (Beak Curve) &nbsp;<span style="font-size:0.65rem; color:var(--text-dim);" id="wtBeakRange">W: 0.0300 → 2.3000</span></div>
+        <div class="wt-tbl-wrap">
+          <table class="wt-tbl" id="wtBeakTable">
+            <thead><tr><th>Batch</th><th>Sample</th><th>f_val</th><th>CE ∂W</th><th>W Decay</th><th>Net ΔW</th><th>W</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
     </div>
-    <div class="legend">
+
+    <div class="legend" style="margin-top:10px;">
       <span><span class="dot" style="background:#ff5252;"></span> Negative (pulls W down)</span>
       <span><span class="dot" style="background:#69f0ae;"></span> Positive (pushes W up)</span>
       <span><span class="dot" style="background:#ffb300;"></span> Weight Decay (always toward 0)</span>
-      <span><span class="dot" style="background:#ffffff44; border:1px solid #ffffff44; width:8px; height:8px;"></span> Net ΔW after combining CE + decay</span>
+      <span><span class="dot" style="background:#ffffff44; border:1px solid #ffffff44; width:8px; height:8px;"></span> Net ΔW = CE + Decay</span>
     </div>
   </div>
 </div>
@@ -3157,187 +3216,87 @@ let weightTableEpoch = 1;
 let weightTableTimer = null;
 let weightTablePlaying = false;
 
-// Pre-compute weight trajectories for both features across 50 epochs
-function generateWeightTrajectories() {
-  const Wdecay = 0.001; // weight decay coefficient
-  const lr = 0.01;      // learning rate
-  const batchesPerEpoch = 4;
-  const totalBatches = 50 * batchesPerEpoch;
-
-  // f_sky: same high value for all classes (indigo ≈ 0.90, lazuli ≈ 0.89)
-  // CE gradients cancel, weight decay pulls to 0
-  let Wsky = 0.05; // small random init
-  const skyTraj = [{ epoch: 0, batch: 0, f: 0.90, ceGrad: 0, wDecay: 0, netDelta: 0, W: Wsky, sample: '—' }];
-
-  for (let b = 1; b <= totalBatches; b++) {
-    const epoch = Math.ceil(b / batchesPerEpoch);
-    const isIndigo = b % 2 === 1; // alternate Indigo/Lazuli
-    const f = isIndigo ? 0.90 : 0.89;
-    const y = isIndigo ? 1.0 : 0.0;
-    const yHat = 0.5;
-    const ceGrad = (yHat - y) * f;
-    const wDecayPull = -2 * Wdecay * Wsky;
-    const netDelta = lr * (ceGrad + wDecayPull);
-    Wsky += netDelta;
-    skyTraj.push({ epoch, batch: ((b-1) % batchesPerEpoch) + 1, f, ceGrad: round4(ceGrad), wDecay: round4(wDecayPull), netDelta: round4(netDelta), W: round4(Wsky), sample: isIndigo ? 'Indigo ☀️' : 'Lazuli ☀️' });
-  }
-
-  // f_beak: different values per class (indigo ≈ 0.65, lazuli ≈ 0.22)
-  // CE gradients consistent, overcome weight decay
-  let Wbeak = 0.03;
-  const beakTraj = [{ epoch: 0, batch: 0, f: 0, ceGrad: 0, wDecay: 0, netDelta: 0, W: Wbeak, sample: '—' }];
-
-  for (let b = 1; b <= totalBatches; b++) {
-    const epoch = Math.ceil(b / batchesPerEpoch);
-    const isIndigo = b % 2 === 1;
-    const f = isIndigo ? 0.65 : 0.22;
-    const y = isIndigo ? 1.0 : 0.0;
-    // Prediction gets better over time
-    const progress = b / totalBatches;
-    const yHat = isIndigo ? Math.min(0.95, 0.5 + progress * 0.45) : Math.max(0.05, 0.5 - progress * 0.45);
-    const ceGrad = (yHat - y) * f;
-    const wDecayPull = -2 * Wdecay * Wbeak;
-    const netDelta = lr * (ceGrad + wDecayPull);
-    Wbeak += netDelta;
-    beakTraj.push({ epoch, batch: ((b-1) % batchesPerEpoch) + 1, f, ceGrad: round4(ceGrad), wDecay: round4(wDecayPull), netDelta: round4(netDelta), W: round4(Wbeak), sample: isIndigo ? 'Indigo 🐦' : 'Lazuli 🐦' });
-  }
-
-  return { sky: skyTraj, beak: beakTraj };
-}
-
+const Wdecay = 0.001, lr = 0.01;
 function round4(v) { return Math.round(v * 10000) / 10000; }
 
-const weightTrajectories = generateWeightTrajectories();
+// Pre-compute full trajectories
+function genTraj(isSky) {
+  const traj = [];
+  let W = isSky ? 0.05 : 0.03;
+  traj.push({ epoch:0, batch:0, f:0, ceGrad:0, wDecay:0, netDelta:0, W:round4(W), sample:'—' });
+  for (let b = 1; b <= 200; b++) {
+    const ep = Math.ceil(b/4), isIndigo = b % 2 === 1;
+    const f = isSky ? (isIndigo ? 0.90 : 0.89) : (isIndigo ? 0.65 : 0.22);
+    const y = isIndigo ? 1.0 : 0.0;
+    const yHat = isSky ? 0.5 : (isIndigo ? Math.min(0.95, 0.5 + b/200*0.45) : Math.max(0.05, 0.5 - b/200*0.45));
+    const ceGrad = (yHat - y) * f;
+    const wDecayPull = -2 * Wdecay * W;
+    const netDelta = lr * (ceGrad + wDecayPull);
+    W += netDelta;
+    traj.push({ epoch:ep, batch:((b-1)%4)+1, f:round4(f), ceGrad:round4(ceGrad), wDecay:round4(wDecayPull), netDelta:round4(netDelta), W:round4(W), sample: isSky ? (isIndigo ? 'Indigo ☀️' : 'Lazuli ☀️') : (isIndigo ? 'Indigo 🐦' : 'Lazuli 🐦') });
+  }
+  return traj;
+}
+const skyTraj = genTraj(true);
+const beakTraj = genTraj(false);
+
+function fmt(v, showSign) {
+  const s = v.toFixed(4);
+  return showSign && v > 0 ? '+' + s : s;
+}
+function cellClass(v, thresholds) {
+  if (v > (thresholds[0]||0.0001)) return 'wt-green';
+  if (v < (thresholds[1]||-0.0001)) return 'wt-red';
+  return '';
+}
+
+function populateTable(tbodyId, rows, isBad) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  rows.forEach((r, ri) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      `<td class="wt-purple">${r.batch}</td>` +
+      `<td>${r.sample}</td>` +
+      `<td>${fmt(r.f)}</td>` +
+      `<td class="${r.ceGrad > 0.0001 ? 'wt-green' : r.ceGrad < -0.0001 ? 'wt-red' : ''}">${fmt(r.ceGrad, true)}</td>` +
+      `<td class="wt-amber">${fmt(r.wDecay)}</td>` +
+      `<td class="${r.netDelta > 0.0001 ? 'wt-green' : r.netDelta < -0.0001 ? 'wt-red' : ''}" style="font-weight:bold;">${fmt(r.netDelta, true)}</td>` +
+      `<td class="${isBad ? 'wt-red' : 'wt-green'}" style="font-weight:bold;">${fmt(r.W)}</td>`;
+    tbody.appendChild(tr);
+  });
+  // Summary row
+  const totalCE = round4(rows.reduce((s,r)=>s+r.ceGrad,0));
+  const totalDecay = round4(rows.reduce((s,r)=>s+r.wDecay,0));
+  const totalDelta = round4(rows.reduce((s,r)=>s+r.netDelta,0));
+  const endW = rows.length > 0 ? rows[rows.length-1].W : 0;
+  const tr = document.createElement('tr');
+  tr.className = 'summary-row';
+  tr.innerHTML =
+    `<td class="wt-purple" style="font-weight:bold;">∑</td>` +
+    `<td class="wt-purple" style="font-weight:bold;">EPOCH</td>` +
+    `<td></td>` +
+    `<td class="wt-amber">${fmt(totalCE, true)}</td>` +
+    `<td class="wt-amber">${fmt(totalDecay)}</td>` +
+    `<td style="font-weight:bold; color:${totalDelta>=0?'var(--green)':'var(--red)'};">${fmt(totalDelta, true)}</td>` +
+    `<td style="font-weight:bold; color:${isBad?'var(--red)':'var(--green)'};">${fmt(endW)}</td>`;
+  tbody.appendChild(tr);
+}
 
 function drawWeightTable() {
-  const canvas = document.getElementById('learnWeightTableCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0, 0, W, H);
-
   const ep = weightTableEpoch;
-  const batchesPerEpoch = 4;
-
-  // Get the 4 batches for current epoch + the row showing state at END of epoch
-  const skyRows = weightTrajectories.sky.filter(r => r.epoch === ep);
-  const beakRows = weightTrajectories.beak.filter(r => r.epoch === ep);
-
-  // Column layout: left half = f_sky, right half = f_beak
-  const halfW = W / 2;
-  const tablePadX = 15, tablePadY = 10;
-  const colWidths = [55, 85, 70, 70, 65, 75]; // Sample, CE Grad, W Decay, Net ΔW, W (total 420px per half)
-
-  function drawHalfTable(ox, title, titleColor, rows, startW, endW, isBad) {
-    const oy = tablePadY;
-    const rowH = 52;
-    const totalTableW = colWidths.reduce((a, b) => a + b, 0);
-
-    // Title
-    ctx.fillStyle = titleColor;
-    ctx.font = 'bold 13px monospace';
-    ctx.fillText(title, ox + 8, oy + 18);
-
-    // Start/End W summary
-    ctx.fillStyle = isBad ? '#ff525288' : '#69f0ae88';
-    ctx.font = '10px monospace';
-    ctx.fillText(`W: ${round4(startW)} → ${round4(endW)}`, ox + totalTableW - 140, oy + 18);
-
-    const headerY = oy + 30;
-    const headers = ['Sample', 'CE Grad', 'W Decay', 'Net ΔW', 'W'];
-    const headerWidths = colWidths.slice(0, 5);
-
-    // Header bg
-    ctx.fillStyle = '#ffffff06';
-    ctx.fillRect(ox, headerY, totalTableW - 20, 24);
-
-    let cx = ox + 8;
-    headers.forEach((h, i) => {
-      ctx.fillStyle = '#6b6b80';
-      ctx.font = 'bold 9px monospace';
-      ctx.fillText(h, cx, headerY + 16);
-      cx += headerWidths[i];
-    });
-
-    // Rows
-    rows.forEach((row, ri) => {
-      const ry = headerY + 30 + ri * rowH;
-
-      // Row bg alternating
-      ctx.fillStyle = ri % 2 === 0 ? '#ffffff02' : '#ffffff05';
-      ctx.fillRect(ox + 4, ry, totalTableW - 20, rowH - 4);
-
-      cx = ox + 8;
-      const vals = [
-        { v: row.sample, c: '#c8c8d4', bold: false },
-        { v: row.ceGrad >= 0 ? '+' + row.ceGrad.toFixed(4) : row.ceGrad.toFixed(4), c: row.ceGrad >= 0 ? '#69f0ae' : '#ff5252', bold: false },
-        { v: row.wDecay.toFixed(4), c: '#ffb300', bold: false },
-        { v: row.netDelta >= 0 ? '+' + row.netDelta.toFixed(4) : row.netDelta.toFixed(4), c: row.netDelta >= 0 ? '#69f0ae' : '#ff5252', bold: true },
-        { v: row.W.toFixed(4), c: isBad ? '#ff5252' : '#69f0ae', bold: true },
-      ];
-
-      vals.forEach((val, vi) => {
-        ctx.fillStyle = val.c;
-        ctx.font = (val.bold ? 'bold ' : '') + '10px monospace';
-        ctx.fillText(val.v, cx, ry + 30);
-        cx += headerWidths[vi];
-      });
-
-      // Arrow showing W movement
-      const arrowX = ox + totalTableW - 30;
-      const arrowY = ry + 22;
-      if (ri < rows.length - 1) {
-        const currW = row.W;
-        const nextW = rows[ri + 1].W;
-        const diff = nextW - currW;
-        if (Math.abs(diff) > 0.0001) {
-          ctx.fillStyle = diff > 0 ? '#69f0ae88' : '#ff525288';
-          ctx.font = '14px sans-serif';
-          ctx.fillText(diff > 0 ? '▲' : '▼', arrowX, arrowY + 4);
-        }
-      }
-    });
-
-    // Final row: accumulated effect over the epoch
-    const finalY = headerY + 30 + rows.length * rowH + 6;
-    ctx.fillStyle = '#ffffff10';
-    ctx.fillRect(ox + 4, finalY - 4, totalTableW - 20, 28);
-
-    const totalCE = round4(rows.reduce((s, r) => s + r.ceGrad, 0));
-    const totalDecay = round4(rows.reduce((s, r) => s + r.wDecay, 0));
-    const totalDelta = round4(rows.reduce((s, r) => s + r.netDelta, 0));
-
-    cx = ox + 8;
-    const summaryVals = [
-      { v: 'EPOCH ' + ep, c: '#b388ff', bold: true },
-      { v: (totalCE >= 0 ? '+' : '') + totalCE.toFixed(4), c: '#ffb300' },
-      { v: totalDecay.toFixed(4), c: '#ffb300' },
-      { v: (totalDelta >= 0 ? '+' : '') + totalDelta.toFixed(4), c: totalDelta >= 0 ? '#69f0ae' : '#ff5252', bold: true },
-      { v: endW.toFixed(4), c: isBad ? '#ff5252' : '#69f0ae', bold: true },
-    ];
-    summaryVals.forEach((sv, si) => {
-      ctx.fillStyle = sv.c;
-      ctx.font = (sv.bold ? 'bold ' : '') + '10px monospace';
-      ctx.fillText(sv.v, cx, finalY + 16);
-      cx += headerWidths[si];
-    });
-
-    return totalTableW;
-  }
-
-  const skyEndW = skyRows.length > 0 ? skyRows[skyRows.length - 1].W : weightTrajectories.sky[0].W;
-  const skyStartW = weightTrajectories.sky.filter(r => r.epoch === ep - 1).pop()?.W ?? weightTrajectories.sky[0].W;
-  const beakEndW = beakRows.length > 0 ? beakRows[beakRows.length - 1].W : weightTrajectories.beak[0].W;
-  const beakStartW = weightTrajectories.beak.filter(r => r.epoch === ep - 1).pop()?.W ?? weightTrajectories.beak[0].W;
-
-  drawHalfTable(0, '🔴 f_sky — Irrelevant', '#ff5252', skyRows, skyStartW, skyEndW, true);
-  drawHalfTable(halfW, '🟢 f_beak — Useful', '#69f0ae', beakRows, beakStartW, beakEndW, false);
-
-  // Bottom formula
-  ctx.fillStyle = '#6b6b80';
-  ctx.font = '10px monospace';
-  ctx.fillText('Each batch: W_new = W_old + η × [ (ŷ − y)·f  +  (−2·λ_W·W) ]       η = learning rate, λ_W = weight decay coefficient', 100, H - 6);
-  ctx.fillText('                               CE gradient              Weight Decay', 100, H + 10);
+  const skyRows = skyTraj.filter(r => r.epoch === ep);
+  const beakRows = beakTraj.filter(r => r.epoch === ep);
+  populateTable('wtSkyTable', skyRows, true);
+  populateTable('wtBeakTable', beakRows, false);
+  // Update range labels
+  const skyStart = skyTraj.filter(r => r.epoch === ep-1).pop()?.W ?? skyTraj[0].W;
+  const skyEnd = skyRows.length > 0 ? skyRows[skyRows.length-1].W : skyStart;
+  const beakStart = beakTraj.filter(r => r.epoch === ep-1).pop()?.W ?? beakTraj[0].W;
+  const beakEnd = beakRows.length > 0 ? beakRows[beakRows.length-1].W : beakStart;
+  const sr = document.getElementById('wtSkyRange'); if (sr) sr.textContent = `W: ${fmt(skyStart)} → ${fmt(skyEnd)}`;
+  const br = document.getElementById('wtBeakRange'); if (br) br.textContent = `W: ${fmt(beakStart)} → ${fmt(beakEnd)}`;
 }
 
 function weightTableStep(dir) {
@@ -3346,17 +3305,14 @@ function weightTableStep(dir) {
   document.getElementById('weightTableSlider').value = weightTableEpoch;
   drawWeightTable();
 }
-
 function weightTableSetEpoch(val) {
   weightTableEpoch = parseInt(val);
   document.getElementById('weightTableEpochLabel').textContent = 'Epoch ' + weightTableEpoch;
   drawWeightTable();
 }
-
 function weightTablePlay() {
   if (weightTablePlaying) {
-    clearInterval(weightTableTimer);
-    weightTablePlaying = false;
+    clearInterval(weightTableTimer); weightTablePlaying = false;
     document.getElementById('weightTablePlayBtn').textContent = '▶ Auto-Play';
     return;
   }
@@ -3364,11 +3320,7 @@ function weightTablePlay() {
   document.getElementById('weightTablePlayBtn').textContent = '⏸ Stop';
   weightTableEpoch = 1;
   weightTableTimer = setInterval(() => {
-    if (weightTableEpoch >= 50) {
-      clearInterval(weightTableTimer);
-      weightTablePlaying = false;
-      document.getElementById('weightTablePlayBtn').textContent = '▶ Auto-Play';
-    }
+    if (weightTableEpoch > 50) { clearInterval(weightTableTimer); weightTablePlaying = false; document.getElementById('weightTablePlayBtn').textContent = '▶ Auto-Play'; return; }
     document.getElementById('weightTableEpochLabel').textContent = 'Epoch ' + weightTableEpoch;
     document.getElementById('weightTableSlider').value = weightTableEpoch;
     drawWeightTable();
