@@ -549,6 +549,80 @@ render:()=>`
 <span style="color:#6a9955;">#      If validate() raises SchemaError → test FAILS ❌</span></div>
 
 <div class="callout" style="background:var(--vbg);border:1px solid rgba(91,58,168,0.15);"><strong>💡 Key insight:</strong> Neither pytest nor Pandera is "pre-defined" in Python. They're both <code>pip install</code>'d libraries. pytest handles discovery + running; Pandera handles DataFrame validation. Your job is to define <strong>what valid looks like</strong> (the schema) and <strong>what to check</strong> (the test functions). The convention is simple: name your function <code>test_*</code> and put it in a <code>Test*</code> class → pytest finds it automatically.</div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem;">🔧 What is a "Fixture" and Why Is It Called That?</h3>
+<p style="font-size:0.82rem;color:var(--tdim);margin-bottom:0.6rem;">The word comes from <strong>manufacturing</strong> — a fixture is a tool that <strong>holds something in place</strong> so you can work on it. Think vise on a workbench 🪚. In testing: the fixture "clamps" your test data ready, so your test code (the "work") stays clean.</p>
+
+<table style="width:100%;border-collapse:collapse;font-size:0.75rem;margin:0.5rem 0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.3rem 0.5rem;">Concept</th><th style="text-align:left;padding:0.3rem 0.5rem;">Analogy</th><th style="text-align:left;padding:0.3rem 0.5rem;">In Code</th></tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--border);background:rgba(91,58,168,0.03);"><td style="padding:0.3rem 0.5rem;font-weight:700;color:var(--violet);">Fixture</td><td style="padding:0.3rem 0.5rem;">The vise on your workbench — holds the workpiece steady</td><td style="padding:0.3rem 0.5rem;font-size:0.7rem;"><code>@pytest.fixture</code> — a function that returns prepared data</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(26,110,52,0.03);"><td style="padding:0.3rem 0.5rem;font-weight:700;color:var(--green);">Fixture return value</td><td style="padding:0.3rem 0.5rem;">The workpiece itself (the wood/metal you're drilling into)</td><td style="padding:0.3rem 0.5rem;font-size:0.7rem;">The DataFrame, list, or callable the fixture function returns</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(184,112,0,0.03);"><td style="padding:0.3rem 0.5rem;font-weight:700;color:var(--amber);">Test function</td><td style="padding:0.3rem 0.5rem;">You — the craftsperson doing the actual work</td><td style="padding:0.3rem 0.5rem;font-size:0.7rem;">The <code>def test_*</code> that calls <code>assert</code> / <code>validate()</code></td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(198,40,40,0.03);"><td style="padding:0.3rem 0.5rem;font-weight:700;color:var(--red);">conftest.py</td><td style="padding:0.3rem 0.5rem;">Your tool rack — all fixtures hang here, ready to grab</td><td style="padding:0.3rem 0.5rem;font-size:0.7rem;">pytest auto-loads this file; every test can use any fixture</td></tr>
+</tbody>
+</table>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.82rem;color:var(--violet);margin:1rem 0 0.4rem;">🔬 How pytest Injects a Fixture — Step by Step</h3>
+<div class="code-box" style="font-size:0.78rem;">
+<span style="color:#6a9955;"># STEP 1: You DEFINE the fixture in conftest.py</span>
+<span style="color:#6a9955;">#         @pytest.fixture marks it; the function body prepares the data</span>
+<span style="color:#569cd6;">@pytest.fixture</span>
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">sample_instruction_data</span>():                    <span style="color:#6a9955;">← fixture name</span>
+    <span style="color:#569cd6;">return</span> pd.DataFrame([...3 clean rows...])        <span style="color:#6a9955;">← workpiece</span>
+
+<span style="color:#6a9955;"># STEP 2: You REQUEST the fixture by parameter name in test_data.py</span>
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_valid_passes</span>(<span style="color:#569cd6;">self</span>, sample_instruction_data):  <span style="color:#6a9955;">← same name!</span>
+    InstructionSchema.validate(sample_instruction_data)  <span style="color:#6a9955;">← use it</span>
+
+<span style="color:#6a9955;"># STEP 3: pytest AUTO-WIRES it at runtime</span>
+<span style="color:#6a9955;">#   pytest sees "sample_instruction_data" parameter</span>
+<span style="color:#6a9955;">#   → searches conftest.py for @pytest.fixture with that name</span>
+<span style="color:#6a9955;">#   → calls the fixture function → injects return value into test</span></div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.82rem;color:var(--violet);margin:1rem 0 0.4rem;">📋 The 4 Fixtures in This Project</h3>
+<table style="width:100%;border-collapse:collapse;font-size:0.75rem;margin:0.5rem 0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.3rem 0.5rem;">Fixture</th><th style="text-align:left;padding:0.3rem 0.5rem;">Returns</th><th style="text-align:left;padding:0.3rem 0.5rem;">Used By</th><th style="text-align:left;padding:0.3rem 0.5rem;">In File</th></tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem;font-size:0.7rem;"><code>sample_instruction_data</code></td><td style="padding:0.3rem 0.5rem;">DataFrame — 3 clean rows</td><td style="padding:0.3rem 0.5rem;">Happy path + format tests</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;">test_data.py</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem;font-size:0.7rem;"><code>bad_instruction_data</code></td><td style="padding:0.3rem 0.5rem;">DataFrame — 4 rows (1 null, 1 empty output, 1 empty instruction)</td><td style="padding:0.3rem 0.5rem;">Edge case + failure tests</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;">test_data.py</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem;font-size:0.7rem;"><code>sample_preference_data</code></td><td style="padding:0.3rem 0.5rem;">DataFrame — 2 DPO preference pairs</td><td style="padding:0.3rem 0.5rem;">Preference schema tests</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;">test_data.py</td></tr>
+<tr><td style="padding:0.3rem 0.5rem;font-size:0.7rem;"><code>mock_dpo_pipeline</code></td><td style="padding:0.3rem 0.5rem;">Callable — fake model (returns preset answers)</td><td style="padding:0.3rem 0.5rem;">All behavioral tests (MFT/INV/DIR/Hallucination)</td><td style="padding:0.3rem 0.5rem;font-size:0.65rem;">test_model.py</td></tr>
+</tbody>
+</table>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.82rem;color:var(--violet);margin:1rem 0 0.4rem;">✅ Without Fixtures vs With Fixtures</h3>
+<div class="compare">
+<div class="cmp-card left"><h4 style="color:var(--red);">❌ Without Fixtures</h4>
+<div class="code-box" style="font-size:0.7rem;padding:0.5rem 0.75rem;margin:0;">
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_one</span>():
+    <span style="color:#6a9955;"># Setup repeated in EVERY test</span>
+    df = pd.DataFrame([
+        {<span style="color:#ce9178;">"instruction"</span>: <span style="color:#ce9178;">"..."</span>, <span style="color:#ce9178;">"input"</span>: <span style="color:#ce9178;">""</span>, <span style="color:#ce9178;">"output"</span>: <span style="color:#ce9178;">"..."</span>},
+    ])
+    Schema.validate(df)
+
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_two</span>():
+    df = pd.DataFrame([...])   <span style="color:#6a9955;"># SAME setup again!</span>
+    <span style="color:#569cd6;">assert</span> <span style="color:#ce9178;">"instruction"</span> <span style="color:#569cd6;">in</span> df.columns
+</div></div>
+<div class="cmp-card right"><h4 style="color:var(--green);">✅ With Fixtures</h4>
+<div class="code-box" style="font-size:0.7rem;padding:0.5rem 0.75rem;margin:0;">
+<span style="color:#6a9955;"># Setup lives ONCE in conftest.py</span>
+<span style="color:#569cd6;">@pytest.fixture</span>
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">df</span>():
+    <span style="color:#569cd6;">return</span> pd.DataFrame([...])
+
+<span style="color:#6a9955;"># Tests stay CLEAN — just request it</span>
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_one</span>(df):       <span style="color:#6a9955;">← injected</span>
+    Schema.validate(df)
+
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_two</span>(df):       <span style="color:#6a9955;">← same fixture</span>
+    <span style="color:#569cd6;">assert</span> <span style="color:#ce9178;">"instruction"</span> <span style="color:#569cd6;">in</span> df.columns
+</div></div>
+</div>
+
+<div class="callout" style="background:rgba(26,110,52,0.06);border:1px solid rgba(26,110,52,0.2);"><strong>🎯 The key benefit — separation of concerns:</strong> Fixture's job = "Here is the data, ready to use." Test's job = "Here is what should happen." Assertion's job = "Did it happen? Yes/No." Change test data in <strong>one place</strong> (conftest.py) → all 25 tests pick it up automatically. That's why it's called a <em>fixture</em> — a fixed, reusable setup that holds your test context in place.</div>
 </div></div>`}
 ];
 
