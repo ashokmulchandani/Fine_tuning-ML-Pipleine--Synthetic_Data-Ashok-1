@@ -833,7 +833,7 @@ InstructionSchema.validate(sample_instruction_data)
 
 <div class="callout" style="background:rgba(26,110,52,0.06);border:1px solid rgba(26,110,52,0.2);"><strong>🎯 The rule:</strong> The decorator gates only classes that <strong>import from or call Pandera directly</strong>. The other classes use plain Python + pandas — they work regardless. If someone clones the repo without <code>pip install pandera</code>, <strong>10 of 15 tests still run</strong> (TestEdgeCases + TestInstructionFormat). You don't lose everything just because one optional dependency is missing.</div>
 </div></div>`},
-{id:'6A.12',title:'Beginner's Guide — Anatomy of One Line & assert Explained',
+{id:'6A.12',title:"Beginner's Guide — Anatomy of One Line & assert Explained",
 fact:'null_mask = bad_instruction_data["instruction"].isnull() — 5 pieces working together. Plus: what assert really means and why tests use it instead of if/print.',
 render:()=>`
 <div class="slide"><div class="card">
