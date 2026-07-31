@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fine-Tuning Pipeline — Complete Guide Index</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--red:#c62828;--cyan:#007a99;--magenta:#9e2a6b;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;min-height:100vh;}
+.app{max-width:1000px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:2.5rem 0 1.5rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.6rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.95rem;margin-top:0.4rem;}
+.header .links{margin-top:1rem;display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;}
+.header .links a{font-family:'Space Grotesk',sans-serif;font-size:0.65rem;font-weight:600;letter-spacing:0.06em;padding:0.4em 1em;border:1.5px solid var(--border);border-radius:100px;color:var(--tdim);text-decoration:none;transition:0.2s;}
+.header .links a:hover{border-color:var(--violet);color:var(--violet);background:var(--vbg);}
+
+.section{margin:1.5rem 0 0.5rem;}
+.section h2{font-family:'Space Grotesk',sans-serif;font-size:0.9rem;font-weight:600;color:var(--tdim);padding-bottom:0.4rem;border-bottom:1.5px solid var(--border);display:flex;align-items:center;gap:0.5rem;}
+.section h2 .icon{font-size:1rem;}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0.6rem;margin:0.5rem 0;}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;text-decoration:none;color:var(--text);transition:0.2s;display:flex;flex-direction:column;gap:0.3rem;}
+.card:hover{border-color:var(--violet);box-shadow:0 2px 12px rgba(91,58,168,0.08);transform:translateY(-1px);}
+.card h3{font-family:'Space Grotesk',sans-serif;font-size:0.8rem;font-weight:600;color:var(--text);}
+.card p{font-size:0.75rem;color:var(--tmut);line-height:1.5;margin:0;}
+
+.card .tag{display:inline-block;font-family:'Space Grotesk',sans-serif;font-size:0.55rem;font-weight:600;letter-spacing:0.06em;padding:0.15em 0.6em;border-radius:100px;align-self:flex-start;}
+
+.tag-phase{background:var(--vbg);color:var(--violet);}
+.tag-visual{background:rgba(0,122,153,0.08);color:var(--cyan);}
+.tag-metrics{background:rgba(26,110,52,0.08);color:var(--green);}
+.tag-ref{background:rgba(184,112,0,0.08);color:var(--amber);}
+.tag-adv{background:rgba(158,42,107,0.08);color:var(--magenta);}
+.tag-new{background:rgba(198,40,40,0.06);color:var(--red);}
+
+.footer{text-align:center;padding:2rem;border-top:1px solid var(--border);margin-top:2rem;color:var(--tmut);font-size:0.75rem;}
+
+@media(max-width:768px){.app{padding:0.75rem;}.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <h1>🧠 Fine-Tuning Pipeline — Complete Visual Guide</h1>
+  <p>Every concept explained with interactive HTML pages. Click any card to open.</p>
+  <div class="links">
+    <a href="finetuning_plan_dashboard.html">📊 Dashboard</a>
+    <a href="https://github.com/ashokmulchandani/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1">📁 GitHub Repo</a>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section"><h2><span class="icon">📚</span> Phase Walkthroughs (Main Curriculum)</h2></div>
+<div class="grid">
+
+<a class="card" href="phase1_fundamentals.html">
+  <span class="tag tag-phase">Phase 1</span>
+  <h3>Fundamentals — What is Fine-Tuning?</h3>
+  <p>Base model vs fine-tuned model. Transfer learning explained. The intuition before the math.</p>
+</a>
+
+<a class="card" href="phase2_quantization.html">
+  <span class="tag tag-phase">Phase 2</span>
+  <h3>Quantization — Shrinking Models</h3>
+  <p>FP32 → INT8/INT4. How quantization makes models fit on consumer GPUs without breaking accuracy.</p>
+</a>
+
+<a class="card" href="phase3_lora_qlora.html">
+  <span class="tag tag-phase">Phase 3</span>
+  <h3>LoRA & QLoRA — Efficient Fine-Tuning</h3>
+  <p>Train 1% of parameters, get 95% of the result. The adapter method that changed everything.</p>
+</a>
+
+<a class="card" href="phase4_domain_finetune.html">
+  <span class="tag tag-phase">Phase 4</span>
+  <h3>Domain Fine-Tuning — Teach the Jargon</h3>
+  <p>Adapt a general model to a specialized domain (medical, legal, etc.) with domain-specific data.</p>
+</a>
+
+<a class="card" href="phase5_instruction_finetune.html">
+  <span class="tag tag-phase">Phase 5</span>
+  <h3>Instruction Fine-Tuning — Teach the Format</h3>
+  <p>Alpaca format, instruction/response pairs. How to make the model follow directions.</p>
+</a>
+
+<a class="card" href="phase5b_synthetic_data.html">
+  <span class="tag tag-phase">Phase 5B</span>
+  <h3>Synthetic Data Generation</h3>
+  <p>Generate training data with LLMs. When you have no labeled data, make it.</p>
+</a>
+
+<a class="card" href="phase6_dpo_preference.html">
+  <span class="tag tag-phase">Phase 6</span>
+  <h3>DPO — Direct Preference Optimization</h3>
+  <p>Teach models to prefer good answers over bad ones. No reward model needed.</p>
+</a>
+
+<a class="card" href="phase6a_ai_testing.html">
+  <span class="tag tag-phase">Phase 6A</span>
+  <h3>AI Testing & QA</h3>
+  <p>25 pytest tests across data + model. MFT/INV/DIR behavioral tests. 4-layer pyramid.</p>
+</a>
+
+<a class="card" href="phase6b_mlops_deployment.html">
+  <span class="tag tag-phase">Phase 6B</span>
+  <h3>MLOps & Deployment</h3>
+  <p>DVC pipelines, MLflow tracking, CI/CD, model registry. Production-grade MLOps.</p>
+</a>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section"><h2><span class="icon">🔬</span> QAT (Quantization-Aware Training) — Deep Dives</h2></div>
+<div class="grid">
+
+<a class="card" href="qat_visual_guide.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>QAT Visual Guide</h3>
+  <p>Full walkthrough: fake quantization, STE (Straight-Through Estimator), and the QAT training loop.</p>
+</a>
+
+<a class="card" href="qat_weight_nudge_animation.html">
+  <span class="tag tag-visual">Animation</span>
+  <h3>QAT Weight Nudge Animation</h3>
+  <p>Animated visualization of how QAT nudges weights toward quantization-friendly values.</p>
+</a>
+
+<a class="card" href="qat_end_to_end_loop.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>QAT End-to-End Loop</h3>
+  <p>The complete QAT cycle: forward pass → fake quantize → backward pass (STE) → update.</p>
+</a>
+
+<a class="card" href="bitnet_1_58bit_deep_dive.html">
+  <span class="tag tag-visual">Deep Dive</span>
+  <h3>BitNet 1.58-bit Deep Dive</h3>
+  <p>Ternary weights (-1, 0, +1). Microsoft's radical approach to 1.58 bits per parameter.</p>
+</a>
+
+<a class="card" href="w1_journey.html">
+  <span class="tag tag-visual">Interactive</span>
+  <h3>W1 Journey — A Weight's Life</h3>
+  <p>Follow one weight through quantization, training, and inference. Interactive story.</p>
+</a>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section"><h2><span class="icon">🧩</span> LoRA — Every Detail Explained</h2></div>
+<div class="grid">
+
+<a class="card" href="lora_target_modules_explained.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>LoRA Target Modules</h3>
+  <p>Which layers should you attach LoRA to? Attention only? MLP too? Visual comparison.</p>
+</a>
+
+<a class="card" href="lora_adapters_per_layer.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>LoRA Adapters Per Layer</h3>
+  <p>How many adapters per transformer layer? Architecture diagram with A and B matrices.</p>
+</a>
+
+<a class="card" href="lora_alpha_dropout_explained.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>LoRA Alpha & Dropout</h3>
+  <p>What alpha (scaling factor) and dropout actually do in LoRA. Interactive sliders.</p>
+</a>
+
+<a class="card" href="lora_adapter_merging.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>LoRA Adapter Merging</h3>
+  <p>W_new = W + (alpha/r) × B × A. The merge step explained with visual math.</p>
+</a>
+
+<a class="card" href="lora_forward_pass_visual.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>LoRA Forward Pass Visual</h3>
+  <p>Step-by-step: input → frozen weights + LoRA path → combined output.</p>
+</a>
+
+<a class="card" href="lora_multiplication_animation.html">
+  <span class="tag tag-visual">Animation</span>
+  <h3>LoRA Multiplication Animation</h3>
+  <p>Animated matrix multiplication: how B × A produces the low-rank update.</p>
+</a>
+
+<a class="card" href="model_memory_lora_calculator.html">
+  <span class="tag tag-ref">Calculator</span>
+  <h3>Model Memory & LoRA Calculator</h3>
+  <p>Interactive calculator: estimate GPU memory for any model + LoRA config.</p>
+</a>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section"><h2><span class="icon">🏗️</span> Training Mechanics & Architecture</h2></div>
+<div class="grid">
+
+<a class="card" href="training_memory_flow.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>Training Memory Flow</h3>
+  <p>Where GPU memory goes during training: model weights, activations, gradients, optimizer states.</p>
+</a>
+
+<a class="card" href="training_loss_explained.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>Training Loss Explained</h3>
+  <p>Cross-entropy, perplexity, loss curves. How to read training logs like a pro.</p>
+</a>
+
+<a class="card" href="lr_step_estimator.html">
+  <span class="tag tag-ref">Calculator</span>
+  <h3>Learning Rate Step Estimator</h3>
+  <p>Calculate optimal LR, warmup steps, and decay schedule for your training run.</p>
+</a>
+
+<a class="card" href="model_deployment_guide.html">
+  <span class="tag tag-ref">Guide</span>
+  <h3>Model Deployment Guide</h3>
+  <p>Adapter → merge → quantize → serve. The full path from trained weights to production API.</p>
+</a>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section"><h2><span class="icon">🔤</span> Tokenization & Embeddings — Visualized</h2></div>
+<div class="grid">
+
+<a class="card" href="tokenization_visual.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>Tokenization Visual</h3>
+  <p>Text → tokens → IDs. BPE tokenization explained with real examples.</p>
+</a>
+
+<a class="card" href="tokenize_embed_visual.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>Tokenize → Embed Visual</h3>
+  <p>From raw text to embedding vectors. The full pipeline: tokenize → lookup → embed.</p>
+</a>
+
+<a class="card" href="image_tokenization_visual.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>Image Tokenization Visual</h3>
+  <p>How vision models turn images into tokens. Patch embedding and ViT explained.</p>
+</a>
+
+<a class="card" href="instruction_format_visual.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>Instruction Format Visual</h3>
+  <p>Alpaca template, system prompts, chat templates. How instructions are structured.</p>
+</a>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section"><h2><span class="icon">📊</span> Metrics, Drift & Monitoring</h2></div>
+<div class="grid">
+
+<a class="card" href="metrics_explained.html">
+  <span class="tag tag-metrics">Metrics</span>
+  <h3>Metrics Explained</h3>
+  <p>Accuracy, F1, BLEU, ROUGE, perplexity. What each metric actually measures.</p>
+</a>
+
+<a class="card" href="metrics_real_examples.html">
+  <span class="tag tag-metrics">Examples</span>
+  <h3>Metrics — Real Examples</h3>
+  <p>Worked examples: calculate each metric by hand on real model outputs.</p>
+</a>
+
+<a class="card" href="drift_explained.html">
+  <span class="tag tag-metrics">Drift</span>
+  <h3>Data Drift Explained</h3>
+  <p>What drift is, why models silently degrade, and how to detect it before users notice.</p>
+</a>
+
+<a class="card" href="drift_report.html">
+  <span class="tag tag-metrics">Report</span>
+  <h3>Drift Report — Evidently AI</h3>
+  <p>Sample drift report. KL divergence, data quality, and distribution shift visualized.</p>
+</a>
+
+<a class="card" href="drift_retraining_guide.html">
+  <span class="tag tag-metrics">Guide</span>
+  <h3>Drift Retraining Guide</h3>
+  <p>When to retrain? How much new data? Decision framework for model refresh cycles.</p>
+</a>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section"><h2><span class="icon">🚀</span> Advanced Topics</h2></div>
+<div class="grid">
+
+<a class="card" href="dpo_loss_simplified.html">
+  <span class="tag tag-adv">Advanced</span>
+  <h3>DPO Loss — Simplified</h3>
+  <p>The DPO loss function explained without math intimidation. Chosen vs rejected.</p>
+</a>
+
+<a class="card" href="hallucination_handling.html">
+  <span class="tag tag-adv">Advanced</span>
+  <h3>Hallucination Handling</h3>
+  <p>Detection vs prevention. DPO, RAG, guardrails, constrained decoding — strategies compared.</p>
+</a>
+
+<a class="card" href="rag_plus_finetune_sensor.html">
+  <span class="tag tag-adv">Advanced</span>
+  <h3>RAG + Fine-Tune Sensor</h3>
+  <p>Hybrid approach: fine-tuned model + retrieval. When to use which and how they complement.</p>
+</a>
+
+<a class="card" href="vision_lang_walkthrough.html">
+  <span class="tag tag-adv">Advanced</span>
+  <h3>Vision-Language Walkthrough</h3>
+  <p>Multimodal fine-tuning. How VLMs combine image and text tokens in one model.</p>
+</a>
+
+<a class="card" href="finetuning_by_data_type.html">
+  <span class="tag tag-adv">Advanced</span>
+  <h3>Fine-Tuning By Data Type</h3>
+  <p>Text, code, images, audio — how fine-tuning strategies differ by modality.</p>
+</a>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section"><h2><span class="icon">🛠️</span> Reference & Tools</h2></div>
+<div class="grid">
+
+<a class="card" href="finetuning_plan_dashboard.html">
+  <span class="tag tag-ref">Dashboard</span>
+  <h3>Fine-Tuning Plan Dashboard</h3>
+  <p>Master dashboard. All phases, checkpoints, and progress in one view.</p>
+</a>
+
+<a class="card" href="air_gapped_no_pip_install.html">
+  <span class="tag tag-new">NEW</span>
+  <h3>Air-Gapped Install — No PIP, No Internet</h3>
+  <p>How to manually transfer .whl files to an offline computer. pip download → USB → pip install.</p>
+</a>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="footer">
+  <p>🧠 Fine-Tuning Pipeline — Built by <a href="https://github.com/ashokmulchandani">Ashok Mulchandani</a></p>
+  <p style="margin-top:0.3rem;">All pages are self-contained HTML. No server needed. Open any file in your browser.</p>
+</div>
+
+</div>
+</body>
+</html>

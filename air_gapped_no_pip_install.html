@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Air-Gapped Install — No PIP, No Internet</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--red:#c62828;--cyan:#007a99;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;min-height:100vh;}
+.app{max-width:960px;margin:0 auto;padding:1.5rem;}
+
+.header{text-align:center;padding:2rem 0 1rem;}
+.header .badge{display:inline-block;font-family:'Space Grotesk',sans-serif;font-size:0.7rem;letter-spacing:0.12em;color:var(--red);border:1.5px solid rgba(198,40,40,0.3);background:rgba(198,40,40,0.06);border-radius:100px;padding:0.3em 1.2em;margin-bottom:0.75rem;font-weight:600;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.95rem;}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.75rem;margin-bottom:1rem;}
+.card h2{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;font-weight:600;margin-bottom:0.8rem;display:flex;align-items:center;gap:0.5rem;}
+.card h2 .num{font-size:0.7rem;color:var(--violet);background:var(--vbg);border-radius:6px;padding:0.2em 0.6em;font-weight:700;}
+.card p{color:var(--tdim);margin-bottom:0.7rem;font-size:0.95rem;}
+
+.code-box{background:#1e1e1e;border:1px solid #333;border-left:3px solid var(--violet);border-radius:8px;padding:1rem 1.25rem;margin:0.75rem 0;font-family:'Space Grotesk',monospace;font-size:0.85rem;line-height:1.8;white-space:pre-wrap;overflow-x:auto;color:#d4d4d4;}
+
+.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.75rem 1rem;margin:0.75rem 0;font-size:0.88rem;line-height:1.7;}
+.warn{background:rgba(198,40,40,0.06);border:1px solid rgba(198,40,40,0.2);}
+
+table{width:100%;border-collapse:collapse;font-size:0.82rem;margin:1rem 0;}
+thead tr{border-bottom:2px solid var(--border);}
+th{text-align:left;padding:0.4rem 0.5rem;font-size:0.7rem;color:var(--tmut);text-transform:uppercase;letter-spacing:0.06em;}
+td{padding:0.4rem 0.5rem;border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0;}
+.cmp-card{background:var(--raised);border:1px solid var(--border);border-radius:10px;padding:1.25rem;}
+.cmp-card.left{border-left:3px solid var(--red);}
+.cmp-card.right{border-left:3px solid var(--green);}
+.cmp-card h4{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;margin-bottom:0.5rem;}
+
+.steps{counter-reset:step;}
+.step{counter-increment:step;display:flex;gap:1rem;align-items:flex-start;padding:1rem 0;border-bottom:1px solid var(--border);}
+.step:last-child{border-bottom:none;}
+.step .n{flex-shrink:0;width:36px;height:36px;background:var(--violet);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.8rem;}
+.step .n::before{content:counter(step);}
+.step .body h4{font-family:'Space Grotesk',sans-serif;font-size:0.85rem;margin-bottom:0.25rem;}
+.step .body p{font-size:0.82rem;color:var(--tdim);margin:0;}
+
+.footer{text-align:center;padding:1.5rem;border-top:1px solid var(--border);margin-top:2rem;}
+.footer a{color:var(--violet);font-family:Inter,sans-serif;font-size:0.75rem;text-decoration:none;margin:0 0.6rem;font-weight:600;}
+.footer a:hover{text-decoration:underline;}
+
+@media(max-width:768px){.app{padding:0.75rem;}.compare{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<header class="header">
+  <div class="badge">🔌 OFFLINE</div>
+  <h1>Air-Gapped Install — No PIP, No Internet</h1>
+  <p>How to move Python libraries manually onto a computer with no internet connection</p>
+</header>
+
+<!-- ────────────────────────────────────────────── -->
+<div class="card">
+<h2><span class="num">1</span> The File Format: <code>.whl</code> (Wheel)</h2>
+<p>Python libraries ship as <code>.whl</code> files — ZIP archives containing the code. Every <code>pip install</code> you've ever run downloaded one of these.</p>
+
+<table>
+<thead><tr><th>Real Wheel File</th><th>Type</th><th>Works On</th></tr></thead>
+<tbody>
+<tr><td><code>pytest-8.3.4-py3-none-any.whl</code></td><td>Pure Python</td><td>Any OS, any CPU</td></tr>
+<tr><td><code>pandera-0.22.2-py3-none-any.whl</code></td><td>Pure Python</td><td>Any OS, any CPU</td></tr>
+<tr><td><code>pandas-2.2.3-cp312-cp312-win_amd64.whl</code></td><td>Compiled C</td><td>Windows, Python 3.12, x64 <strong>only</strong></td></tr>
+<tr><td><code>numpy-2.1.3-cp312-cp312-manylinux_x86_64.whl</code></td><td>Compiled C</td><td>Linux, Python 3.12, x64 <strong>only</strong></td></tr>
+</tbody>
+</table>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.82rem;color:var(--violet);margin:1rem 0 0.4rem;">📛 Name Decoder Ring</h3>
+<div class="code-box">
+<span style="color:#6a9955;">pandera-0.22.2-py3-none-any.whl</span>
+<span style="color:#6a9955;">  │       │      │    │    └── any platform (pure Python = no C code)</span>
+<span style="color:#6a9955;">  │       │      │    └── ABI tag (none = no compiled C inside)</span>
+<span style="color:#6a9955;">  │       │      └── Python version (py3 = Python 3.x)</span>
+<span style="color:#6a9955;">  │       └── version</span>
+<span style="color:#6a9955;">  └── package name</span>
+
+<span style="color:#ce9178;">pandas-2.2.3-cp312-cp312-win_amd64.whl</span>
+<span style="color:#6a9955;">  │      │     │      └────────────── Windows 64-bit ONLY</span>
+<span style="color:#6a9955;">  │      │     └── compiled Python 3.12 ABI</span>
+<span style="color:#6a9955;">  │      └── compiled Python 3.12 tag</span>
+<span style="color:#6a9955;">  └── version</span></div>
+
+<table>
+<thead><tr><th>Tag</th><th>Meaning</th><th>Portable?</th></tr></thead>
+<tbody>
+<tr><td><code>py3-none-any</code></td><td>Pure Python — no compiled code</td><td style="color:var(--green);font-weight:600;">✅ Anywhere</td></tr>
+<tr><td><code>cp312-cp312-win_amd64</code></td><td>C extensions — Windows 64-bit only</td><td style="color:var(--red);font-weight:600;">❌ Platform locked</td></tr>
+<tr><td><code>cp312-cp312-manylinux_x86_64</code></td><td>C extensions — Linux 64-bit only</td><td style="color:var(--red);font-weight:600;">❌ Platform locked</td></tr>
+<tr><td><code>cp312-cp312-macosx_arm64</code></td><td>C extensions — macOS Apple Silicon only</td><td style="color:var(--red);font-weight:600;">❌ Platform locked</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ────────────────────────────────────────────── -->
+<div class="card">
+<h2><span class="num">2</span> The 3-Step Transfer Process</h2>
+
+<div class="steps">
+  <div class="step">
+    <div class="n"></div>
+    <div class="body">
+      <h4>Download on the ONLINE machine</h4>
+      <p>Use <code>pip download</code> — it grabs every <code>.whl</code> including dependencies, into one folder.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="n"></div>
+    <div class="body">
+      <h4>Copy the folder to the OFFLINE machine</h4>
+      <p>USB drive, external HDD, CD, sneakernet — whatever works. The <code>offline_packages/</code> folder is self-contained.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="n"></div>
+    <div class="body">
+      <h4>Install from the folder on the OFFLINE machine</h4>
+      <p><code>pip install --no-index --find-links=offline_packages/ ...</code> — no internet needed.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ────────────────────────────────────────────── -->
+<div class="card">
+<h2><span class="num">3</span> Step 1 — Download Everything on the Online Machine</h2>
+<p>Run these commands on a machine WITH internet access. This does NOT install anything — it only downloads <code>.whl</code> files.</p>
+
+<div class="code-box">
+<span style="color:#6a9955;"># Create a folder to hold all .whl files</span>
+mkdir offline_packages
+
+<span style="color:#6a9955;"># Download pytest + ALL its dependencies (pluggy, iniconfig, ...)</span>
+pip download pytest -d offline_packages
+
+<span style="color:#6a9955;"># Download pandera + ALL its dependencies (pandas, numpy, typing_extensions, ...)</span>
+pip download pandera -d offline_packages
+
+<span style="color:#6a9955;"># Or download EVERYTHING in one command:</span>
+pip download pytest pandera pandas numpy -d offline_packages
+
+<span style="color:#6a9955;"># Check what you got:</span>
+ls offline_packages/
+<span style="color:#6a9955;"># pytest-8.3.4-py3-none-any.whl</span>
+<span style="color:#6a9955;"># pandera-0.22.2-py3-none-any.whl</span>
+<span style="color:#6a9955;"># pluggy-1.5.0-py3-none-any.whl</span>
+<span style="color:#6a9955;"># iniconfig-2.0.0-py3-none-any.whl</span>
+<span style="color:#6a9955;"># packaging-24.1-py3-none-any.whl</span>
+<span style="color:#6a9955;"># pandas-2.2.3-cp312-cp312-win_amd64.whl</span>
+<span style="color:#6a9955;"># numpy-2.1.3-cp312-cp312-win_amd64.whl</span>
+<span style="color:#6a9955;"># ... ~10 more files</span></div>
+
+<div class="callout"><strong>💡 Key:</strong> <code>pip download</code> resolves the full dependency tree. pytest needs pluggy, iniconfig, and packaging. pandera needs pandas, numpy, and typing_extensions. One command grabs it all.</div>
+</div>
+
+<!-- ────────────────────────────────────────────── -->
+<div class="card">
+<h2><span class="num">4</span> Step 2 — Transfer to the Air-Gapped Machine</h2>
+<p>Copy the entire <code>offline_packages/</code> folder to the offline computer. Any method works:</p>
+
+<table>
+<thead><tr><th>Method</th><th>Good For</th></tr></thead>
+<tbody>
+<tr><td>USB flash drive</td><td>Most common — folders up to 100 MB</td></tr>
+<tr><td>External HDD/SSD</td><td>Large ML libraries (PyTorch ~2 GB)</td></tr>
+<tr><td>Internal network share</td><td>Lab computers on same LAN (not internet)</td></tr>
+<tr><td>CD/DVD</td><td>High-security environments that block USB</td></tr>
+</tbody>
+</table>
+
+<div class="callout"><strong>⚠️ Important:</strong> The online and offline machines must have the <strong>same Python version</strong> and the <strong>same operating system</strong> if any package contains compiled C code (pandas, numpy, PyTorch). Pure Python <code>py3-none-any</code> wheels work anywhere.</div>
+</div>
+
+<!-- ────────────────────────────────────────────── -->
+<div class="card">
+<h2><span class="num">5</span> Step 3 — Install on the Air-Gapped Machine</h2>
+<p>On the offline computer, point pip at your folder instead of PyPI:</p>
+
+<div class="code-box">
+<span style="color:#6a9955;"># Install from local folder — ZERO internet required</span>
+pip install --no-index --find-links=offline_packages/ pytest pandera
+
+<span style="color:#6a9955;"># --no-index     = "Don't look at PyPI (the internet)"</span>
+<span style="color:#6a9955;"># --find-links   = "Look here instead" (your folder of .whl files)</span></div>
+
+<div class="callout"><strong>✅ That's it.</strong> pip reads the <code>.whl</code> files from your folder, resolves dependencies locally, and installs everything. No internet. No PyPI. No network at all.</div>
+</div>
+
+<!-- ────────────────────────────────────────────── -->
+<div class="card">
+<h2><span class="num">6</span> Different Platforms — Cross-OS Download</h2>
+<p>If your online machine is <strong>Windows</strong> but the air-gapped machine is <strong>Linux</strong>, you must download wheels for the <strong>target</strong> platform:</p>
+
+<div class="code-box">
+<span style="color:#6a9955;"># Download wheels for LINUX from a WINDOWS machine</span>
+pip download pandera -d offline_packages \
+    --platform manylinux2014_x86_64 \
+    --python-version 3.12 \
+    --only-binary=:all:
+
+<span style="color:#6a9955;"># Download wheels for WINDOWS from a LINUX machine</span>
+pip download pandera -d offline_packages \
+    --platform win_amd64 \
+    --python-version 3.12 \
+    --only-binary=:all:</div>
+
+<table>
+<thead><tr><th>Target OS</th><th><code>--platform</code> flag</th></tr></thead>
+<tbody>
+<tr><td>Windows 64-bit</td><td><code>--platform win_amd64</code></td></tr>
+<tr><td>Linux 64-bit (x86)</td><td><code>--platform manylinux2014_x86_64</code></td></tr>
+<tr><td>macOS Intel</td><td><code>--platform macosx_10_9_x86_64</code></td></tr>
+<tr><td>macOS Apple Silicon (M1/M2/M3)</td><td><code>--platform macosx_11_0_arm64</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ────────────────────────────────────────────── -->
+<div class="card">
+<h2><span class="num">7</span> What Gets Downloaded — For This Project</h2>
+<p>Here's exactly what <code>pip download pytest pandera -d offline_packages/</code> produces:</p>
+
+<table>
+<thead><tr><th>Package</th><th>Wheel Type</th><th>Size</th><th>Portable?</th></tr></thead>
+<tbody>
+<tr><td><code>pytest</code></td><td><code>py3-none-any</code></td><td>~400 KB</td><td style="color:var(--green);">✅ Anywhere</td></tr>
+<tr><td><code>pandera</code></td><td><code>py3-none-any</code></td><td>~200 KB</td><td style="color:var(--green);">✅ Anywhere</td></tr>
+<tr><td><code>pluggy</code></td><td><code>py3-none-any</code></td><td>~30 KB</td><td style="color:var(--green);">✅ Anywhere</td></tr>
+<tr><td><code>iniconfig</code></td><td><code>py3-none-any</code></td><td>~10 KB</td><td style="color:var(--green);">✅ Anywhere</td></tr>
+<tr><td><code>packaging</code></td><td><code>py3-none-any</code></td><td>~70 KB</td><td style="color:var(--green);">✅ Anywhere</td></tr>
+<tr><td><code>typing_extensions</code></td><td><code>py3-none-any</code></td><td>~50 KB</td><td style="color:var(--green);">✅ Anywhere</td></tr>
+<tr><td><code>typeguard</code></td><td><code>py3-none-any</code></td><td>~60 KB</td><td style="color:var(--green);">✅ Anywhere</td></tr>
+<tr><td><code>wrapt</code></td><td>Platform-specific</td><td>~50 KB</td><td style="color:var(--red);">❌ OS-specific</td></tr>
+<tr style="background:rgba(184,112,0,0.06);"><td><strong>pandas</strong></td><td>Platform-specific</td><td>~25 MB</td><td style="color:var(--red);">❌ OS-specific</td></tr>
+<tr style="background:rgba(184,112,0,0.06);"><td><strong>numpy</strong></td><td>Platform-specific</td><td>~15 MB</td><td style="color:var(--red);">❌ OS-specific</td></tr>
+</tbody>
+</table>
+
+<div class="callout"><strong>📦 Total folder size:</strong> ~50 MB for pytest + pandera + all dependencies. The heavy hitters are pandas (25 MB) and numpy (15 MB) — both contain compiled C code and must match the target OS.</div>
+</div>
+
+<!-- ────────────────────────────────────────────── -->
+<div class="card">
+<h2><span class="num">8</span> One-Liner Cheat Sheet</h2>
+
+<div class="code-box">
+<span style="color:#6a9955;"># ┌─── ONLINE MACHINE (with internet) ───┐</span>
+mkdir offline_packages
+pip download pytest pandera -d offline_packages
+<span style="color:#6a9955;"># Copy offline_packages/ to USB drive</span>
+
+<span style="color:#6a9955;"># ┌─── AIR-GAPPED MACHINE (no internet) ───┐</span>
+<span style="color:#6a9955;"># Copy offline_packages/ from USB drive</span>
+pip install --no-index --find-links=offline_packages/ pytest pandera
+
+<span style="color:#6a9955;"># ┌─── VERIFY ───┐</span>
+python -c "import pytest; import pandera; print('✅ Ready')"</div>
+</div>
+
+<!-- ────────────────────────────────────────────── -->
+<div class="card">
+<h2><span class="num">9</span> Common Mistakes</h2>
+
+<table>
+<thead><tr><th>Mistake</th><th>What Happens</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>Wrong Python version</td><td>Wheel has <code>cp312</code> but target has Python 3.11</td><td>Use <code>--python-version 3.11</code> when downloading</td></tr>
+<tr><td>Wrong platform</td><td>Downloaded <code>win_amd64</code> but target is Linux</td><td>Use <code>--platform manylinux2014_x86_64</code></td></tr>
+<tr><td>Forgot dependencies</td><td>Installed pytest but not pluggy → import fails</td><td>Always <code>pip download</code> (not manual .whl selection)</td></tr>
+<tr><td>Used <code>pip install</code> instead of <code>pip download</code></td><td>Installed on online machine, nothing to transfer</td><td><code>pip download</code> only saves files, doesn't install</td></tr>
+<tr><td>Mixed <code>.whl</code> and <code>.tar.gz</code> in folder</td><td>Source distributions need compilation (no compiler on offline)</td><td>Add <code>--only-binary=:all:</code> to skip source dists</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ────────────────────────────────────────────── -->
+<div class="card">
+<h2><span class="num">10</span> Bonus: Entire <code>requirements.txt</code> at Once</h2>
+
+<div class="code-box">
+<span style="color:#6a9955;"># 1. Export your current environment (online machine)</span>
+pip freeze > requirements.txt
+
+<span style="color:#6a9955;"># 2. Download ALL wheels for the entire environment</span>
+pip download -r requirements.txt -d offline_packages
+
+<span style="color:#6a9955;"># 3. On the air-gapped machine, install everything</span>
+pip install --no-index --find-links=offline_packages/ -r requirements.txt</div>
+
+<div class="callout"><strong>🔐 Pro tip:</strong> Many air-gapped environments also require a security scan. Your security team can scan the <code>offline_packages/</code> folder once (whitelist those hashes), then you never need to re-scan — you're reusing the same verified <code>.whl</code> files.</div>
+</div>
+
+<div class="footer">
+<a href="index.html">🏠 Index</a>
+<a href="finetuning_plan_dashboard.html">📊 Dashboard</a>
+<a href="phase6a_ai_testing.html">🧪 Phase 6A: Testing</a>
+</div>
+
+</div>
+</body>
+</html>
