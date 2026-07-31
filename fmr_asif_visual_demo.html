@@ -832,6 +832,41 @@ L<sub>total</sub> = L<sub>CE</sub> - <span class="num">λ</span> * H            
     </div>
   </div>
 
+  <!-- FMR Sliding Equalization Animation -->
+  <div class="card card-fmr" style="margin-top:24px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+      <h3 style="margin:0;">🧹 FMR Sliding Equalization — Watch Features Get Cleaned <span class="info-badge fmr">ANIMATED</span></h3>
+      <div style="display:flex; gap:6px;">
+        <button class="btn btn-fmr" style="padding:6px 12px; font-size:0.7rem;" onclick="slideStep(-1)">◀ Prev</button>
+        <button class="btn btn-fmr" style="padding:6px 12px; font-size:0.7rem;" onclick="slidePlay()" id="slidePlayBtn">▶ Play</button>
+        <button class="btn btn-fmr" style="padding:6px 12px; font-size:0.7rem;" onclick="slideStep(1)">Next ▶</button>
+        <button class="btn btn-fmr" style="padding:6px 12px; font-size:0.7rem;" onclick="slideReset()">↺ Reset</button>
+        <span style="font-family:var(--font-mono); font-size:0.75rem; color:var(--text-dim); min-width:50px; text-align:center;" id="slidePosLabel">0 / 30</span>
+        <span style="font-family:var(--font-mono); font-size:0.65rem; color:var(--text-dim);">Speed:</span>
+        <input type="range" id="slideSpeed" min="100" max="1500" value="600" style="width:70px; accent-color:var(--cyan);" oninput="document.getElementById('slideSpeedVal').textContent=(this.value/1000).toFixed(1)+'s'">
+        <span style="font-family:var(--font-mono); font-size:0.65rem; color:var(--text-dim);" id="slideSpeedVal">0.6s</span>
+      </div>
+    </div>
+    <p class="card-desc">FMR acts like a <strong>sliding filter</strong> across all 2048 feature dimensions. Each step: a group of features is pushed toward the uniform target. <strong style="color:var(--red);">Red cells</strong> = biased (loud), <strong style="color:var(--cyan);">Cyan cells</strong> = equalized. Watch entropy rise as the filter sweeps across.</p>
+    <div class="canvas-wrap">
+      <canvas id="fmrSlidingCanvas" width="1200" height="340"></canvas>
+    </div>
+    <div class="metrics-row">
+      <div class="metric metric-fmr">
+        <div class="metric-value" id="slideEntropy">1.80</div>
+        <div class="metric-label">Entropy H (↑ better)</div>
+      </div>
+      <div class="metric metric-fmr">
+        <div class="metric-value" id="slideLambda">1.00</div>
+        <div class="metric-label">Dynamic λ</div>
+      </div>
+      <div class="metric metric-fmr">
+        <div class="metric-value" id="slideUniform">0%</div>
+        <div class="metric-label">Features Equalized</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Controls -->
   <div class="controls">
     <h4>▸ Simulation Controls</h4>
@@ -2135,6 +2170,224 @@ function drawArrow(ctx, x1, y1, x2, y2, color, width, label) {
   }
 }
 
+// ==================== FMR SLIDING EQUALIZATION ANIMATION ====================
+const SLIDE_COLS = 6, SLIDE_ROWS = 5, SLIDE_TOTAL = SLIDE_COLS * SLIDE_ROWS; // 30 features
+const SLIDE_WINDOW = 4; // how many features equalized per step
+let slidePos = 0, slideTimer = null, slidePlaying = false;
+let slideFeatures = []; // current feature magnitudes
+let slideEqualized = []; // which positions have been visited
+
+function initSlideFeatures() {
+  slideFeatures = [];
+  for (let i = 0; i < SLIDE_TOTAL; i++) {
+    // Simulate biased features: some loud (0.7-0.95), some quiet (0.05-0.4)
+    const isBiased = i < SLIDE_TOTAL * 0.6;
+    slideFeatures.push(isBiased ? 0.65 + Math.random() * 0.3 : 0.05 + Math.random() * 0.35);
+  }
+  slideFeatures.sort((a, b) => b - a); // sorted by magnitude
+  slideEqualized = new Array(SLIDE_TOTAL).fill(false);
+  slidePos = 0;
+}
+
+function drawSlidingAnimation() {
+  const canvas = document.getElementById('fmrSlidingCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  if (slideFeatures.length === 0) initSlideFeatures();
+
+  const targetUniform = 0.5;
+  const cellW = 52, cellH = 36, gap = 4;
+  const gridW = SLIDE_COLS * (cellW + gap) - gap;
+  const gridH = SLIDE_ROWS * (cellH + gap) - gap;
+
+  // === INPUT GRID (left) ===
+  const inLabelX = 30, inGridX = 30, inGridY = 55;
+  ctx.fillStyle = '#6b6b80';
+  ctx.font = 'bold 11px monospace';
+  ctx.fillText('INPUT: Feature Magnitudes (before FMR)', inLabelX, inGridY - 10);
+  ctx.fillStyle = '#6b6b8066';
+  ctx.font = '9px monospace';
+  ctx.fillText('Sorted: loudest → quietest', inLabelX + gridW - 130, inGridY - 10);
+
+  // Draw input grid cells
+  for (let i = 0; i < SLIDE_TOTAL; i++) {
+    const col = i % SLIDE_COLS, row = Math.floor(i / SLIDE_COLS);
+    const cx = inGridX + col * (cellW + gap), cy = inGridY + row * (cellH + gap);
+    const val = slideFeatures[i];
+
+    // Cell color: red (biased) → cyan (uniform)
+    const deviation = Math.max(0, Math.min(1, (val - targetUniform) / (0.95 - targetUniform)));
+    const r = Math.floor(255 * deviation);
+    const g = Math.floor(82 * deviation + 229 * (1 - deviation));
+    const b = Math.floor(82 * deviation + 255 * (1 - deviation));
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.strokeStyle = slideEqualized[i] ? '#69f0ae' : '#ffffff22';
+    ctx.lineWidth = slideEqualized[i] ? 2 : 0.5;
+
+    // FMR window highlight
+    const windowStart = slidePos;
+    const windowEnd = Math.min(SLIDE_TOTAL, slidePos + SLIDE_WINDOW);
+    if (i >= windowStart && i < windowEnd) {
+      ctx.shadowColor = '#00e5ff';
+      ctx.shadowBlur = 8;
+    }
+
+    ctx.beginPath();
+    ctx.roundRect(cx, cy, cellW, cellH, 4);
+    ctx.fill();
+    ctx.stroke();
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+
+    // Value label
+    ctx.fillStyle = '#ffffffcc';
+    ctx.font = 'bold 8px monospace';
+    ctx.fillText(val.toFixed(2), cx + 6, cy + 22);
+  }
+
+  // FMR window label
+  const wCol = (slidePos % SLIDE_COLS), wRow = Math.floor(slidePos / SLIDE_COLS);
+  const wx = inGridX + wCol * (cellW + gap);
+  const wy = inGridY + wRow * (cellH + gap);
+  ctx.fillStyle = '#00e5ff';
+  ctx.font = 'bold 7px monospace';
+  ctx.fillText('FMR', wx - 2, wy - 6);
+
+  // Arrow between grids
+  const arrowX = inGridX + gridW + 30;
+  const arrowY = inGridY + gridH / 2;
+  ctx.fillStyle = '#00e5ff44';
+  ctx.font = '22px sans-serif';
+  ctx.fillText('→', arrowX, arrowY + 7);
+
+  // === OUTPUT GRID (right) ===
+  const outGridX = arrowX + 40, outGridY = inGridY;
+  ctx.fillStyle = '#6b6b80';
+  ctx.font = 'bold 11px monospace';
+  ctx.fillText('OUTPUT: After FMR Equalization', outGridX, outGridY - 10);
+
+  for (let i = 0; i < SLIDE_TOTAL; i++) {
+    const col = i % SLIDE_COLS, row = Math.floor(i / SLIDE_COLS);
+    const cx = outGridX + col * (cellW + gap), cy = outGridY + row * (cellH + gap);
+
+    let outVal;
+    if (slideEqualized[i]) {
+      // Equalized: pushed strongly toward uniform
+      const origVal = slideFeatures[i];
+      outVal = origVal + (targetUniform - origVal) * 0.85;
+    } else {
+      outVal = slideFeatures[i]; // unchanged
+    }
+
+    const deviation = Math.max(0, Math.min(1, (outVal - targetUniform) / (0.95 - targetUniform)));
+    const r = Math.floor(255 * deviation);
+    const g = Math.floor(82 * deviation + 229 * (1 - deviation));
+    const b = Math.floor(82 * deviation + 255 * (1 - deviation));
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.strokeStyle = slideEqualized[i] ? '#69f0ae' : '#ffffff22';
+    ctx.lineWidth = slideEqualized[i] ? 2 : 0.5;
+
+    ctx.beginPath();
+    ctx.roundRect(cx, cy, cellW, cellH, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffffcc';
+    ctx.font = 'bold 8px monospace';
+    ctx.fillText(outVal.toFixed(2), cx + 6, cy + 22);
+  }
+
+  // Legend
+  const legY = inGridY + gridH + 20;
+  // Color gradient bar
+  const gradBarX = inGridX, gradBarW = 180;
+  const grad = ctx.createLinearGradient(gradBarX, 0, gradBarX + gradBarW, 0);
+  grad.addColorStop(0, '#ff5252'); grad.addColorStop(1, '#00e5ff');
+  ctx.fillStyle = grad;
+  ctx.fillRect(gradBarX, legY, gradBarW, 10);
+  ctx.fillStyle = '#6b6b80';
+  ctx.font = '8px monospace';
+  ctx.fillText('BIASED', gradBarX, legY + 22);
+  ctx.fillText('UNIFORM', gradBarX + gradBarW - 45, legY + 22);
+
+  // How it works text
+  ctx.fillStyle = '#6b6b8077';
+  ctx.font = '9px monospace';
+  ctx.fillText('Each step: FMR visits ' + SLIDE_WINDOW + ' features → pushes them toward target 0.50 → entropy rises → output grid fills with cyan', inGridX, legY + 38);
+
+  // Update metrics
+  const equalizedCount = slideEqualized.filter(Boolean).length;
+  const pct = Math.round(equalizedCount / SLIDE_TOTAL * 100);
+  document.getElementById('slideUniform').textContent = pct + '%';
+  document.getElementById('slidePosLabel').textContent = slidePos + ' / ' + SLIDE_TOTAL;
+
+  // Compute entropy of current state
+  const allOut = [];
+  for (let i = 0; i < SLIDE_TOTAL; i++) {
+    if (slideEqualized[i]) allOut.push(slideFeatures[i] + (targetUniform - slideFeatures[i]) * 0.85);
+    else allOut.push(slideFeatures[i]);
+  }
+  const sm = softmax(allOut);
+  const slideH = computeEntropy(sm);
+  document.getElementById('slideEntropy').textContent = slideH.toFixed(2);
+  const maxEnt = Math.log(SLIDE_TOTAL);
+  const slideLambda = Math.max(0.01, (maxEnt - slideH) / (maxEnt - 1.5));
+  document.getElementById('slideLambda').textContent = slideLambda.toFixed(2);
+}
+
+function slideApplyFMR() {
+  const end = Math.min(SLIDE_TOTAL, slidePos + SLIDE_WINDOW);
+  for (let i = slidePos; i < end; i++) {
+    slideEqualized[i] = true;
+  }
+}
+
+function slideStep(dir) {
+  if (dir > 0) slideApplyFMR();
+  const newPos = slidePos + dir * SLIDE_WINDOW;
+  slidePos = Math.max(0, Math.min(SLIDE_TOTAL - SLIDE_WINDOW, newPos));
+  if (slidePos >= SLIDE_TOTAL - SLIDE_WINDOW) {
+    // Mark remaining as equalized
+    for (let i = slidePos; i < SLIDE_TOTAL; i++) slideEqualized[i] = true;
+  }
+  if (dir <= 0 && slidePos === 0) slideEqualized.fill(false); // reset if going back to start
+  drawSlidingAnimation();
+}
+
+function slidePlay() {
+  if (slidePlaying) {
+    clearInterval(slideTimer); slidePlaying = false;
+    document.getElementById('slidePlayBtn').textContent = '▶ Play';
+    return;
+  }
+  if (slidePos >= SLIDE_TOTAL - SLIDE_WINDOW) slideReset();
+  slidePlaying = true;
+  document.getElementById('slidePlayBtn').textContent = '⏸ Stop';
+  const speed = parseInt(document.getElementById('slideSpeed').value) || 600;
+  slideTimer = setInterval(() => {
+    if (slidePos >= SLIDE_TOTAL - SLIDE_WINDOW) {
+      slideApplyFMR();
+      drawSlidingAnimation();
+      clearInterval(slideTimer); slidePlaying = false;
+      document.getElementById('slidePlayBtn').textContent = '▶ Play';
+      return;
+    }
+    slideApplyFMR();
+    slidePos += SLIDE_WINDOW;
+    drawSlidingAnimation();
+  }, speed);
+}
+
+function slideReset() {
+  clearInterval(slideTimer); slidePlaying = false;
+  document.getElementById('slidePlayBtn').textContent = '▶ Play';
+  initSlideFeatures();
+  drawSlidingAnimation();
+}
+
 function updateFMR() {
   const biasSlider = document.getElementById('fmrBias');
   const progressSlider = document.getElementById('fmrProgress');
@@ -2160,6 +2413,9 @@ function updateFMR() {
     ((maxEnt - result.entropy) / (maxEnt - 1.5)).toFixed(2);
   document.getElementById('fmrVariance').textContent =
     (0.15 * (1 - fmrState.progress / 100)).toFixed(3);
+
+  // Init sliding animation if not yet done
+  if (slideFeatures.length === 0) { initSlideFeatures(); drawSlidingAnimation(); }
 }
 
 function animateFMR() {
