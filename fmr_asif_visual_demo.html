@@ -1252,6 +1252,22 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
 
   <!-- Interactive Weight Table -->
   <div style="margin-top:18px;">
+    <!-- Explanation -->
+    <div class="insight-callout" style="margin-bottom:12px;">
+      <strong>📖 How to Read This Table:</strong> The classifier has <strong>2048 weights</strong> (W₁, W₂, ..., W₂₀₄₈), one per feature from the backbone. Each weight multiplies its feature: <strong>logit = Σ(Wᵢ × fᵢ)</strong>. This table tracks <strong>ONE weight (W)</strong> for <strong>ONE feature (f)</strong> across 4 batches per epoch.<br><br>
+      <strong>Column Guide:</strong><br>
+      &nbsp;&nbsp;<span style="color:#b388ff;">#</span> = Batch # &nbsp;|&nbsp;
+      <span style="color:var(--text);">Sample</span> = Which training image &nbsp;|&nbsp;
+      <span style="color:var(--text);"><strong>f</strong></span> = Feature value (from frozen backbone, constant per sample) &nbsp;|&nbsp;
+      <span style="color:var(--text);"><strong>y</strong></span> = Ground truth label (1=Indigo, 0=Not) &nbsp;|&nbsp;
+      <span style="color:var(--text);"><strong>ŷ</strong></span> = Model prediction (probability) &nbsp;|&nbsp;
+      <span style="color:var(--text);"><strong>Error</strong></span> = ŷ − y &nbsp;|&nbsp;
+      <span style="color:var(--text);"><strong>CE ∂W</strong></span> = (ŷ−y)×f = gradient from cross-entropy &nbsp;|&nbsp;
+      <span style="color:var(--amber);"><strong>W Decay</strong></span> = −2λ_W×W (always pulls to 0) &nbsp;|&nbsp;
+      <span style="color:var(--text);"><strong>η·Net</strong></span> = lr×(CE+Decay) = actual weight change &nbsp;|&nbsp;
+      <span style="color:var(--text);"><strong>W</strong></span> = Weight AFTER update
+    </div>
+
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
       <h5 style="color:#b388ff; font-family:var(--font-display); font-weight:400; margin:0;">🔢 Live Weight Calculation Table — Step Through Epochs</h5>
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
@@ -1270,7 +1286,7 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
         <div style="font-family:var(--font-display); font-size:0.85rem; color:#ff5252; margin-bottom:6px;">🔴 f<sub>sky</sub> — Irrelevant (Blue Sky) &nbsp;<span style="font-size:0.65rem; color:var(--text-dim);" id="wtSkyRange">W: 0.0500 → 0.0500</span></div>
         <div class="wt-tbl-wrap">
           <table class="wt-tbl">
-            <thead><tr><th>#</th><th>Sample</th><th>f</th><th>ŷ</th><th>Error</th><th>CE ∂W</th><th>W Decay</th><th>η·Net</th><th>W</th></tr></thead>
+            <thead><tr><th>#</th><th>Sample</th><th>f</th><th>y</th><th>ŷ</th><th>Error</th><th>CE ∂W</th><th>W Decay</th><th>η·Net</th><th>W</th></tr></thead>
             <tbody id="wtSkyTbody"></tbody>
           </table>
         </div>
@@ -1283,7 +1299,7 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
         <div style="font-family:var(--font-display); font-size:0.85rem; color:#69f0ae; margin-bottom:6px;">🟢 f<sub>beak</sub> — Useful (Beak Curve) &nbsp;<span style="font-size:0.65rem; color:var(--text-dim);" id="wtBeakRange">W: 0.0300 → 2.3000</span></div>
         <div class="wt-tbl-wrap">
           <table class="wt-tbl">
-            <thead><tr><th>#</th><th>Sample</th><th>f</th><th>ŷ</th><th>Error</th><th>CE ∂W</th><th>W Decay</th><th>η·Net</th><th>W</th></tr></thead>
+            <thead><tr><th>#</th><th>Sample</th><th>f</th><th>y</th><th>ŷ</th><th>Error</th><th>CE ∂W</th><th>W Decay</th><th>η·Net</th><th>W</th></tr></thead>
             <tbody id="wtBeakTbody"></tbody>
           </table>
         </div>
@@ -3273,6 +3289,7 @@ function populateTable(tbodyId, rows, isBad) {
       `<td class="wt-purple">${r.batch}</td>` +
       `<td>${r.sample}</td>` +
       `<td>${fmt(r.f)}</td>` +
+      `<td>${r.y.toFixed(0)}</td>` +
       `<td>${fmt3(r.yHat)}</td>` +
       `<td class="${errCls}" style="font-weight:bold;">${fmt3(r.error, true)}</td>` +
       `<td class="${ceCls}">${fmt(r.ceGrad, true)}</td>` +
@@ -3293,6 +3310,7 @@ function populateTable(tbodyId, rows, isBad) {
   tr.innerHTML =
     `<td style="font-weight:bold;">∑</td>` +
     `<td style="font-weight:bold;">TOTAL</td>` +
+    `<td></td>` +
     `<td></td>` +
     `<td></td>` +
     `<td class="wt-amber">${fmt3(totalErr, true)}</td>` +
