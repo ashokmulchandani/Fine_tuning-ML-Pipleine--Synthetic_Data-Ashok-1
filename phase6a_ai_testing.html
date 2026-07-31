@@ -671,6 +671,51 @@ InstructionSchema.validate(sample_instruction_data)
 </table>
 
 <div class="callout" style="background:var(--vbg);border:1px solid rgba(91,58,168,0.15);"><strong>🧠 The pattern:</strong> Pandera gives you the engine (<code>validate()</code>) and the tools (<code>Field()</code>, <code>@check</code>). You <strong>declare what valid looks like</strong> — column names, types, rules. Then <code>validate()</code> reads your declarations and enforces them. It's like filling out a form: Pandera gives you the blanks, you fill in your rules, Pandera does the checking. <strong>You never write validation loop logic</strong> — that's Pandera's job.</div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem;">🎯 Why <code>@pytest.mark.skipif</code> Is on Some Classes But Not Others</h3>
+<p style="font-size:0.82rem;color:var(--tdim);margin-bottom:0.6rem;">Look at <code>test_data.py</code> — the decorator only appears before <strong>2 of the 4 classes</strong>. This is intentional.</p>
+
+<div class="code-box" style="font-size:0.78rem;">
+<span style="color:#6a9955;"># At the top of test_data.py — try to import Pandera, silently fail if missing</span>
+<span style="color:#569cd6;">try</span>:
+    <span style="color:#569cd6;">import</span> pandera <span style="color:#569cd6;">as</span> pa
+    PANDERA_AVAILABLE = <span style="color:#569cd6;">True</span>       <span style="color:#6a9955;">← Pandera IS installed</span>
+<span style="color:#569cd6;">except</span> <span style="color:#569cd6;">ImportError</span>:
+    PANDERA_AVAILABLE = <span style="color:#569cd6;">False</span>      <span style="color:#6a9955;">← Pandera NOT installed, but we don't crash</span>
+
+<span style="color:#6a9955;"># ═══════════════════════════════════════════════════════════</span>
+<span style="color:#6a9955;"># Classes WITH the decorator — they call pa.validate() or pa.SchemaError</span>
+<span style="color:#6a9955;"># ═══════════════════════════════════════════════════════════</span>
+
+<span style="color:#569cd6;">@pytest.mark.skipif</span>(<span style="color:#569cd6;">not</span> PANDERA_AVAILABLE, reason=<span style="color:#ce9178;">"pandera not installed"</span>)
+<span style="color:#569cd6;">class</span> <span style="color:#4ec9b0;">TestHappyPath</span>:                    <span style="color:#6a9955;">← skipped if no Pandera</span>
+    <span style="color:#6a9955;"># Tests call InstructionSchema.validate(df) → would crash without Pandera</span>
+
+<span style="color:#569cd6;">@pytest.mark.skipif</span>(<span style="color:#569cd6;">not</span> PANDERA_AVAILABLE, reason=<span style="color:#ce9178;">"pandera not installed"</span>)
+<span style="color:#569cd6;">class</span> <span style="color:#4ec9b0;">TestFailureModes</span>:                  <span style="color:#6a9955;">← skipped if no Pandera</span>
+    <span style="color:#6a9955;"># Tests use pytest.raises(pa.errors.SchemaError) → would crash without Pandera</span>
+
+<span style="color:#6a9955;"># ═══════════════════════════════════════════════════════════</span>
+<span style="color:#6a9955;"># Classes WITHOUT the decorator — plain pandas + assert, always safe</span>
+<span style="color:#6a9955;"># ═══════════════════════════════════════════════════════════</span>
+
+<span style="color:#569cd6;">class</span> <span style="color:#4ec9b0;">TestEdgeCases</span>:                      <span style="color:#6a9955;">← ALWAYS runs</span>
+    <span style="color:#6a9955;"># Tests use df["col"].isnull(), .str.len(), .notna() → plain pandas, never crashes</span>
+
+<span style="color:#569cd6;">class</span> <span style="color:#4ec9b0;">TestInstructionFormat</span>:               <span style="color:#6a9955;">← ALWAYS runs</span>
+    <span style="color:#6a9955;"># Tests use .startswith(), "in", len() → plain Python, never crashes</span></div>
+
+<table style="width:100%;border-collapse:collapse;font-size:0.75rem;margin:0.5rem 0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.3rem 0.5rem;">Class</th><th style="text-align:left;padding:0.3rem 0.5rem;">Line</th><th style="text-align:left;padding:0.3rem 0.5rem;">Has <code>@skipif</code>?</th><th style="text-align:left;padding:0.3rem 0.5rem;">What It Uses</th><th style="text-align:left;padding:0.3rem 0.5rem;">Runs Without Pandera?</th></tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--border);background:rgba(91,58,168,0.03);"><td style="padding:0.3rem 0.5rem;font-weight:600;font-size:0.72rem;">TestHappyPath</td><td style="padding:0.3rem 0.5rem;">90</td><td style="padding:0.3rem 0.5rem;color:var(--violet);font-weight:600;">✅ Yes</td><td style="padding:0.3rem 0.5rem;font-size:0.68rem;"><code>InstructionSchema.validate()</code></td><td style="color:var(--red);">❌ Skipped — needs Pandera</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(26,110,52,0.03);"><td style="padding:0.3rem 0.5rem;font-weight:600;font-size:0.72rem;">TestEdgeCases</td><td style="padding:0.3rem 0.5rem;">113</td><td style="padding:0.3rem 0.5rem;color:var(--red);font-weight:600;">❌ No</td><td style="padding:0.3rem 0.5rem;font-size:0.68rem;"><code>df["col"].isnull()</code>, <code>.str.len()</code>, <code>.notna()</code></td><td style="color:var(--green);">✅ Always runs</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(91,58,168,0.03);"><td style="padding:0.3rem 0.5rem;font-weight:600;font-size:0.72rem;">TestFailureModes</td><td style="padding:0.3rem 0.5rem;">156</td><td style="padding:0.3rem 0.5rem;color:var(--violet);font-weight:600;">✅ Yes</td><td style="padding:0.3rem 0.5rem;font-size:0.68rem;"><code>pytest.raises(pa.errors.SchemaError)</code></td><td style="color:var(--red);">❌ Skipped — needs Pandera</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(26,110,52,0.03);"><td style="padding:0.3rem 0.5rem;font-weight:600;font-size:0.72rem;">TestInstructionFormat</td><td style="padding:0.3rem 0.5rem;">198</td><td style="padding:0.3rem 0.5rem;color:var(--red);font-weight:600;">❌ No</td><td style="padding:0.3rem 0.5rem;font-size:0.68rem;"><code>.startswith()</code>, <code>"in"</code>, <code>len()</code></td><td style="color:var(--green);">✅ Always runs</td></tr>
+</tbody>
+</table>
+
+<div class="callout" style="background:rgba(26,110,52,0.06);border:1px solid rgba(26,110,52,0.2);"><strong>🎯 The rule:</strong> The decorator gates only classes that <strong>import from or call Pandera directly</strong>. The other classes use plain Python + pandas — they work regardless. If someone clones the repo without <code>pip install pandera</code>, <strong>10 of 15 tests still run</strong> (TestEdgeCases + TestInstructionFormat). You don't lose everything just because one optional dependency is missing.</div>
 </div></div>`}
 ];
 
