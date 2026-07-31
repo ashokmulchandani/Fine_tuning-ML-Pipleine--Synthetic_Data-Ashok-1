@@ -1350,6 +1350,41 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
   </div>
 </div>
 
+<!-- SECTION 5C: Matrix Multiplication Animation -->
+<div class="learn-section">
+  <div class="section-num">Section 05C</div>
+  <h4>🧮 Matrix Multiplication: W × f = Logits — See How Weights &amp; Features Combine</h4>
+  <p>To classify a bird image, the classifier computes: <strong>logit_class = Σ(W_class,i × f_i)</strong> for each of the 200 bird species. Below shows a simplified version: <strong>3 classes × 5 features</strong>. Watch how <strong style="color:#ff5252;">f_sky</strong> (irrelevant) gets multiplied by <strong>W≈0</strong> → contributes nothing, while <strong style="color:#69f0ae;">f_beak</strong> (useful) gets multiplied by <strong>large W</strong> → drives the prediction.</p>
+
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin:12px 0;">
+    <div style="display:flex; gap:6px;">
+      <button class="btn btn-fmr" style="padding:6px 12px; font-size:0.7rem;" onclick="matMulStep(-1)">◀ Prev Row</button>
+      <button class="btn btn-fmr" style="padding:6px 12px; font-size:0.7rem;" onclick="matMulPlay()" id="matMulPlayBtn">▶ Auto-Play</button>
+      <button class="btn btn-fmr" style="padding:6px 12px; font-size:0.7rem;" onclick="matMulStep(1)">Next Row ▶</button>
+      <button class="btn btn-fmr" style="padding:6px 12px; font-size:0.7rem;" onclick="matMulReset()">↺ Reset</button>
+    </div>
+    <span style="font-family:var(--font-mono); font-size:0.75rem; color:var(--text-dim);" id="matMulRowLabel">Row 0 / 3</span>
+    <span style="font-family:var(--font-mono); font-size:0.65rem; color:var(--text-dim);">Speed:</span>
+    <input type="range" id="matMulSpeed" min="400" max="2500" value="1000" style="width:70px; accent-color:var(--cyan);" oninput="document.getElementById('matMulSpeedVal').textContent=(this.value/1000).toFixed(1)+'s'">
+    <span style="font-family:var(--font-mono); font-size:0.65rem; color:var(--text-dim);" id="matMulSpeedVal">1.0s</span>
+  </div>
+
+  <div class="learn-canvas-wrap">
+    <canvas id="matMulCanvas" width="1200" height="420"></canvas>
+  </div>
+
+  <div class="legend">
+    <span><span class="dot" style="background:#ff5252;"></span> W≈0 → feature ignored</span>
+    <span><span class="dot" style="background:#69f0ae;"></span> Large |W| → feature drives prediction</span>
+    <span><span class="dot" style="background:#ffb300;"></span> Active computation (current row)</span>
+    <span><span class="dot" style="background:#00e5ff; width:8px; height:8px; border:2px solid #00e5ff; border-radius:0;"></span> Currently highlighted cell</span>
+  </div>
+
+  <div class="insight-callout" style="margin-top:10px;">
+    <strong>💡 Key Insight:</strong> The classifier doesn't know which features matter. It learns <strong>W values from data</strong>. Irrelevant features (f_sky) have no consistent pattern across classes → W → 0 via weight decay. Useful features (f_beak) have consistent patterns → W grows large. The matrix multiplication automatically <strong>amplifies useful features and ignores irrelevant ones</strong> — no manual filtering needed.
+  </div>
+</div>
+
 <!-- SECTION 6: Real Scenarios -->
 <div class="learn-section">
   <div class="section-num">Section 06</div>
@@ -3479,6 +3514,225 @@ function drawWeightDecayDiagram() {
   ctx.fillText('Weight Decay is always ON — pulling every weight toward zero. Only consistent CE gradients can resist.', W/2 - 350, H - 4);
 }
 
+// ==================== MATRIX MULTIPLICATION ANIMATION ====================
+const MAT_NUM_CLASSES = 3, MAT_NUM_FEATURES = 5;
+const matFeatures = [
+  { name: 'f_sky',    val: 0.91, useful: false, desc: 'Blue Sky' },
+  { name: 'f_beak',   val: 0.65, useful: true,  desc: 'Beak Curve' },
+  { name: 'f_grass',  val: 0.88, useful: false, desc: 'Green Foliage' },
+  { name: 'f_wing',   val: 0.22, useful: true,  desc: 'Wing Bar' },
+  { name: 'f_branch', val: 0.73, useful: false, desc: 'Branch' },
+];
+const matWeights = [
+  // W for Indigo Bunting
+  [ 0.01,  2.30,  0.02,  1.50,  0.01 ],
+  // W for Lazuli Bunting
+  [ 0.02, -1.80,  0.01,  1.20,  0.01 ],
+  // W for Painted Bunting
+  [ 0.01,  0.50,  0.01, -0.80,  0.02 ],
+];
+const matClassNames = ['Indigo Bunting', 'Lazuli Bunting', 'Painted Bunting'];
+
+let matMulRow = 0, matMulCol = 0, matMulTimer = null, matMulPlaying = false;
+
+function drawMatMul() {
+  const canvas = document.getElementById('matMulCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const cellW = 80, cellH = 32, gap = 4;
+  const featNames = matFeatures.map(f => f.name);
+  const featVals = matFeatures.map(f => f.val);
+  const featUseful = matFeatures.map(f => f.useful);
+  const featDesc = matFeatures.map(f => f.desc);
+
+  // ── Feature vector (top-right, horizontal) ──
+  const fvX = 280, fvY = 50;
+  ctx.fillStyle = '#6b6b80';
+  ctx.font = 'bold 10px monospace';
+  ctx.fillText('Feature Vector f (5×1)', fvX + 10, fvY - 12);
+
+  // "f =" label
+  ctx.fillStyle = '#b388ff';
+  ctx.font = 'bold 14px monospace';
+  ctx.fillText('f =', fvX - 35, fvY + 20 + MAT_NUM_CLASSES * (cellH + gap) / 2);
+
+  for (let j = 0; j < MAT_NUM_FEATURES; j++) {
+    const cx = fvX + j * (cellW + gap), cy = fvY + MAT_NUM_CLASSES * (cellH + gap) / 2;
+    const isActive = matMulCol === j;
+    // Color by usefulness
+    ctx.fillStyle = featUseful[j] ? '#69f0ae33' : '#ff525233';
+    ctx.strokeStyle = isActive ? '#ffb300' : (featUseful[j] ? '#69f0ae55' : '#ff525255');
+    ctx.lineWidth = isActive ? 2.5 : 1;
+    ctx.beginPath(); ctx.roundRect(cx, cy, cellW, cellH, 5); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 9px monospace';
+    ctx.fillText(featNames[j], cx + 6, cy + 13);
+    ctx.fillStyle = '#ffffffaa'; ctx.font = '8px monospace';
+    ctx.fillText(featVals[j].toFixed(2), cx + 6, cy + 25);
+  }
+
+  // ── Weight matrix (left) ──
+  const wmX = 60, wmY = fvY;
+  ctx.fillStyle = '#6b6b80';
+  ctx.font = 'bold 10px monospace';
+  ctx.fillText('Weight Matrix W (3×5)', wmX + 10, wmY - 12);
+  ctx.font = '9px monospace';
+  ctx.fillText('Each row = one class', wmX + 10, wmY);
+
+  // "W =" label
+  ctx.fillStyle = '#b388ff';
+  ctx.font = 'bold 14px monospace';
+  ctx.fillText('W =', wmX - 40, wmY + 35 + MAT_NUM_CLASSES * (cellH + gap) / 2);
+
+  let wRows = [];
+  for (let i = 0; i < MAT_NUM_CLASSES; i++) {
+    for (let j = 0; j < MAT_NUM_FEATURES; j++) {
+      const cx = wmX + j * (cellW + gap), cy = wmY + 30 + i * (cellH + gap);
+      const val = matWeights[i][j];
+      const isActive = (matMulRow === i && matMulCol === j);
+      const absW = Math.abs(val);
+      // Color intensity by |W|: near 0 = red/gray, large = green
+      const intensity = Math.min(1, absW / 2.5);
+      const r = Math.floor(255 * (1 - intensity)), g = Math.floor(100 + 155 * intensity), b = Math.floor(80);
+      ctx.fillStyle = `rgba(${r},${g},${b},${0.3 + intensity * 0.5})`;
+      ctx.strokeStyle = isActive ? '#ffb300' : `rgba(${r},${g},${b},0.5)`;
+      ctx.lineWidth = isActive ? 2.5 : 1;
+      if (isActive) { ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 10; }
+      ctx.beginPath(); ctx.roundRect(cx, cy, cellW, cellH, 5); ctx.fill(); ctx.stroke();
+      ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+      ctx.fillStyle = isActive ? '#ffb300' : '#fff';
+      ctx.font = 'bold 9px monospace';
+      ctx.fillText((val >= 0 ? '+' : '') + val.toFixed(2), cx + 8, cy + 20);
+    }
+    // Class name label
+    ctx.fillStyle = '#c8c8d4';
+    ctx.font = '9px monospace';
+    ctx.fillText(matClassNames[i], wmX + MAT_NUM_FEATURES * (cellW + gap) + 8, wmY + 30 + i * (cellH + gap) + 20);
+    wRows.push({ i, y: wmY + 30 + i * (cellH + gap) });
+  }
+
+  // ── Equals sign & Result vector (right of feature vector) ──
+  const resX = fvX + MAT_NUM_FEATURES * (cellW + gap) + 50, resY = fvY;
+  ctx.fillStyle = '#b388ff';
+  ctx.font = 'bold 20px monospace';
+  ctx.fillText('=', fvX + MAT_NUM_FEATURES * (cellW + gap) + 15, wRows[1].y + 10);
+
+  ctx.fillStyle = '#6b6b80';
+  ctx.font = 'bold 10px monospace';
+  ctx.fillText('Logits (3×1)', resX, resY - 12);
+
+  // Compute each row's dot product
+  for (let i = 0; i < MAT_NUM_CLASSES; i++) {
+    let sum = 0;
+    const terms = [];
+    for (let j = 0; j < MAT_NUM_FEATURES; j++) {
+      const term = matWeights[i][j] * featVals[j];
+      sum += term;
+      terms.push(term);
+    }
+    const cy = resY + 30 + i * (cellH + gap);
+    const isActive = matMulRow === i;
+
+    // Show computation breakdown for active row
+    if (isActive && matMulCol >= 0) {
+      let compText = '';
+      for (let j = 0; j <= matMulCol; j++) {
+        if (j > 0) compText += ' + ';
+        const term = matWeights[i][j] * featVals[j];
+        compText += `(${matWeights[i][j].toFixed(2)}×${featVals[j].toFixed(2)})`;
+      }
+      if (matMulCol < MAT_NUM_FEATURES - 1) compText += ' + ...';
+      ctx.fillStyle = '#ffb30088';
+      ctx.font = '9px monospace';
+      ctx.fillText(compText, resX + 10, cy - 8);
+    }
+
+    ctx.fillStyle = '#14141f';
+    ctx.strokeStyle = isActive ? '#ffb300' : '#ffffff22';
+    ctx.lineWidth = isActive ? 2.5 : 1;
+    if (isActive) { ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 10; }
+    ctx.beginPath(); ctx.roundRect(resX + 10, cy + 2, 140, cellH, 5); ctx.fill(); ctx.stroke();
+    ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0;
+    ctx.fillStyle = isActive ? '#ffb300' : '#fff';
+    ctx.font = 'bold 10px monospace';
+    const partialSum = terms.slice(0, matMulCol + 1).reduce((a, b) => a + b, 0);
+    ctx.fillText(isActive ? partialSum.toFixed(2) + '...' : sum.toFixed(2), resX + 18, cy + 22);
+
+    // Class label
+    ctx.fillStyle = '#c8c8d4';
+    ctx.font = '9px monospace';
+    ctx.fillText(matClassNames[i], resX + 160, cy + 22);
+  }
+
+  // ── Bottom: Computation formula ──
+  const bottomY = resY + 30 + MAT_NUM_CLASSES * (cellH + gap) + 20;
+  if (matMulRow >= 0 && matMulCol >= 0) {
+    const wVal = matWeights[matMulRow][matMulCol];
+    const fVal = featVals[matMulCol];
+    const term = wVal * fVal;
+    ctx.fillStyle = '#b388ff';
+    ctx.font = 'bold 11px monospace';
+    ctx.fillText(`Step ${matMulCol + 1}: W[${matMulRow}][${matMulCol}] × f[${matMulCol}] = (${wVal.toFixed(2)}) × (${fVal.toFixed(2)}) = ${term >= 0 ? '+' : ''}${term.toFixed(3)}`, 60, bottomY);
+    ctx.fillStyle = '#6b6b8077';
+    ctx.font = '10px monospace';
+    ctx.fillText(`Feature: ${featDesc[matMulCol]} — ${featUseful[matMulCol] ? 'USEFUL (large |W| → drives prediction)' : 'IRRELEVANT (W≈0 → contributes nothing)'}`, 60, bottomY + 20);
+  }
+
+  // ── Color legend for features ──
+  const legY = H - 30;
+  ctx.fillStyle = '#69f0ae'; ctx.font = 'bold 9px monospace';
+  ctx.fillText('■ Useful features (large W)', 60, legY);
+  ctx.fillStyle = '#ff5252'; ctx.fillText('■ Irrelevant (W≈0)', 280, legY);
+  ctx.fillStyle = '#6b6b8077';
+  ctx.font = '9px monospace';
+  ctx.fillText('Full formula: logit_indigo = 0.01×0.91 + 2.30×0.65 + 0.02×0.88 + 1.50×0.22 + 0.01×0.73 = 1.82', 470, legY);
+}
+
+function matMulStep(dir) {
+  if (dir > 0) {
+    matMulCol++;
+    if (matMulCol >= MAT_NUM_FEATURES) { matMulCol = 0; matMulRow++; }
+  } else {
+    matMulCol--;
+    if (matMulCol < 0) { matMulCol = MAT_NUM_FEATURES - 1; matMulRow--; }
+  }
+  matMulRow = Math.max(0, Math.min(MAT_NUM_CLASSES - 1, matMulRow));
+  matMulCol = Math.max(0, Math.min(MAT_NUM_FEATURES - 1, matMulCol));
+  document.getElementById('matMulRowLabel').textContent = `Row ${matMulRow + 1} / ${MAT_NUM_CLASSES}  Col ${matMulCol + 1} / ${MAT_NUM_FEATURES}`;
+  drawMatMul();
+}
+
+function matMulPlay() {
+  if (matMulPlaying) {
+    clearInterval(matMulTimer); matMulPlaying = false;
+    document.getElementById('matMulPlayBtn').textContent = '▶ Auto-Play';
+    return;
+  }
+  matMulPlaying = true;
+  document.getElementById('matMulPlayBtn').textContent = '⏸ Stop';
+  if (matMulRow >= MAT_NUM_CLASSES - 1 && matMulCol >= MAT_NUM_FEATURES - 1) { matMulRow = 0; matMulCol = 0; }
+  const speed = parseInt(document.getElementById('matMulSpeed').value) || 1000;
+  matMulTimer = setInterval(() => {
+    if (matMulRow >= MAT_NUM_CLASSES - 1 && matMulCol >= MAT_NUM_FEATURES - 1) {
+      clearInterval(matMulTimer); matMulPlaying = false;
+      document.getElementById('matMulPlayBtn').textContent = '▶ Auto-Play';
+      drawMatMul();
+      return;
+    }
+    matMulStep(1);
+  }, speed);
+}
+
+function matMulReset() {
+  clearInterval(matMulTimer); matMulPlaying = false;
+  document.getElementById('matMulPlayBtn').textContent = '▶ Auto-Play';
+  matMulRow = 0; matMulCol = 0;
+  document.getElementById('matMulRowLabel').textContent = 'Row 1 / 3  Col 1 / 5';
+  drawMatMul();
+}
+
 function drawLearnDiagrams() {
   drawFeaturePipelineDiagram();
   drawTransferDiagram();
@@ -3486,6 +3740,7 @@ function drawLearnDiagrams() {
   drawGradientPathsDiagram();
   drawWeightDecayDiagram();
   drawWeightTable();
+  drawMatMul();
 }
 
 // ==================== INTERACTIVE WEIGHT DECAY TABLE ====================
