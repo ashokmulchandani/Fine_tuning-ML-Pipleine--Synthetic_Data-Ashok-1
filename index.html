@@ -3,2955 +3,371 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Neural Observatory — FMR &amp; ASIF Interactive Demo</title>
+<title>Fine-Tuning Pipeline — Complete Guide Index</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --void: #060609;
-    --deep: #0d0d16;
-    --surface: #14141f;
-    --elevated: #1a1a2e;
-    --border: #252538;
-    --text: #c8c8d4;
-    --text-dim: #6b6b80;
-    --cyan: #00e5ff;
-    --cyan-glow: #00e5ff44;
-    --cyan-dim: #006070;
-    --amber: #ffb300;
-    --amber-glow: #ffb30044;
-    --amber-dim: #604800;
-    --magenta: #ff4081;
-    --magenta-glow: #ff408144;
-    --green: #69f0ae;
-    --red: #ff5252;
-    --font-display: 'Georgia', 'Times New Roman', serif;
-    --font-mono: 'Courier New', 'Consolas', monospace;
-    --font-body: system-ui, -apple-system, sans-serif;
-  }
+:root{--bg:#fafbfc;--card:#fff;--raised:#f0f2f5;--border:#dde0e5;--text:#1a1d23;--tdim:#4a4f5a;--tmut:#8b9099;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--amber:#b87000;--red:#c62828;--cyan:#007a99;--magenta:#9e2a6b;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.65;min-height:100vh;}
+.app{max-width:1000px;margin:0 auto;padding:1.5rem;}
 
-  /* === LIGHT THEME === */
-  body.light {
-    --void: #f4f4f7;
-    --deep: #ffffff;
-    --surface: #fafafc;
-    --elevated: #f0f0f5;
-    --border: #d4d4dd;
-    --text: #1a1a28;
-    --text-dim: #707088;
-    --cyan: #008499;
-    --cyan-glow: #00849933;
-    --cyan-dim: #cceff5;
-    --amber: #b37b00;
-    --amber-glow: #b37b0033;
-    --amber-dim: #fff3d6;
-    --magenta: #c62850;
-    --magenta-glow: #c6285033;
-    --green: #2e7d50;
-    --red: #c62828;
-  }
-  body.light::before {
-    background:
-      radial-gradient(ellipse 80% 60% at 20% 50%, #00849906 0%, transparent 60%),
-      radial-gradient(ellipse 80% 60% at 80% 50%, #b37b0006 0%, transparent 60%),
-      radial-gradient(ellipse 40% 30% at 50% 0%, #c6285004 0%, transparent 70%);
-  }
-  body.light::after {
-    background-image:
-      linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
-    mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 25%, transparent 70%);
-  }
-  body.light .tab-btn.active-fmr {
-    box-shadow: 0 0 16px var(--cyan-glow), inset 0 0 16px #00849906;
-  }
-  body.light .tab-btn.active-asif {
-    box-shadow: 0 0 16px var(--amber-glow), inset 0 0 16px #b37b0006;
-  }
-  body.light .canvas-wrap,
-  body.light .asif-diagram-wrap {
-    background: #f8f8fc;
-    border-color: var(--border);
-  }
-  body.light .code-snip {
-    background: #f0f0f5;
-  }
-  body.light .metric {
-    background: #f8f8fc;
-  }
-  body.light .btn-fmr:hover {
-    background: var(--cyan-dim);
-  }
-  body.light .btn-asif:hover {
-    background: var(--amber-dim);
-  }
+.header{text-align:center;padding:2.5rem 0 1.5rem;}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.6rem;font-weight:700;color:var(--violet);}
+.header p{color:var(--tdim);font-size:0.95rem;margin-top:0.4rem;}
+.header .links{margin-top:1rem;display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;}
+.header .links a{font-family:'Space Grotesk',sans-serif;font-size:0.65rem;font-weight:600;letter-spacing:0.06em;padding:0.4em 1em;border:1.5px solid var(--border);border-radius:100px;color:var(--tdim);text-decoration:none;transition:0.2s;}
+.header .links a:hover{border-color:var(--violet);color:var(--violet);background:var(--vbg);}
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+.section{margin:1.5rem 0 0.5rem;}
+.section h2{font-family:'Space Grotesk',sans-serif;font-size:0.9rem;font-weight:600;color:var(--tdim);padding-bottom:0.4rem;border-bottom:1.5px solid var(--border);display:flex;align-items:center;gap:0.5rem;}
+.section h2 .icon{font-size:1rem;}
 
-  body {
-    background: var(--void);
-    color: var(--text);
-    font-family: var(--font-body);
-    overflow-x: hidden;
-    min-height: 100vh;
-  }
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:0.6rem;margin:0.5rem 0;}
 
-  /* Ambient background */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-      radial-gradient(ellipse 80% 60% at 20% 50%, #00e5ff08 0%, transparent 60%),
-      radial-gradient(ellipse 80% 60% at 80% 50%, #ffb30008 0%, transparent 60%),
-      radial-gradient(ellipse 40% 30% at 50% 0%, #ff408106 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-  }
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;text-decoration:none;color:var(--text);transition:0.2s;display:flex;flex-direction:column;gap:0.3rem;}
+.card:hover{border-color:var(--violet);box-shadow:0 2px 12px rgba(91,58,168,0.08);transform:translateY(-1px);}
+.card h3{font-family:'Space Grotesk',sans-serif;font-size:0.8rem;font-weight:600;color:var(--text);}
+.card p{font-size:0.75rem;color:var(--tmut);line-height:1.5;margin:0;}
 
-  /* Grid overlay */
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-    z-index: 0;
-    mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 30%, transparent 70%);
-  }
+.card .tag{display:inline-block;font-family:'Space Grotesk',sans-serif;font-size:0.55rem;font-weight:600;letter-spacing:0.06em;padding:0.15em 0.6em;border-radius:100px;align-self:flex-start;}
 
-  /* === HEADER === */
-  .header {
-    position: relative;
-    z-index: 1;
-    text-align: center;
-    padding: 48px 24px 24px;
-  }
-  .header h1 {
-    font-family: var(--font-display);
-    font-size: clamp(2rem, 5vw, 3.2rem);
-    font-weight: 400;
-    letter-spacing: 0.04em;
-    background: linear-gradient(135deg, var(--cyan), #b0bec5, var(--amber));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 8px;
-  }
-  .header .subtitle {
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    color: var(--text-dim);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
+.tag-phase{background:var(--vbg);color:var(--violet);}
+.tag-visual{background:rgba(0,122,153,0.08);color:var(--cyan);}
+.tag-metrics{background:rgba(26,110,52,0.08);color:var(--green);}
+.tag-ref{background:rgba(184,112,0,0.08);color:var(--amber);}
+.tag-adv{background:rgba(158,42,107,0.08);color:var(--magenta);}
+.tag-new{background:rgba(198,40,40,0.06);color:var(--red);}
 
-  /* === THEME TOGGLE === */
-  .theme-toggle {
-    position: fixed;
-    top: 20px;
-    right: 24px;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 30px;
-    padding: 5px;
-    width: 56px;
-    height: 30px;
-    transition: all 0.4s ease;
-  }
-  .theme-toggle:hover {
-    border-color: #8888aa;
-  }
-  .theme-knob {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--amber);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 0 10px var(--amber-glow);
-    position: relative;
-    left: 0;
-  }
-  body.light .theme-knob {
-    background: var(--cyan);
-    box-shadow: 0 0 10px var(--cyan-glow);
-    left: 26px;
-  }
-  .theme-icon {
-    position: absolute;
-    font-size: 12px;
-    transition: opacity 0.3s;
-    pointer-events: none;
-  }
-  .theme-icon.moon { left: 6px; opacity: 1; }
-  .theme-icon.sun { right: 6px; opacity: 0.3; }
-  body.light .theme-icon.moon { opacity: 0.3; }
-  body.light .theme-icon.sun { opacity: 1; }
+.footer{text-align:center;padding:2rem;border-top:1px solid var(--border);margin-top:2rem;color:var(--tmut);font-size:0.75rem;}
 
-  /* === TABS === */
-  .tabs {
-    position: relative;
-    z-index: 1;
-    display: flex;
-    justify-content: center;
-    gap: 4px;
-    margin: 0 24px 32px;
-  }
-  .tab-btn {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 12px 36px;
-    cursor: pointer;
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
-    letter-spacing: 0.06em;
-    transition: all 0.35s ease;
-    position: relative;
-  }
-  .tab-btn:first-child { border-radius: 6px 0 0 6px; }
-  .tab-btn:last-child { border-radius: 0 6px 6px 0; }
-  .tab-btn.active-fmr {
-    background: var(--cyan-dim);
-    border-color: var(--cyan);
-    color: var(--cyan);
-    box-shadow: 0 0 24px var(--cyan-glow), inset 0 0 24px #00e5ff08;
-  }
-  .tab-btn.active-asif {
-    background: var(--amber-dim);
-    border-color: var(--amber);
-    color: var(--amber);
-    box-shadow: 0 0 24px var(--amber-glow), inset 0 0 24px #ffb30008;
-  }
-  .tab-btn.active-learn {
-    background: #1a1040;
-    border-color: #b388ff;
-    color: #b388ff;
-    box-shadow: 0 0 24px #b388ff33, inset 0 0 24px #b388ff08;
-  }
-  .tab-btn:hover:not(.active-fmr):not(.active-asif):not(.active-learn) {
-    color: var(--text);
-    border-color: #444;
-  }
-  body.light .tab-btn.active-learn {
-    background: #ede7f6;
-    border-color: #7c4dff;
-    color: #7c4dff;
-    box-shadow: 0 0 16px #7c4dff33;
-  }
-
-  /* === LEARN TAB STYLES === */
-  .learn-hero {
-    text-align: center;
-    padding: 32px 24px;
-    position: relative;
-  }
-  .learn-hero h2 {
-    font-family: var(--font-display);
-    font-size: 2rem;
-    font-weight: 400;
-    color: #b388ff;
-    margin-bottom: 8px;
-  }
-  .learn-hero .hero-sub {
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    color: var(--text-dim);
-    letter-spacing: 0.06em;
-  }
-  .learn-hero .gh-link {
-    display: inline-block;
-    margin-top: 14px;
-    padding: 8px 20px;
-    border: 1px solid #b388ff44;
-    border-radius: 20px;
-    color: #b388ff;
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    text-decoration: none;
-    transition: all 0.3s;
-    letter-spacing: 0.04em;
-  }
-  .learn-hero .gh-link:hover {
-    background: #b388ff15;
-    box-shadow: 0 0 16px #b388ff22;
-  }
-
-  .learn-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 28px 32px;
-    margin-bottom: 20px;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.4s ease;
-  }
-  .learn-section:hover {
-    border-color: #b388ff33;
-  }
-  .learn-section::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, #b388ff44, transparent);
-    opacity: 0.6;
-  }
-  .learn-section h4 {
-    font-family: var(--font-display);
-    font-size: 1.15rem;
-    font-weight: 400;
-    color: #b388ff;
-    margin-bottom: 6px;
-    letter-spacing: 0.02em;
-  }
-  .learn-section .section-num {
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    color: #b388ff55;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 10px;
-  }
-  .learn-section p, .learn-section li {
-    font-size: 0.85rem;
-    line-height: 1.7;
-    color: var(--text);
-  }
-  .learn-section ul {
-    padding-left: 20px;
-    margin: 8px 0;
-  }
-  .learn-section li {
-    margin-bottom: 6px;
-  }
-  .learn-section code {
-    background: var(--deep);
-    padding: 2px 7px;
-    border-radius: 4px;
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    color: #b388ff;
-    border: 1px solid var(--border);
-  }
-
-  .formula-box {
-    background: var(--deep);
-    border: 1px solid #b388ff33;
-    border-radius: 10px;
-    padding: 18px 24px;
-    margin: 14px 0;
-    font-family: var(--font-mono);
-    font-size: 0.9rem;
-    text-align: center;
-    letter-spacing: 0.03em;
-    overflow-x: auto;
-    line-height: 1.8;
-  }
-  .formula-box .hl-cyan { color: var(--cyan); }
-  .formula-box .hl-amber { color: var(--amber); }
-  .formula-box .hl-magenta { color: var(--magenta); }
-  .formula-box .hl-green { color: var(--green); }
-  .formula-box .hl-purple { color: #b388ff; }
-  .formula-box .hl-red { color: var(--red); }
-  .formula-box .dim { color: var(--text-dim); }
-
-  .insight-callout {
-    border-left: 3px solid #b388ff;
-    background: #b388ff08;
-    padding: 14px 18px;
-    margin: 14px 0;
-    border-radius: 0 8px 8px 0;
-    font-size: 0.84rem;
-    line-height: 1.6;
-  }
-  .insight-callout strong { color: #b388ff; }
-
-  .compare-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin: 14px 0;
-  }
-  @media (max-width: 700px) { .compare-grid { grid-template-columns: 1fr; } }
-  .compare-card {
-    background: var(--deep);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 18px;
-  }
-  .compare-card.bad { border-color: #ff525233; }
-  .compare-card.good { border-color: #69f0ae33; }
-  .compare-card h5 { font-family: var(--font-mono); font-size: 0.75rem; margin-bottom: 8px; letter-spacing: 0.05em; }
-  .compare-card.bad h5 { color: var(--red); }
-  .compare-card.good h5 { color: var(--green); }
-
-  .learn-canvas-wrap {
-    background: var(--deep);
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    margin: 14px 0;
-    overflow: hidden;
-  }
-  .learn-canvas-wrap canvas { display: block; width: 100%; height: auto; }
-
-  .key-takeaway-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 14px;
-    margin: 14px 0;
-  }
-  .takeaway-card {
-    background: var(--deep);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 18px 20px;
-    transition: all 0.3s;
-  }
-  .takeaway-card:hover { border-color: #b388ff44; transform: translateY(-2px); }
-  .takeaway-card .emoji { font-size: 1.5rem; margin-bottom: 6px; }
-  .takeaway-card h5 { font-family: var(--font-mono); font-size: 0.78rem; color: #b388ff; margin-bottom: 4px; }
-  .takeaway-card p { font-size: 0.78rem; color: var(--text-dim); line-height: 1.5; }
-
-  /* === MAIN CONTAINER === */
-  .main-container {
-    position: relative;
-    z-index: 1;
-    max-width: 1300px;
-    margin: 0 auto;
-    padding: 0 24px 60px;
-  }
-
-  .panel {
-    display: none;
-    animation: fadeSlideIn 0.5s ease;
-  }
-  .panel.active { display: block; }
-
-  @keyframes fadeSlideIn {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  /* === LAYOUT === */
-  .viz-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    margin-bottom: 24px;
-  }
-  @media (max-width: 900px) {
-    .viz-grid { grid-template-columns: 1fr; }
-    .tabs { flex-direction: column; align-items: center; }
-    .tab-btn:first-child, .tab-btn:last-child { border-radius: 6px; }
-  }
-
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 24px;
-    position: relative;
-    overflow: hidden;
-  }
-  .card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 1px;
-    opacity: 0.5;
-  }
-  .card.card-fmr::before { background: linear-gradient(90deg, transparent, var(--cyan), transparent); }
-  .card.card-asif::before { background: linear-gradient(90deg, transparent, var(--amber), transparent); }
-
-  .card h3 {
-    font-family: var(--font-display);
-    font-size: 1.1rem;
-    font-weight: 400;
-    letter-spacing: 0.03em;
-    margin-bottom: 4px;
-  }
-  .card-fmr h3 { color: var(--cyan); }
-  .card-asif h3 { color: var(--amber); }
-
-  .card .card-desc {
-    font-size: 0.78rem;
-    color: var(--text-dim);
-    margin-bottom: 20px;
-    line-height: 1.5;
-  }
-
-  /* === CANVAS === */
-  .canvas-wrap {
-    position: relative;
-    background: var(--deep);
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    overflow: hidden;
-  }
-  .canvas-wrap canvas {
-    display: block;
-    width: 100%;
-    height: auto;
-  }
-
-  /* === METRICS ROW === */
-  .metrics-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-top: 16px;
-  }
-  .metric {
-    background: var(--deep);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 14px 16px;
-    text-align: center;
-  }
-  .metric .metric-value {
-    font-family: var(--font-mono);
-    font-size: 1.6rem;
-    font-weight: bold;
-    transition: color 0.4s;
-  }
-  .metric .metric-label {
-    font-size: 0.68rem;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-top: 4px;
-  }
-  .metric-fmr .metric-value { color: var(--cyan); }
-  .metric-asif .metric-value { color: var(--amber); }
-
-  /* === CONTROLS === */
-  .controls {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px 24px;
-    margin-top: 16px;
-  }
-  .controls h4 {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 14px;
-  }
-  .control-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-  }
-  .control-row:last-child { margin-bottom: 0; }
-  .control-row label {
-    font-size: 0.78rem;
-    color: var(--text);
-    min-width: 100px;
-  }
-  .control-row input[type="range"] {
-    -webkit-appearance: none;
-    flex: 1;
-    min-width: 120px;
-    height: 6px;
-    border-radius: 3px;
-    background: var(--border);
-    outline: none;
-  }
-  .control-row input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    cursor: pointer;
-    border: 2px solid var(--surface);
-    transition: all 0.2s;
-  }
-  .fmr-slider::-webkit-slider-thumb { background: var(--cyan); box-shadow: 0 0 12px var(--cyan-glow); }
-  .asif-slider::-webkit-slider-thumb { background: var(--amber); box-shadow: 0 0 12px var(--amber-glow); }
-
-  .control-row .val {
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    min-width: 40px;
-    text-align: right;
-    color: var(--text);
-  }
-
-  .btn {
-    padding: 10px 24px;
-    border: 1px solid;
-    border-radius: 6px;
-    cursor: pointer;
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    letter-spacing: 0.05em;
-    transition: all 0.3s;
-    background: transparent;
-  }
-  .btn-fmr { border-color: var(--cyan); color: var(--cyan); }
-  .btn-fmr:hover { background: var(--cyan-dim); box-shadow: 0 0 20px var(--cyan-glow); }
-  .btn-asif { border-color: var(--amber); color: var(--amber); }
-  .btn-asif:hover { background: var(--amber-dim); box-shadow: 0 0 20px var(--amber-glow); }
-
-  /* === FULL-WIDTH === */
-  .full-width { grid-column: 1 / -1; }
-
-  /* === ASIF DIAGRAM SPECIFIC === */
-  .asif-diagram-wrap {
-    background: var(--deep);
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .legend {
-    display: flex;
-    gap: 18px;
-    flex-wrap: wrap;
-    margin-top: 12px;
-    font-size: 0.72rem;
-    color: var(--text-dim);
-  }
-  .legend span { display: flex; align-items: center; gap: 6px; }
-  .legend .dot {
-    width: 8px; height: 8px; border-radius: 50%; display: inline-block;
-  }
-
-  /* === PULSE ANIMATION === */
-  @keyframes pulse-cyan {
-    0%, 100% { box-shadow: 0 0 8px var(--cyan-glow); }
-    50% { box-shadow: 0 0 24px var(--cyan), 0 0 40px var(--cyan-glow); }
-  }
-  @keyframes pulse-amber {
-    0%, 100% { box-shadow: 0 0 8px var(--amber-glow); }
-    50% { box-shadow: 0 0 24px var(--amber), 0 0 40px var(--amber-glow); }
-  }
-
-  /* === CODE SNIPPET === */
-  .code-snip {
-    background: var(--deep);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 14px 18px;
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
-    line-height: 1.6;
-    color: var(--text-dim);
-    margin-top: 12px;
-    overflow-x: auto;
-  }
-  .code-snip .kw { color: #82b1ff; }
-  .code-snip .fn { color: var(--cyan); }
-  .code-snip .comment { color: #546e7a; }
-  .code-snip .num { color: var(--amber); }
-
-  /* === TOOLTIP === */
-  .info-badge {
-    display: inline-block;
-    font-size: 0.65rem;
-    padding: 2px 8px;
-    border-radius: 10px;
-    margin-left: 6px;
-    font-family: var(--font-mono);
-  }
-  .info-badge.fmr { background: var(--cyan-dim); color: var(--cyan); border: 1px solid #00e5ff33; }
-  .info-badge.asif { background: var(--amber-dim); color: var(--amber); border: 1px solid #ffb30033; }
+@media(max-width:768px){.app{padding:0.75rem;}.grid{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
 
-<div class="header">
-  <h1>Neural Observatory</h1>
-  <div class="subtitle">Interactive Visualization · FMR &amp; ASIF Regularization Techniques</div>
+<div class="app">
+
+<header class="header">
+  <h1>🧠 Fine-Tuning Pipeline — Complete Visual Guide</h1>
+  <p>Every concept explained with interactive HTML pages. Click any card to open.</p>
+  <div class="links">
+    <a href="finetuning_plan_dashboard.html">📊 Dashboard</a>
+    <a href="https://github.com/ashokmulchandani/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1">📁 GitHub Repo</a>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section"><h2><span class="icon">📚</span> Phase Walkthroughs (Main Curriculum)</h2></div>
+<div class="grid">
+
+<a class="card" href="phase1_fundamentals.html">
+  <span class="tag tag-phase">Phase 1</span>
+  <h3>Fundamentals — What is Fine-Tuning?</h3>
+  <p>Base model vs fine-tuned model. Transfer learning explained. The intuition before the math.</p>
+</a>
+
+<a class="card" href="phase2_quantization.html">
+  <span class="tag tag-phase">Phase 2</span>
+  <h3>Quantization — Shrinking Models</h3>
+  <p>FP32 → INT8/INT4. How quantization makes models fit on consumer GPUs without breaking accuracy.</p>
+</a>
+
+<a class="card" href="phase3_lora_qlora.html">
+  <span class="tag tag-phase">Phase 3</span>
+  <h3>LoRA & QLoRA — Efficient Fine-Tuning</h3>
+  <p>Train 1% of parameters, get 95% of the result. The adapter method that changed everything.</p>
+</a>
+
+<a class="card" href="phase4_domain_finetune.html">
+  <span class="tag tag-phase">Phase 4</span>
+  <h3>Domain Fine-Tuning — Teach the Jargon</h3>
+  <p>Adapt a general model to a specialized domain (medical, legal, etc.) with domain-specific data.</p>
+</a>
+
+<a class="card" href="phase5_instruction_finetune.html">
+  <span class="tag tag-phase">Phase 5</span>
+  <h3>Instruction Fine-Tuning — Teach the Format</h3>
+  <p>Alpaca format, instruction/response pairs. How to make the model follow directions.</p>
+</a>
+
+<a class="card" href="phase5b_synthetic_data.html">
+  <span class="tag tag-phase">Phase 5B</span>
+  <h3>Synthetic Data Generation</h3>
+  <p>Generate training data with LLMs. When you have no labeled data, make it.</p>
+</a>
+
+<a class="card" href="phase6_dpo_preference.html">
+  <span class="tag tag-phase">Phase 6</span>
+  <h3>DPO — Direct Preference Optimization</h3>
+  <p>Teach models to prefer good answers over bad ones. No reward model needed.</p>
+</a>
+
+<a class="card" href="phase6a_ai_testing.html">
+  <span class="tag tag-phase">Phase 6A</span>
+  <h3>AI Testing & QA</h3>
+  <p>25 pytest tests across data + model. MFT/INV/DIR behavioral tests. 4-layer pyramid.</p>
+</a>
+
+<a class="card" href="phase6b_mlops_deployment.html">
+  <span class="tag tag-phase">Phase 6B</span>
+  <h3>MLOps & Deployment</h3>
+  <p>DVC pipelines, MLflow tracking, CI/CD, model registry. Production-grade MLOps.</p>
+</a>
+
 </div>
 
-<!-- Theme Toggle -->
-<div class="theme-toggle" onclick="toggleTheme()" title="Toggle Day/Night Mode">
-  <span class="theme-icon moon">🌙</span>
-  <span class="theme-icon sun">☀️</span>
-  <div class="theme-knob"></div>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section"><h2><span class="icon">🔬</span> QAT (Quantization-Aware Training) — Deep Dives</h2></div>
+<div class="grid">
+
+<a class="card" href="qat_visual_guide.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>QAT Visual Guide</h3>
+  <p>Full walkthrough: fake quantization, STE (Straight-Through Estimator), and the QAT training loop.</p>
+</a>
+
+<a class="card" href="qat_weight_nudge_animation.html">
+  <span class="tag tag-visual">Animation</span>
+  <h3>QAT Weight Nudge Animation</h3>
+  <p>Animated visualization of how QAT nudges weights toward quantization-friendly values.</p>
+</a>
+
+<a class="card" href="qat_end_to_end_loop.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>QAT End-to-End Loop</h3>
+  <p>The complete QAT cycle: forward pass → fake quantize → backward pass (STE) → update.</p>
+</a>
+
+<a class="card" href="bitnet_1_58bit_deep_dive.html">
+  <span class="tag tag-visual">Deep Dive</span>
+  <h3>BitNet 1.58-bit Deep Dive</h3>
+  <p>Ternary weights (-1, 0, +1). Microsoft's radical approach to 1.58 bits per parameter.</p>
+</a>
+
+<a class="card" href="w1_journey.html">
+  <span class="tag tag-visual">Interactive</span>
+  <h3>W1 Journey — A Weight's Life</h3>
+  <p>Follow one weight through quantization, training, and inference. Interactive story.</p>
+</a>
+
 </div>
 
-<div class="tabs">
-  <button class="tab-btn active-fmr" id="tabFmr" onclick="switchTab('fmr')">◈ FMR — Feature Magnitude Regularization</button>
-  <button class="tab-btn" id="tabAsif" onclick="switchTab('asif')">◈ ASIF — Adversarial Suppression</button>
-  <button class="tab-btn" id="tabLearn" onclick="switchTab('learn')">◆ Learn — FMR Deep Dive</button>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section"><h2><span class="icon">🧩</span> LoRA — Every Detail Explained</h2></div>
+<div class="grid">
+
+<a class="card" href="lora_target_modules_explained.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>LoRA Target Modules</h3>
+  <p>Which layers should you attach LoRA to? Attention only? MLP too? Visual comparison.</p>
+</a>
+
+<a class="card" href="lora_adapters_per_layer.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>LoRA Adapters Per Layer</h3>
+  <p>How many adapters per transformer layer? Architecture diagram with A and B matrices.</p>
+</a>
+
+<a class="card" href="lora_alpha_dropout_explained.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>LoRA Alpha & Dropout</h3>
+  <p>What alpha (scaling factor) and dropout actually do in LoRA. Interactive sliders.</p>
+</a>
+
+<a class="card" href="lora_adapter_merging.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>LoRA Adapter Merging</h3>
+  <p>W_new = W + (alpha/r) × B × A. The merge step explained with visual math.</p>
+</a>
+
+<a class="card" href="lora_forward_pass_visual.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>LoRA Forward Pass Visual</h3>
+  <p>Step-by-step: input → frozen weights + LoRA path → combined output.</p>
+</a>
+
+<a class="card" href="lora_multiplication_animation.html">
+  <span class="tag tag-visual">Animation</span>
+  <h3>LoRA Multiplication Animation</h3>
+  <p>Animated matrix multiplication: how B × A produces the low-rank update.</p>
+</a>
+
+<a class="card" href="model_memory_lora_calculator.html">
+  <span class="tag tag-ref">Calculator</span>
+  <h3>Model Memory & LoRA Calculator</h3>
+  <p>Interactive calculator: estimate GPU memory for any model + LoRA config.</p>
+</a>
+
 </div>
 
-<div class="main-container">
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section"><h2><span class="icon">🏗️</span> Training Mechanics & Architecture</h2></div>
+<div class="grid">
 
-<!-- ==================== FMR PANEL ==================== -->
-<div class="panel active" id="panelFmr">
-  <div class="viz-grid">
-    <!-- LEFT: Bar Chart -->
-    <div class="card card-fmr">
-      <h3>Feature Magnitude Distribution <span class="info-badge fmr">LIVE</span></h3>
-      <p class="card-desc">Each bar is a feature dimension. <strong style="color:var(--red)">Red</strong> = high magnitude (biased, potentially irrelevant). <strong style="color:var(--cyan)">Cyan</strong> = uniform. FMR pushes all features toward equal prominence.</p>
-      <div class="canvas-wrap">
-        <canvas id="fmrCanvas" width="600" height="320"></canvas>
-      </div>
-      <div class="metrics-row">
-        <div class="metric metric-fmr">
-          <div class="metric-value" id="fmrEntropy">0.00</div>
-          <div class="metric-label">Entropy H (↑ better)</div>
-        </div>
-        <div class="metric metric-fmr">
-          <div class="metric-value" id="fmrLambda">1.00</div>
-          <div class="metric-label">Dynamic Weight λ</div>
-        </div>
-        <div class="metric metric-fmr">
-          <div class="metric-value" id="fmrVariance">0.00</div>
-          <div class="metric-label">Magnitude Variance</div>
-        </div>
-      </div>
-    </div>
+<a class="card" href="training_memory_flow.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>Training Memory Flow</h3>
+  <p>Where GPU memory goes during training: model weights, activations, gradients, optimizer states.</p>
+</a>
 
-    <!-- RIGHT: Explanation + Before/After -->
-    <div class="card card-fmr">
-      <h3>How FMR Works</h3>
-      <p class="card-desc">Pretrained models produce features where some dimensions dominate (high magnitude) regardless of whether they're useful. FMR adds an entropy-maximization loss to <strong>equalize</strong> all feature magnitudes.</p>
+<a class="card" href="training_loss_explained.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>Training Loss Explained</h3>
+  <p>Cross-entropy, perplexity, loss curves. How to read training logs like a pro.</p>
+</a>
 
-      <div class="canvas-wrap" style="margin-bottom:12px;">
-        <canvas id="fmrBeforeAfter" width="600" height="200"></canvas>
-      </div>
+<a class="card" href="lr_step_estimator.html">
+  <span class="tag tag-ref">Calculator</span>
+  <h3>Learning Rate Step Estimator</h3>
+  <p>Calculate optimal LR, warmup steps, and decay schedule for your training run.</p>
+</a>
 
-      <div class="code-snip">
-<span class="comment">// FMR Loss — surprisingly simple</span><br>
-features = <span class="fn">backbone</span>(image)  <span class="comment">// extract features</span><br>
-p = <span class="fn">softmax</span>(features)        <span class="comment">// normalize → probability-like</span><br>
-H = -<span class="fn">sum</span>(p * <span class="fn">log</span>(p))         <span class="comment">// compute entropy</span><br>
-λ = (H<sub>max</sub> - H) / (H<sub>max</sub> - H<sub>init</sub>)  <span class="comment">// dynamic weight</span><br>
-L<sub>total</sub> = L<sub>CE</sub> - <span class="num">λ</span> * H              <span class="comment">// maximize entropy = minimize -H</span>
-      </div>
+<a class="card" href="model_deployment_guide.html">
+  <span class="tag tag-ref">Guide</span>
+  <h3>Model Deployment Guide</h3>
+  <p>Adapter → merge → quantize → serve. The full path from trained weights to production API.</p>
+</a>
 
-      <div class="legend">
-        <span><span class="dot" style="background:var(--red);"></span> Biased features (dominate)</span>
-        <span><span class="dot" style="background:var(--cyan);"></span> Equalized features</span>
-        <span><span class="dot" style="background:var(--green);"></span> H<sub>max</sub> target</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Training Curves Chart -->
-  <div class="card card-fmr" style="margin-top:24px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-      <h3 style="margin:0;">Training Curves: Entropy, Loss &amp; λ Over Time <span class="info-badge fmr">LIVE</span></h3>
-      <div style="display:flex; gap:6px;">
-        <button class="btn btn-fmr" style="padding:6px 14px; font-size:0.72rem;" onclick="animateFMR()">▶ Play</button>
-        <button class="btn btn-fmr" style="padding:6px 14px; font-size:0.72rem;" onclick="resetFMR()">↺ Reset</button>
-      </div>
-    </div>
-    <p class="card-desc">As FMR equalizes feature magnitudes: <strong style="color:var(--green)">Entropy H ↗</strong> rises toward H<sub>max</sub>, <strong style="color:var(--magenta)">λ ↘</strong> auto-decays, <strong style="color:var(--cyan)">|FMR Loss| ↘</strong> fades, and <strong style="color:var(--amber)">Total Loss ↘</strong> converges.</p>
-    <div class="canvas-wrap">
-      <canvas id="fmrCurvesCanvas" width="1200" height="320"></canvas>
-    </div>
-    <div class="legend">
-      <span><span class="dot" style="background:var(--green);"></span> Entropy H (→ H<sub>max</sub>)</span>
-      <span><span class="dot" style="background:var(--magenta);"></span> Dynamic λ (auto-decays)</span>
-      <span><span class="dot" style="background:var(--cyan);"></span> |FMR Loss| = |−λ·H|</span>
-      <span><span class="dot" style="background:var(--amber);"></span> Total Loss = L<sub>CE</sub> − λ·H</span>
-    </div>
-  </div>
-
-  <!-- Gradient Tug-of-War Visualization -->
-  <div class="card card-fmr" style="margin-top:24px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-      <h3 style="margin:0;">Gradient Tug-of-War: Why Useful Features Survive <span class="info-badge fmr">KEY INSIGHT</span></h3>
-      <div style="display:flex; gap:6px;">
-        <button class="btn btn-fmr" style="padding:6px 14px; font-size:0.72rem;" onclick="animateFMR()">▶ Play</button>
-        <button class="btn btn-fmr" style="padding:6px 14px; font-size:0.72rem;" onclick="resetFMR()">↺ Reset</button>
-      </div>
-    </div>
-    <p class="card-desc">
-      Each feature experiences <strong>two opposing gradients</strong>:
-      <span style="color:#69f0ae;">▸ CE Loss gradient</span> = "stay strong, you help classification!" (only for useful features) &nbsp;
-      <span style="color:#ff5252;">▸ FMR gradient</span> = "move toward the uniform target!" (for ALL features).
-      <strong>If CE doesn't fight back → FMR wins → feature suppressed. If CE fights back → stalemate → feature survives.</strong>
-    </p>
-    <div class="canvas-wrap">
-      <canvas id="fmrTugOfWarCanvas" width="1200" height="400"></canvas>
-    </div>
-    <div class="legend">
-      <span><span class="dot" style="background:#69f0ae;"></span> ∂L<sub>CE</sub>/∂f — CE gradient (classification needs this)</span>
-      <span><span class="dot" style="background:#ff5252;"></span> ∂L<sub>FMR</sub>/∂f — FMR gradient (pushes toward uniform)</span>
-      <span><span class="dot" style="background:var(--amber);"></span> Net gradient = CE + FMR</span>
-      <span><span class="dot" style="background:#ffffff44;"></span> ═══ Uniform target</span>
-    </div>
-  </div>
-
-  <!-- Controls -->
-  <div class="controls">
-    <h4>▸ Simulation Controls</h4>
-    <div class="control-row">
-      <label>Bias Level (pretraining)</label>
-      <input type="range" class="fmr-slider" id="fmrBias" min="0" max="100" value="80" oninput="updateFMR()">
-      <span class="val" id="fmrBiasVal">80%</span>
-    </div>
-    <div class="control-row">
-      <label>Training Progress</label>
-      <input type="range" class="fmr-slider" id="fmrProgress" min="0" max="100" value="0" oninput="updateFMR()">
-      <span class="val" id="fmrProgressVal">0%</span>
-    </div>
-    <div class="control-row">
-      <label>Data Regime</label>
-      <input type="range" class="fmr-slider" id="fmrDataRegime" min="15" max="100" step="5" value="15" oninput="updateFMR()">
-      <span class="val" id="fmrDataRegimeVal">15%</span>
-    </div>
-    <div class="control-row">
-      <button class="btn btn-fmr" onclick="animateFMR()">▶ Play Animation</button>
-      <button class="btn btn-fmr" onclick="resetFMR()">↺ Reset</button>
-    </div>
-  </div>
 </div>
 
-<!-- ==================== ASIF PANEL ==================== -->
-<div class="panel" id="panelAsif">
-  <div class="viz-grid">
-    <!-- LEFT: Network Diagram -->
-    <div class="card card-asif full-width">
-      <h3>ASIF Network Architecture <span class="info-badge asif">ANIMATED</span></h3>
-      <p class="card-desc">The <strong style="color:var(--amber)">Identifier</strong> tries to guess <em>which specific sample</em> each feature vector belongs to. The <strong style="color:var(--magenta)">Gradient Reversal</strong> flips its gradients, forcing the Feature Extractor to produce features that are <em>useless for identification</em> — only class-level patterns survive.</p>
-      <div class="canvas-wrap">
-        <canvas id="asifArchCanvas" width="1200" height="420"></canvas>
-      </div>
-      <div class="metrics-row">
-        <div class="metric metric-asif">
-          <div class="metric-value" id="asifClassAcc">86.8%</div>
-          <div class="metric-label">Classification Acc ↑</div>
-        </div>
-        <div class="metric" style="--metric-color: var(--magenta);">
-          <div class="metric-value" style="color:var(--magenta);" id="asifIdentAcc">92.3%</div>
-          <div class="metric-label">Identification Acc ↓ (want LOW)</div>
-        </div>
-        <div class="metric metric-asif">
-          <div class="metric-value" id="asifDGR">1.00</div>
-          <div class="metric-label">DGR λ (auto-tuned)</div>
-        </div>
-      </div>
-    </div>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section"><h2><span class="icon">🔤</span> Tokenization & Embeddings — Visualized</h2></div>
+<div class="grid">
 
-    <!-- LEFT: Feature Space -->
-    <div class="card card-asif">
-      <h3>Feature Space: Class-wise vs Identity-wise</h3>
-      <p class="card-desc">After ASIF training, features cluster by <strong style="color:var(--amber)">class</strong> (color groups) but are <strong>scattered within each class</strong> — making individual sample identification impossible.</p>
-      <div class="canvas-wrap">
-        <canvas id="asifFeatureCanvas" width="600" height="320"></canvas>
-      </div>
-      <div class="legend">
-        <span><span class="dot" style="background:#ff5252;"></span> Class A</span>
-        <span><span class="dot" style="background:#448aff;"></span> Class B</span>
-        <span><span class="dot" style="background:#69f0ae;"></span> Class C</span>
-        <span><span class="dot" style="background:var(--amber);"></span> Class centroids</span>
-      </div>
-    </div>
+<a class="card" href="tokenization_visual.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>Tokenization Visual</h3>
+  <p>Text → tokens → IDs. BPE tokenization explained with real examples.</p>
+</a>
 
-    <!-- RIGHT: Gradient Flow -->
-    <div class="card card-asif">
-      <h3>Gradient Flow &amp; Dynamic Reversal (DGR)</h3>
-      <p class="card-desc">The DGR layer passes features through <strong>unchanged</strong> on the forward pass but <strong>reverses and scales</strong> gradients during backpropagation. λ auto-adjusts: stronger reversal when the identifier is doing too well.</p>
-      <div class="canvas-wrap">
-        <canvas id="asifGradientCanvas" width="600" height="320"></canvas>
-      </div>
-      <div class="code-snip">
-<span class="comment">// DGR Algorithm — no manual λ tuning!</span><br>
-L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comment">// baseline: max-entropy identification</span><br>
-λ = <span class="num">1.0</span><br>
-<span class="kw">while</span> training:<br>
-&nbsp;&nbsp;L<sub>id</sub> = <span class="fn">identify</span>(features)  <span class="comment">// how well can we ID samples?</span><br>
-&nbsp;&nbsp;backprop with <span class="num">λ</span> * gradient_reversal<br>
-&nbsp;&nbsp;λ = (L<sub>id</sub> - L̂<sub>id</sub>) / L̂<sub>id</sub>  <span class="comment">// auto-adjust</span>
-      </div>
-    </div>
-  </div>
+<a class="card" href="tokenize_embed_visual.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>Tokenize → Embed Visual</h3>
+  <p>From raw text to embedding vectors. The full pipeline: tokenize → lookup → embed.</p>
+</a>
 
-  <!-- Controls -->
-  <div class="controls">
-    <h4>▸ Simulation Controls</h4>
-    <div class="control-row">
-      <label>Label Noise</label>
-      <input type="range" class="asif-slider" id="asifNoise" min="0" max="90" step="5" value="40" oninput="updateASIF()">
-      <span class="val" id="asifNoiseVal">40%</span>
-    </div>
-    <div class="control-row">
-      <label>Training Epoch</label>
-      <input type="range" class="asif-slider" id="asifEpoch" min="0" max="100" value="0" oninput="updateASIF()">
-      <span class="val" id="asifEpochVal">0</span>
-    </div>
-    <div class="control-row">
-      <label>Dataset Size</label>
-      <input type="range" class="asif-slider" id="asifDataSize" min="10" max="100" step="10" value="30" oninput="updateASIF()">
-      <span class="val" id="asifDataSizeVal">30k</span>
-    </div>
-    <div class="control-row">
-      <button class="btn btn-asif" onclick="animateASIF()">▶ Play Animation</button>
-      <button class="btn btn-asif" onclick="resetASIF()">↺ Reset</button>
-    </div>
-  </div>
+<a class="card" href="image_tokenization_visual.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>Image Tokenization Visual</h3>
+  <p>How vision models turn images into tokens. Patch embedding and ViT explained.</p>
+</a>
+
+<a class="card" href="instruction_format_visual.html">
+  <span class="tag tag-visual">Visual</span>
+  <h3>Instruction Format Visual</h3>
+  <p>Alpaca template, system prompts, chat templates. How instructions are structured.</p>
+</a>
+
 </div>
 
-<!-- ==================== LEARN PANEL ==================== -->
-<div class="panel" id="panelLearn">
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section"><h2><span class="icon">📊</span> Metrics, Drift & Monitoring</h2></div>
+<div class="grid">
 
-<div class="learn-hero">
-  <h2>FMR — The Complete Picture</h2>
-  <div class="hero-sub">Everything we discussed · From pixels to gradients · In plain English</div>
-  <a class="gh-link" href="https://ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/" target="_blank" rel="noopener">
-    🔗 ashokmulchandani.github.io/Fine_tuning-ML-Pipleine--Synthetic_Data-Ashok-1/
-  </a>
+<a class="card" href="metrics_explained.html">
+  <span class="tag tag-metrics">Metrics</span>
+  <h3>Metrics Explained</h3>
+  <p>Accuracy, F1, BLEU, ROUGE, perplexity. What each metric actually measures.</p>
+</a>
+
+<a class="card" href="metrics_real_examples.html">
+  <span class="tag tag-metrics">Examples</span>
+  <h3>Metrics — Real Examples</h3>
+  <p>Worked examples: calculate each metric by hand on real model outputs.</p>
+</a>
+
+<a class="card" href="drift_explained.html">
+  <span class="tag tag-metrics">Drift</span>
+  <h3>Data Drift Explained</h3>
+  <p>What drift is, why models silently degrade, and how to detect it before users notice.</p>
+</a>
+
+<a class="card" href="drift_report.html">
+  <span class="tag tag-metrics">Report</span>
+  <h3>Drift Report — Evidently AI</h3>
+  <p>Sample drift report. KL divergence, data quality, and distribution shift visualized.</p>
+</a>
+
+<a class="card" href="drift_retraining_guide.html">
+  <span class="tag tag-metrics">Guide</span>
+  <h3>Drift Retraining Guide</h3>
+  <p>When to retrain? How much new data? Decision framework for model refresh cycles.</p>
+</a>
+
 </div>
 
-<!-- SECTION 1: The Problem -->
-<div class="learn-section">
-  <div class="section-num">Section 01</div>
-  <h4>The Problem: Too Few Labeled Images, Too Many Subtle Differences</h4>
-  <p>Fine-grained visual recognition (FGVR) means telling apart nearly identical things — like 200 species of birds that all look the same to an untrained eye. You can't gather millions of labeled images for every bird species. So you <strong>transfer-learn</strong> from a model pretrained on ImageNet (1.2M general images).</p>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section"><h2><span class="icon">🚀</span> Advanced Topics</h2></div>
+<div class="grid">
 
-  <div class="compare-grid">
-    <div class="compare-card bad">
-      <h5>❌ THE TRAP</h5>
-      <p>The pretrained model was trained on <strong>different</strong> data. It learned that "green background = outdoors" and "blue = sky." These features are LOUD (high magnitude) but <strong>useless</strong> for telling bird species apart. With only a few training images, the classifier latches onto these loud-but-irrelevant features and overfits.</p>
-    </div>
-    <div class="compare-card good">
-      <h5>✅ THE FIX (FMR)</h5>
-      <p>FMR adds a penalty that says: <strong>"All features must have equal prominence."</strong> Loud background-detector features get pushed DOWN. Quiet beak-shape features get a chance to be HEARD. The classifier is forced to use features that actually generalize — like beak curvature and wing patterns.</p>
-    </div>
-  </div>
+<a class="card" href="dpo_loss_simplified.html">
+  <span class="tag tag-adv">Advanced</span>
+  <h3>DPO Loss — Simplified</h3>
+  <p>The DPO loss function explained without math intimidation. Chosen vs rejected.</p>
+</a>
+
+<a class="card" href="hallucination_handling.html">
+  <span class="tag tag-adv">Advanced</span>
+  <h3>Hallucination Handling</h3>
+  <p>Detection vs prevention. DPO, RAG, guardrails, constrained decoding — strategies compared.</p>
+</a>
+
+<a class="card" href="rag_plus_finetune_sensor.html">
+  <span class="tag tag-adv">Advanced</span>
+  <h3>RAG + Fine-Tune Sensor</h3>
+  <p>Hybrid approach: fine-tuned model + retrieval. When to use which and how they complement.</p>
+</a>
+
+<a class="card" href="vision_lang_walkthrough.html">
+  <span class="tag tag-adv">Advanced</span>
+  <h3>Vision-Language Walkthrough</h3>
+  <p>Multimodal fine-tuning. How VLMs combine image and text tokens in one model.</p>
+</a>
+
+<a class="card" href="finetuning_by_data_type.html">
+  <span class="tag tag-adv">Advanced</span>
+  <h3>Fine-Tuning By Data Type</h3>
+  <p>Text, code, images, audio — how fine-tuning strategies differ by modality.</p>
+</a>
+
+<a class="card" href="fmr_asif_visual_demo.html" style="border-color:#5b3aa8;background:#f3effc;">
+      <span class="tag tag-new">🧪 INTERACTIVE DEMO</span>
+      <h3>🧠 Neural Observatory — FMR &amp; ASIF Animated Demo</h3>
+      <p>Feature Magnitude Regularization + Adversarial Suppression. Gradient tug-of-war, "Bird in a Blue Sky" walkthrough, training curves, day/night toggle, and a complete Learn tab.</p>
+    </a>
+
+    <a class="card" href="safety-programming.html>
+  <span class="tag tag-new">🛡️ NEW</span>
+  <h3>Safety Programming: Fail Safe, Not Fail Silent</h3>
+  <p>Interactive guide: the 4 Rules of safety programming mapped to real Python code. Design patterns, Python OOP basics for beginners, and a self-test quiz.</p>
+</a>
+
 </div>
 
-<!-- SECTION 2: What Are Features? -->
-<div class="learn-section">
-  <div class="section-num">Section 02</div>
-  <h4>What Are "Features"? NOT Pixels!</h4>
-  <p>When the paper says "features," they mean the <strong>2048-dimensional output of a pretrained CNN's penultimate layer</strong> — NOT raw RGB pixel values. Each of the 2048 numbers is an abstract learned representation detecting something: a shape, texture, pattern, or concept.</p>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="section"><h2><span class="icon">🛠️</span> Reference & Tools</h2></div>
+<div class="grid">
 
-  <div class="learn-canvas-wrap">
-    <canvas id="learnFeaturePipeline" width="1200" height="260"></canvas>
-  </div>
+<a class="card" href="finetuning_plan_dashboard.html">
+  <span class="tag tag-ref">Dashboard</span>
+  <h3>Fine-Tuning Plan Dashboard</h3>
+  <p>Master dashboard. All phases, checkpoints, and progress in one view.</p>
+</a>
 
-  <div class="formula-box">
-    <span class="dim">Input Image (224×224×3)</span><br>
-    <span class="dim"> ↓</span><br>
-    <span class="dim">Pretrained ResNet-50 Backbone (frozen or fine-tuned)</span><br>
-    <span class="dim"> ↓</span><br>
-    <span class="hl-purple">Feature Vector f ∈ ℝ²⁰⁴⁸</span>  <span class="dim">← THIS is what "features" means</span><br>
-    <span class="dim">e.g., [</span><span class="hl-red">0.91</span><span class="dim">, </span><span class="hl-green">0.12</span><span class="dim">, </span><span class="hl-cyan">0.67</span><span class="dim">, ..., </span><span class="hl-green">0.04</span><span class="dim">]</span><br>
-    <span class="dim"> ↓</span><br>
-    <span class="dim">Linear Classifier W (2048 → 200 classes) ← the ONLY thing we train</span><br>
-    <span class="dim"> ↓</span><br>
-    <span class="hl-amber">Prediction: "Indigo Bunting"</span>
-  </div>
+<a class="card" href="air_gapped_no_pip_install.html">
+  <span class="tag tag-new">NEW</span>
+  <h3>Air-Gapped Install — No PIP, No Internet</h3>
+  <p>How to manually transfer .whl files to an offline computer. pip download → USB → pip install.</p>
+</a>
+
 </div>
 
-<!-- SECTION 3: Feature Magnitude Bias -->
-<div class="learn-section">
-  <div class="section-num">Section 03</div>
-  <h4>The Core Insight: Feature Magnitude Bias</h4>
-  <p>Let's say f₁ = 0.91 and f₂ = 0.03. The classifier sees f₁ is <strong>3,000% larger</strong> than f₂. If f₁ happens to detect "green background" and green correlates with a bird class in your tiny training set, the classifier will rely heavily on f₁ — even though beak shape (f₂ = 0.03, quiet) is what actually matters.</p>
-
-  <div class="insight-callout">
-    <strong>💡 Key Realization:</strong> The pretrained model baked in biases about which visual patterns are "important" based on its original ImageNet training. These biases are encoded as <strong>uneven feature magnitudes</strong>. FMR undoes this bias by forcing all feature dimensions toward equal prominence.
-  </div>
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="footer">
+  <p>🧠 Fine-Tuning Pipeline — Built by <a href="https://github.com/ashokmulchandani">Ashok Mulchandani</a></p>
+  <p style="margin-top:0.3rem;">All pages are self-contained HTML. No server needed. Open any file in your browser.</p>
 </div>
 
-<!-- SECTION 4: The Formula -->
-<div class="learn-section">
-  <div class="section-num">Section 04</div>
-  <h4>The Formula — Every Term Decoded</h4>
-
-  <div class="formula-box">
-    <span class="hl-purple" style="font-size:1.1rem;">L<sub>total</sub></span><span class="dim"> = </span><span class="hl-cyan" style="font-size:1.1rem;">L<sub>CE</sub></span><span class="dim"> − </span><span class="hl-magenta" style="font-size:1.1rem;">λ</span><span class="dim"> · </span><span class="hl-green" style="font-size:1.1rem;">H</span>
-  </div>
-
-  <table style="width:100%; border-collapse:collapse; margin:14px 0; font-size:0.82rem;">
-    <tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:10px 12px;"><code style="color:#b388ff;">L<sub>total</sub></code></td>
-      <td style="padding:10px 12px;">Total training loss — what the optimizer minimizes</td>
-      <td style="padding:10px 12px; color:var(--text-dim);">The sum of two competing objectives</td>
-    </tr>
-    <tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:10px 12px;"><code style="color:var(--cyan);">L<sub>CE</sub></code></td>
-      <td style="padding:10px 12px;"><strong>Cross-Entropy Loss</strong> — how wrong is the prediction?</td>
-      <td style="padding:10px 12px; color:var(--text-dim);">Standard classification loss: −Σ y_true × log(ŷ)</td>
-    </tr>
-    <tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:10px 12px;"><code style="color:var(--magenta);">λ</code></td>
-      <td style="padding:10px 12px;"><strong>Dynamic weight</strong> — how hard should FMR push right now?</td>
-      <td style="padding:10px 12px; color:var(--text-dim);">λ = (H<sub>max</sub> − H) / (H<sub>max</sub> − H<sub>init</sub>) — auto-decays</td>
-    </tr>
-    <tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:10px 12px;"><code style="color:var(--green);">H</code></td>
-      <td style="padding:10px 12px;"><strong>Entropy</strong> of softmax-normalized features</td>
-      <td style="padding:10px 12px; color:var(--text-dim);">H = −Σ p_i × log(p_i) — measures "uniformity"</td>
-    </tr>
-    <tr>
-      <td style="padding:10px 12px;"><code style="color:var(--amber);">−λ·H</code></td>
-      <td style="padding:10px 12px;"><strong>FMR penalty term</strong></td>
-      <td style="padding:10px 12px; color:var(--text-dim);">Negative because we MAXIMIZE entropy (minimize −H)</td>
-    </tr>
-  </table>
-
-  <div class="insight-callout">
-    <strong>🔑 Why "−λ·H" not "+λ·(−H)"?</strong> They are mathematically identical. The paper frames it as "minimize L<sub>CE</sub> + λ·(−H)" — adding a penalty for LOW entropy. The code writes "L<sub>CE</sub> − λ·H" because it's cleaner. Both mean: <em>penalize the model when feature magnitudes are uneven.</em>
-  </div>
 </div>
-
-<!-- SECTION 5: Why CE Pushes Back -->
-<div class="learn-section">
-  <div class="section-num">Section 05</div>
-  <h4>Walked Example: "Bird in a Blue Sky" — Where the Push Back Lives</h4>
-  <p>We're classifying an <strong>Indigo Bunting</strong> (true label). The image shows the bird perched on a branch against a bright blue sky. Two features compete for the classifier's attention.</p>
-
-  <!-- SCENE SETTING -->
-  <div class="learn-canvas-wrap">
-    <canvas id="learnBirdSceneCanvas" width="1200" height="200"></canvas>
-  </div>
-
-  <!-- SCENARIO A: IRRELEVANT -->
-  <div class="compare-card bad" style="margin:18px 0;">
-    <h5>🔴 SCENARIO A — Irrelevant Feature: "Blue Sky Detector" (f<sub>sky</sub> = 0.91)</h5>
-    <p style="margin-bottom:10px;">This feature fires strongly whenever the photo has blue sky. In ImageNet pretraining, many bird photos had blue skies — so the model learned to make this feature LOUD. But sky color tells you <strong>nothing</strong> about which bird species this is. Indigo Buntings and Lazuli Buntings both appear under blue skies.</p>
-
-    <div style="background:var(--deep); border-radius:8px; padding:14px 18px; margin:10px 0; font-family:var(--font-mono); font-size:0.82rem; line-height:1.8;">
-      <span style="color:#ff5252;">Step 1 — Classifier's relationship to f<sub>sky</sub>:</span><br>
-      &nbsp;&nbsp;The classifier learned: <em>"Blue sky appears in ALL bird classes equally"</em><br>
-      &nbsp;&nbsp;→ <strong>W<sub>indigo,sky</sub> ≈ 0</strong> &nbsp; W<sub>lazuli,sky</sub> ≈ 0 &nbsp; W<sub>any,sky</sub> ≈ 0<br>
-      &nbsp;&nbsp;→ Every class weight for this feature is near zero<br><br>
-      <span style="color:#ff5252;">Step 2 — CE gradient:</span><br>
-      &nbsp;&nbsp;<strong>∂L<sub>CE</sub>/∂f<sub>sky</sub> = (0.7 − 0) × 0.01 = 0.007 ≈ 0</strong><br>
-      &nbsp;&nbsp;The CE loss says: <em>"I don't care about sky. Doesn't help me classify."</em><br>
-      &nbsp;&nbsp;CE is <strong>SILENT</strong> — no opposing force<br><br>
-      <span style="color:#ff5252;">Step 3 — FMR gradient:</span><br>
-      &nbsp;&nbsp;<strong>∂(−λ·H)/∂f<sub>sky</sub> = −0.7 × (0.91 − 0.5) × 0.8 = −0.23</strong><br>
-      &nbsp;&nbsp;FMR says: <em>"You're 0.41 above the uniform target. Come DOWN."</em><br><br>
-      <span style="color:#ff5252;">Step 4 — Net:</span><br>
-      &nbsp;&nbsp;<strong>∂L<sub>total</sub>/∂f<sub>sky</sub> = 0.007 + (−0.23) = −0.22</strong><br>
-      &nbsp;&nbsp;→ f<sub>sky</sub> drops toward 0.69 this step<br>
-      &nbsp;&nbsp;→ After many steps: f<sub>sky</sub> ≈ 0.5 (uniform target) &nbsp; <strong>✓ SUPPRESSED</strong>
-    </div>
-  </div>
-
-  <!-- SCENARIO B: USEFUL -->
-  <div class="compare-card good" style="margin:18px 0;">
-    <h5>🟢 SCENARIO B — Useful Feature: "Beak Curvature Detector" (f<sub>beak</sub> = 0.12)</h5>
-    <p style="margin-bottom:10px;">This feature detects curved, conical beaks. In ImageNet pretraining, "has beak = bird" was all that mattered — the fine shape was irrelevant, so this feature stayed QUIET. But for our task, Indigo Buntings have subtly thicker, more curved beaks than Lazuli Buntings. <strong>This quiet feature is actually the key.</strong></p>
-
-    <div style="background:var(--deep); border-radius:8px; padding:14px 18px; margin:10px 0; font-family:var(--font-mono); font-size:0.82rem; line-height:1.8;">
-      <span style="color:#69f0ae;">Step 1 — Classifier's relationship to f<sub>beak</sub>:</span><br>
-      &nbsp;&nbsp;The classifier learned: <em>"Curved thick beak = Indigo Bunting!"</em><br>
-      &nbsp;&nbsp;→ <strong>W<sub>indigo,beak</sub> = +2.3</strong> &nbsp; (large positive weight)<br>
-      &nbsp;&nbsp;→ W<sub>lazuli,beak</sub> = −1.8 &nbsp; (Lazuli has thinner beak → negative)<br><br>
-      <span style="color:#69f0ae;">Step 2 — CE gradient:</span><br>
-      &nbsp;&nbsp;Model is <strong>moderately wrong</strong>: predicted 70% Lazuli, but it's actually Indigo<br>
-      &nbsp;&nbsp;ŷ<sub>indigo</sub> = 0.3, &nbsp; y<sub>indigo</sub> = 1.0<br>
-      &nbsp;&nbsp;<strong>∂L<sub>CE</sub>/∂f<sub>beak</sub> = (0.3 − 1.0) × 2.3 = −1.61</strong><br>
-      &nbsp;&nbsp;The CE loss says: <em>"You UNDER-used this feature! Make it STRONGER!"</em><br>
-      &nbsp;&nbsp;CE <strong>FIGHTS BACK HARD</strong> — negative sign means "increase f<sub>beak</sub>"<br><br>
-      <span style="color:#69f0ae;">Step 3 — FMR gradient:</span><br>
-      &nbsp;&nbsp;<strong>∂(−λ·H)/∂f<sub>beak</sub> = −0.7 × (0.12 − 0.5) × 0.8 = +0.21</strong><br>
-      &nbsp;&nbsp;FMR says: <em>"You're below target. Come UP toward uniform."</em> ← actually helps!<br><br>
-      <span style="color:#69f0ae;">Step 4 — Net:</span><br>
-      &nbsp;&nbsp;<strong>∂L<sub>total</sub>/∂f<sub>beak</sub> = −1.61 + 0.21 = −1.40</strong><br>
-      &nbsp;&nbsp;→ f<sub>beak</sub> RISES strongly toward ~0.26 this step<br>
-      &nbsp;&nbsp;→ After many steps: f<sub>beak</sub> ≈ 0.5 (uniform, but now USED by classifier)<br>
-      &nbsp;&nbsp;→ <strong>✓ FEATURE AMPLIFIED &amp; USED</strong><br>
-      &nbsp;&nbsp;→ <span style="color:#ffb300;">FMR actually HELPED bring this feature UP to be heard!</span>
-    </div>
-  </div>
-
-  <!-- SIDE BY SIDE SUMMARY -->
-  <div class="insight-callout" style="margin-top:16px;">
-    <strong>🔑 The Asymmetry That Makes FMR Work:</strong><br><br>
-    <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
-      <tr style="border-bottom:1px solid var(--border);">
-        <th style="padding:8px; text-align:left; color:var(--text-dim);"></th>
-        <th style="padding:8px; text-align:center; color:#ff5252;">f<sub>sky</sub> (Blue Sky)</th>
-        <th style="padding:8px; text-align:center; color:#69f0ae;">f<sub>beak</sub> (Beak Curve)</th>
-      </tr>
-      <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:8px;">Pretrained magnitude</td>
-        <td style="padding:8px; text-align:center;">0.91 ← LOUD</td>
-        <td style="padding:8px; text-align:center;">0.12 ← quiet</td>
-      </tr>
-      <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:8px;">Actually useful?</td>
-        <td style="padding:8px; text-align:center;">❌ No</td>
-        <td style="padding:8px; text-align:center;">✅ Yes</td>
-      </tr>
-      <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:8px;">Classifier weight W<sub>class,i</sub></td>
-        <td style="padding:8px; text-align:center;">≈ 0 (ignored)</td>
-        <td style="padding:8px; text-align:center;">+2.3 (relied upon)</td>
-      </tr>
-      <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:8px;">∂L<sub>CE</sub>/∂f<sub>i</sub> (CE gradient)</td>
-        <td style="padding:8px; text-align:center; color:#ff5252;">≈ 0 (SILENT)</td>
-        <td style="padding:8px; text-align:center; color:#69f0ae;">−1.61 (FIGHTS)</td>
-      </tr>
-      <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:8px;">∂(−λ·H)/∂f<sub>i</sub> (FMR gradient)</td>
-        <td style="padding:8px; text-align:center;">−0.23 (push DOWN)</td>
-        <td style="padding:8px; text-align:center;">+0.21 (push UP)</td>
-      </tr>
-      <tr>
-        <td style="padding:8px;"><strong>NET RESULT</strong></td>
-        <td style="padding:8px; text-align:center; color:#ff5252;"><strong>−0.22 → SUPPRESSED ✓</strong></td>
-        <td style="padding:8px; text-align:center; color:#69f0ae;"><strong>−1.40 → AMPLIFIED ✓</strong></td>
-      </tr>
-    </table>
-  </div>
-
-  <!-- VISUAL GRADIENT PATHS -->
-  <div class="learn-canvas-wrap" style="margin-top:16px;">
-    <canvas id="learnGradientPathsCanvas" width="1200" height="280"></canvas>
-  </div>
-
-  <div class="insight-callout" style="margin-top:12px;">
-    <strong>💡 The Beautiful Asymmetry:</strong> FMR doesn't need to know which features are useful. It blindly pushes ALL features toward uniform. But the CE loss <strong>selectively resists</strong> only for features the classifier actually uses (W<sub>class,i</sub> ≠ 0). Irrelevant features have no champion — they fall to FMR alone. Useful features have CE as their champion — they survive. <strong>The classifier is the filter.</strong>
-  </div>
-</div>
-
-<!-- SECTION 6: Real Scenarios -->
-<div class="learn-section">
-  <div class="section-num">Section 06</div>
-  <h4>Real Life: When Are Features Loud vs Quiet?</h4>
-  <div class="compare-grid">
-    <div class="compare-card bad">
-      <h5>🔊 LOUD Features (pretrained bias)</h5>
-      <ul>
-        <li><strong>Blue sky detector</strong> → 0.91 — Birds are often photographed against sky in ImageNet</li>
-        <li><strong>Green foliage</strong> → 0.88 — Animals on grass in ImageNet</li>
-        <li><strong>Asphalt/road texture</strong> → 0.85 — Cars on roads in ImageNet</li>
-        <li><strong>Center-of-frame bias</strong> → 0.79 — Objects centered in ImageNet photos</li>
-      </ul>
-    </div>
-    <div class="compare-card good">
-      <h5>🔈 QUIET Features (what actually matters)</h5>
-      <ul>
-        <li><strong>Beak curvature</strong> → 0.12 — ImageNet only needed "has beak = bird"</li>
-        <li><strong>Feather tip pattern</strong> → 0.08 — Never needed at ImageNet granularity</li>
-        <li><strong>Wing bar width</strong> → 0.05 — "Has wing = flying thing" was enough</li>
-        <li><strong>Eye ring shape</strong> → 0.03 — Way too fine-grained for ImageNet</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="insight-callout">
-    <strong>⚠️ Can FMR accidentally suppress a genuinely useful loud feature?</strong> In theory, yes. In practice, <strong>CE loss protects it</strong> — if the classifier needs that feature, W<sub>class,i</sub> will be large, CE gradients will push back, and the feature survives. The paper's evidence: FMR on randomly initialized models (no pretrained bias) gives only +0.9% gain vs +10.4% on pretrained models — confirming FMR specifically fixes <strong>pretraining-induced</strong> bias.
-  </div>
-</div>
-
-<!-- SECTION 7: Dynamic Lambda -->
-<div class="learn-section">
-  <div class="section-num">Section 07</div>
-  <h4>Dynamic λ: Why the Regularization Fades</h4>
-  <p>Using a <strong>fixed</strong> λ would either over-regularize (never let features settle) or under-regularize (not enough push early on). The dynamic formula solves this elegantly:</p>
-
-  <div class="formula-box">
-    <span class="hl-magenta" style="font-size:1.1rem;">λ = (H<sub>max</sub> − H) / (H<sub>max</sub> − H<sub>init</sub>)</span>
-  </div>
-
-  <div class="compare-grid">
-    <div class="compare-card bad">
-      <h5>🔴 Early Training (H ≈ H<sub>init</sub>)</h5>
-      <p><code>λ ≈ 1.0</code> — features are very biased, numerator is large → <strong>STRONG push</strong> toward uniformity</p>
-    </div>
-    <div class="compare-card good">
-      <h5>🟢 Late Training (H ≈ H<sub>max</sub>)</h5>
-      <p><code>λ ≈ 0.01</code> — features are nearly uniform, numerator is tiny → <strong>FMR gracefully exits</strong>, letting CE loss finish the job undisturbed</p>
-    </div>
-  </div>
-
-  <div class="insight-callout">
-    <strong>🧠 Intuition:</strong> FMR is like training wheels. Strong when you need them (early, biased), then automatically falling away when you don't (late, uniform). The classifier gets the final say.
-  </div>
-</div>
-
-<!-- SECTION 8: Pre-training vs Fine-tuning -->
-<div class="learn-section">
-  <div class="section-num">Section 08</div>
-  <h4>Pre-training vs Fine-tuning: Different Images Entirely</h4>
-  <div class="learn-canvas-wrap">
-    <canvas id="learnTransferCanvas" width="1200" height="200"></canvas>
-  </div>
-  <p style="margin-top:12px;">The ResNet-50 backbone was pretrained on <strong>ImageNet</strong> (1.2M images, 1,000 general classes like "bird", "car", "chair"). It has <strong>never seen a CUB200 image</strong>. The CUB200 dataset has 6,000 images of 200 bird species — completely different from ImageNet's single "bird" category. FMR corrects the biases the pretrained model brought from its ImageNet training.</p>
-</div>
-
-<!-- SECTION 9: Key Takeaways -->
-<div class="learn-section">
-  <div class="section-num">Section 09</div>
-  <h4>Key Takeaways — FMR in a Nutshell</h4>
-  <div class="key-takeaway-grid">
-    <div class="takeaway-card">
-      <div class="emoji">🎯</div>
-      <h5>Features ≠ Pixels</h5>
-      <p>"Features" are the 2048-dimensional output of a frozen CNN backbone — abstract learned representations, not raw RGB values.</p>
-    </div>
-    <div class="takeaway-card">
-      <div class="emoji">⚖️</div>
-      <h5>FMR Equalizes Magnitudes</h5>
-      <p>By maximizing entropy of softmax(f), FMR forces all 2048 feature dimensions toward equal prominence — no single feature dominates.</p>
-    </div>
-    <div class="takeaway-card">
-      <div class="emoji">🛡️</div>
-      <h5>CE Loss Protects Useful Features</h5>
-      <p>If a feature is genuinely useful, its classifier weight W<sub>class,i</sub> is large → CE gradient fights FMR → the feature survives. No manual filtering needed.</p>
-    </div>
-    <div class="takeaway-card">
-      <div class="emoji">📉</div>
-      <h5>Dynamic λ Auto-Decays</h5>
-      <p>λ = (H<sub>max</sub> − H)/(H<sub>max</sub> − H<sub>init</sub>) — starts strong when biased, auto-fades to near-zero when uniform. No hyperparameter tuning.</p>
-    </div>
-    <div class="takeaway-card">
-      <div class="emoji">🔄</div>
-      <h5>Pretrained ≠ Pretrained on YOUR Data</h5>
-      <p>The model was trained on ImageNet, not your birds/cars/aircraft. FMR fixes the domain gap by removing ImageNet's feature magnitude bias.</p>
-    </div>
-    <div class="takeaway-card">
-      <div class="emoji">🧪</div>
-      <h5>Only +0.9% on Random Weights</h5>
-      <p>FMR on randomly initialized models gives almost no gain, proving it specifically fixes <strong>pretraining-induced</strong> bias, not a universal problem.</p>
-    </div>
-  </div>
-</div>
-
-</div><!-- /panelLearn -->
-
-</div><!-- /main-container -->
-
-<script>
-// ==================== POLYFILLS ====================
-// roundRect polyfill for older browsers
-if (!CanvasRenderingContext2D.prototype.roundRect) {
-  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
-    if (typeof r === 'number') r = { tl: r, tr: r, br: r, bl: r };
-    if (Array.isArray(r)) r = { tl: r[0]||0, tr: r[1]||0, br: r[2]||0, bl: r[3]||0 };
-    this.beginPath();
-    this.moveTo(x + r.tl, y);
-    this.lineTo(x + w - r.tr, y);
-    this.quadraticCurveTo(x + w, y, x + w, y + r.tr);
-    this.lineTo(x + w, y + h - r.br);
-    this.quadraticCurveTo(x + w, y + h, x + w, y + h - r.br);
-    this.lineTo(x + r.bl, y + h);
-    this.quadraticCurveTo(x, y + h, x, y + h - r.bl);
-    this.lineTo(x, y + r.tl);
-    this.quadraticCurveTo(x, y, x + r.tl, y);
-    this.closePath();
-    return this;
-  };
-}
-
-// ==================== SHARED STATE ====================
-let currentTab = 'fmr';
-let fmrAnimId = null, asifAnimId = null, learnLoopId = null;
-let fmrState = { bias: 80, progress: 0, dataRegime: 15 };
-let asifState = { noise: 40, epoch: 0, dataSize: 30 };
-
-// ==================== TAB SWITCHING ====================
-function switchTab(tab) {
-  currentTab = tab;
-  document.getElementById('tabFmr').className = tab === 'fmr' ? 'tab-btn active-fmr' : 'tab-btn';
-  document.getElementById('tabAsif').className = tab === 'asif' ? 'tab-btn active-asif' : 'tab-btn';
-  document.getElementById('tabLearn').className = tab === 'learn' ? 'tab-btn active-learn' : 'tab-btn';
-  document.getElementById('panelFmr').className = tab === 'fmr' ? 'panel active' : 'panel';
-  document.getElementById('panelAsif').className = tab === 'asif' ? 'panel active' : 'panel';
-  document.getElementById('panelLearn').className = tab === 'learn' ? 'panel active' : 'panel';
-
-  // Stop all animation loops
-  cancelAnimationFrame(fmrAnimId);
-  cancelAnimationFrame(asifAnimId);
-  cancelAnimationFrame(learnLoopId);
-  fmrAnimId = null; asifAnimId = null; learnLoopId = null;
-
-  if (tab === 'fmr') {
-    cancelAnimationFrame(asifArchLoop); asifArchLoop = null;
-    updateFMR();
-  } else if (tab === 'asif') {
-    cancelAnimationFrame(asifArchLoop); asifArchLoop = null;
-    updateASIF();
-    if (!asifArchLoop) animateASIFArch();
-  } else if (tab === 'learn') {
-    cancelAnimationFrame(asifArchLoop); asifArchLoop = null;
-    drawLearnDiagrams();
-    animateLearnLoop();
-  }
-}
-
-// ==================== FMR VISUALIZATION ====================
-const NUM_FEATURES = 30;
-
-function drawFMRChart(progress, bias) {
-  const canvas = document.getElementById('fmrCanvas');
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0, 0, W, H);
-
-  // Generate feature magnitudes
-  const features = [];
-  const maxMag = 1.0;
-  for (let i = 0; i < NUM_FEATURES; i++) {
-    // Some features are "biased" (naturally large), some are small
-    const baseBias = (i < NUM_FEATURES * (bias / 100)) ?
-      (0.5 + 0.5 * Math.random()) : // biased: 0.5-1.0
-      (0.05 + 0.25 * Math.random()); // small: 0.05-0.3
-
-    // As training progresses, equalize toward 1/NUM_FEATURES (after softmax, uniform = 1/D)
-    const targetUniform = 0.5; // normalized target
-    const current = baseBias + (targetUniform - baseBias) * (progress / 100);
-    features.push(Math.max(0.02, current));
-  }
-
-  // Sort by magnitude for visual clarity
-  features.sort((a, b) => b - a);
-
-  const barAreaX = 40, barAreaY = 30, barAreaW = W - 60, barAreaH = H - 80;
-  const barWidth = (barAreaW / NUM_FEATURES) - 1.5;
-  const maxVal = 1.0;
-
-  // Draw grid lines
-  ctx.strokeStyle = '#ffffff08';
-  ctx.lineWidth = 0.5;
-  for (let v = 0; v <= 1; v += 0.25) {
-    const y = barAreaY + barAreaH * (1 - v);
-    ctx.beginPath();
-    ctx.moveTo(barAreaX, y);
-    ctx.lineTo(barAreaX + barAreaW, y);
-    ctx.stroke();
-  }
-
-  // Draw bars — each bar colored individually by its deviation from uniform target
-  const targetUniform = 0.5;
-  features.forEach((val, i) => {
-    const x = barAreaX + i * (barAreaW / NUM_FEATURES);
-    const barH = (val / maxVal) * barAreaH;
-    const y = barAreaY + barAreaH - barH;
-
-    // Per-bar color: deviation from target → how "biased" this specific feature is
-    // deviation = 1.0 (far above target) → RED
-    // deviation = 0.0 (at or below target) → CYAN
-    const deviation = Math.max(0, Math.min(1, (val - targetUniform) / (maxVal - targetUniform)));
-    const r = Math.floor(255 * deviation + 0 * (1 - deviation));
-    const g = Math.floor(82 * deviation + 229 * (1 - deviation));
-    const b = Math.floor(82 * deviation + 255 * (1 - deviation));
-    const alpha = 0.65 + 0.35 * (1 - deviation);
-
-    // Glow: biased (tall) bars get red glow, uniform bars get cyan glow
-    if (deviation > 0.5) {
-      ctx.shadowColor = `rgba(255, 82, 82, ${0.3 + deviation * 0.4})`;
-      ctx.shadowBlur = 3 + deviation * 5;
-    } else if (deviation < 0.3) {
-      ctx.shadowColor = `rgba(0, 229, 255, ${0.2 + (1 - deviation) * 0.3})`;
-      ctx.shadowBlur = 2 + (1 - deviation) * 3;
-    } else {
-      ctx.shadowColor = 'transparent';
-      ctx.shadowBlur = 0;
-    }
-
-    const gradient = ctx.createLinearGradient(x, y, x, barAreaY + barAreaH);
-    gradient.addColorStop(0, `rgba(${r},${g},${b},${alpha})`);
-    gradient.addColorStop(1, `rgba(${r},${g},${b},${alpha * 0.25})`);
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.roundRect(x, y, barWidth, barH, [1.5, 1.5, 0, 0]);
-    ctx.fill();
-  });
-  ctx.shadowColor = 'transparent';
-  ctx.shadowBlur = 0;
-
-  // Entropy line
-  const softmaxVals = softmax(features);
-  const entropy = computeEntropy(softmaxVals);
-  const maxEntropy = Math.log(NUM_FEATURES);
-  const entropyRatio = entropy / maxEntropy;
-
-  // Draw entropy target line
-  const targetY = barAreaY + barAreaH * (1 - 0.5);
-  ctx.strokeStyle = 'rgba(105, 240, 174, 0.5)';
-  ctx.lineWidth = 1;
-  ctx.setLineDash([4, 6]);
-  ctx.beginPath();
-  ctx.moveTo(barAreaX, targetY);
-  ctx.lineTo(barAreaX + barAreaW, targetY);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Label target
-  ctx.fillStyle = 'rgba(105,240,174,0.7)';
-  ctx.font = '9px monospace';
-  ctx.fillText('Hₘₐₓ (uniform)', barAreaX + barAreaW - 95, targetY - 5);
-
-  // Axis labels
-  ctx.fillStyle = '#6b6b80';
-  ctx.font = '9px monospace';
-  ctx.fillText('Feature Dimensions (sorted by magnitude)', barAreaX + barAreaW / 2 - 100, H - 8);
-  ctx.save();
-  ctx.translate(12, barAreaY + barAreaH / 2);
-  ctx.rotate(-Math.PI / 2);
-  ctx.fillText('Magnitude', -25, 0);
-  ctx.restore();
-
-  // Y-axis ticks
-  ctx.fillStyle = '#6b6b80';
-  ctx.font = '8px monospace';
-  for (let v = 0; v <= 1; v += 0.25) {
-    const y = barAreaY + barAreaH * (1 - v);
-    ctx.fillText(v.toFixed(2), barAreaX - 30, y + 4);
-  }
-
-  // Color scale legend (gradient bar bottom-right)
-  const legendX = barAreaX + barAreaW - 160;
-  const legendY = H - 20;
-  const legendW = 140;
-  const legendH = 8;
-  const grad = ctx.createLinearGradient(legendX, 0, legendX + legendW, 0);
-  grad.addColorStop(0, '#ff5252');
-  grad.addColorStop(0.35, '#ff8a65');
-  grad.addColorStop(0.65, '#4dd0e1');
-  grad.addColorStop(1, '#00e5ff');
-  ctx.fillStyle = grad;
-  ctx.beginPath();
-  ctx.roundRect(legendX, legendY, legendW, legendH, 3);
-  ctx.fill();
-  ctx.fillStyle = '#6b6b80';
-  ctx.font = '8px monospace';
-  ctx.fillText('BIASED (red)', legendX - 2, legendY - 3);
-  ctx.fillText('UNIFORM (cyan)', legendX + legendW - 80, legendY - 3);
-
-  return { features, entropy, maxEntropy, entropyRatio };
-}
-
-function softmax(arr) {
-  const maxVal = Math.max(...arr);
-  const exps = arr.map(v => Math.exp(v - maxVal));
-  const sum = exps.reduce((a, b) => a + b, 0);
-  return exps.map(v => v / sum);
-}
-
-function computeEntropy(probs) {
-  return -probs.reduce((sum, p) => sum + (p > 0 ? p * Math.log(p) : 0), 0);
-}
-
-function drawFMRBeforeAfter(progress, bias) {
-  const canvas = document.getElementById('fmrBeforeAfter');
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0, 0, W, H);
-
-  // Two image representations: BEFORE (biased attention) and AFTER (FMR attention)
-  const halfW = W / 2 - 30;
-
-  // LEFT: Before - biased features attend to background
-  const beforeX = 20, beforeY = 25, imgW = halfW, imgH = H - 50;
-
-  // Bird silhouette zone
-  ctx.fillStyle = '#14141f';
-  ctx.strokeStyle = '#252538';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.roundRect(beforeX, beforeY, imgW, imgH, 8);
-  ctx.fill();
-  ctx.stroke();
-
-  // Draw "bird" shape (simplified)
-  drawBirdOutline(ctx, beforeX + imgW / 2, beforeY + imgH / 2, imgW * 0.3);
-
-  // Draw heatmap - biased → red hotspots on background
-  const biasStrength = (100 - progress) / 100 * (bias / 100);
-  for (let i = 0; i < 8; i++) {
-    const hx = beforeX + 20 + Math.random() * (imgW - 40);
-    const hy = beforeY + 15 + Math.random() * (imgH - 30);
-    const hr = 15 + Math.random() * 25;
-    const ha = biasStrength * (0.3 + Math.random() * 0.5);
-    const grad = ctx.createRadialGradient(hx, hy, 0, hx, hy, hr);
-    grad.addColorStop(0, `rgba(255, 82, 82, ${ha})`);
-    grad.addColorStop(1, 'rgba(255, 82, 82, 0)');
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(hx, hy, hr, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Draw bird-region hotspots (smaller, fewer)
-  const birdCx = beforeX + imgW / 2, birdCy = beforeY + imgH / 2;
-  for (let i = 0; i < 3; i++) {
-    const hx = birdCx + (Math.random() - 0.5) * imgW * 0.25;
-    const hy = birdCy + (Math.random() - 0.5) * imgH * 0.2;
-    const hr = 8 + Math.random() * 12;
-    const ha = 0.15 + Math.random() * 0.15;
-    const grad = ctx.createRadialGradient(hx, hy, 0, hx, hy, hr);
-    grad.addColorStop(0, `rgba(0, 229, 255, ${ha})`);
-    grad.addColorStop(1, 'rgba(0, 229, 255, 0)');
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(hx, hy, hr, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  ctx.fillStyle = '#ff5252';
-  ctx.font = 'bold 11px monospace';
-  ctx.fillText('BEFORE: Background-focused', beforeX + 8, beforeY + imgH + 16);
-
-  // RIGHT: After - FMR attention on the object
-  const afterX = W / 2 + 10, afterY = 25;
-
-  ctx.fillStyle = '#14141f';
-  ctx.strokeStyle = '#252538';
-  ctx.beginPath();
-  ctx.roundRect(afterX, afterY, imgW, imgH, 8);
-  ctx.fill();
-  ctx.stroke();
-
-  drawBirdOutline(ctx, afterX + imgW / 2, afterY + imgH / 2, imgW * 0.3);
-
-  // Draw FMR heatmap - cyan hotspots on the bird
-  const fmrStrength = progress / 100;
-  for (let i = 0; i < 10; i++) {
-    const hx = birdCx + (Math.random() - 0.5) * imgW * 0.22 + (afterX - beforeX);
-    const hy = birdCy + (Math.random() - 0.5) * imgH * 0.18;
-    const hr = 6 + Math.random() * 14;
-    const ha = fmrStrength * (0.3 + Math.random() * 0.5);
-    const grad = ctx.createRadialGradient(hx, hy, 0, hx, hy, hr);
-    grad.addColorStop(0, `rgba(0, 229, 255, ${ha})`);
-    grad.addColorStop(1, 'rgba(0, 229, 255, 0)');
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(hx, hy, hr, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Also show a few background hotspots fading
-  for (let i = 0; i < 4; i++) {
-    const hx = afterX + 20 + Math.random() * (imgW - 40);
-    const hy = afterY + 15 + Math.random() * (imgH - 30);
-    const hr = 10 + Math.random() * 15;
-    const ha = (1 - fmrStrength) * biasStrength * 0.3;
-    const grad = ctx.createRadialGradient(hx, hy, 0, hx, hy, hr);
-    grad.addColorStop(0, `rgba(255, 82, 82, ${ha})`);
-    grad.addColorStop(1, 'rgba(255, 82, 82, 0)');
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(hx, hy, hr, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  ctx.fillStyle = '#00e5ff';
-  ctx.font = 'bold 11px monospace';
-  ctx.fillText('AFTER FMR: Object-focused', afterX + 8, afterY + imgH + 16);
-}
-
-function drawBirdOutline(ctx, cx, cy, size) {
-  // Minimalist bird silhouette
-  ctx.strokeStyle = '#ffffff15';
-  ctx.lineWidth = 1;
-  ctx.fillStyle = '#ffffff06';
-  ctx.beginPath();
-  // Body
-  ctx.ellipse(cx, cy, size * 0.6, size * 0.35, -0.2, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-  // Head
-  ctx.beginPath();
-  ctx.arc(cx + size * 0.45, cy - size * 0.15, size * 0.2, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-  // Beak
-  ctx.beginPath();
-  ctx.moveTo(cx + size * 0.65, cy - size * 0.18);
-  ctx.lineTo(cx + size * 0.9, cy - size * 0.12);
-  ctx.lineTo(cx + size * 0.65, cy - size * 0.08);
-  ctx.closePath();
-  ctx.fill();
-  // Tail
-  ctx.beginPath();
-  ctx.moveTo(cx - size * 0.5, cy - size * 0.1);
-  ctx.lineTo(cx - size * 0.85, cy - size * 0.3);
-  ctx.lineTo(cx - size * 0.55, cy + size * 0.05);
-  ctx.closePath();
-  ctx.fill();
-}
-
-function drawFMRCurves(progress, bias, dataRegime) {
-  const canvas = document.getElementById('fmrCurvesCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0, 0, W, H);
-
-  const pad = { top: 30, right: 40, bottom: 45, left: 55 };
-  const plotW = W - pad.left - pad.right;
-  const plotH = H - pad.top - pad.bottom;
-
-  // Simulate curves over NUM_POINTS training steps
-  const NUM_POINTS = 100;
-  const maxEntropy = Math.log(NUM_FEATURES); // ~3.401
-  const Hinit = 1.5 + (bias / 100) * 0.5; // lower Hinit = more biased
-  const Hmax = maxEntropy;
-
-  // Pre-compute curve data
-  const entropyCurve = [];
-  const lambdaCurve = [];
-  const fmrLossCurve = [];
-  const totalLossCurve = [];
-  const ceLossCurve = [];
-
-  for (let i = 0; i <= NUM_POINTS; i++) {
-    const t = i / NUM_POINTS;
-    // Entropy: logistic-style rise from Hinit → near Hmax
-    const H = Hinit + (Hmax - Hinit) * (1 / (1 + Math.exp(-8 * (t - 0.35))));
-    entropyCurve.push(H);
-
-    // λ: auto-decays as H approaches Hmax
-    const lambda = Math.max(0.01, (Hmax - H) / (Hmax - Hinit));
-    lambdaCurve.push(lambda);
-
-    // |FMR Loss| = |−λ × H| = λ × H
-    const fmrLoss = lambda * H;
-    fmrLossCurve.push(fmrLoss);
-
-    // L_CE: decreases with training (standard)
-    const ceLoss = 2.2 - t * 1.5 + Math.sin(t * 12) * 0.08 * (1 - t);
-    ceLossCurve.push(ceLoss);
-
-    // Total Loss = L_CE − λ·H (FMR subtracts because we maximize entropy)
-    totalLossCurve.push(ceLoss - fmrLoss);
-  }
-
-  // Y-axis range
-  const allVals = [...entropyCurve, ...lambdaCurve, ...fmrLossCurve, ...totalLossCurve];
-  const yMin = Math.max(0, Math.floor(Math.min(...allVals) * 10) / 10 - 0.2);
-  const yMax = Math.ceil(Math.max(...allVals) * 10) / 10 + 0.2;
-
-  function toX(t) { return pad.left + t * plotW; }
-  function toY(v) { return pad.top + plotH * (1 - (v - yMin) / (yMax - yMin)); }
-
-  // Grid
-  ctx.strokeStyle = '#ffffff06';
-  ctx.lineWidth = 0.5;
-  const ySteps = 5;
-  for (let i = 0; i <= ySteps; i++) {
-    const v = yMin + (i / ySteps) * (yMax - yMin);
-    const y = toY(v);
-    ctx.beginPath();
-    ctx.moveTo(pad.left, y);
-    ctx.lineTo(W - pad.right, y);
-    ctx.stroke();
-    ctx.fillStyle = '#6b6b8055';
-    ctx.font = '9px monospace';
-    ctx.fillText(v.toFixed(1), pad.left - 38, y + 4);
-  }
-  // X-axis ticks
-  for (let i = 0; i <= 5; i++) {
-    const t = i / 5;
-    const x = toX(t);
-    ctx.fillStyle = '#6b6b8055';
-    ctx.font = '9px monospace';
-    ctx.fillText((t * 100).toFixed(0) + '%', x - 12, pad.top + plotH + 18);
-  }
-  ctx.fillStyle = '#6b6b80';
-  ctx.font = '9px monospace';
-  ctx.fillText('Training Progress →', W - pad.right - 110, pad.top + plotH + 32);
-
-  // Draw each curve
-  function drawCurve(data, color, lineWidth, dashPattern) {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = lineWidth;
-    if (dashPattern) ctx.setLineDash(dashPattern);
-    else ctx.setLineDash([]);
-    ctx.beginPath();
-    for (let i = 0; i <= NUM_POINTS; i++) {
-      const x = toX(i / NUM_POINTS);
-      const y = toY(data[i]);
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  // Entropy H (green, thick)
-  drawCurve(entropyCurve, '#69f0ae', 2.5, []);
-
-  // λ (magenta, dashed)
-  drawCurve(lambdaCurve, '#ff4081', 2, [6, 4]);
-
-  // |FMR Loss| (cyan, medium)
-  drawCurve(fmrLossCurve, '#00e5ff', 2, []);
-
-  // Total Loss (amber, thick)
-  drawCurve(totalLossCurve, '#ffb300', 2.5, []);
-
-  // Hmax reference line
-  ctx.strokeStyle = '#69f0ae33';
-  ctx.lineWidth = 1;
-  ctx.setLineDash([2, 6]);
-  const hmaxY = toY(Hmax);
-  ctx.beginPath();
-  ctx.moveTo(pad.left, hmaxY);
-  ctx.lineTo(W - pad.right, hmaxY);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.fillStyle = '#69f0ae55';
-  ctx.font = '9px monospace';
-  ctx.fillText('Hₘₐₓ = ' + Hmax.toFixed(2), W - pad.right - 60, hmaxY - 5);
-
-  // Vertical progress line
-  const curX = toX(progress / 100);
-  ctx.strokeStyle = '#ffffff33';
-  ctx.lineWidth = 1;
-  ctx.setLineDash([3, 5]);
-  ctx.beginPath();
-  ctx.moveTo(curX, pad.top);
-  ctx.lineTo(curX, pad.top + plotH);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Dots at current progress
-  const idx = Math.round(progress / 100 * NUM_POINTS);
-  const dots = [
-    { val: entropyCurve[idx], color: '#69f0ae' },
-    { val: lambdaCurve[idx], color: '#ff4081' },
-    { val: fmrLossCurve[idx], color: '#00e5ff' },
-    { val: totalLossCurve[idx], color: '#ffb300' },
-  ];
-  dots.forEach(d => {
-    ctx.fillStyle = d.color;
-    ctx.beginPath();
-    ctx.arc(curX, toY(d.val), 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#ffffff44';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  });
-}
-
-// ==================== FMR GRADIENT TUG-OF-WAR ====================
-function drawFMRTugOfWar(progress, bias) {
-  const canvas = document.getElementById('fmrTugOfWarCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0, 0, W, H);
-
-  const numFeatures = 8;
-  const barH = 28;
-  const barGap = 18;
-  const leftPad = 200;
-  const rightPad = 50;
-  const topPad = 30;
-  const barAreaW = W - leftPad - rightPad;
-  const targetUniform = 0.5;
-
-  // Feature definitions: name, base magnitude, isUseful
-  const featureDefs = [
-    { name: 'Beak curvature',   base: 0.82, useful: true,  desc: 'Critical for species ID' },
-    { name: 'Wing bar width',  base: 0.78, useful: true,  desc: 'Key differentiator' },
-    { name: 'Eye ring shape',  base: 0.65, useful: true,  desc: 'Subtle but important' },
-    { name: 'Feather tip pattern', base: 0.58, useful: true, desc: 'Species-specific' },
-    { name: 'Green foliage',   base: 0.91, useful: false, desc: 'Background — IRRELEVANT' },
-    { name: 'Blue sky',        base: 0.87, useful: false, desc: 'Just the weather — USELESS' },
-    { name: 'Branch texture',  base: 0.73, useful: false, desc: 'Where bird sat — NOISE' },
-    { name: 'Photo brightness',base: 0.69, useful: false, desc: 'Camera setting — SPURIOUS' },
-  ];
-
-  // Compute current magnitudes and gradients
-  const data = featureDefs.map((def, i) => {
-    const t = progress / 100;
-    // When λ→0 (late training), FMR push fades
-    const lambda = Math.max(0.01, 1.0 - t * 0.99);
-
-    // Current magnitude: biased features start high, move toward target
-    const raw = def.base + (targetUniform - def.base) * t * 0.7;
-    const magnitude = raw;
-
-    // CE gradient: ∂L_CE/∂f
-    // Useful features: CE wants to keep them strong → positive gradient (push UP)
-    // Irrelevant features: CE doesn't care → near-zero gradient
-    const ceGrad = def.useful
-      ? 0.15 * (1 - t * 0.3)  // CE fights to keep useful features active
-      : 0.005;                 // CE is indifferent to irrelevant features
-
-    // FMR gradient: ∂(-λH)/∂f → always toward uniform target → negative for high mags
-    // The farther from target, the stronger the push
-    const fmrGrad = -lambda * (magnitude - targetUniform) * 0.8;
-
-    // Net gradient
-    const netGrad = ceGrad + fmrGrad;
-
-    // Predicted new magnitude (clamped)
-    const newMag = Math.max(0.05, Math.min(1.0, magnitude + netGrad));
-
-    return { ...def, magnitude, lambda, ceGrad, fmrGrad, netGrad, newMag };
-  });
-
-  // Sort: useful features first, then irrelevant
-  data.sort((a, b) => (b.useful ? 1 : 0) - (a.useful ? 1 : 0));
-
-  // Draw each feature row
-  data.forEach((feat, i) => {
-    const y = topPad + i * (barH + barGap + 30); // extra space for arrows
-
-    // ── Feature label ──
-    ctx.fillStyle = feat.useful ? '#69f0ae' : '#ff5252';
-    ctx.font = 'bold 12px monospace';
-    ctx.fillText(feat.name, 10, y + barH / 2 + 4);
-    ctx.fillStyle = '#6b6b80';
-    ctx.font = '9px monospace';
-    ctx.fillText(feat.desc, 10, y + barH / 2 + 18);
-
-    // ── Usefulness badge ──
-    const badgeX = leftPad - 75;
-    const badgeY = y + 2;
-    ctx.fillStyle = feat.useful ? '#69f0ae22' : '#ff525222';
-    ctx.strokeStyle = feat.useful ? '#69f0ae55' : '#ff525255';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.roundRect(badgeX, badgeY, 68, 20, 4);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = feat.useful ? '#69f0ae' : '#ff5252';
-    ctx.font = 'bold 9px monospace';
-    ctx.fillText(feat.useful ? 'USEFUL ✓' : 'NOISE ✗', badgeX + 8, badgeY + 14);
-
-    // ── Bar: current magnitude ──
-    const barX = leftPad;
-    const barW = feat.magnitude * barAreaW;
-    const barMidY = y + barH / 2;
-
-    // Background track
-    ctx.fillStyle = '#ffffff06';
-    ctx.fillRect(barX, y, barAreaW, barH);
-
-    // Bar fill
-    const barGrad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
-    if (feat.useful) {
-      barGrad.addColorStop(0, '#69f0ae88');
-      barGrad.addColorStop(1, '#69f0ae44');
-    } else {
-      barGrad.addColorStop(0, '#ff525288');
-      barGrad.addColorStop(1, '#ff525244');
-    }
-    ctx.fillStyle = barGrad;
-    ctx.fillRect(barX, y, barW, barH);
-
-    // Uniform target line
-    const targetX = barX + targetUniform * barAreaW;
-    ctx.strokeStyle = '#ffffff33';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([3, 4]);
-    ctx.beginPath();
-    ctx.moveTo(targetX, y - 4);
-    ctx.lineTo(targetX, y + barH + 4);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // ── Arrow zone (below bar) ──
-    const arrowY = y + barH + 10;
-    const arrowCenterX = barX + feat.magnitude * barAreaW;
-    const arrowMaxLen = 60;
-
-    // CE arrow (green, pointing right/up — keeps feature strong)
-    const ceLen = feat.ceGrad * 300;
-    if (Math.abs(ceLen) > 0.5) {
-      drawArrow(ctx, arrowCenterX, arrowY, arrowCenterX + ceLen, arrowY,
-        '#69f0ae', 2.5, 'CE: stay strong');
-    }
-
-    // FMR arrow (red, pointing left toward target line)
-    const fmrLen = feat.fmrGrad * 300;
-    if (Math.abs(fmrLen) > 0.5) {
-      const fmrStartX = arrowCenterX;
-      const fmrEndX = arrowCenterX + fmrLen;
-      drawArrow(ctx, fmrStartX, arrowY + 12, fmrEndX, arrowY + 12,
-        '#ff5252', 2.5, null);
-    }
-
-    // Net arrow (amber — the actual movement)
-    const netLen = feat.netGrad * 300;
-    if (Math.abs(netLen) > 0.3) {
-      drawArrow(ctx, arrowCenterX, arrowY + 24, arrowCenterX + netLen, arrowY + 24,
-        '#ffb300', 3, 'NET');
-    }
-
-    // ── Predicted ghost bar (where feature will go) ──
-    const ghostW = feat.newMag * barAreaW;
-    ctx.fillStyle = feat.useful ? '#69f0ae22' : '#ff525222';
-    ctx.strokeStyle = feat.useful ? '#69f0ae55' : '#ff525255';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([2, 2]);
-    ctx.beginPath();
-    ctx.roundRect(barX, y, ghostW, barH, 2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = '#ffb30088';
-    ctx.font = '8px monospace';
-    ctx.fillText('next →', barX + ghostW + 3, y + barH / 2 + 4);
-  });
-
-  // Formula at bottom
-  const bottomY = topPad + data.length * (barH + barGap + 30) + 10;
-  ctx.fillStyle = '#6b6b80';
-  ctx.font = '10px monospace';
-  ctx.fillText('∂L_total/∂f = ∂L_CE/∂f + λ · ∂(−H)/∂f', leftPad + 20, bottomY);
-  ctx.fillText('│', leftPad + 20, bottomY + 15);
-  ctx.fillText('├─ CE gradient: nonzero ONLY for useful features → fights FMR', leftPad + 20, bottomY + 30);
-  ctx.fillText('└─ FMR gradient: always toward uniform target → strongest when λ is large', leftPad + 20, bottomY + 44);
-}
-
-function drawArrow(ctx, x1, y1, x2, y2, color, width, label) {
-  const dx = x2 - x1;
-  const len = Math.sqrt(dx * dx);
-  if (len < 0.5) return;
-
-  ctx.strokeStyle = color;
-  ctx.lineWidth = width;
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.stroke();
-
-  // Arrowhead
-  const headLen = 8;
-  const angle = Math.atan2(0, dx); // horizontal arrows
-  const dir = dx > 0 ? 1 : -1;
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.moveTo(x2, y2);
-  ctx.lineTo(x2 - dir * headLen, y2 - 4);
-  ctx.lineTo(x2 - dir * headLen, y2 + 4);
-  ctx.closePath();
-  ctx.fill();
-
-  // Label
-  if (label) {
-    ctx.fillStyle = color;
-    ctx.font = 'bold 9px monospace';
-    const lx = x1 + dx / 2 - (label.length * 5) / 2;
-    ctx.fillText(label, lx, y1 - 6);
-  }
-}
-
-function updateFMR() {
-  const biasSlider = document.getElementById('fmrBias');
-  const progressSlider = document.getElementById('fmrProgress');
-  const dataRegimeSlider = document.getElementById('fmrDataRegime');
-
-  fmrState.bias = parseInt(biasSlider.value);
-  fmrState.progress = parseInt(progressSlider.value);
-  fmrState.dataRegime = parseInt(dataRegimeSlider.value);
-
-  document.getElementById('fmrBiasVal').textContent = fmrState.bias + '%';
-  document.getElementById('fmrProgressVal').textContent = fmrState.progress + '%';
-  document.getElementById('fmrDataRegimeVal').textContent = fmrState.dataRegime + '%';
-
-  const result = drawFMRChart(fmrState.progress, fmrState.bias);
-  drawFMRBeforeAfter(fmrState.progress, fmrState.bias);
-  drawFMRCurves(fmrState.progress, fmrState.bias, fmrState.dataRegime);
-  drawFMRTugOfWar(fmrState.progress, fmrState.bias);
-
-  // Update metrics
-  const maxEnt = Math.log(NUM_FEATURES);
-  document.getElementById('fmrEntropy').textContent = result.entropy.toFixed(2);
-  document.getElementById('fmrLambda').textContent =
-    ((maxEnt - result.entropy) / (maxEnt - 1.5)).toFixed(2);
-  document.getElementById('fmrVariance').textContent =
-    (0.15 * (1 - fmrState.progress / 100)).toFixed(3);
-}
-
-function animateFMR() {
-  cancelAnimationFrame(fmrAnimId);
-  const progressSlider = document.getElementById('fmrProgress');
-  let p = 0;
-  function step() {
-    if (p > 100) { fmrAnimId = null; return; }
-    progressSlider.value = p;
-    updateFMR();
-    p += 1.5;
-    fmrAnimId = requestAnimationFrame(step);
-  }
-  fmrAnimId = requestAnimationFrame(step);
-}
-
-function resetFMR() {
-  cancelAnimationFrame(fmrAnimId);
-  document.getElementById('fmrProgress').value = 0;
-  document.getElementById('fmrBias').value = 80;
-  document.getElementById('fmrDataRegime').value = 15;
-  updateFMR();
-}
-
-// ==================== ASIF VISUALIZATION ====================
-
-function drawASIFArchitecture(epoch, noise) {
-  const canvas = document.getElementById('asifArchCanvas');
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0, 0, W, H);
-
-  const trainingProgress = epoch / 100;
-
-  // === NODE POSITIONS ===
-  const inputX = 50, inputY = H / 2;
-  const featX = 220, featY = H / 2;
-  const classX = 440, classY = H * 0.3;
-  const identX = 440, identY = H * 0.7;
-  const lossClassX = 600, lossClassY = H * 0.3;
-  const lossIdentX = 600, lossIdentY = H * 0.7;
-  const gradRevX = 320, gradRevY = H * 0.7;
-
-  // === DRAW CONNECTIONS WITH ANIMATED PARTICLES ===
-  const time = Date.now() / 1000;
-
-  // Input → Feature Extractor
-  drawAnimatedConnection(ctx, inputX + 40, inputY, featX - 40, featY, '#ffffff20', time, 0);
-
-  // Feature Extractor → Classifier
-  drawAnimatedConnection(ctx, featX + 40, featY - 10, classX - 40, classY, '#00e5ff30', time, 1);
-
-  // Feature Extractor → Identifier (via DGR)
-  drawAnimatedConnection(ctx, featX + 40, featY + 10, gradRevX - 20, gradRevY, '#ffb30030', time, 2);
-
-  // DGR → Identifier
-  drawAnimatedConnection(ctx, gradRevX + 20, gradRevY, identX - 40, identY, '#ffb30030', time, 3);
-
-  // Classifier → Loss
-  drawAnimatedConnection(ctx, classX + 40, classY, lossClassX - 20, lossClassY, '#00e5ff20', time, 4);
-
-  // Identifier → Loss
-  drawAnimatedConnection(ctx, identX + 40, identY, lossIdentX - 20, lossIdentY, '#ffb30020', time, 5);
-
-  // === GRADIENT REVERSAL ARROW (REVERSED) ===
-  // Show gradient going backward with reversal symbol
-  const grPulse = Math.sin(time * 3) * 0.4 + 0.6;
-  ctx.strokeStyle = `rgba(255, 64, 129, ${0.5 + grPulse * 0.4})`;
-  ctx.lineWidth = 2;
-  ctx.setLineDash([4, 4]);
-  ctx.beginPath();
-  ctx.moveTo(gradRevX, gradRevY - 15);
-  ctx.lineTo(gradRevX - 30, gradRevY - 35);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Arrowhead pointing BACK
-  ctx.fillStyle = `rgba(255, 64, 129, ${0.5 + grPulse * 0.4})`;
-  ctx.beginPath();
-  ctx.moveTo(gradRevX - 35, gradRevY - 35);
-  ctx.lineTo(gradRevX - 20, gradRevY - 42);
-  ctx.lineTo(gradRevX - 28, gradRevY - 28);
-  ctx.closePath();
-  ctx.fill();
-
-  // "⊗" reversal symbol
-  ctx.fillStyle = '#ff4081';
-  ctx.font = 'bold 16px monospace';
-  ctx.fillText('⊗', gradRevX - 8, gradRevY + 5);
-
-  // === DRAW NODES ===
-  // Image icon
-  drawNode(ctx, inputX, inputY, 50, 36, '#14141f', '#252538', '🖼 Input', null, 0);
-  ctx.font = '20px sans-serif';
-  ctx.fillText('🖼', inputX - 8, inputY + 6);
-
-  // Feature Extractor
-  drawNode(ctx, featX, featY, 70, 50, '#14141f', '#00e5ff33', 'Feature', 'Extractor', trainingProgress);
-  ctx.fillStyle = '#00e5ff44';
-  ctx.fillRect(featX - 30, featY - 20, 60, 40);
-  // Inner grid pattern
-  ctx.strokeStyle = '#00e5ff15';
-  ctx.lineWidth = 0.5;
-  for (let gx = 0; gx < 3; gx++) {
-    for (let gy = 0; gy < 2; gy++) {
-      ctx.strokeRect(featX - 25 + gx * 18, featY - 16 + gy * 16, 14, 12);
-    }
-  }
-
-  // Classifier
-  drawNode(ctx, classX, classY, 60, 40, '#14141f', '#00e5ff22', 'Classifier', 'hC', 0);
-  ctx.fillStyle = '#00e5ff';
-  ctx.font = '13px monospace';
-  ctx.fillText('hC', classX - 10, classY + 5);
-
-  // Identifier (with per-class params visual)
-  drawNode(ctx, identX, identY, 60, 40, '#14141f', '#ffb30022', 'Identifier', 'hI', 0);
-  ctx.fillStyle = '#ffb300';
-  ctx.font = '13px monospace';
-  ctx.fillText('hI', identX - 10, identY + 5);
-
-  // Small per-class boxes inside identifier
-  for (let ci = 0; ci < 3; ci++) {
-    ctx.fillStyle = `hsl(${ci * 120}, 70%, 60%)`;
-    ctx.fillRect(identX + 17, identY - 10 + ci * 8, 10, 5);
-  }
-
-  // Gradient Reversal indicator
-  drawNode(ctx, gradRevX, gradRevY, 35, 26, '#14141f', '#ff408122', 'DGR', null, 0);
-  ctx.fillStyle = '#ff4081';
-  ctx.font = '10px monospace';
-  ctx.fillText('DGR', gradRevX - 13, gradRevY + 4);
-
-  // Cross Entropy Loss
-  drawNode(ctx, lossClassX, lossClassY, 45, 30, '#14141f', '#00e5ff18', 'Lcls', null, 0);
-  ctx.fillStyle = '#00e5ff';
-  ctx.font = '11px monospace';
-  ctx.fillText('Lcls', lossClassX - 14, lossClassY + 4);
-
-  // Identification Loss (with red X overlay when suppressed)
-  drawNode(ctx, lossIdentX, lossIdentY, 45, 30, '#14141f', '#ffb30018', 'Lid', null, 0);
-  ctx.fillStyle = '#ffb300';
-  ctx.font = '11px monospace';
-  ctx.fillText('Lid', lossIdentX - 12, lossIdentY + 4);
-
-  // Red X over Lid that grows with training
-  if (trainingProgress > 0.2) {
-    const xAlpha = (trainingProgress - 0.2) * 1.2;
-    ctx.strokeStyle = `rgba(255, 82, 82, ${Math.min(0.8, xAlpha)})`;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(lossIdentX - 16, lossIdentY - 10);
-    ctx.lineTo(lossIdentX + 16, lossIdentY + 10);
-    ctx.moveTo(lossIdentX + 16, lossIdentY - 10);
-    ctx.lineTo(lossIdentX - 16, lossIdentY + 10);
-    ctx.stroke();
-  }
-
-  // === LABELS ===
-  ctx.fillStyle = '#6b6b80';
-  ctx.font = '10px monospace';
-
-  // Classification path label
-  ctx.fillStyle = '#00e5ff88';
-  ctx.fillText('Class-wise Features ↑', featX + 40, featY - 20);
-
-  // Identification path label
-  ctx.fillStyle = '#ffb30088';
-  ctx.fillText('Identity-wise Features ↓', featX + 40, featY + 30);
-
-  // DGR explanation
-  ctx.fillStyle = '#ff408188';
-  ctx.font = '9px monospace';
-  ctx.fillText('∇ reversed', gradRevX - 25, gradRevY - 40);
-
-  // Legend at bottom
-  ctx.fillStyle = '#6b6b80';
-  ctx.font = '10px monospace';
-  ctx.fillText('Forward pass →', W - 180, H - 20);
-  ctx.fillText('Backward (reversed for ID) ⇠', W - 180, H - 8);
-
-  // Draw forward arrow
-  ctx.strokeStyle = '#6b6b8044';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(W - 350, H - 18);
-  ctx.lineTo(W - 200, H - 18);
-  ctx.stroke();
-  ctx.fillStyle = '#6b6b80';
-  ctx.beginPath();
-  ctx.moveTo(W - 200, H - 18);
-  ctx.lineTo(W - 208, H - 24);
-  ctx.lineTo(W - 208, H - 12);
-  ctx.closePath();
-  ctx.fill();
-
-  // Draw backward arrow (reversed) for identifier path
-  ctx.strokeStyle = '#ff408144';
-  ctx.beginPath();
-  ctx.moveTo(W - 200, H - 6);
-  ctx.lineTo(W - 350, H - 6);
-  ctx.stroke();
-  ctx.fillStyle = '#ff4081';
-  ctx.beginPath();
-  ctx.moveTo(W - 350, H - 6);
-  ctx.lineTo(W - 342, H - 12);
-  ctx.lineTo(W - 342, H + 0);
-  ctx.closePath();
-  ctx.fill();
-}
-
-function drawAnimatedConnection(ctx, x1, y1, x2, y2, color, time, offset) {
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.stroke();
-
-  // Animated dot
-  const t = ((time * 0.8 + offset * 0.5) % 1.5) / 1.5;
-  const dotX = x1 + (x2 - x1) * t;
-  const dotY = y1 + (y2 - y1) * t;
-  ctx.fillStyle = color.replace('30', '80').replace('20', '70');
-  ctx.beginPath();
-  ctx.arc(dotX, dotY, 3, 0, Math.PI * 2);
-  ctx.fill();
-}
-
-function drawNode(ctx, x, y, w, h, bgColor, borderColor, label, sublabel, glow) {
-  ctx.fillStyle = bgColor;
-  ctx.strokeStyle = borderColor;
-  ctx.lineWidth = 1.5;
-  if (glow > 0.3) {
-    ctx.shadowColor = borderColor;
-    ctx.shadowBlur = 8 * glow;
-  }
-  ctx.beginPath();
-  ctx.roundRect(x - w / 2, y - h / 2, w, h, 6);
-  ctx.fill();
-  ctx.stroke();
-  ctx.shadowColor = 'transparent';
-  ctx.shadowBlur = 0;
-
-  ctx.fillStyle = '#c8c8d4';
-  ctx.font = 'bold 10px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText(label, x, y - h / 2 - 8);
-  if (sublabel) {
-    ctx.fillStyle = '#6b6b80';
-    ctx.font = '9px monospace';
-    ctx.fillText(sublabel, x, y - h / 2 - 20);
-  }
-  ctx.textAlign = 'start';
-}
-
-function drawASIFFeatureSpace(epoch, noise) {
-  const canvas = document.getElementById('asifFeatureCanvas');
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0, 0, W, H);
-
-  const trainingProgress = epoch / 100;
-  const pad = 50;
-
-  // Background grid
-  ctx.strokeStyle = '#ffffff06';
-  ctx.lineWidth = 0.5;
-  for (let x = pad; x <= W - pad; x += 30) {
-    ctx.beginPath(); ctx.moveTo(x, pad); ctx.lineTo(x, H - pad); ctx.stroke();
-  }
-  for (let y = pad; y <= H - pad; y += 30) {
-    ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(W - pad, y); ctx.stroke();
-  }
-
-  const classes = [
-    { color: '#ff5252', cx: W * 0.25, cy: H * 0.35 },
-    { color: '#448aff', cx: W * 0.65, cy: H * 0.3 },
-    { color: '#69f0ae', cx: W * 0.45, cy: H * 0.7 },
-  ];
-
-  // Per-class scatter
-  const samplesPerClass = 20;
-  const intraClassSpread = 25 + (1 - trainingProgress) * 55; // shrinks with training
-  const identitySpread = 8 + (1 - trainingProgress) * 30; // identity scatter shrinks
-
-  const allPoints = [];
-
-  classes.forEach((cls, ci) => {
-    // Class centroid
-    ctx.fillStyle = cls.color;
-    ctx.beginPath();
-    ctx.arc(cls.cx, cls.cy, 6, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#ffffff33';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    // Samples — scattered WITHIN class
-    for (let i = 0; i < samplesPerClass; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const dist = Math.random() * intraClassSpread;
-      // Add identity-specific offset (suppressed as training progresses)
-      const idAngle = Math.random() * Math.PI * 2;
-      const idDist = Math.random() * identitySpread;
-      const sx = cls.cx + Math.cos(angle) * dist + Math.cos(idAngle) * idDist;
-      const sy = cls.cy + Math.sin(angle) * dist + Math.sin(idAngle) * idDist;
-      allPoints.push({ x: sx, y: sy, color: cls.color, class: ci });
-
-      const alpha = 0.4 + 0.3 * trainingProgress;
-      ctx.fillStyle = cls.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
-      ctx.beginPath();
-      ctx.arc(sx, sy, 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Draw translucent class boundary
-    ctx.strokeStyle = cls.color + '22';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([3, 5]);
-    ctx.beginPath();
-    ctx.arc(cls.cx, cls.cy, intraClassSpread + identitySpread, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  });
-
-  // Label
-  ctx.fillStyle = '#6b6b80';
-  ctx.font = '10px monospace';
-  ctx.fillText('Feature Space t-SNE projection', pad + 5, H - 10);
-  ctx.fillText(`Intra-class scatter: ${Math.round(intraClassSpread)}px`, W - 210, H - 10);
-}
-
-function drawASIFGradient(epoch, noise) {
-  const canvas = document.getElementById('asifGradientCanvas');
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0, 0, W, H);
-
-  const progress = epoch / 100;
-  const pad = 50;
-
-  // Axes
-  ctx.strokeStyle = '#ffffff15';
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(pad, H - pad); ctx.lineTo(W - pad, H - pad); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(pad, pad); ctx.lineTo(pad, H - pad); ctx.stroke();
-
-  // X-axis: Epoch
-  ctx.fillStyle = '#6b6b80';
-  ctx.font = '10px monospace';
-  ctx.fillText('Epoch →', W - 100, H - pad + 15);
-  ctx.fillText('Loss / λ →', pad, pad - 10);
-
-  // Plot data
-  const plotW = W - pad * 2;
-  const plotH = H - pad * 2;
-
-  // DGR λ curve (auto-adjusting)
-  ctx.strokeStyle = '#ff4081';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([]);
-  ctx.beginPath();
-  for (let i = 0; i <= 100; i++) {
-    const x = pad + (i / 100) * plotW;
-    // λ starts high (identifier doing well), drops as identifier is suppressed
-    const lid = 2.5 - (i / 100) * 1.8;
-    const lidHat = Math.log(10);
-    const lambda = Math.max(0, (lid - lidHat) / lidHat);
-    const y = pad + plotH * (1 - lambda / 2);
-    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-  }
-  ctx.stroke();
-
-  // Label λ
-  ctx.fillStyle = '#ff4081';
-  ctx.font = '10px monospace';
-  const lx = pad + progress * plotW;
-  ctx.fillText('λ (DGR)', pad + plotW * 0.5, pad + plotH * 0.3);
-
-  // Classification Loss (decreasing)
-  ctx.strokeStyle = '#00e5ff';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  for (let i = 0; i <= 100; i++) {
-    const x = pad + (i / 100) * plotW;
-    const clsLoss = 2.3 - (i / 100) * 1.5 + Math.sin(i / 8) * 0.15;
-    const y = pad + plotH * (1 - clsLoss / 2.5);
-    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-  }
-  ctx.stroke();
-  ctx.fillStyle = '#00e5ff';
-  ctx.fillText('Lcls ↓', pad + 10, pad + plotH * 0.5);
-
-  // Identification Loss (increasing — harder to identify)
-  ctx.strokeStyle = '#ffb300';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  for (let i = 0; i <= 100; i++) {
-    const x = pad + (i / 100) * plotW;
-    const idLoss = 1.0 + (i / 100) * 1.3 + Math.sin(i / 7) * 0.1;
-    const y = pad + plotH * (1 - idLoss / 2.5);
-    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-  }
-  ctx.stroke();
-  ctx.fillStyle = '#ffb300';
-  ctx.fillText('Lid ↑ (harder to ID)', pad + 10, pad + plotH * 0.75);
-
-  // Vertical line for current epoch
-  const curX = pad + progress * plotW;
-  ctx.strokeStyle = '#ffffff44';
-  ctx.lineWidth = 1;
-  ctx.setLineDash([2, 4]);
-  ctx.beginPath();
-  ctx.moveTo(curX, pad);
-  ctx.lineTo(curX, H - pad);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Dot at current position
-  ctx.fillStyle = '#ffffff';
-  ctx.beginPath();
-  ctx.arc(curX, pad + plotH * (1 - (2.3 - progress * 1.5) / 2.5), 4, 0, Math.PI * 2);
-  ctx.fill();
-}
-
-function updateASIF() {
-  const noiseSlider = document.getElementById('asifNoise');
-  const epochSlider = document.getElementById('asifEpoch');
-  const dataSizeSlider = document.getElementById('asifDataSize');
-
-  asifState.noise = parseInt(noiseSlider.value);
-  asifState.epoch = parseInt(epochSlider.value);
-  asifState.dataSize = parseInt(dataSizeSlider.value);
-
-  document.getElementById('asifNoiseVal').textContent = asifState.noise + '%';
-  document.getElementById('asifEpochVal').textContent = asifState.epoch;
-  document.getElementById('asifDataSizeVal').textContent = asifState.dataSize + 'k';
-
-  drawASIFArchitecture(asifState.epoch, asifState.noise);
-  drawASIFFeatureSpace(asifState.epoch, asifState.noise);
-  drawASIFGradient(asifState.epoch, asifState.noise);
-
-  // Update metrics
-  const progress = asifState.epoch / 100;
-  const classAcc = Math.min(95, 70 + progress * 25 - (asifState.noise / 100) * 20).toFixed(1);
-  const identAcc = Math.max(5, 95 - progress * 80 - (asifState.noise / 100) * 10).toFixed(1);
-  const lid = 2.5 - progress * 1.8;
-  const lidHat = Math.log(10);
-  const lambda = Math.max(0.01, (lid - lidHat) / lidHat);
-
-  document.getElementById('asifClassAcc').textContent = classAcc + '%';
-  document.getElementById('asifIdentAcc').textContent = identAcc + '%';
-  document.getElementById('asifDGR').textContent = lambda.toFixed(2);
-}
-
-let asifArchLoop = null;
-function animateASIFArch() {
-  drawASIFArchitecture(asifState.epoch, asifState.noise);
-  asifArchLoop = requestAnimationFrame(animateASIFArch);
-}
-
-function animateASIF() {
-  cancelAnimationFrame(asifAnimId);
-  const epochSlider = document.getElementById('asifEpoch');
-  let e = 0;
-  // Start the continuous architecture animation
-  if (!asifArchLoop) animateASIFArch();
-  function step() {
-    if (e > 100) {
-      asifAnimId = null;
-      cancelAnimationFrame(asifArchLoop);
-      asifArchLoop = null;
-      return;
-    }
-    epochSlider.value = e;
-    updateASIF();
-    e += 1.2;
-    asifAnimId = requestAnimationFrame(step);
-  }
-  asifAnimId = requestAnimationFrame(step);
-}
-
-function resetASIF() {
-  cancelAnimationFrame(asifAnimId);
-  cancelAnimationFrame(asifArchLoop);
-  asifArchLoop = null;
-  document.getElementById('asifEpoch').value = 0;
-  document.getElementById('asifNoise').value = 40;
-  document.getElementById('asifDataSize').value = 30;
-  updateASIF();
-}
-
-// ==================== THEME TOGGLE ====================
-function toggleTheme() {
-  document.body.classList.toggle('light');
-  localStorage.setItem('neural-observatory-theme', document.body.classList.contains('light') ? 'light' : 'dark');
-}
-
-// Restore saved theme on load
-(function() {
-  if (localStorage.getItem('neural-observatory-theme') === 'light') {
-    document.body.classList.add('light');
-  }
-})();
-
-// ==================== LEARN TAB DIAGRAMS ====================
-function drawFeaturePipelineDiagram() {
-  const canvas = document.getElementById('learnFeaturePipeline');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0, 0, W, H);
-
-  const boxes = [
-    { x: 30, y: H/2-35, w: 130, h: 70, label: 'Input Image', sub: '224×224×3', color: '#b388ff', icon: '🖼' },
-    { x: 200, y: H/2-40, w: 180, h: 80, label: 'ResNet-50', sub: 'Backbone (frozen)', color: '#00e5ff', icon: '🧠' },
-    { x: 430, y: H/2-30, w: 160, h: 60, label: 'Feature Vector f', sub: '2048-dim', color: '#ffb300', icon: '📊' },
-    { x: 640, y: H/2-25, w: 140, h: 50, label: 'Softmax(f)', sub: 'probability-like', color: '#69f0ae', icon: '🔄' },
-    { x: 820, y: H/2-30, w: 140, h: 60, label: 'Entropy H', sub: '−Σ p log p', color: '#ff4081', icon: '📐' },
-    { x: 1000, y: H/2-20, w: 170, h: 40, label: 'FMR Loss = −λ·H', sub: 'Regularizer', color: '#ff5252', icon: '⚖️' },
-  ];
-
-  // Arrows and animated dots
-  const time = Date.now() / 1000;
-  boxes.forEach((box, i) => {
-    // Box
-    ctx.fillStyle = '#14141f';
-    ctx.strokeStyle = box.color + '44';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.roundRect(box.x, box.y, box.w, box.h, 10);
-    ctx.fill();
-    ctx.stroke();
-
-    // Icon
-    ctx.font = '22px sans-serif';
-    ctx.fillText(box.icon, box.x + 10, box.y + 28);
-
-    // Label
-    ctx.fillStyle = box.color;
-    ctx.font = 'bold 11px monospace';
-    ctx.fillText(box.label, box.x + 40, box.y + 26);
-    ctx.fillStyle = '#6b6b80';
-    ctx.font = '9px monospace';
-    ctx.fillText(box.sub, box.x + 40, box.y + 44);
-
-    // Arrow to next
-    if (i < boxes.length - 1) {
-      const nx = boxes[i+1].x;
-      const ax = box.x + box.w;
-      const ay = box.y + box.h/2;
-      ctx.strokeStyle = '#ffffff15';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(ax, ay);
-      ctx.lineTo(nx, ay);
-      ctx.stroke();
-      // Animated dot on arrow
-      const t = ((time * 0.6 + i * 0.4) % 1.5) / 1.5;
-      const dx = ax + (nx - ax) * t;
-      ctx.fillStyle = box.color;
-      ctx.beginPath();
-      ctx.arc(dx, ay, 3, 0, Math.PI*2);
-      ctx.fill();
-    }
-  });
-
-  // Bottom annotation
-  ctx.fillStyle = '#b388ff55';
-  ctx.font = '10px monospace';
-  ctx.fillText('↑ FMR operates HERE — on the 2048-dim feature vector, NOT on raw pixels', 300, H - 20);
-}
-
-function drawTransferDiagram() {
-  const canvas = document.getElementById('learnTransferCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0, 0, W, H);
-
-  // Pretraining box
-  ctx.fillStyle = '#14141f';
-  ctx.strokeStyle = '#00e5ff44';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.roundRect(30, 20, 440, H-40, 12);
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = '#00e5ff';
-  ctx.font = 'bold 13px monospace';
-  ctx.fillText('PRETRAINING (already done)', 50, 48);
-  ctx.fillStyle = '#6b6b80';
-  ctx.font = '10px monospace';
-  ctx.fillText('Dataset: ImageNet — 1.2M images, 1000 general classes', 50, 66);
-  ctx.fillText('Examples: "dog", "car", "bird", "chair", "fish"', 50, 82);
-  ctx.fillText('Model learns: edges, shapes, textures, general visual concepts', 50, 98);
-  ctx.fillStyle = '#00e5ff66';
-  ctx.font = '9px monospace';
-  ctx.fillText('ResNet-50 has NEVER seen a CUB200 bird species image', 50, 118);
-
-  // Arrow
-  const ax = 490, ay = H/2;
-  ctx.strokeStyle = '#b388ff';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([6,3]);
-  ctx.beginPath();
-  ctx.moveTo(ax, ay);
-  ctx.lineTo(ax + 80, ay);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.fillStyle = '#b388ff';
-  ctx.font = 'bold 11px monospace';
-  ctx.fillText('TRANSFER →', ax + 10, ay - 10);
-  ctx.font = '9px monospace';
-  ctx.fillText('Copy weights', ax + 18, ay + 16);
-
-  // Fine-tuning box
-  ctx.fillStyle = '#14141f';
-  ctx.strokeStyle = '#ffb30044';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.roundRect(590, 20, 580, H-40, 12);
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = '#ffb300';
-  ctx.font = 'bold 13px monospace';
-  ctx.fillText('FINE-TUNING (what WE do + FMR)', 610, 48);
-  ctx.fillStyle = '#6b6b80';
-  ctx.font = '10px monospace';
-  ctx.fillText('Dataset: CUB200 — 6,000 images, 200 bird species', 610, 66);
-  ctx.fillText('Examples: "Indigo Bunting", "Lazuli Bunting", "Painted Bunting"', 610, 82);
-  ctx.fillText('Model adapts: general visual knowledge → fine-grained species differences', 610, 98);
-  ctx.fillStyle = '#ffb30066';
-  ctx.font = '9px monospace';
-  ctx.fillText('FMR equalizes feature magnitudes to fix ImageNet→CUB200 domain bias', 610, 118);
-
-  // FMR badge
-  ctx.fillStyle = '#b388ff22';
-  ctx.strokeStyle = '#b388ff55';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.roundRect(610, 130, 220, 28, 6);
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = '#b388ff';
-  ctx.font = 'bold 10px monospace';
-  ctx.fillText('⚡ FMR applied HERE', 625, 150);
-}
-
-function drawBirdSceneDiagram() {
-  const canvas = document.getElementById('learnBirdSceneCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0, 0, W, H);
-
-  const time = Date.now() / 1000;
-
-  // === Left: Image scene ===
-  const imgX = 30, imgY = 20, imgW = 260, imgH = H - 40;
-  ctx.fillStyle = '#14141f';
-  ctx.strokeStyle = '#b388ff33';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.roundRect(imgX, imgY, imgW, imgH, 10);
-  ctx.fill();
-  ctx.stroke();
-
-  // Blue sky background
-  const skyGrad = ctx.createLinearGradient(0, imgY, 0, imgY + imgH * 0.6);
-  skyGrad.addColorStop(0, '#4488cc');
-  skyGrad.addColorStop(1, '#88bbee');
-  ctx.fillStyle = skyGrad;
-  ctx.beginPath();
-  ctx.roundRect(imgX + 4, imgY + 4, imgW - 8, imgH * 0.55, 6);
-  ctx.fill();
-
-  // Branch
-  ctx.strokeStyle = '#6b4433';
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.moveTo(imgX - 10, imgY + imgH * 0.6);
-  ctx.quadraticCurveTo(imgX + imgW * 0.5, imgY + imgH * 0.55, imgX + imgW + 10, imgY + imgH * 0.7);
-  ctx.stroke();
-
-  // Bird silhouette on branch
-  const bx = imgX + imgW * 0.4, by = imgY + imgH * 0.38;
-  ctx.fillStyle = '#1a1a30';
-  ctx.beginPath();
-  ctx.ellipse(bx, by, 18, 11, -0.1, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(bx + 14, by - 5, 7, 0, Math.PI * 2);
-  ctx.fill();
-  // Beak
-  ctx.beginPath();
-  ctx.moveTo(bx + 20, by - 6);
-  ctx.lineTo(bx + 30, by - 4);
-  ctx.lineTo(bx + 20, by - 2);
-  ctx.closePath();
-  ctx.fill();
-
-  // Labels on image
-  ctx.fillStyle = '#ffffff88';
-  ctx.font = 'bold 9px monospace';
-  ctx.fillText('Blue Sky', imgX + imgW - 70, imgY + 30);
-  ctx.strokeStyle = '#ffffff33';
-  ctx.setLineDash([2, 3]);
-  ctx.beginPath();
-  ctx.moveTo(imgX + imgW - 45, imgY + 50);
-  ctx.lineTo(imgX + imgW - 80, imgY + 65);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  ctx.fillStyle = '#69f0ae88';
-  ctx.fillText('Beak', bx + 28, by - 18);
-  ctx.strokeStyle = '#69f0ae33';
-  ctx.setLineDash([2, 3]);
-  ctx.beginPath();
-  ctx.moveTo(bx + 28, by - 8);
-  ctx.lineTo(bx + 40, by - 22);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  // Image label
-  ctx.fillStyle = '#6b6b80';
-  ctx.font = '9px monospace';
-  ctx.fillText('Input Image', imgX + imgW/2 - 30, imgY + imgH + 16);
-
-  // === Arrow to backbone ===
-  const ax1 = imgX + imgW + 20, ay1 = H/2;
-  ctx.strokeStyle = '#ffffff20';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(ax1, ay1);
-  ctx.lineTo(ax1 + 30, ay1);
-  ctx.stroke();
-  const t1 = ((time * 0.8) % 1);
-  ctx.fillStyle = '#ffffff66';
-  ctx.beginPath();
-  ctx.arc(ax1 + t1 * 30, ay1, 3, 0, Math.PI * 2);
-  ctx.fill();
-
-  // === Center: Feature Vector ===
-  const fvX = ax1 + 50, fvY = H/2 - 50;
-  ctx.fillStyle = '#14141f';
-  ctx.strokeStyle = '#ffb30044';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.roundRect(fvX, fvY, 190, 100, 8);
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = '#ffb300';
-  ctx.font = 'bold 10px monospace';
-  ctx.fillText('Feature Vector f', fvX + 20, fvY + 20);
-
-  // Two feature bars inside
-  const barX = fvX + 10, bar1Y = fvY + 32, bar2Y = fvY + 55;
-  // f_sky bar (long, red)
-  ctx.fillStyle = '#ff525288';
-  ctx.fillRect(barX, bar1Y, 155, 14);
-  ctx.fillStyle = '#ff5252';
-  ctx.font = '9px monospace';
-  ctx.fillText('f_sky = 0.91', barX + 5, bar1Y + 11);
-
-  // f_beak bar (short, green)
-  ctx.fillStyle = '#69f0ae88';
-  ctx.fillRect(barX, bar2Y, 20, 14);
-  ctx.fillStyle = '#69f0ae';
-  ctx.font = '9px monospace';
-  ctx.fillText('f_beak = 0.12', barX + 5, bar2Y + 11);
-
-  // FMR annotation
-  ctx.fillStyle = '#ff4081';
-  ctx.font = 'italic 9px monospace';
-  ctx.fillText('FMR: "Equalize these!"', fvX + 20, fvY + 88);
-
-  // === Arrow to classifier ===
-  const ax2 = fvX + 190 + 20, ay2 = fvY + 50;
-  ctx.strokeStyle = '#ffffff20';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(ax2, ay2);
-  ctx.lineTo(ax2 + 30, ay2);
-  ctx.stroke();
-  const t2 = ((time * 0.8 + 0.3) % 1);
-  ctx.fillStyle = '#ffffff66';
-  ctx.beginPath();
-  ctx.arc(ax2 + t2 * 30, ay2, 3, 0, Math.PI * 2);
-  ctx.fill();
-
-  // === Right: Gradient outcomes ===
-  const resX = ax2 + 50, resY = H/2 - 55;
-  ctx.fillStyle = '#1a1025';
-  ctx.strokeStyle = '#b388ff44';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.roundRect(resX, resY, 260, 110, 8);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = '#b388ff';
-  ctx.font = 'bold 11px monospace';
-  ctx.fillText('Gradient Check:', resX + 12, resY + 22);
-
-  ctx.fillStyle = '#ff5252';
-  ctx.font = '10px monospace';
-  ctx.fillText('f_sky: W≈0 → CE SILENT', resX + 12, resY + 45);
-  ctx.fillText('→ FMR wins → SUPPRESSED', resX + 12, resY + 62);
-
-  ctx.fillStyle = '#69f0ae';
-  ctx.fillText('f_beak: W=+2.3 → CE FIGHTS', resX + 12, resY + 82);
-  ctx.fillText('→ CE beats FMR → AMPLIFIED', resX + 12, resY + 99);
-
-  // Big arrow from result → verdict
-  ctx.fillStyle = '#b388ff';
-  ctx.font = 'bold 15px monospace';
-  ctx.fillText('→', resX + 270, resY + 55);
-}
-
-function drawGradientPathsDiagram() {
-  const canvas = document.getElementById('learnGradientPathsCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
-  ctx.clearRect(0, 0, W, H);
-
-  // Two columns
-  const colW = (W - 80) / 2;
-  const leftX = 30, rightX = 50 + colW;
-
-  function drawColumn(ox, oy, title, titleColor, features, featureColor, verdict, verdictColor) {
-    // Box
-    ctx.fillStyle = '#14141f';
-    ctx.strokeStyle = titleColor + '33';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.roundRect(ox, oy, colW, H - 40, 10);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.fillStyle = titleColor;
-    ctx.font = 'bold 12px monospace';
-    ctx.fillText(title, ox + 14, oy + 26);
-
-    // Path: Input → Backbone → f → CE / FMR
-    const nodes = [
-      { label: 'Input', x: ox + 30, y: oy + 55 },
-      { label: 'Backbone', x: ox + 120, y: oy + 55 },
-      { label: 'f', x: ox + 220, y: oy + 55 },
-    ];
-
-    // Horizontal chain
-    nodes.forEach((n, i) => {
-      ctx.fillStyle = '#1a1a28';
-      ctx.strokeStyle = titleColor + '22';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.roundRect(n.x - 25, n.y - 12, 50, 24, 5);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#c8c8d4';
-      ctx.font = '9px monospace';
-      ctx.fillText(n.label, n.x - 14, n.y + 5);
-      if (i < nodes.length - 1) {
-        ctx.strokeStyle = '#ffffff15';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(n.x + 25, n.y);
-        ctx.lineTo(nodes[i+1].x - 25, n.y);
-        ctx.stroke();
-      }
-    });
-
-    // Split into CE and FMR paths
-    const splitX = nodes[2].x + 25;
-    const splitY = nodes[2].y;
-    const ceY = splitY - 25;
-    const fmrY = splitY + 25;
-
-    // CE branch
-    ctx.strokeStyle = titleColor;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(splitX, splitY);
-    ctx.lineTo(splitX + 30, ceY);
-    ctx.lineTo(splitX + 120, ceY);
-    ctx.stroke();
-
-    ctx.fillStyle = '#1a1a28';
-    ctx.strokeStyle = titleColor + '33';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.roundRect(splitX + 120, ceY - 14, 110, 28, 5);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = titleColor;
-    ctx.font = 'bold 9px monospace';
-    ctx.fillText(features.ceLabel, splitX + 126, ceY + 5);
-
-    // FMR branch
-    ctx.strokeStyle = '#ff4081';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(splitX, splitY);
-    ctx.lineTo(splitX + 30, fmrY);
-    ctx.lineTo(splitX + 120, fmrY);
-    ctx.stroke();
-
-    ctx.fillStyle = '#1a1a28';
-    ctx.strokeStyle = '#ff408133';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.roundRect(splitX + 120, fmrY - 14, 110, 28, 5);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = '#ff4081';
-    ctx.font = 'bold 9px monospace';
-    ctx.fillText(features.fmrLabel, splitX + 126, fmrY + 5);
-
-    // Verdict
-    const verdictY = oy + H - 60;
-    ctx.fillStyle = verdictColor + '15';
-    ctx.strokeStyle = verdictColor + '44';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.roundRect(ox + 20, verdictY - 10, colW - 40, 30, 6);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = verdictColor;
-    ctx.font = 'bold 12px monospace';
-    ctx.fillText(verdict, ox + colW/2 - 95, verdictY + 10);
-  }
-
-  drawColumn(leftX, 20,
-    'IRRELEVANT: Blue Sky Detector', '#ff5252',
-    { ceLabel: 'W≈0 → ∂CE=0 (silent)', fmrLabel: 'FMR: push DOWN' },
-    '→ FEATURE SUPPRESSED ✓', '#ff5252');
-
-  drawColumn(rightX, 20,
-    'USEFUL: Beak Curvature', '#69f0ae',
-    { ceLabel: 'W=+2.3 → ∂CE=−1.61', fmrLabel: 'FMR: push UP (helps!)' },
-    '→ FEATURE AMPLIFIED ✓', '#69f0ae');
-
-  // Center comparison
-  const centerX = W / 2;
-  ctx.fillStyle = '#b388ff';
-  ctx.font = 'bold 14px monospace';
-  ctx.fillText('VS', centerX - 12, H / 2);
-
-  // Bottom formula
-  ctx.fillStyle = '#b388ff55';
-  ctx.font = '10px monospace';
-  ctx.fillText('Rule: ∂L_total/∂f_i = (ŷ − y) × W_class,i  +  (−λ × ∂H/∂f_i)', W/2 - 260, H - 4);
-  ctx.fillText('                       ↑ CE: only nonzero if W≠0        ↑ FMR: always active', W/2 - 260, H + 12);
-}
-
-function drawLearnDiagrams() {
-  drawFeaturePipelineDiagram();
-  drawTransferDiagram();
-  drawBirdSceneDiagram();
-  drawGradientPathsDiagram();
-}
-
-// ==================== INITIALIZATION ====================
-function animateLearnLoop() {
-  drawFeaturePipelineDiagram();
-  drawBirdSceneDiagram();
-  learnLoopId = requestAnimationFrame(animateLearnLoop);
-}
-
-function init() {
-  updateFMR();
-  updateASIF();
-  // Start ASIF architecture animation loop for particle effects
-  animateASIFArch();
-  // Pre-draw learn tab diagrams
-  drawLearnDiagrams();
-}
-
-window.addEventListener('load', init);
-</script>
-
 </body>
 </html>

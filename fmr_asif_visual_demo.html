@@ -1124,6 +1124,94 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
   </div>
 </div>
 
+<!-- SECTION 5B: Weight Decay -->
+<div class="learn-section">
+  <div class="section-num">Section 05B</div>
+  <h4>How Exactly Do Weights Become Zero? — The Physics of Irrelevance</h4>
+  <p>A natural question: <strong>"What actively sets W<sub>sky</sub> to zero? Is it ReLU? Dropout? Some special mechanism?"</strong></p>
+  <p>The answer: <strong>none of the above.</strong> Weights decay to zero because <strong>nothing fights to keep them alive.</strong> The mechanism is standard <strong>L2 Weight Decay</strong> — used in virtually every neural network training setup.</p>
+
+  <div class="formula-box">
+    <span class="hl-purple" style="font-size:1.05rem;">L<sub>total</sub> = L<sub>CE</sub> − λ·H + λ<sub>W</sub>·Σ W²</span><br><br>
+    <span class="dim">             ↑ Weight Decay term</span><br>
+    <span class="dim">             Always pulls ALL weights toward zero (like friction)</span>
+  </div>
+
+  <div class="insight-callout">
+    <strong>🔑 Key Insight:</strong> Weight decay doesn't know which weights are useful. It pulls EVERY weight toward zero, all the time. Only weights that receive <strong>consistent, strong gradients</strong> from the CE loss can resist this pull. Irrelevant features get no CE gradient → nothing to fight decay → W drifts to zero.
+  </div>
+
+  <div class="compare-grid">
+    <div class="compare-card bad">
+      <h5>🔴 f<sub>sky</sub> (Blue Sky): Gradients CANCEL → W → 0</h5>
+      <div style="background:var(--deep); border-radius:6px; padding:10px 14px; margin:8px 0; font-family:var(--font-mono); font-size:0.78rem; line-height:1.7;">
+        <span style="color:#ff5252;">Batch 1 — Indigo Bunting under blue sky:</span><br>
+        &nbsp;&nbsp;∂L<sub>CE</sub>/∂W<sub>sky</sub> = (0.5−1.0) × 0.91 = <strong>−0.455</strong><br>
+        &nbsp;&nbsp;→ pushes W DOWN<br><br>
+        <span style="color:#ff5252;">Batch 2 — Lazuli Bunting under blue sky:</span><br>
+        &nbsp;&nbsp;∂L<sub>CE</sub>/∂W<sub>sky</sub> = (0.5−0.0) × 0.89 = <strong>+0.445</strong><br>
+        &nbsp;&nbsp;→ pushes W UP<br><br>
+        <span style="color:#ffb300;">Average gradient ≈ 0.0 ← CANCELS OUT!</span><br><br>
+        <span style="color:#ff5252;">But weight decay is ALWAYS running:</span><br>
+        &nbsp;&nbsp;∂(λ<sub>W</sub>·W²)/∂W = <strong>2·λ<sub>W</sub>·W</strong> (always toward zero)<br><br>
+        <span style="color:#ff5252;">NET:</span> W<sub>sky</sub> → 0 &nbsp; <strong>✓ Nothing resists decay</strong>
+      </div>
+    </div>
+    <div class="compare-card good">
+      <h5>🟢 f<sub>beak</sub> (Beak): Gradients CONSISTENT → W SURVIVES</h5>
+      <div style="background:var(--deep); border-radius:6px; padding:10px 14px; margin:8px 0; font-family:var(--font-mono); font-size:0.78rem; line-height:1.7;">
+        <span style="color:#69f0ae;">Batch 1 — Indigo Bunting (thick beak, f=0.65):</span><br>
+        &nbsp;&nbsp;∂L<sub>CE</sub>/∂W<sub>beak</sub> = (0.3−1.0) × 0.65 = <strong>−0.455</strong><br>
+        &nbsp;&nbsp;→ W INCREASES (prediction was too low)<br><br>
+        <span style="color:#69f0ae;">Batch 2 — Lazuli Bunting (thin beak, f=0.22):</span><br>
+        &nbsp;&nbsp;∂L<sub>CE</sub>/∂W<sub>beak</sub> = (0.8−0.0) × 0.22 = <strong>+0.176</strong><br>
+        &nbsp;&nbsp;→ W decreases slightly (thin beak = less Indigo)<br><br>
+        <span style="color:#69f0ae;">Average gradient is CONSISTENTLY negative</span><br>
+        &nbsp;&nbsp;→ pushes W in the SAME direction every batch<br><br>
+        <span style="color:#ffb300;">Gradient signal > Weight decay → W grows</span><br><br>
+        <span style="color:#69f0ae;">NET:</span> W<sub>beak</sub> → +2.3 &nbsp; <strong>✓ Signal overcomes decay</strong>
+      </div>
+    </div>
+  </div>
+
+  <div class="learn-canvas-wrap" style="margin-top:14px;">
+    <canvas id="learnWeightDecayCanvas" width="1200" height="260"></canvas>
+  </div>
+
+  <div class="insight-callout" style="margin-top:12px;">
+    <strong>💡 The Beautiful Simplicity:</strong> No special mechanism is needed. The asymmetry emerges naturally from the data:<br><br>
+    <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+      <tr style="border-bottom:1px solid var(--border);">
+        <th style="padding:6px; text-align:left; color:var(--text-dim);">Component</th>
+        <th style="padding:6px; text-align:center; color:#ff5252;">Effect on f<sub>sky</sub></th>
+        <th style="padding:6px; text-align:center; color:#69f0ae;">Effect on f<sub>beak</sub></th>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;">Feature values across classes</td>
+        <td style="padding:6px; text-align:center;">Same (≈0.9 for all)</td>
+        <td style="padding:6px; text-align:center;">Different (0.65 vs 0.22)</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;">CE gradient direction</td>
+        <td style="padding:6px; text-align:center;">Random (cancels)</td>
+        <td style="padding:6px; text-align:center;">Consistent (survives)</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;">Weight decay</td>
+        <td style="padding:6px; text-align:center;">Pulls → 0 (unopposed)</td>
+        <td style="padding:6px; text-align:center;">Pulls → 0 (opposed by CE)</td>
+      </tr>
+      <tr>
+        <td style="padding:6px;"><strong>Final W</strong></td>
+        <td style="padding:6px; text-align:center; color:#ff5252;"><strong>→ 0</strong></td>
+        <td style="padding:6px; text-align:center; color:#69f0ae;"><strong>→ +2.3</strong></td>
+      </tr>
+    </table>
+    <br>
+    <strong>It's not ReLU. It's not dropout. It's just weight decay + the absence of a consistent signal.</strong> Like a boat with no engine — the current (weight decay) slowly pulls it to shore (zero). Only boats with engines (consistent CE gradients) stay out at sea.
+  </div>
+</div>
+
 <!-- SECTION 6: Real Scenarios -->
 <div class="learn-section">
   <div class="section-num">Section 06</div>
@@ -2927,11 +3015,117 @@ function drawGradientPathsDiagram() {
   ctx.fillText('                       ↑ CE: only nonzero if W≠0        ↑ FMR: always active', W/2 - 260, H + 12);
 }
 
+function drawWeightDecayDiagram() {
+  const canvas = document.getElementById('learnWeightDecayCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { top: 20, right: 30, bottom: 40, left: 60 };
+  const plotW = W / 2 - pad.left - pad.right;
+  // Two plots side by side
+
+  function drawWeightPlot(ox, title, titleColor, curves) {
+    const plotH = H - pad.top - pad.bottom;
+    const cw = W / 2 - pad.right;
+
+    // Title
+    ctx.fillStyle = titleColor;
+    ctx.font = 'bold 12px monospace';
+    ctx.fillText(title, ox + pad.left, pad.top + 16);
+
+    // Axes
+    ctx.strokeStyle = '#ffffff15';
+    ctx.lineWidth = 1;
+    const ax = ox + pad.left, ay = pad.top, ah = plotH, aw = plotW;
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax, ay + ah); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(ax, ay + ah); ctx.lineTo(ax + aw, ay + ah); ctx.stroke();
+
+    // Labels
+    ctx.fillStyle = '#6b6b80';
+    ctx.font = '9px monospace';
+    ctx.fillText('Epochs →', ax + aw / 2 - 20, ay + ah + 20);
+    ctx.fillText('0', ax - 10, ay + ah + 14);
+
+    // Draw curves
+    curves.forEach(c => {
+      ctx.strokeStyle = c.color;
+      ctx.lineWidth = c.width || 2;
+      if (c.dash) ctx.setLineDash(c.dash);
+      ctx.beginPath();
+      for (let i = 0; i <= 100; i++) {
+        const t = i / 100;
+        const val = c.fn(t);
+        const sx = ax + t * aw;
+        const sy = ay + ah * (1 - (val - c.ymin) / (c.ymax - c.ymin));
+        if (i === 0) ctx.moveTo(sx, sy);
+        else ctx.lineTo(sx, sy);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Label
+      ctx.fillStyle = c.color;
+      ctx.font = '9px monospace';
+      ctx.fillText(c.label, ax + aw - 100, ay + ah * (1 - (c.fn(0.95) - c.ymin) / (c.ymax - c.ymin)));
+    });
+
+    // Zero line
+    ctx.strokeStyle = '#ffffff15';
+    ctx.setLineDash([2, 4]);
+    const zy = ay + ah * (1 - (0 - curves[0].ymin) / (curves[0].ymax - curves[0].ymin));
+    ctx.beginPath(); ctx.moveTo(ax, zy); ctx.lineTo(ax + aw, zy); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#ffffff33';
+    ctx.font = '8px monospace';
+    ctx.fillText('W=0', ax - 22, zy + 3);
+  }
+
+  // LEFT: Irrelevant feature - weight decays to zero
+  drawWeightPlot(0, 'f_sky — Irrelevant (gradients cancel)', '#ff5252', [
+    {
+      label: 'W_sky', color: '#ff5252', width: 2.5, ymin: -0.6, ymax: 0.6,
+      fn: t => 0.05 * Math.sin(t * 40) * Math.exp(-t * 3) * (1 - t * 0.3)
+    },
+    {
+      label: 'Weight Decay Pull', color: '#ffb300', width: 1.5, dash: [4, 4], ymin: -0.6, ymax: 0.6,
+      fn: t => -0.02 - t * 0.001
+    },
+  ]);
+
+  // RIGHT: Useful feature - weight grows large
+  drawWeightPlot(W / 2, 'f_beak — Useful (consistent gradients)', '#69f0ae', [
+    {
+      label: 'W_beak', color: '#69f0ae', width: 2.5, ymin: -0.5, ymax: 3.0,
+      fn: t => Math.min(2.8, 0.1 + t * 3.2 + Math.sin(t * 60) * 0.3 * Math.exp(-t * 2))
+    },
+    {
+      label: 'Weight Decay Pull', color: '#ffb300', width: 1.5, dash: [4, 4], ymin: -0.5, ymax: 3.0,
+      fn: t => -0.02
+    },
+  ]);
+
+  // Center divider
+  ctx.strokeStyle = '#ffffff10';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(W / 2, pad.top);
+  ctx.lineTo(W / 2, H - pad.bottom);
+  ctx.stroke();
+
+  // Bottom annotation
+  ctx.fillStyle = '#b388ff55';
+  ctx.font = '10px monospace';
+  ctx.fillText('Weight Decay is always ON — pulling every weight toward zero. Only consistent CE gradients can resist.', W/2 - 350, H - 4);
+}
+
 function drawLearnDiagrams() {
   drawFeaturePipelineDiagram();
   drawTransferDiagram();
   drawBirdSceneDiagram();
   drawGradientPathsDiagram();
+  drawWeightDecayDiagram();
 }
 
 // ==================== INITIALIZATION ====================
