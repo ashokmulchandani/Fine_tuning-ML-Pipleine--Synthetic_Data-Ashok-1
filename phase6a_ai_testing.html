@@ -64,7 +64,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 <nav class="topbar">
   <span class="logo">Phase 6A</span>
   <div class="dots" id="dots"></div>
-  <span class="step-label" id="stepLabel">1/12</span>
+  <span class="step-label" id="stepLabel">1/13</span>
 </nav>
 
 <div class="app">
@@ -984,6 +984,123 @@ null_mask.sum() → <span style="color:#ce9178;">1</span>  (only one True)</div>
 </table>
 
 <div class="callout" style="background:rgba(26,110,52,0.06);border:1px solid rgba(26,110,52,0.2);"><strong>🎯 The big picture:</strong> Every test line follows the same pattern: <strong>grab data</strong> (fixture → DataFrame → column → Series) → <strong>check something</strong> (.isnull(), .str.len(), .startswith()) → <strong>assert it's true</strong> (assert result, "message if wrong"). Once you see this pattern, every test in the file reads the same way.</div>
+</div></div>`},
+{id:'6A.13',title:"Why Test for Nulls If We DON'T Want Nulls?",
+fact:'The #1 beginner question: "If I assert my bad data has nulls... doesn\'t that mean I\'m ALLOWING nulls?" Answer: No — you\'re checking your test weapon is loaded before firing it.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.13</span> Why Test for Nulls If We DON'T Want Nulls?</h2>
+<p style="font-size:0.9rem;color:var(--tdim);">This is the #1 beginner question — and it's completely logical to ask. Let's walk through it.</p>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--red);margin:1.2rem 0 0.5rem;">🤔 The Confusion</h3>
+<p style="font-size:0.82rem;color:var(--tdim);margin-bottom:0.4rem;">You see this test pass:</p>
+
+<div class="code-box" style="font-size:0.78rem;">
+<span style="color:#6a9955;"># test_data.py, line 116-120</span>
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_null_instruction_rejected</span>(<span style="color:#569cd6;">self</span>, bad_instruction_data):
+    null_mask = bad_instruction_data[<span style="color:#ce9178;">"instruction"</span>].isnull()
+    <span style="color:#569cd6;">assert</span> null_mask.sum() > <span style="color:#ce9178;">0</span>      <span style="color:#6a9955;">← "Yes! Null found! Test passes!"</span>
+    <span style="color:#569cd6;">assert</span> null_mask.sum() == <span style="color:#ce9178;">1</span>     <span style="color:#6a9955;">← "Exactly 1 null! Perfect!"</span></div>
+
+<p style="font-size:0.85rem;color:var(--tdim);margin:0.75rem 0;">And you think: <em>"Wait... we're CELEBRATING that nulls exist? Aren't nulls bad? Doesn't this mean we're letting bad data through?"</em></p>
+
+<p style="font-size:0.85rem;color:var(--tdim);">The answer: <strong>No.</strong> This test is checking the TEST FIXTURE, not the training data. Two completely different things.</p>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem;">🔫 The Analogy: Testing a Weapon</h3>
+
+<div style="background:var(--raised);border-radius:10px;padding:1.25rem;margin:0.75rem 0;">
+
+<table style="width:100%;border-collapse:collapse;font-size:0.8rem;margin:0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.4rem 0.5rem;">Step</th><th style="text-align:left;padding:0.4rem 0.5rem;">Gun Range</th><th style="text-align:left;padding:0.4rem 0.5rem;">Your Tests</th></tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem 0.5rem;font-weight:700;">1</td><td style="padding:0.4rem 0.5rem;">Load the gun with bullets</td><td style="padding:0.4rem 0.5rem;font-size:0.75rem;">Create <code>bad_instruction_data</code> with nulls in it</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem 0.5rem;font-weight:700;">2</td><td style="padding:0.4rem 0.5rem;color:var(--amber);font-weight:600;">"Is the gun loaded?"</td><td style="padding:0.4rem 0.5rem;font-size:0.75rem;color:var(--amber);font-weight:600;">Test A: <code>assert null_mask.sum() > 0</code> — "Are nulls actually IN the fixture?"</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.4rem 0.5rem;font-weight:700;">3</td><td style="padding:0.4rem 0.5rem;">Fire at the target</td><td style="padding:0.4rem 0.5rem;font-size:0.75rem;">Run the schema: <code>InstructionSchema.validate(bad_data)</code></td></tr>
+<tr><td style="padding:0.4rem 0.5rem;font-weight:700;">4</td><td style="padding:0.4rem 0.5rem;color:var(--green);font-weight:600;">"Did the bullet hit?"</td><td style="padding:0.4rem 0.5rem;font-size:0.75rem;color:var(--green);font-weight:600;">Test B: <code>pytest.raises(SchemaError)</code> — "Did the schema BLOCK the nulls?"</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem;">🧪 The Two Tests — Different Jobs</h3>
+<p style="font-size:0.82rem;color:var(--tdim);margin-bottom:0.4rem;">There are TWO separate tests, each checking a DIFFERENT thing:</p>
+
+<div class="compare">
+<div class="cmp-card left"><h4 style="color:var(--amber);">Test A — Line 116 (Fixture Check)</h4>
+<div class="code-box" style="font-size:0.72rem;padding:0.5rem 0.75rem;margin:0;">
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_null_instruction_rejected</span>(<span style="color:#569cd6;">self</span>, bad_instruction_data):
+    null_mask = bad_instruction_data[<span style="color:#ce9178;">"instruction"</span>].isnull()
+    <span style="color:#569cd6;">assert</span> null_mask.sum() > <span style="color:#ce9178;">0</span>
+</div>
+<p style="font-size:0.75rem;color:var(--tdim);margin:0.5rem 0 0 0;"><strong>Question it answers:</strong><br>"Is the test fixture CORRECT? Did I actually put nulls in my bad data?"</p>
+<p style="font-size:0.75rem;color:var(--tdim);margin:0.3rem 0 0 0;"><strong>If it FAILS:</strong> The fixture accidentally has no nulls. Test B would LIE (pass for the wrong reason).</p>
+<p style="font-size:0.75rem;color:var(--tdim);margin:0.3rem 0 0 0;"><strong>Target:</strong> The FIXTURE (test setup)</p>
+</div>
+<div class="cmp-card right"><h4 style="color:var(--green);">Test B — Line 159 (Schema Check)</h4>
+<div class="code-box" style="font-size:0.72rem;padding:0.5rem 0.75rem;margin:0;">
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_null_instruction_raises_schema_error</span>(<span style="color:#569cd6;">self</span>, bad_instruction_data):
+    <span style="color:#569cd6;">with</span> pytest.raises(pa.errors.SchemaError):
+        InstructionSchema.validate(bad_instruction_data)
+</div>
+<p style="font-size:0.75rem;color:var(--tdim);margin:0.5rem 0 0 0;"><strong>Question it answers:</strong><br>"Does Pandera ACTUALLY reject nulls? Does my schema work?"</p>
+<p style="font-size:0.75rem;color:var(--tdim);margin:0.3rem 0 0 0;"><strong>If it PASSES:</strong> Schema correctly blocks null data. Pipeline is SAFE.</p>
+<p style="font-size:0.75rem;color:var(--tdim);margin:0.3rem 0 0 0;"><strong>Target:</strong> The SCHEMA (the gatekeeper)</p>
+</div>
+</div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem;">🔄 The Flow — Both Must Pass</h3>
+
+<div class="code-box" style="font-size:0.78rem;">
+<span style="color:#ce9178;">                    ┌─────────────────────────┐</span>
+<span style="color:#ce9178;">                    │  bad_instruction_data   │  ← DataFrame with deliberate nulls</span>
+<span style="color:#ce9178;">                    └───────────┬─────────────┘</span>
+<span style="color:#ce9178;">                                │</span>
+<span style="color:#ce9178;">                ┌───────────────┴───────────────┐</span>
+<span style="color:#ce9178;">                │                               │</span>
+<span style="color:#ce9178;">                ▼                               ▼</span>
+    <span style="color:#569cd6;">Test A</span> (line 116)                  <span style="color:#569cd6;">Test B</span> (line 159)
+    <span style="color:#ce9178;">"Is the weapon loaded?"</span>           <span style="color:#ce9178;">"Does the weapon FIRE?"</span>
+                │                               │
+        null_mask.sum() > <span style="color:#ce9178;">0</span>               pytest.raises(SchemaError)
+                │                               │
+        ┌───────┴───────┐               ┌───────┴───────┐
+        │               │               │               │
+        <span style="color:#569cd6;">PASS</span> ✅           <span style="color:#569cd6;">FAIL</span> ❌            <span style="color:#569cd6;">PASS</span> ✅           <span style="color:#569cd6;">FAIL</span> ❌
+        <span style="color:#ce9178;">"Yes, nulls      "Fixture        "Schema          "Schema
+        exist in       is broken —    REJECTED         did NOT
+        the fixture"   fix it first"  the nulls"       reject —
+                                                       FIX IT!"</span>
+<span style="color:#ce9178;">                                                         │</span>
+<span style="color:#6a9955;">    ┌────────────────────────────────────────────────────┘</span>
+<span style="color:#6a9955;">    │</span>
+<span style="color:#6a9955;">    ▼</span>
+<span style="color:#6a9955;">  Only if BOTH pass → pipeline is proven SAFE 🛡️</span>
+<span style="color:#6a9955;">  Test A passes + Test B passes = "Nulls exist AND schema blocks them"</span></div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem;">🏭 Does This Help in Production?</h3>
+<p style="font-size:0.82rem;color:var(--tdim);margin-bottom:0.4rem;">Short answer: <strong>No.</strong> These tests guard TRAINING, not production traffic. Here's what guards what:</p>
+
+<div style="background:var(--raised);border-radius:10px;padding:1.25rem;margin:0.75rem 0;">
+
+<table style="width:100%;border-collapse:collapse;font-size:0.78rem;margin:0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.3rem 0.5rem;">Test</th><th style="text-align:left;padding:0.3rem 0.5rem;">Guards</th><th style="text-align:left;padding:0.3rem 0.5rem;">When It Runs</th><th style="text-align:left;padding:0.3rem 0.5rem;">Analogy</th></tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--border);background:rgba(198,40,40,0.03);"><td style="padding:0.3rem 0.5rem;font-weight:600;"><code>test_data.py</code></td><td style="padding:0.3rem 0.5rem;">Training data quality</td><td style="padding:0.3rem 0.5rem;font-size:0.7rem;">Before training (once)</td><td style="padding:0.3rem 0.5rem;font-size:0.72rem;">🍳 Checks ingredients before cooking</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(184,112,0,0.03);"><td style="padding:0.3rem 0.5rem;font-weight:600;"><code>test_model.py</code></td><td style="padding:0.3rem 0.5rem;">Model behavior</td><td style="padding:0.3rem 0.5rem;font-size:0.7rem;">After training, before deploy</td><td style="padding:0.3rem 0.5rem;font-size:0.72rem;">👨‍🍳 Checks the chef knows recipes</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(26,110,52,0.03);"><td style="padding:0.3rem 0.5rem;font-weight:600;">Input guard<br><span style="font-size:0.65rem;color:var(--tmut);">(not built yet)</span></td><td style="padding:0.3rem 0.5rem;">Bad user input</td><td style="padding:0.3rem 0.5rem;font-size:0.7rem;">Every production request</td><td style="padding:0.3rem 0.5rem;font-size:0.72rem;">🛎️ Waiter checks order at the table</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout" style="background:var(--vbg);border:1px solid rgba(91,58,168,0.15);"><strong>🧠 Simple rule:</strong> <code>test_data.py</code> prevents you from <strong>training on garbage</strong>. Once the model is trained, those tests did their job and retire. Production needs its own separate layer — an input guard that checks every single user request BEFORE it reaches the model. That's Phase 6B (MLOps/Deployment). Think of it as a kitchen: test_data checks the ingredients (once, before cooking), production guards check every incoming order (every time a customer speaks).</div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.82rem;color:var(--violet);margin:1rem 0 0.4rem;">✅ The Bottom Line — One Sentence</h3>
+
+<div style="background:rgba(26,110,52,0.06);border:2px solid rgba(26,110,52,0.3);border-radius:12px;padding:1.25rem;text-align:center;margin:0.75rem 0;">
+<p style="font-size:1rem;color:var(--green);font-weight:700;margin:0;">
+"Test A proves the test data HAS nulls. Test B proves the schema BLOCKS nulls.<br>Together they prove: <em>when nulls appear, the pipeline stops them.</em>"
+</p>
+</div>
+
 </div></div>`}
 ];
 
