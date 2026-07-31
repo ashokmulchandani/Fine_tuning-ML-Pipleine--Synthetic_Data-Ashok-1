@@ -118,7 +118,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
   <button class="tab" onclick="switchTab(5)"><span class="tb-emoji">🚀</span> Deploy: YOLO vs LLM</button>
   <button class="tab" onclick="switchTab(6)"><span class="tb-emoji">🔧</span> Sensor FT</button>
   <button class="tab" onclick="switchTab(7)"><span class="tb-emoji">🛰️</span> LIDAR FT</button>
-  <button class="tab" onclick="switchTab(8)"><span class="tb-emoji">🛡️</span> Safety Prog</button>
 </div>
 
 <div id="app"></div>
@@ -437,54 +436,6 @@ const tabs=[
        {n:2,title:'TensorRT / vLLM Deploy',tag:'dpo',viz:'<span class="vz-box vz-input">☁️ LIDAR Stream</span><span class="vz-arrow">-></span><span class="vz-box vz-process">⚡ TensorRT/vLLM</span><span class="vz-arrow">-></span><span class="vz-box vz-output">📝 3D Labels</span>',code:'# Two deployment paths:\n# 1. PointNet + TensorRT -> real-time 3D detection\n# 2. vLLM API -> text-based scene descriptions\n# Both: merge_and_unload() adapter first (Phase 3.10 rule)'},
        {n:3,title:'3D Visualization',tag:'sft',viz:'<span class="vz-box vz-input">☁️ Raw LIDAR</span><span class="vz-arrow">+</span><span class="vz-box vz-input">🤖 Model Output</span><span class="vz-arrow">-></span><span class="vz-box vz-output">🌍 CloudCompare</span>',code:'# Visualize in CloudCompare/Open3D:\n# - Load original .las point cloud\n# - Overlay predicted labels (building, tree, vehicle)\n# - Export 3D mesh (.ply/.obj) for Blender/Unreal'},
        {n:4,title:'Monitor+Retrain',tag:'dpo',viz:'<span class="vz-box vz-input">📊 New Scenes</span><span class="vz-arrow">-></span><span class="vz-box vz-process">🔍 Drift?</span><span class="vz-arrow">-></span><span class="vz-box vz-output">🔄 Retrain</span>',code:'Evidently AI -> drift on new LIDAR sensor models/environments\n-> auto-retrain with new labeled scenes'},
-     ]},
-  ]
-},
-{ // 8: DRIFT RETRAINING SAFETY
-  name:'🛡️ Drift Retraining — When & How to Retrain', phases:'Fail Safe, Not Fail Silent',
-  metrics:[
-    {val:'3 Guardrails',lbl:'Safety Rules',color:'var(--red)'},
-    {val:'4 Drift Types',lbl:'When to Act',color:'var(--amber)'},
-    {val:'5 Sources',lbl:'Q&A Origins',color:'var(--green)'},
-    {val:'Automated',lbl:'CI/CD Pipeline',color:'var(--cyan)'},
-  ],
-  banner:[
-    {val:'Mix Old+New',lbl:'Guardrail 1',color:'var(--red)'},
-    {val:'Merge First',lbl:'Guardrail 2',color:'var(--red)'},
-    {val:'Not All Drift',lbl:'Guardrail 3',color:'var(--amber)'},
-    {val:'Human Decides',lbl:'Key Insight',color:'var(--cyan)'},
-  ],
-  stages:[
-    {emoji:'📋',name:'GUARDRAIL 1',time:'Catastrophic Forgetting',desc:'Mix old + new data',
-     substeps:[
-       {n:1,title:'The Problem — Model Forgets Everything',tag:'data',code:'# If new data = 500 K8s Q&A, old data = 50 medical Q&A\n# -> Model forgets Metformin entirely!\n\nBefore retrain:  "What is Metformin?" -> "Biguanide..." ✅\nAfter retrain:   "What is Metformin?" -> "K8s pod?" ❌'},
-       {n:2,title:'The Fix — Mix Old + New Data',tag:'data',code:'# ✅ RIGHT: Keep everything together\n# instruction_data.json = original_qa.json + new_qa.json\n# NOT: just new_qa.json (replaces old!)\n\n# WHERE: scripts/prepare_data.py — reads combined dataset\ndf = pd.read_json("data/instruction_data.json")\n# File has BOTH old medical Q&A and new K8s Q&A\n# DVC tracks the COMBINED file — one version, all data'},
-     ]},
-    {emoji:'🧠',name:'GUARDRAIL 2',time:'LoRA Adapter Stacking',desc:'Merge before fresh LoRA',
-     substeps:[
-       {n:1,title:'The Problem — Cannot Stack Unmerged Adapters',tag:'data',code:'# ❌ WRONG: Two unmerged adapters = undefined behavior\nmodel = PeftModel.from_pretrained(base, "adapter_v1")  # Medical\nmodel = get_peft_model(model, lora_config)              # K8s adapter\n# -> Two LoRA side paths. Which one runs? Nobody knows.'},
-       {n:2,title:'The Fix — merge_and_unload() First',tag:'sft',code:'# ✅ RIGHT: Merge old adapter, apply fresh LoRA\nmodel = PeftModel.from_pretrained(base, "adapter_v1")\nmodel = model.merge_and_unload()       # Bake BxA into Wo\nmodel = get_peft_model(model, lora_config)  # Fresh LoRA\ntrainer.train()  # Trains on medical + K8s TOGETHER\n\n# WHERE: scripts/train_stage.py — Phase 3.10 rule\n# merge_and_unload() is called before get_peft_model()'},
-     ]},
-    {emoji:'📈',name:'GUARDRAIL 3',time:'Not All Drift = Retrain',desc:'4 drift types, 4 actions',
-     substeps:[
-       {n:1,title:'Drift Type 1: New Vocabulary, Same Topic',tag:'data',code:'# Example: "K8s" instead of "Kubernetes"\n# Action: ❌ Do NOT retrain — add synonym mapping\n# Reason: Same domain knowledge. Just different words.\n# Cost: $0. No training needed.'},
-       {n:2,title:'Drift Type 2: New Topic, Same Domain',tag:'data',code:'# Example: "Docker" added to DevOps questions\n# Action: ✅ Retrain with appended data\n# Reason: Same domain (DevOps). Model should learn this.\n# Cost: ~$0.04 on T4. 4 minutes.\n# WHERE: scripts/check_drift.py detects this. You decide.'},
-       {n:3,title:'Drift Type 3: Completely New Domain',tag:'data',code:'# Example: Medical -> Cooking questions\n# Action: ⚠️ Fine-tune a SEPARATE model. Do NOT mix.\n# Reason: Medical model should not answer cooking Qs.\n# Cost: New adapter file. Keep domains separate.\n# WHERE: Human reviews drift report. Decides domain boundary.'},
-       {n:4,title:'Drift Type 4: Seasonal Drift',tag:'data',code:'# Example: Tax questions appear in April\n# Action: ⏰ Schedule retraining. Do NOT react daily.\n# Reason: Predictable, cyclical. Plan for it.\n# WHERE: GitHub Actions cron — can schedule monthly retrain.\n# Not every drift alert requires immediate action.'},
-     ]},
-    {emoji:'📥',name:'Q&A SOURCES',time:'Where New Data Comes From',desc:'5 sources ranked by quality',
-     substeps:[
-       {n:1,title:'🥇 Business Source Docs (Best)',tag:'data',code:'# Quality: HIGHEST. Cost: FREE.\n# Phase 4 pipeline: PDF -> extract -> chunk -> format\n# K8s runbook.pdf -> 200 Q&A pairs\n# Docs already exist. Just run the pipeline.\n# WHERE: Phase 4 notebook + format_instruction()'},
-       {n:2,title:'🥈 Expert Seeds -> GPT-4o Expand',tag:'sft',code:'# Quality: HIGH. Cost: ~$5-10 for 500 pairs.\n# Domain expert writes 20-50 seed pairs.\n# GPT-4o generates 500 more from seeds.\n# Human spot-checks 10% for accuracy.\n# WHERE: Phase 5b (Synthetic Data Generation)'},
-       {n:3,title:'🥉 Production Logs (Underrated)',tag:'data',code:'# Quality: HIGHEST. Cost: Expert time.\n# Collect failed queries (thumbs down, "I don't know")\n# Expert answers them ONCE.\n# Now you have real Q&A from actual user needs.\n# WHERE: vLLM logs + Evidently monitoring'},
-       {n:4,title:'🏴 Pure GPT-4o (No Source) — AVOID',tag:'data',code:'# Quality: LOW. Cost: ~$3-5.\n# No source docs. No expert review.\n# HIGH RISK: hallucinations, wrong facts, no business context.\n# Only use for prototyping, never for production data.'},
-     ]},
-    {emoji:'🚀',name:'THE FLOW',time:'Drift -> Retrain',desc:'Complete automated pipeline',
-     substeps:[
-       {n:1,title:'Step 1: Drift Detected (Daily, Auto)',tag:'ci',code:'# check_drift.py runs daily at 6am UTC\n# drift > 0.5 -> GitHub Actions fails -> you get notified\n# WHERE: .github/workflows/test-finetune.yml (on: schedule)\n# WHERE: scripts/check_drift.py (Evidently AI)'},
-       {n:2,title:'Step 2: Human Reviews What Drifted',tag:'ci',code:'# Open drift_report.html -> see which topics drifted\n# "Users asking about Docker and K8s — 50% of queries"\n# Human decides: collect new data or not?\n# WHERE: drift_report.html (generated by Evidently)'},
-       {n:3,title:'Step 3: Append + dvc repro',tag:'dvc',code:'# Collect new Q&A -> append to instruction_data.json\n# dvc add data/instruction_data.json\n# dvc push (new version tracked!)\n# dvc repro (prepare -> train -> evaluate)\n# WHERE: Terminal commands. DVC handles the rest.'},
-       {n:4,title:'Step 4: Promote to Production',tag:'mlflow',code:'# mlflow models transition medical-qa 8 --stage Staging\n# Human reviews in Staging -> promotes to Production\n# Old adapter (v7) -> Archived\n# New adapter (v8, medical+DevOps) -> Production ✅\n# WHERE: MLflow Model Registry'},
      ]},
   ]
 }
