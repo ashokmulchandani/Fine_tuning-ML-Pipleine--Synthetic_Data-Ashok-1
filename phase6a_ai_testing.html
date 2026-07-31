@@ -550,6 +550,122 @@ render:()=>`
 
 <div class="callout" style="background:var(--vbg);border:1px solid rgba(91,58,168,0.15);"><strong>💡 Key insight:</strong> Neither pytest nor Pandera is "pre-defined" in Python. They're both <code>pip install</code>'d libraries. pytest handles discovery + running; Pandera handles DataFrame validation. Your job is to define <strong>what valid looks like</strong> (the schema) and <strong>what to check</strong> (the test functions). The convention is simple: name your function <code>test_*</code> and put it in a <code>Test*</code> class → pytest finds it automatically.</div>
 
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.82rem;color:var(--amber);margin:1rem 0 0.4rem;">🔬 Anatomy — TestEdgeCases (Line 113, No Pandera, Always Runs)</h3>
+<div class="code-box" style="font-size:0.76rem;">
+<span style="color:#6a9955;"># FILE: tests/test_data.py, line 113-148</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#  ┌── NO @pytest.mark.skipif decoration → ALWAYS runs</span>
+<span style="color:#6a9955;">#  │   Why? This class never imports from pandera!</span>
+<span style="color:#6a9955;">#  │</span>
+<span style="color:#569cd6;">class</span> <span style="color:#4ec9b0;">TestEdgeCases</span>:                            <span style="color:#6a9955;">← YOU define, no decorator needed</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#      ┌── pytest discovers this (starts with "test_")</span>
+<span style="color:#6a9955;">#      │</span>
+<span style="color:#6a9955;">#      │         ┌── fixture from conftest.py (the 4-row bad data)</span>
+<span style="color:#6a9955;">#      │         │</span>
+    <span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_null_instruction_rejected</span>(<span style="color:#569cd6;">self</span>, bad_instruction_data):
+<span style="color:#6a9955;">#                                              └── fixture: 4 rows, row 2 is null ─┘</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#      ┌── plain pandas — no Pandera needed</span>
+<span style="color:#6a9955;">#      │</span>
+        null_mask = bad_instruction_data[<span style="color:#ce9178;">"instruction"</span>].isnull()
+        <span style="color:#569cd6;">assert</span> null_mask.sum() > <span style="color:#ce9178;">0</span>      <span style="color:#6a9955;">← pandas .isnull() → True for None</span>
+        <span style="color:#569cd6;">assert</span> null_mask.sum() == <span style="color:#ce9178;">1</span>     <span style="color:#6a9955;">← exactly 1 null expected</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#</span>
+    <span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_empty_output_rejected</span>(<span style="color:#569cd6;">self</span>, bad_instruction_data):
+        empty_mask = bad_instruction_data[<span style="color:#ce9178;">"output"</span>].str.len() == <span style="color:#ce9178;">0</span>
+        <span style="color:#569cd6;">assert</span> empty_mask.sum() > <span style="color:#ce9178;">0</span>    <span style="color:#6a9955;">← pandas .str.len() → finds empty string</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#</span>
+    <span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_clean_data_passes_basic_checks</span>(<span style="color:#569cd6;">self</span>, sample_instruction_data):
+        <span style="color:#569cd6;">assert</span> sample_instruction_data[<span style="color:#ce9178;">"instruction"</span>].notna().all()
+        <span style="color:#569cd6;">assert</span> sample_instruction_data[<span style="color:#ce9178;">"output"</span>].notna().all()
+        <span style="color:#569cd6;">assert</span> (sample_instruction_data[<span style="color:#ce9178;">"instruction"</span>].str.len() > <span style="color:#ce9178;">0</span>).all()
+<span style="color:#6a9955;">#      └── plain pandas ─┘  └── not a single import from pandera! ─┘</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#  🛠️ Tools used: pandas .isnull(), .notna(), .str.len(), plain assert</span>
+<span style="color:#6a9955;">#  🔌 Dependencies: ONLY pandas (always installed)</span>
+<span style="color:#6a9955;">#  🏷️  @skipif: NOT needed — runs even without pip install pandera</span></div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.82rem;color:var(--red);margin:1rem 0 0.4rem;">🔬 Anatomy — TestFailureModes (Line 156, Pandera Required, Gated)</h3>
+<div class="code-box" style="font-size:0.76rem;">
+<span style="color:#6a9955;"># FILE: tests/test_data.py, line 155-191</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#  ┌── @skipif gates this class — if Pandera is missing, skip all 4 tests</span>
+<span style="color:#6a9955;">#  │</span>
+<span style="color:#569cd6;">@pytest.mark.skipif</span>(<span style="color:#569cd6;">not</span> PANDERA_AVAILABLE, reason=<span style="color:#ce9178;">"pandera not installed"</span>)
+<span style="color:#569cd6;">class</span> <span style="color:#4ec9b0;">TestFailureModes</span>:                         <span style="color:#6a9955;">← YOU define, WITH skipif gate</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#  TEST A — Uses BOTH pytest.raises() AND pa.errors.SchemaError</span>
+<span style="color:#6a9955;">#      ┌── pytest discovers this</span>
+<span style="color:#6a9955;">#      │         ┌── fixture: the 4-row bad data</span>
+<span style="color:#6a9955;">#      │         │</span>
+    <span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_null_instruction_raises_schema_error</span>(<span style="color:#569cd6;">self</span>, bad_instruction_data):
+        <span style="color:#569cd6;">with</span> pytest.raises(pa.errors.SchemaError):    <span style="color:#6a9955;">← pandera's error class!</span>
+            InstructionSchema.validate(bad_instruction_data)
+<span style="color:#6a9955;">#           └── Pandera's method ─┘</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#  The flow: "I EXPECT this to fail. If it doesn't fail → test fails."</span>
+<span style="color:#6a9955;">#  pytest.raises() is like a try/except: catches the error → test PASSES.</span>
+<span style="color:#6a9955;">#  If no error is raised → pytest.raises() FAILS the test.</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#  TEST B — Creates data ON THE FLY (no fixture needed)</span>
+    <span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_empty_string_raises_schema_error</span>(<span style="color:#569cd6;">self</span>):
+<span style="color:#6a9955;">#      └── NO fixture parameter! Data is built inline.</span>
+        df = pd.DataFrame([{
+            <span style="color:#ce9178;">"instruction"</span>: <span style="color:#ce9178;">""</span>,                    <span style="color:#6a9955;">← empty string → should FAIL schema</span>
+            <span style="color:#ce9178;">"input"</span>: <span style="color:#ce9178;">""</span>,
+            <span style="color:#ce9178;">"output"</span>: <span style="color:#ce9178;">"Some answer"</span>
+        }])
+        <span style="color:#569cd6;">with</span> pytest.raises(pa.errors.SchemaError):
+            InstructionSchema.validate(df)      <span style="color:#6a9955;">← should REJECT empty instruction</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#  TEST C — Edge case: what about ZERO rows?</span>
+    <span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_zero_rows_is_valid</span>(<span style="color:#569cd6;">self</span>):
+        df = pd.DataFrame({<span style="color:#ce9178;">"instruction"</span>: [], <span style="color:#ce9178;">"input"</span>: [], <span style="color:#ce9178;">"output"</span>: []})
+        <span style="color:#569cd6;">assert</span> set(df.columns) == {<span style="color:#ce9178;">"instruction"</span>, <span style="color:#ce9178;">"input"</span>, <span style="color:#ce9178;">"output"</span>}
+<span style="color:#6a9955;">#      └── plain Python set comparison — not even pandas, just assert!</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#  🛠️ Tools used: pytest.raises(), pa.errors.SchemaError, Schema.validate()</span>
+<span style="color:#6a9955;">#  🔌 Dependencies: pytest + pandera (BOTH needed)</span>
+<span style="color:#6a9955;">#  🏷️  @skipif: REQUIRED — would crash without pip install pandera</span></div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.82rem;color:var(--cyan);margin:1rem 0 0.4rem;">🔬 Anatomy — TestInstructionFormat (Line 198, No Pandera, Always Runs)</h3>
+<div class="code-box" style="font-size:0.76rem;">
+<span style="color:#6a9955;"># FILE: tests/test_data.py, line 198-217</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#  ┌── NO @pytest.mark.skipif — uses only Python built-ins (str, len, in)</span>
+<span style="color:#6a9955;">#  │</span>
+<span style="color:#569cd6;">class</span> <span style="color:#4ec9b0;">TestInstructionFormat</span>:                     <span style="color:#6a9955;">← YOU define, no decorator needed</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#      ┌── fixture: the 3 clean rows from conftest.py</span>
+<span style="color:#6a9955;">#      │</span>
+    <span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_instructions_start_with_marker</span>(<span style="color:#569cd6;">self</span>, sample_instruction_data):
+        <span style="color:#569cd6;">for</span> inst <span style="color:#569cd6;">in</span> sample_instruction_data[<span style="color:#ce9178;">"instruction"</span>]:
+            <span style="color:#569cd6;">assert</span> inst.startswith(<span style="color:#ce9178;">"### Instruction:"</span>)
+<span style="color:#6a9955;">#                 └── Python str method, zero dependencies ─┘</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#</span>
+    <span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_instructions_end_with_response_marker</span>(<span style="color:#569cd6;">self</span>, sample_instruction_data):
+        <span style="color:#569cd6;">for</span> inst <span style="color:#569cd6;">in</span> sample_instruction_data[<span style="color:#ce9178;">"instruction"</span>]:
+            <span style="color:#569cd6;">assert</span> <span style="color:#ce9178;">"### Response:"</span> <span style="color:#569cd6;">in</span> inst
+<span style="color:#6a9955;">#                 └── Python "in" operator — works everywhere ─┘</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#</span>
+    <span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_outputs_are_substantial</span>(<span style="color:#569cd6;">self</span>, sample_instruction_data):
+        <span style="color:#569cd6;">for</span> output <span style="color:#569cd6;">in</span> sample_instruction_data[<span style="color:#ce9178;">"output"</span>]:
+            <span style="color:#569cd6;">assert</span> len(output) > <span style="color:#ce9178;">20</span>
+<span style="color:#6a9955;">#                 └── Python len() — no library needed ─┘</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#  🛠️ Tools used: .startswith(), "in" operator, len() — ALL built into Python</span>
+<span style="color:#6a9955;">#  🔌 Dependencies: NONE beyond Python itself</span>
+<span style="color:#6a9955;">#  🏷️  @skipif: NOT needed — runs on ANY machine with Python 3.x</span></div>
+
+<div class="callout" style="background:rgba(26,110,52,0.06);border:1px solid rgba(26,110,52,0.2);"><strong>🧩 The 4 classes — summary:</strong> <code>TestHappyPath</code> + <code>TestFailureModes</code> need Pandera → gated with <code>@skipif</code>. <code>TestEdgeCases</code> + <code>TestInstructionFormat</code> use plain Python/pandas → always run. The gate is NOT "is this class important?" — it's "does this class import from Pandera?"</div>
+
 <h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem;">🔧 What is a "Fixture" and Why Is It Called That?</h3>
 <p style="font-size:0.82rem;color:var(--tdim);margin-bottom:0.6rem;">The word comes from <strong>manufacturing</strong> — a fixture is a tool that <strong>holds something in place</strong> so you can work on it. Think vise on a workbench 🪚. In testing: the fixture "clamps" your test data ready, so your test code (the "work") stays clean.</p>
 
