@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Safety Programming: Fail Safe, Not Fail Silent</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f9fc;
+  --card: #fff;
+  --border: #dde0e6;
+  --text: #1a1d23;
+  --tdim: #4a4f5b;
+  --tmut: #8b909b;
+  --violet: #5b3aa8;
+  --vbg: #f3effc;
+  --green: #1a6e34;
+  --gBg: #e8f5e9;
+  --amber: #b87000;
+  --aBg: #fff8e1;
+  --red: #c62828;
+  --rBg: #ffebee;
+  --cyan: #007a99;
+  --cBg: #e0f7fa;
+  --magenta: #9e2a6b;
+  --mBg: #fce4ec;
+  --blue: #2979ff;
+  --bBg: #e3f2fd;
+  --orange: #e65100;
+  --oBg: #fff3e0;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;overflow-x:hidden;}
+
+.app{max-width:1050px;margin:0 auto;padding:1.5rem;}
+
+/* ── HEADER ── */
+.header{text-align:center;padding:1.5rem 0 0.5rem;}
+.header .title-row{display:flex;align-items:center;justify-content:center;gap:0.6rem;margin-bottom:0.5rem;flex-wrap:wrap;}
+.header .mega-emoji{font-size:3.2rem;animation:float 3s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+.header .shield-icon{font-size:2.8rem;animation:pulseShield 2s ease-in-out infinite;}
+@keyframes pulseShield{0%,100%{transform:scale(1);}50%{transform:scale(1.12);}}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.8rem;font-weight:700;color:var(--violet);}
+.header .subtitle{color:var(--tdim);font-size:0.9rem;margin-top:0.15rem;max-width:600px;margin-left:auto;margin-right:auto;}
+
+/* ── HERO BANNER ── */
+.hero-banner{background:linear-gradient(135deg, var(--vbg) 0%, #ede7f6 50%, #e8eaf6 100%);border:1px solid rgba(91,58,168,0.12);border-radius:20px;padding:1.5rem 2rem;margin:1rem 0;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;justify-content:center;}
+.hero-banner .hero-emoji{font-size:4rem;animation:float 3.5s ease-in-out infinite;}
+.hero-banner .hero-text{flex:1;min-width:250px;}
+.hero-banner .hero-text h2{font-family:'Space Grotesk',sans-serif;font-size:1.3rem;color:var(--violet);margin-bottom:0.3rem;}
+.hero-banner .hero-text p{font-size:0.85rem;color:var(--tdim);line-height:1.5;}
+.hero-banner .hero-stat{text-align:center;background:var(--card);border-radius:14px;padding:1rem 1.5rem;box-shadow:0 2px 12px rgba(0,0,0,0.04);}
+.hero-banner .hero-stat .hs-val{font-family:'Space Grotesk',sans-serif;font-size:2rem;font-weight:700;color:var(--red);}
+.hero-banner .hero-stat .hs-lbl{font-size:0.65rem;color:var(--tmut);text-transform:uppercase;letter-spacing:0.06em;}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:0.3rem;justify-content:center;margin:1.2rem 0 0.8rem;flex-wrap:wrap;}
+.tab{font-family:'Space Grotesk',sans-serif;font-size:0.68rem;font-weight:600;padding:0.55em 1.3em;border:2px solid var(--border);border-radius:100px;background:var(--card);color:var(--tmut);cursor:pointer;transition:0.18s;display:flex;align-items:center;gap:0.35em;}
+.tab:hover{border-color:var(--violet);color:var(--violet);transform:translateY(-1px);}
+.tab.active{background:var(--violet);border-color:var(--violet);color:#fff;box-shadow:0 4px 16px rgba(91,58,168,0.25);}
+.tab .tb-emoji{font-size:1rem;}
+
+/* ── COMPARISON TABLE ── */
+.comparison-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin:1rem 0;}
+.comparison-card h3{font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin-bottom:0.75rem;text-align:center;text-transform:uppercase;letter-spacing:0.1em;}
+.tbl{width:100%;border-collapse:collapse;font-size:0.78rem;}
+.tbl thead th{font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--tmut);padding:0.5rem 0.6rem;border-bottom:2px solid var(--border);text-align:center;background:var(--bg);}
+.tbl thead th:first-child{border-radius:8px 0 0 0;}
+.tbl thead th:last-child{border-radius:0 8px 0 0;}
+.tbl tbody td{padding:0.55rem 0.6rem;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle;}
+.tbl tbody td:first-child{text-align:left;font-weight:600;font-size:0.72rem;}
+.tbl tbody tr{transition:0.15s;}
+.tbl tbody tr:hover{background:var(--vbg);}
+.tbl .bad{color:var(--red);font-weight:600;}
+.tbl .good{color:var(--green);font-weight:600;}
+.tbl .tag-danger{display:inline-block;background:var(--rBg);color:var(--red);padding:2px 10px;border-radius:100px;font-size:0.6rem;font-weight:600;}
+.tbl .tag-safe{display:inline-block;background:var(--gBg);color:var(--green);padding:2px 10px;border-radius:100px;font-size:0.6rem;font-weight:600;}
+
+/* ── PIPELINE (4 RULES) ── */
+.pipeline-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.5rem;margin:1rem 0;}
+.pipeline-label{font-family:'Space Grotesk',sans-serif;font-size:0.55rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--tmut);text-align:center;margin-bottom:1rem;}
+
+.pipeline{display:flex;align-items:flex-start;justify-content:center;gap:0;flex-wrap:wrap;}
+.pipe-stage{text-align:center;padding:1rem 1rem;border-radius:14px;cursor:pointer;transition:0.2s;min-width:140px;max-width:180px;border:2px solid var(--border);background:rgba(255,255,255,0.5);position:relative;}
+.pipe-stage:hover{border-color:var(--violet);transform:translateY(-4px);box-shadow:0 8px 28px rgba(91,58,168,0.12);}
+.pipe-stage.active-stage{border-color:var(--violet);background:var(--vbg);box-shadow:0 0 0 5px rgba(91,58,168,0.07);}
+.pipe-stage .st-emoji{font-size:2.2rem;display:block;margin-bottom:0.4rem;}
+.pipe-stage .st-name{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;}
+.pipe-stage .st-badge{display:inline-block;font-size:0.5rem;padding:2px 8px;border-radius:100px;margin-top:0.3rem;font-weight:600;}
+.pipe-stage .st-badge.danger{background:var(--rBg);color:var(--red);}
+.pipe-stage .st-badge.safe{background:var(--gBg);color:var(--green);}
+
+.pipe-arrow{display:flex;align-items:center;padding:0 0.5rem;color:var(--violet);font-size:1.8rem;font-weight:300;margin-top:1.2rem;animation:pulse 1.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:0.25;}50%{opacity:1;}}
+
+/* ── SUBSTEPS ── */
+.substeps{background:var(--vbg);border:1px solid var(--violet);border-radius:12px;padding:1.25rem;margin:1.25rem 0 0;display:none;}
+.substeps.show{display:block;animation:slideDown 0.35s ease;}
+@keyframes slideDown{from{opacity:0;transform:translateY(-12px);}to{opacity:1;transform:translateY(0);}}
+.sec-arrow.rotated{transform:rotate(90deg);}
+.substeps h4{font-family:'Space Grotesk',sans-serif;font-size:0.78rem;color:var(--violet);margin-bottom:0.75rem;}
+.substep-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;}
+.substep{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0.85rem;transition:0.2s;cursor:default;}
+.substep:hover{border-color:var(--violet);box-shadow:0 2px 12px rgba(91,58,168,0.06);}
+.substep .ss-num{font-family:'Space Grotesk',sans-serif;font-size:0.55rem;color:var(--violet);font-weight:700;letter-spacing:0.06em;}
+.substep .ss-title{font-weight:600;font-size:0.78rem;margin:0.15rem 0 0.3rem;}
+.substep .ss-explanation{font-size:0.65rem;color:var(--tdim);line-height:1.5;}
+.substep .ss-code{font-family:'JetBrains Mono','Space Grotesk',monospace;font-size:0.58rem;color:var(--tdim);background:rgba(0,0,0,0.025);padding:0.5rem 0.6rem;border-radius:6px;margin-top:0.4rem;white-space:pre-wrap;line-height:1.5;overflow-x:auto;border-left:3px solid var(--violet);}
+.ss-code .kw{color:var(--magenta);}
+.ss-code .cm{color:var(--tmut);font-style:italic;}
+.ss-code .fn{color:var(--blue);}
+.ss-code .str{color:var(--green);}
+.substep .ss-analogy{font-size:0.58rem;color:var(--cyan);margin-top:0.4rem;padding:0.35rem 0.6rem;background:var(--cBg);border-radius:6px;font-style:italic;}
+
+/* ── SUMMARY TABLE ── */
+.summary-table-wrap{overflow-x:auto;margin:1rem 0;}
+.summary-table{width:100%;border-collapse:collapse;font-size:0.7rem;background:var(--card);border-radius:14px;overflow:hidden;border:1px solid var(--border);}
+.summary-table thead th{font-size:0.55rem;letter-spacing:0.07em;text-transform:uppercase;color:var(--tmut);padding:0.55rem 0.5rem;border-bottom:2px solid var(--border);text-align:center;background:var(--bg);white-space:nowrap;}
+.summary-table thead th:first-child{text-align:left;padding-left:0.8rem;}
+.summary-table tbody td{padding:0.5rem 0.5rem;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle;}
+.summary-table tbody td:first-child{text-align:left;font-weight:600;font-size:0.7rem;white-space:nowrap;}
+.summary-table tbody tr{transition:0.15s;}
+.summary-table tbody tr:hover{background:var(--vbg);}
+.summary-table tbody tr:last-child td{border-bottom:none;}
+.rule-dot{display:inline-block;width:18px;height:18px;border-radius:50%;line-height:18px;font-size:0.6rem;font-weight:700;}
+.rule-dot.yes{background:var(--gBg);color:var(--green);}
+.rule-dot.no{background:transparent;color:var(--tmut);opacity:0.3;}
+.summary-table .col-rule1{background:rgba(26,110,52,0.03);}
+.summary-table .col-rule2{background:rgba(91,58,168,0.03);}
+.summary-table .col-rule3{background:rgba(0,122,153,0.03);}
+.summary-table .col-rule4{background:rgba(184,112,0,0.03);}
+.summary-table thead .th-rule1{color:var(--green);}
+.summary-table thead .th-rule2{color:var(--violet);}
+.summary-table thead .th-rule3{color:var(--cyan);}
+.summary-table thead .th-rule4{color:var(--amber);}
+
+.pattern-summary-badge{display:inline-block;font-size:0.52rem;padding:2px 8px;border-radius:100px;font-weight:600;margin-left:0.3rem;}
+.pattern-summary-badge.r1{background:var(--gBg);color:var(--green);}
+.pattern-summary-badge.r2{background:var(--vbg);color:var(--violet);}
+.pattern-summary-badge.r3{background:var(--cBg);color:var(--cyan);}
+.pattern-summary-badge.r4{background:var(--aBg);color:var(--amber);}
+
+/* ── PATTERNS GRID ── */
+.patterns-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;margin:1rem 0;}
+.pattern-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.2rem;text-align:center;transition:0.2s;cursor:pointer;}
+.pattern-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(0,0,0,0.08);border-color:var(--violet);}
+.pattern-card .pc-emoji{font-size:2.5rem;display:block;margin-bottom:0.5rem;}
+.pattern-card .pc-name{font-family:'Space Grotesk',sans-serif;font-size:0.75rem;font-weight:700;color:var(--violet);}
+.pattern-card .pc-use{font-size:0.6rem;color:var(--tdim);margin-top:0.2rem;}
+.pattern-card .pc-safety{font-size:0.58rem;color:var(--green);margin-top:0.3rem;font-weight:600;padding:3px 10px;background:var(--gBg);border-radius:100px;display:inline-block;}
+
+/* ── FLOW DIAGRAM ── */
+.flow-row{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;margin:1rem 0;padding:1rem;}
+.flow-box{background:var(--card);border:2px solid;border-radius:12px;padding:1rem 1.2rem;text-align:center;min-width:120px;transition:0.2s;}
+.flow-box.fb-danger{border-color:var(--red);background:var(--rBg);}
+.flow-box.fb-process{border-color:var(--violet);background:var(--vbg);}
+.flow-box.fb-safe{border-color:var(--green);background:var(--gBg);}
+.flow-box .fb-emoji{font-size:1.8rem;display:block;}
+.flow-box .fb-label{font-family:'Space Grotesk',sans-serif;font-size:0.65rem;font-weight:700;margin-top:0.2rem;}
+.flow-arrow-big{font-size:2rem;padding:0 0.5rem;color:var(--violet);animation:pulse 1.4s ease-in-out infinite;}
+.flow-arrow-danger{font-size:2rem;padding:0 0.5rem;color:var(--red);}
+
+/* ── CALLOUT ── */
+.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:12px;padding:0.8rem 1.2rem;margin:1rem 0;font-size:0.8rem;text-align:center;display:flex;align-items:center;gap:0.5rem;justify-content:center;}
+.callout.warn{background:var(--aBg);border-color:rgba(184,112,0,0.2);}
+.callout.info{background:var(--bBg);border-color:rgba(41,121,255,0.15);}
+.callout .co-emoji{font-size:1.3rem;}
+
+/* ── METRICS ── */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;margin:1rem 0;}
+.metric{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center;transition:0.2s;}
+.metric:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,0.05);}
+.metric .val{font-family:'Space Grotesk',sans-serif;font-size:1.3rem;font-weight:700;}
+.metric .lbl{font-size:0.6rem;color:var(--tmut);margin-top:0.15rem;text-transform:uppercase;letter-spacing:0.06em;}
+
+/* ── PYTHON LIMITS TABLE ── */
+.lang-table{width:100%;border-collapse:collapse;font-size:0.75rem;margin:1rem 0;}
+.lang-table th{font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--tmut);padding:0.5rem;border-bottom:2px solid var(--border);text-align:center;background:var(--bg);}
+.lang-table td{padding:0.55rem 0.5rem;border-bottom:1px solid var(--border);text-align:center;}
+.lang-table tr:hover{background:var(--vbg);}
+.lang-table .check{color:var(--green);font-weight:700;font-size:1rem;}
+.lang-table .cross{color:var(--red);font-weight:700;font-size:1rem;}
+.lang-table .partial{color:var(--amber);font-weight:700;}
+
+/* ── NAV BUTTONS ── */
+.nav-row{display:flex;justify-content:center;align-items:center;gap:0.75rem;margin:1.25rem 0;}
+.nav-btn{font-family:'Space Grotesk',sans-serif;font-size:0.68rem;font-weight:600;padding:0.5em 1.3em;border:2px solid var(--border);border-radius:100px;background:var(--card);color:var(--text);cursor:pointer;transition:0.15s;}
+.nav-btn:hover{border-color:var(--violet);color:var(--violet);}
+.nav-btn:disabled{opacity:0.25;cursor:not-allowed;}
+
+/* ── QUIZ / INTERACTIVE ── */
+.quiz-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.25rem;margin:1rem 0;text-align:center;}
+.quiz-card h4{font-family:'Space Grotesk',sans-serif;font-size:0.8rem;color:var(--violet);margin-bottom:0.5rem;}
+.quiz-options{display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;margin:0.5rem 0;}
+.quiz-opt{font-family:'Space Grotesk',sans-serif;font-size:0.68rem;font-weight:600;padding:0.5em 1.2em;border:2px solid var(--border);border-radius:100px;background:var(--card);cursor:pointer;transition:0.15s;}
+.quiz-opt:hover{border-color:var(--violet);}
+.quiz-opt.correct{background:var(--gBg);border-color:var(--green);color:var(--green);}
+.quiz-opt.wrong{background:var(--rBg);border-color:var(--red);color:var(--red);}
+.quiz-feedback{font-size:0.75rem;margin-top:0.5rem;min-height:1.5rem;font-weight:500;}
+
+/* ── GLOW ANIMATION ── */
+@keyframes glowSafe{0%,100%{box-shadow:0 0 8px rgba(26,110,52,0.2);}50%{box-shadow:0 0 20px rgba(26,110,52,0.4);}}
+@keyframes glowDanger{0%,100%{box-shadow:0 0 8px rgba(198,40,40,0.2);}50%{box-shadow:0 0 20px rgba(198,40,40,0.4);}}
+.glow-safe{animation:glowSafe 2s ease-in-out infinite;}
+.glow-danger{animation:glowDanger 1.5s ease-in-out infinite;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .pipeline{flex-direction:column;align-items:center;}
+  .pipe-arrow{transform:rotate(90deg);margin:0;}
+  .metrics{grid-template-columns:1fr 1fr;}
+  .substep-grid{grid-template-columns:1fr;}
+  .patterns-grid{grid-template-columns:1fr 1fr;}
+  .flow-row{flex-direction:column;gap:0.5rem;}
+  .flow-arrow-big,.flow-arrow-danger{transform:rotate(90deg);}
+  .hero-banner{flex-direction:column;text-align:center;}
+}
+@media(max-width:480px){
+  .patterns-grid{grid-template-columns:1fr;}
+  .metrics{grid-template-columns:1fr;}
+  .tbl{font-size:0.65rem;}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<!-- ═══════════════ NAV LINK ═══════════════ -->
+<div style="text-align:center;padding-top:0.5rem;">
+  <a href="https://ashokmulchandani.github.io/CUDA-GPU-Colab-Computer-Vision-Project-Ashok-1/"
+     style="font-family:'Space Grotesk',sans-serif;font-size:0.65rem;font-weight:600;color:var(--blue);text-decoration:none;padding:0.4em 1em;border:2px solid var(--blue);border-radius:100px;transition:0.15s;display:inline-flex;align-items:center;gap:0.35em;"
+     onmouseover="this.style.background='var(--blue)';this.style.color='#fff';"
+     onmouseout="this.style.background='transparent';this.style.color='var(--blue)';">
+    ← Back to CUDA GPU & Computer Vision Projects
+  </a>
+</div>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header class="header">
+  <div class="title-row">
+    <span class="mega-emoji">🛡️</span>
+    <h1>Safety Programming: Fail Safe, Not Fail Silent</h1>
+    <span class="shield-icon">⚠️</span>
+  </div>
+  <p class="subtitle">Writing code where failure kills people, not just errors in a log. Click any stage to explore.</p>
+</header>
+
+<!-- ═══════════════ HERO BANNER ═══════════════ -->
+<div class="hero-banner">
+  <span class="hero-emoji">🧠</span>
+  <div class="hero-text">
+    <h2>The One Rule That Changes Everything</h2>
+    <p><strong>Normal code:</strong> "Something broke? Log it, maybe restart, move on."<br>
+    <strong>Safety code:</strong> "Something broke? Go to the <span style="color:var(--green);font-weight:700;">safest possible state</span>,
+    <span style="color:var(--red);font-weight:700;">scream for help</span>, and never guess."</p>
+  </div>
+  <div class="hero-stat">
+    <div class="hs-val">0</div>
+    <div class="hs-lbl">Acceptable Silent Failures</div>
+  </div>
+</div>
+
+<!-- ═══════════════ TABS ═══════════════ -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab(0)"><span class="tb-emoji">📊</span> Normal vs Safety</button>
+  <button class="tab" onclick="switchTab(1)"><span class="tb-emoji">🛡️</span> The 4 Rules</button>
+  <button class="tab" onclick="switchTab(2)"><span class="tb-emoji">🔷</span> Design Patterns</button>
+  <button class="tab" onclick="switchTab(3)"><span class="tb-emoji">🔍</span> The Flow</button>
+  <button class="tab" onclick="switchTab(4)"><span class="tb-emoji">🐍</span> Python's Limits</button>
+  <button class="tab" onclick="switchTab(5)"><span class="tb-emoji">🧪</span> Test Yourself</button>
+  <button class="tab" onclick="switchTab(6)"><span class="tb-emoji">🐍</span> Python OOP Basics</button>
+</div>
+
+<div id="app-content"></div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+
+const tabs = [
+
+// ── TAB 0: NORMAL VS SAFETY ──
+{
+  name: '📊 Normal Python vs Safety Python',
+  subtitle: 'The mindset shift in one table',
+  type: 'comparison',
+  metrics: [
+    {val:'Fail Loud',lbl:'Safety Rule #1',color:'var(--green)'},
+    {val:'Guard Inputs',lbl:'Safety Rule #2',color:'var(--violet)'},
+    {val:'Track Changes',lbl:'Safety Rule #3',color:'var(--cyan)'},
+    {val:'Redundancy',lbl:'Safety Rule #4',color:'var(--amber)'},
+  ],
+  comparison: {
+    headers: ['Scenario', '❌ Normal Python', '✅ Safety Python', 'Why It Matters'],
+    rows: [
+      ['Error Handling', '<span class="tag-danger">try: thing(); except: pass</span>', '<span class="tag-safe">try: thing(); except: log_critical(); escalate(); fail_safe()</span>', 'Silent failures kill. Loud failures save.'],
+      ['System Crash', '<span class="tag-danger">If it crashes, restart it</span>', '<span class="tag-safe">It must never crash. Predictable failure modes only.</span>', 'A plane cannot "restart" mid-flight.'],
+      ['Data Access', '<span class="tag-danger">x = data["key"] — KeyError? Who cares</span>', '<span class="tag-safe">x = data.get("key", SAFE_DEFAULT)</span>', 'Every access guarded. No surprises.'],
+      ['Deployment', '<span class="tag-danger">Push to prod, fix later</span>', '<span class="tag-safe">Every path tested. MC/DC coverage.</span>', 'You cannot patch a car\'s brakes after the crash.'],
+      ['State Changes', '<span class="tag-danger">mode = "auto" — whoever, whenever</span>', '<span class="tag-safe">mode = set_mode("auto", operator, reason)</span>', 'Every change is tracked and auditable.'],
+      ['Sensors', '<span class="tag-danger">One sensor, one reading</span>', '<span class="tag-safe">Three sensors, majority vote</span>', 'No single failure should cause catastrophe.'],
+    ]
+  }
+},
+
+// ── TAB 1: THE 4 RULES ──
+{
+  name: '🛡️ The 4 Rules of Safety Programming',
+  subtitle: 'Click each rule to see code examples and real-world analogies',
+  type: 'pipeline',
+  stages: [
+    {
+      emoji:'🔊', name:'FAIL LOUD', badge:'Rule 1', badgeClass:'safe',
+      substeps:[
+        {
+          n:'❌ BAD', title:'Fail Silent — The Killer Pattern',
+          explanation:'When an error happens but the code ignores it, the system keeps running with corrupted or missing data. Nobody knows anything is wrong — until the catastrophe.',
+          analogy:'🚗 Analogy: Your car\'s gas pedal sensor breaks, but instead of warning you, the car just... keeps going at the last speed it saw.',
+          code:`<span class="cm"># ❌ DANGEROUS — fails silently</span>
+<span class="kw">try</span>:
+    throttle = read_sensor()
+<span class="kw">except</span>:
+    <span class="kw">pass</span>  <span class="cm"># Engine keeps running with NO throttle data!</span>`
+        },
+        {
+          n:'✅ GOOD', title:'Fail LOUD — Go to a KNOWN Safe State',
+          explanation:'When something breaks, immediately go to the safest default, log the incident, and alert a human operator. Never keep running on bad data.',
+          analogy:'🚗 Analogy: When the gas pedal sensor fails, the car cuts power to idle, pulls over safely, and alerts the driver with a warning light.',
+          code:`<span class="cm"># ✅ SAFE — fails LOUD and to a KNOWN state</span>
+<span class="kw">try</span>:
+    throttle = read_sensor()
+<span class="kw">except</span> SensorError:
+    throttle = <span class="str">0.0</span>       <span class="cm"># Force idle — safe default</span>
+    alert_operator()     <span class="cm"># Human knows something broke</span>
+    log_critical(<span class="str">"Sensor failed — throttle set to idle"</span>)`
+        }
+      ]
+    },
+    {
+      emoji:'🛡️', name:'GUARD INPUTS', badge:'Rule 2', badgeClass:'safe',
+      substeps:[
+        {
+          n:'❌ BAD', title:'Trust the Data Blindly',
+          explanation:'Accepting any value that comes in without checking if it makes sense. A sensor could return 999° for a flap angle, and the code would just... use it.',
+          analogy:'🚗 Analogy: You wouldn\'t steer your car to a 720° angle just because a broken sensor said so. You\'d say "wait, that\'s impossible."',
+          code:`<span class="cm"># ❌ Trusts data blindly</span>
+<span class="kw">def</span> <span class="fn">adjust_flaps</span>(angle):
+    flaps.set(angle)  <span class="cm"># What if angle is 999°?</span>`
+        },
+        {
+          n:'✅ GOOD', title:'Validate Everything Before Using It',
+          explanation:'Every input is checked against known safe bounds before being used. If a value is impossible, reject it immediately and raise an alarm.',
+          analogy:'🚗 Analogy: The car\'s computer checks: "Is the steering angle between -540° and +540°? No? Then this sensor is lying — ignore it."',
+          code:`<span class="cm"># ✅ Validates everything</span>
+<span class="kw">def</span> <span class="fn">adjust_flaps</span>(angle):
+    <span class="kw">if not</span> (MIN_ANGLE <= angle <= MAX_ANGLE):
+        <span class="kw">raise</span> SafetyViolation(<span class="str">f"Flap angle {angle} out of range"</span>)
+    flaps.set(angle)`
+        }
+      ]
+    },
+    {
+      emoji:'📝', name:'TRACK EVERYTHING', badge:'Rule 3', badgeClass:'safe',
+      substeps:[
+        {
+          n:'❌ BAD', title:'Silent State Changes — Who Did What?',
+          explanation:'A global variable is changed by anyone, anywhere, with no record. When something goes wrong, you have zero audit trail to figure out what happened.',
+          analogy:'🏥 Analogy: A nurse changes your IV drip dosage without writing it in your chart. Next shift has no idea what you\'re on.',
+          code:`<span class="cm"># ❌ Mutable global — who changed it? When? Why?</span>
+mode = <span class="str">"auto"</span>
+<span class="cm"># ... 500 lines later ...</span>
+mode = <span class="str">"manual"</span>  <span class="cm"># WHO did this? Nobody knows.</span>`
+        },
+        {
+          n:'✅ GOOD', title:'Immutable + Audit Trail — Every Change Logged',
+          explanation:'Every state change is wrapped in a function that records the operator, timestamp, old value, new value, and reason. Fully auditable.',
+          analogy:'🏥 Analogy: Every medication change is signed, timestamped, and explained in the patient\'s chart. If something goes wrong, you can trace exactly what happened.',
+          code:`<span class="cm"># ✅ Immutable + audit trail</span>
+mode = <span class="str">"auto"</span>
+log = [(<span class="str">"init"</span>, <span class="str">"auto"</span>, now(), <span class="str">"system"</span>)]
+
+<span class="kw">def</span> <span class="fn">set_mode</span>(new_mode, operator, reason):
+    log.append({
+        <span class="str">"old"</span>: mode, <span class="str">"new"</span>: new_mode,
+        <span class="str">"who"</span>: operator, <span class="str">"when"</span>: timestamp(),
+        <span class="str">"why"</span>: reason
+    })
+    <span class="kw">return</span> new_mode`
+        }
+      ]
+    },
+    {
+      emoji:'🗳️', name:'REDUNDANCY', badge:'Rule 4', badgeClass:'safe',
+      substeps:[
+        {
+          n:'❌ BAD', title:'Single Point of Failure',
+          explanation:'Relying on one sensor means if that sensor lies — or breaks — your system makes decisions on bad data. One failure = catastrophe.',
+          analogy:'⚖️ Analogy: A judge convicts someone based on ONE witness. What if that witness is lying or mistaken?',
+          code:`<span class="cm"># ❌ One sensor = single point of failure</span>
+altitude = sensor_1.read()
+<span class="cm"># If sensor_1 lies, you crash.</span>`
+        },
+        {
+          n:'✅ GOOD', title:'Voting — 3 Sensors, Majority Wins',
+          explanation:'Use three independent sensors. If two agree, use them. If all three disagree, use the median and alert. No single sensor failure can cause disaster.',
+          analogy:'⚖️ Analogy: Three judges on a panel. If two agree, that\'s the verdict. If they all disagree, something is very wrong — investigate.',
+          code:`<span class="cm"># ✅ Three sensors = can detect when one is lying</span>
+a1, a2, a3 = s1.read(), s2.read(), s3.read()
+<span class="kw">if</span> abs(a1 - a2) < EPSILON:
+    altitude = (a1 + a2) / <span class="str">2</span>  <span class="cm"># Two agree, use them</span>
+<span class="kw">else</span>:
+    altitude = median(a1, a2, a3)  <span class="cm"># Voting — ignore outlier</span>
+    alert(<span class="str">"Sensor disagreement detected!"</span>)`
+        }
+      ]
+    }
+  ]
+},
+
+// ── TAB 2: DESIGN PATTERNS ──
+{
+  name: '🔷 Design Patterns in Safety Programming',
+  subtitle: 'Every safety principle maps to a proven design pattern',
+  type: 'patterns',
+  patterns: [
+    {
+      emoji:'🔌', name:'Circuit Breaker',
+      use:'Stop calling a failing service so it can recover',
+      safety:'3 failures → shut it down safely',
+      detail:'If a sensor or subsystem keeps failing, stop the operation entirely instead of retrying into danger. State machine: CLOSED → OPEN → HALF-OPEN.',
+      code:`<span class="kw">if</span> consecutive_failures >= <span class="str">3</span>:
+    signal = DANGER
+    enter_safe_mode()  <span class="cm"># Don't retry — shut it down</span>`
+    },
+    {
+      emoji:'🐕', name:'Watchdog',
+      use:'Monitor expects a heartbeat from the main system',
+      safety:'No heartbeat → force safe reset',
+      detail:'A separate timer that runs independently. If the main code freezes, the watchdog reboots the system. Often a hardware chip in real safety systems.',
+      code:`<span class="cm"># Main loop sends heartbeat</span>
+watchdog.feed()
+
+<span class="cm"># Watchdog runs independently</span>
+<span class="kw">if not</span> heartbeat_received_within(<span class="str">100ms</span>):
+    force_system_reboot()`
+    },
+    {
+      emoji:'👁️', name:'Observer / Pub-Sub',
+      use:'Every state change is broadcast to all watchers',
+      safety:'Nothing changes in secret',
+      detail:'When state transitions, all monitoring systems, logs, and alerts are notified immediately. No silent changes allowed.',
+      code:`<span class="cm"># State change → automatically notifies all watchers</span>
+state.transition(<span class="str">"FLYING"</span>, <span class="str">"EMERGENCY_DESCENT"</span>)
+<span class="cm"># → Logger writes it</span>
+<span class="cm"># → Alert system notifies operator</span>
+<span class="cm"># → Flight data recorder stamps it</span>`
+    },
+    {
+      emoji:'📋', name:'Command / Audit Trail',
+      use:'Wrap every change in a command object',
+      safety:'Who, What, When, and Why — always recorded',
+      detail:'Instead of directly changing state, every action is a Command object that is logged, timestamped, and attributed. Fully auditable and replayable.',
+      code:`<span class="kw">class</span> <span class="fn">ModeChange</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, new_mode, operator, reason):
+        self.new_mode = new_mode
+        self.operator = operator
+        self.timestamp = now()
+        self.reason = reason`
+    },
+    {
+      emoji:'🗳️', name:'Triple Modular Redundancy',
+      use:'Run 3 independent copies, vote on the answer',
+      safety:'No single failure can cause catastrophe',
+      detail:'Used by SpaceX, Boeing, and NASA for flight computers. Three independent systems compute the same thing. If two agree, use that. If not, safe mode.',
+      code:`<span class="cm"># Three sensors vote on the truth</span>
+a, b, c = s1.read(), s2.read(), s3.read()
+result = majority_vote(a, b, c)
+<span class="kw">if</span> all_disagree(a, b, c):
+    enter_safe_mode()`
+    },
+    {
+      emoji:'🔀', name:'State Machine',
+      use:'System can ONLY be in defined states',
+      safety:'Impossible states are literally impossible',
+      detail:'Every state and every allowed transition is explicitly defined. The system physically cannot enter an undefined state. Prevents "how did we get HERE?" moments.',
+      code:`states = [<span class="str">"INIT"</span>, <span class="str">"READY"</span>, <span class="str">"FLYING"</span>, <span class="str">"EMERGENCY"</span>]
+transitions = {
+    <span class="str">"FLYING"</span>: [<span class="str">"LANDED"</span>, <span class="str">"EMERGENCY"</span>],
+    <span class="str">"EMERGENCY"</span>: [<span class="str">"LANDED"</span>],  <span class="cm"># Can't go back to flying!</span>
+}`
+    }
+  ]
+},
+
+// ── TAB 3: THE FLOW ──
+{
+  name: '🔍 The Safety Flow: From Danger to Safe',
+  subtitle: 'How safety code transforms a dangerous situation into a safe one in 3 steps',
+  type: 'flow',
+  flowSteps: [
+    {emoji:'💥', label:'SOMETHING BREAKS', type:'danger', desc:'Sensor fails, network drops, memory corrupts, invalid input arrives.'},
+    {emoji:'🔍', label:'DETECT & ASSESS', type:'process', desc:'Is this recoverable? What\'s the safest fallback? Who needs to know?'},
+    {emoji:'🛡️', label:'FAIL TO SAFE STATE', type:'safe', desc:'Go to known-safe default. Log everything. Alert a human. Never guess.'},
+  ],
+  detailSections: [
+    {
+      title:'❌ The Wrong Way',
+      color:'var(--red)', bg:'var(--rBg)',
+      steps:'Error happens → `except: pass` → System keeps running on bad data → 💀 Catastrophe'
+    },
+    {
+      title:'✅ The Right Way',
+      color:'var(--green)', bg:'var(--gBg)',
+      steps:'Error happens → `except SpecificError:` → Go to safest default → Log critical details → Alert human → 🛡️ Safe'
+    }
+  ]
+},
+
+// ── TAB 4: PYTHON'S LIMITS ──
+{
+  name: '🐍 Python\'s Limits for Safety-Critical Systems',
+  subtitle: 'Where Python fits — and where it doesn\'t — in the safety-critical stack',
+  type: 'pythonLimits',
+  metrics: [
+    {val:'DO-178C',lbl:'Aviation Standard',color:'var(--red)'},
+    {val:'Level A',lbl:'Highest Criticality',color:'var(--red)'},
+    {val:'C/C++/Ada',lbl:'Certified Languages',color:'var(--green)'},
+    {val:'AI + Monitoring',lbl:'Python\'s Sweet Spot',color:'var(--blue)'},
+  ],
+  limits: [
+    {feature:'Deterministic Memory', python:'❌ Garbage collection = unpredictable pauses', cppAda:'✅ Manual memory, no GC pauses', why:'Plane can\'t "pause" mid-flight for GC'},
+    {feature:'Certified Compiler', python:'❌ No certified Python compiler exists', cppAda:'✅ Certified compilers (Green Hills, Wind River)', why:'Must prove the binary matches the source exactly'},
+    {feature:'Static Typing', python:'⚠️ Optional with mypy — not enforced at runtime', cppAda:'✅ Compile-time type checking, no surprises', why:'Type errors at runtime = potential crash'},
+    {feature:'Real-Time Guarantees', python:'❌ No hard real-time guarantees', cppAda:'✅ Deterministic execution times', why:'"Respond within 5ms or crash" — Python can\'t promise this'},
+    {feature:'Memory Safety', python:'⚠️ Memory-safe but no control over layout', cppAda:'✅ Full control + modern safety standards', why:'Need to prove no buffer overflows or use-after-free'},
+  ],
+  wherePythonFits: [
+    {layer:'AI Perception & Classification', lang:'Python → Research, C++ → Certified Deploy', critical:'Medium'},
+    {layer:'Path Planning & Decision Support', lang:'Python/C++ Hybrid', critical:'High'},
+    {layer:'Monitoring, Logging, Dashboards', lang:'Python — Auditable but not safety-critical', critical:'Low'},
+    {layer:'Flight Control & Engine Shutdown', lang:'C/C++/Ada — Must be certified', critical:'Level A — MAX'},
+  ]
+},
+
+// ── TAB 5: TEST YOURSELF ──
+{
+  name: '🧪 Test Your Understanding',
+  subtitle: 'Can you spot the safety violation?',
+  type: 'quiz',
+  questions: [
+    {
+      q:'What is the #1 rule of safety programming?',
+      options: ['Fail fast and restart', 'Fail safe, not fail silent', 'Log all errors to a file', 'Use try/except everywhere'],
+      correct: 1,
+      explanation: 'In safety code, when something breaks, the system must go to the safest possible state AND alert a human. Never fail silently.'
+    },
+    {
+      q:'Why can\'t Python be used for DO-178C Level A flight control code?',
+      options: ['Python is too slow', 'Garbage collection causes unpredictable pauses + no certified compiler', 'Python doesn\'t have classes', 'Python can\'t do math'],
+      correct: 1,
+      explanation: 'Level A requires deterministic memory (no GC pauses) and a certified compiler that can prove the binary matches the source. Python has neither.'
+    },
+    {
+      q:'What pattern prevents a frozen system from hanging forever?',
+      options: ['Circuit Breaker', 'Observer Pattern', 'Watchdog', 'Factory Pattern'],
+      correct: 2,
+      explanation: 'A Watchdog is a separate timer that expects a heartbeat. If the main system freezes and stops sending heartbeats, the watchdog forces a safe reboot.'
+    },
+    {
+      q:'Why use 3 sensors instead of 1 for critical readings?',
+      options: ['They\'re cheaper in bulk', 'Triple Modular Redundancy — majority vote detects lies', 'Redundancy looks good on paper', 'One sensor is always broken'],
+      correct: 1,
+      explanation: 'With 3 sensors, if two agree and one disagrees, you use the two and flag the outlier. No single sensor failure can cause a wrong reading.'
+    },
+    {
+      q:'What does `except: pass` mean in a safety context?',
+      options: ['Elegant error handling', 'The error is being logged somewhere else', 'The system is swallowing errors silently — DANGEROUS', 'It\'s just Python syntax, nothing special'],
+      correct: 2,
+      explanation: '`except: pass` catches ALL errors and does nothing. The system keeps running as if everything is fine, even though critical data may be missing or corrupted.'
+    },
+  ]
+},
+
+// ── TAB 6: PYTHON OOP BASICS ──
+{
+  name: '🐍 Python OOP Basics — self, __init__, Class vs Object',
+  subtitle: 'Everything we discussed: self, dot, __init__, class vs object, attributes — for beginners',
+  type: 'pythonBasics',
+  sections: [
+    {
+      title: '🧠 What is <code>self</code>?',
+      content: `<p style="margin-bottom:0.5rem;"><strong>self = "this specific object I'm working with right now."</strong> Think of it like the word <strong>"my"</strong> in English.</p>
+      <div class="ss-code" style="margin:0.5rem 0;">class Dog:
+    def __init__(self, name, breed):
+        self.name = name       # "MY name is..."
+        self.breed = breed     # "MY breed is..."
+
+    def bark(self):
+        print(f"{self.name} says woof!")   # Uses MY name
+
+# Create two dogs
+dog1 = Dog("Rex", "German Shepherd")
+dog2 = Dog("Bella", "Golden Retriever")
+
+dog1.bark()   # → "Rex says woof!"   (self = dog1)
+dog2.bark()   # → "Bella says woof!"  (self = dog2)</div>
+      <p>When <code>dog1.bark()</code> runs, Python secretly passes <code>dog1</code> as <code>self</code>. So <code>self.name</code> becomes <code>dog1.name</code> which is <code>"Rex"</code>.</p>`
+    },
+    {
+      title: '🏷️ What does <code>self.new_mode</code> mean? Are these Python keywords?',
+      content: `<p style="margin-bottom:0.5rem;"><strong>No! They are NOT keywords.</strong> <code>new_mode</code>, <code>who_did_it</code>, <code>why</code> — these are names YOU invent on the spot. Python has no idea what <code>new_mode</code> is. You create it just by writing <code>self.new_mode = ...</code>. That's it. No pre-definition needed.</p>
+      <div class="ss-code" style="margin:0.5rem 0;">class ModeChange:
+    def __init__(self, new_mode, operator, reason):
+        self.new_mode = new_mode       # ← Creates "new_mode" RIGHT HERE
+        self.operator = operator       # ← Creates "operator" RIGHT HERE
+        self.timestamp = now()         # ← Creates "timestamp" RIGHT HERE
+        self.reason = reason           # ← Creates "reason" RIGHT HERE
+        self.extra_thing = "hello"     # ← You could even add this, no problem!</div>
+      <p><strong>Before <code>__init__</code> runs:</strong> The object is empty. No drawers exist.<br>
+      <strong>After <code>__init__</code> runs:</strong> The object has drawers named <code>new_mode</code>, <code>operator</code>, <code>timestamp</code>, <code>reason</code>.</p>`
+    },
+    {
+      title: '🔤 What does <code>__init__</code> mean?',
+      content: `<p style="margin-bottom:0.5rem;"><strong>__init__ = "Initialize" = "Set Up"</strong>. It's not an acronym.</p>
+      <p>The double underscores <code>__</code> are Python's way of saying <strong>"this is special."</strong> Python calls them <strong>"dunder"</strong> methods (double underscore). So <code>__init__</code> is pronounced <strong>"dunder init"</strong>.</p>
+      <p>Think of <code>__init__</code> like a <strong>Setup Wizard</strong>:</p>
+      <div class="ss-code" style="margin:0.5rem 0;"># When you write:
+cmd = ModeChange("manual", "Ashok", "Emergency")
+
+# Python does:
+# 1. Creates an empty box (empty object)
+# 2. AUTOMATICALLY calls __init__() to fill the box
+# 3. You get the filled box (cmd)</div>
+      <p>Python calls <code>__init__</code> <strong>automatically</strong> — you never write <code>cmd.__init__()</code>. It happens when you write <code>ModeChange(...)</code>.</p>`
+    },
+    {
+      title: '📦 Class vs Object vs Method vs Attribute — How to Identify Each',
+      content: `<p style="margin-bottom:0.5rem;"><strong>The Recipe vs The Cake:</strong></p>
+      <div class="comparison-card" style="padding:1rem;margin:0.5rem 0;">
+        <table class="tbl">
+          <thead><tr><th>Thing</th><th>How to spot it</th><th>Real world</th></tr></thead>
+          <tbody>
+            <tr><td><strong>CLASS</strong></td><td>Starts with <code>class</code> keyword. Capital first letter.</td><td>🍰 Recipe on paper</td></tr>
+            <tr><td><strong>OBJECT</strong></td><td>Created by calling the class: <code>ClassName(...)</code></td><td>🎂 Actual cake you can eat</td></tr>
+            <tr><td><strong>METHOD</strong></td><td><code>def</code> INSIDE a class. First parameter is <code>self</code>.</td><td>🧑‍🍳 A step in the recipe</td></tr>
+            <tr><td><strong>ATTRIBUTE</strong></td><td><code>self.something = value</code>. Belongs to one object.</td><td>🏷️ A label on ONE specific cake</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="ss-code" style="margin:0.5rem 0;">class ModeChange:                                    ← CLASS (recipe)
+    def __init__(self, new_mode, operator, reason):  ← METHOD (function inside class, has "self")
+        self.new_mode = new_mode                     ← ATTRIBUTE (data stored on the object)
+        self.operator = operator                     ← ATTRIBUTE
+        self.timestamp = now()                       ← ATTRIBUTE
+        self.reason = reason                         ← ATTRIBUTE
+
+cmd = ModeChange("manual", "Ashok", "Emergency")     ← cmd is an OBJECT (a real cake)</div>
+      <p><strong>One Rule of Thumb:</strong><br>
+      → If it starts with <code>class</code> → class (recipe)<br>
+      → If it's <code>something = ClassName(...)</code> → object (cake)<br>
+      → If it's <code>def</code> inside a class and has <code>self</code> → method (step in recipe)<br>
+      → If it's <code>self.____ = ____</code> → attribute (label on one cake)</p>`
+    },
+    {
+      title: '🔗 What does the dot <code>.</code> do?',
+      content: `<p style="margin-bottom:0.5rem;">The dot <code>.</code> means <strong>"go inside and look for"</strong>. That's all.</p>
+      <p>Python treats ALL names after the dot the same way:</p>
+      <div class="ss-code" style="margin:0.5rem 0;">cmd1 = ModeChange("manual", "Ashok", "Emergency")
+
+cmd1.new_mode       # ✅ "manual"       — drawer EXISTS (created in __init__)
+cmd1.operator       # ✅ "Ashok"        — drawer EXISTS (created in __init__)
+cmd1.weather        # ❌ ERROR          — drawer doesn't exist (never created)
+cmd1.ModelChange    # ❌ ERROR          — drawer doesn't exist (ModelChange is the CLASS, not inside cmd1)
+cmd1.potato         # ❌ ERROR          — drawer doesn't exist</div>
+      <p>The dot doesn't care what the name is. If the drawer exists → you get the value. If it doesn't → error.<br>
+      <strong>ModelChange has no special meaning after a dot.</strong> It's just a name you're looking for, same as <code>potato</code> or <code>weather</code>.</p>`
+    },
+    {
+      title: '➕ Can I add attributes AFTER creating the object?',
+      content: `<p style="margin-bottom:0.5rem;"><strong>YES!</strong> Python lets you add drawers to any object anytime:</p>
+      <div class="ss-code" style="margin:0.5rem 0;">cmd = ModeChange("manual", "Ashok", "Emergency")
+
+cmd.weather = "sunny"     # ✅ Works! Object now has 5 drawers
+cmd.mood = "happy"        # ✅ Works! Now has 6 drawers
+
+print(cmd.weather)        # → "sunny"
+print(cmd.mood)           # → "happy"</div>
+      <p><strong>But</strong> you CAN'T pass it during creation:</p>
+      <div class="ss-code" style="margin:0.5rem 0;">cmd = ModeChange("manual", "Ashok", "Emergency", "Sunny")
+# ❌ ERROR! __init__ only expects 3 parameters (+ self)
+#    You passed 4. Python says: "Too many!"</div>
+      <p><strong>Analogy:</strong> <code>__init__</code> is a <strong>form</strong> with fixed fields. You can't write in extra boxes that don't exist. But after the form is submitted, you can <strong>tape post-it notes</strong> (<code>cmd.weather = "sunny"</code>) onto it all day.</p>
+      <p><strong>Also important:</strong> This only affects THAT object, not others:</p>
+      <div class="ss-code" style="margin:0.5rem 0;">cmd1 = ModeChange("manual", "Ashok", "Emergency")
+cmd1.weather = "sunny"    # Only cmd1 gets this
+
+cmd2 = ModeChange("auto", "Bob", "Scheduled")
+# cmd2 does NOT have .weather — it was never added to cmd2
+
+print(cmd1.weather)   # → "sunny"
+print(cmd2.weather)   # ❌ ERROR! cmd2 has no 'weather' drawer</div>`
+    },
+    {
+      title: '❌ Why <code>cmd1.ModelChange</code> makes NO sense',
+      content: `<p style="margin-bottom:0.5rem;"><strong>You're right — it's pointless and will give an error.</strong></p>
+      <p><code>ModelChange</code> is the CLASS (recipe). <code>cmd1</code> is an OBJECT (cake) baked from that recipe. The recipe is not stored inside the cake!</p>
+      <div class="ss-code" style="margin:0.5rem 0;">ModelChange  ───(bakes)───→  cmd1
+    ↑                           ↑
+  Recipe                     Cake
+
+You go:  Recipe → Cake  ✅  (ModeChange("manual", ...) → cmd1)
+NOT:     Cake → Recipe  ❌  (cmd1.ModelChange doesn't exist)</div>
+      <div class="ss-analogy">🍰 Analogy: You can use a recipe to bake a cake. But you cannot open a cake and find the recipe inside it. Same idea — ModelChange (recipe) creates cmd1 (cake), but cmd1.ModelChange (looking for the recipe inside the cake) is nonsense.</div>`
+    },
+    {
+      title: '🔄 The two <code>new_mode</code>s — they\'re DIFFERENT things',
+      content: `<p style="margin-bottom:0.5rem;">This is one of the most confusing things in Python:</p>
+      <div class="ss-code" style="margin:0.5rem 0;">def __init__(self, new_mode, operator, reason):
+    self.new_mode = new_mode    # ← TWO different things here!
+    #   ↑              ↑
+    # LABEL on        VALUE that came in
+    # the object      through the parameter door</div>
+      <p>They just happen to share the same name. It could be written as:</p>
+      <div class="ss-code" style="margin:0.5rem 0;">def __init__(self, potato, operator, reason):
+    self.new_mode = potato    # Same result!</div>
+      <table class="tbl" style="margin-top:0.5rem;">
+        <thead><tr><th>Part</th><th>What it is</th></tr></thead>
+        <tbody>
+          <tr><td><code>new_mode</code> (parameter)</td><td>The <strong>value</strong> that comes in through the function door</td></tr>
+          <tr><td><code>self.new_mode</code> (attribute)</td><td>A <strong>sticker/label</strong> you attach to the object to remember that value</td></tr>
+          <tr><td><code>self.new_mode = new_mode</code></td><td>"Take the value that came in, and stick it on this object with the label new_mode"</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:0.5rem;">They have the same name just by <strong>convention</strong> (it's easier to remember), not because they're the same thing.</p>`
+    }
+  ]
+}
+
+];
+
+// ═══════════════════════════════════════════
+// RENDER ENGINE
+// ═══════════════════════════════════════════
+let currentTab = 0;
+let currentStage = 0;
+let quizAnswered = {};
+
+function switchTab(i) {
+  currentTab = i;
+  currentStage = 0;
+  quizAnswered = {};
+  document.querySelectorAll('.tab').forEach((t, j) => t.classList.toggle('active', j === i));
+  render();
+}
+
+function selectStage(i) {
+  currentStage = i;
+  render();
+}
+
+function answerQuiz(qIndex, optIndex) {
+  if (quizAnswered[qIndex] !== undefined) return;
+  quizAnswered[qIndex] = optIndex;
+  render();
+}
+
+function render() {
+  const t = tabs[currentTab];
+  let html = '';
+
+  // ── SUBTITLE ──
+  if (t.subtitle) {
+    html += `<p style="text-align:center;color:var(--tdim);font-size:0.82rem;margin-top:0.3rem;">${t.subtitle}</p>`;
+  }
+
+  // ── METRICS ──
+  if (t.metrics) {
+    html += `<div class="metrics">${t.metrics.map(m => `
+      <div class="metric"><div class="val" style="color:${m.color};">${m.val}</div><div class="lbl">${m.lbl}</div></div>
+    `).join('')}</div>`;
+  }
+
+  // ── TYPE: COMPARISON (Tab 0) ──
+  if (t.type === 'comparison' && t.comparison) {
+    html += `<div class="comparison-card">
+      <h3>🧭 The Mindset Shift</h3>
+      <div style="overflow-x:auto;">
+      <table class="tbl"><thead><tr>${t.comparison.headers.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>
+      ${t.comparison.rows.map(row => `
+        <tr>${row.map((cell, ci) => `<td>${cell}</td>`).join('')}</tr>
+      `).join('')}
+      </tbody></table></div>
+    </div>`;
+
+    // Summary callout
+    html += `<div class="callout">
+      <span class="co-emoji">💡</span>
+      <span><strong>The Golden Rule:</strong> In safety code, <em>"probably fine"</em> is never fine. The system must always know exactly what state it is in and exactly what it will do next.</span>
+    </div>`;
+  }
+
+  // ── TYPE: PIPELINE (Tab 1 - 4 Rules) ──
+  if (t.type === 'pipeline' && t.stages) {
+    html += `<div class="pipeline-card">
+      <div class="pipeline-label">Click a rule to see ❌ BAD vs ✅ GOOD code examples</div>
+      <div class="pipeline">`;
+
+    t.stages.forEach((s, i) => {
+      const active = i === currentStage ? ' active-stage' : '';
+      html += `
+        <div class="pipe-stage${active}" onclick="selectStage(${i})">
+          <div class="st-emoji">${s.emoji}</div>
+          <div class="st-name">${s.name}</div>
+          <span class="st-badge ${s.badgeClass}">${s.badge}</span>
+        </div>`;
+      if (i < t.stages.length - 1) {
+        html += '<div class="pipe-arrow">→</div>';
+      }
+    });
+
+    html += `</div>`;
+
+    // Substeps for selected stage
+    if (t.stages[currentStage]) {
+      const s = t.stages[currentStage];
+      html += `<div class="substeps show">
+        <h4>${s.emoji} ${s.name} — ${s.badge}</h4>
+        <div class="substep-grid">`;
+      s.substeps.forEach(ss => {
+        html += `<div class="substep">
+          <span class="ss-num">${ss.n}</span>
+          <div class="ss-title">${ss.title}</div>
+          <div class="ss-explanation">${ss.explanation || ''}</div>
+          ${ss.analogy ? `<div class="ss-analogy">${ss.analogy}</div>` : ''}
+          ${ss.code ? `<div class="ss-code">${ss.code}</div>` : ''}
+        </div>`;
+      });
+      html += `</div></div>`;
+    }
+
+    html += `</div>`;
+  }
+
+  // ── TYPE: PATTERNS (Tab 2) ──
+  if (t.type === 'patterns' && t.patterns) {
+    html += `<div class="patterns-grid">`;
+    t.patterns.forEach((p, i) => {
+      html += `
+        <div class="pattern-card" onclick="selectStage(${i})" style="cursor:pointer;">
+          <span class="pc-emoji">${p.emoji}</span>
+          <div class="pc-name">${p.name}</div>
+          <div class="pc-use">${p.use}</div>
+          <div class="pc-safety">${p.safety}</div>
+        </div>`;
+    });
+    html += `</div>`;
+
+    // ── SUMMARY TABLE: Patterns → Rules mapping ──
+    html += `<div class="comparison-card" style="margin-top:1.25rem;">
+      <h3>📋 Complete Summary: Patterns × Safety Rules</h3>
+      <p style="text-align:center;font-size:0.65rem;color:var(--tmut);margin-bottom:0.75rem;">
+        Every design pattern reinforces one or more of the 4 Rules. <em>"Probably fine" is never fine.</em>
+      </p>
+      <div class="summary-table-wrap">
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th>Pattern</th>
+            <th>What It Prevents</th>
+            <th>Safety Translation</th>
+            <th class="th-rule1">🛡️ Rule 1<br>Fail Safe</th>
+            <th class="th-rule2">🔍 Rule 2<br>Guard Inputs</th>
+            <th class="th-rule3">📝 Rule 3<br>Track Everything</th>
+            <th class="th-rule4">🗳️ Rule 4<br>Redundancy</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>🔌 Circuit Breaker</td>
+            <td>Retrying into danger</td>
+            <td><em>"3 failures → shut it down"</em></td>
+            <td class="col-rule1"><span class="rule-dot yes">✓</span></td>
+            <td class="col-rule2"><span class="rule-dot no">—</span></td>
+            <td class="col-rule3"><span class="rule-dot no">—</span></td>
+            <td class="col-rule4"><span class="rule-dot no">—</span></td>
+          </tr>
+          <tr>
+            <td>🐕 Watchdog</td>
+            <td>Frozen / hung processes</td>
+            <td><em>"No heartbeat → force safe reset"</em></td>
+            <td class="col-rule1"><span class="rule-dot yes">✓</span></td>
+            <td class="col-rule2"><span class="rule-dot no">—</span></td>
+            <td class="col-rule3"><span class="rule-dot no">—</span></td>
+            <td class="col-rule4"><span class="rule-dot yes">✓</span></td>
+          </tr>
+          <tr>
+            <td>👁️ Observer / Pub-Sub</td>
+            <td>Silent state changes</td>
+            <td><em>"Every change is broadcast"</em></td>
+            <td class="col-rule1"><span class="rule-dot no">—</span></td>
+            <td class="col-rule2"><span class="rule-dot no">—</span></td>
+            <td class="col-rule3"><span class="rule-dot yes">✓</span></td>
+            <td class="col-rule4"><span class="rule-dot no">—</span></td>
+          </tr>
+          <tr>
+            <td>📋 Command / Audit Trail</td>
+            <td>Untraceable actions</td>
+            <td><em>"Who did what, when, and why"</em></td>
+            <td class="col-rule1"><span class="rule-dot no">—</span></td>
+            <td class="col-rule2"><span class="rule-dot no">—</span></td>
+            <td class="col-rule3"><span class="rule-dot yes">✓</span></td>
+            <td class="col-rule4"><span class="rule-dot no">—</span></td>
+          </tr>
+          <tr>
+            <td>🗳️ Voting (TMR)</td>
+            <td>Single sensor lies</td>
+            <td><em>"3 say yes, 2 say no → go with the 2"</em></td>
+            <td class="col-rule1"><span class="rule-dot yes">✓</span></td>
+            <td class="col-rule2"><span class="rule-dot yes">✓</span></td>
+            <td class="col-rule3"><span class="rule-dot no">—</span></td>
+            <td class="col-rule4"><span class="rule-dot yes">✓</span></td>
+          </tr>
+          <tr>
+            <td>🔀 State Machine</td>
+            <td>Impossible states</td>
+            <td><em>"You can only go from A→B or C, never Z"</em></td>
+            <td class="col-rule1"><span class="rule-dot yes">✓</span></td>
+            <td class="col-rule2"><span class="rule-dot yes">✓</span></td>
+            <td class="col-rule3"><span class="rule-dot yes">✓</span></td>
+            <td class="col-rule4"><span class="rule-dot no">—</span></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+      <div style="display:flex;gap:0.6rem;justify-content:center;flex-wrap:wrap;margin-top:0.8rem;">
+        <span class="pattern-summary-badge r1">Rule 1: Fail Safe, Not Fail Silent</span>
+        <span class="pattern-summary-badge r2">Rule 2: Guard Every Input</span>
+        <span class="pattern-summary-badge r3">Rule 3: No Silent State Changes</span>
+        <span class="pattern-summary-badge r4">Rule 4: Redundancy for Critical Decisions</span>
+      </div>
+      <p style="text-align:center;font-size:0.62rem;color:var(--tmut);margin-top:0.6rem;">
+        💡 <strong>Common thread:</strong> Every pattern removes ambiguity. The system must always know exactly what state it's in and exactly what it will do next.
+      </p>
+    </div>`;
+
+    // Show selected pattern detail
+    if (t.patterns[currentStage] !== undefined) {
+      const p = t.patterns[currentStage];
+      html += `<div class="substeps show">
+        <h4>${p.emoji} ${p.name} Pattern</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+          <div class="substep">
+            <span class="ss-num">📖 HOW IT WORKS</span>
+            <div class="ss-explanation" style="margin-top:0.3rem;">${p.detail}</div>
+            <div class="ss-analogy" style="margin-top:0.5rem;">🛡️ Safety translation: <strong>${p.safety}</strong></div>
+          </div>
+          <div class="substep">
+            <span class="ss-num">💻 CODE EXAMPLE</span>
+            <div class="ss-code" style="margin-top:0.3rem;">${p.code || '// Pattern applied in system architecture'}</div>
+          </div>
+        </div>
+      </div>`;
+    }
+  }
+
+  // ── TYPE: FLOW (Tab 3) ──
+  if (t.type === 'flow' && t.flowSteps) {
+    html += `<div class="pipeline-card">
+      <div class="pipeline-label">The 3-step transformation from danger to safety</div>
+      <div class="flow-row">`;
+
+    t.flowSteps.forEach((fs, i) => {
+      const boxClass = fs.type === 'danger' ? 'fb-danger' : fs.type === 'process' ? 'fb-process' : 'fb-safe';
+      html += `
+        <div class="flow-box ${boxClass} ${fs.type === 'safe' ? 'glow-safe' : fs.type === 'danger' ? 'glow-danger' : ''}">
+          <span class="fb-emoji">${fs.emoji}</span>
+          <div class="fb-label">${fs.label}</div>
+          <div style="font-size:0.58rem;color:var(--tdim);margin-top:0.2rem;">${fs.desc}</div>
+        </div>`;
+      if (i < t.flowSteps.length - 1) {
+        html += `<div class="${fs.type === 'danger' ? 'flow-arrow-danger' : 'flow-arrow-big'}">→</div>`;
+      }
+    });
+
+    html += `</div>`;
+
+    // Detail sections
+    if (t.detailSections) {
+      html += `<div class="substep-grid" style="margin-top:1rem;">`;
+      t.detailSections.forEach(ds => {
+        html += `<div class="substep" style="border-left:4px solid ${ds.color};background:${ds.bg};">
+          <div class="ss-title" style="color:${ds.color};">${ds.title}</div>
+          <div style="font-size:0.72rem;color:var(--tdim);margin-top:0.3rem;line-height:1.7;">${ds.steps}</div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+
+    html += `</div>`;
+
+    // One-paragraph summary
+    html += `<div class="callout info">
+      <span class="co-emoji">📌</span>
+      <span><strong>In one sentence:</strong> Safety programming is being paranoid in a smart way — assume everything will break, and when it does, go to the safest state, yell for help, and never trust a single source of truth for life-or-death decisions.</span>
+    </div>`;
+  }
+
+  // ── TYPE: PYTHON LIMITS (Tab 4) ──
+  if (t.type === 'pythonLimits') {
+    // Limits table
+    html += `<div class="comparison-card">
+      <h3>⚖️ Why Python Can't Be Certified for DO-178C Level A</h3>
+      <div style="overflow-x:auto;">
+      <table class="lang-table"><thead><tr>
+        <th>Requirement</th><th>🐍 Python</th><th>✅ C/C++/Ada</th><th>Why It Matters</th>
+      </tr></thead><tbody>
+      ${t.limits.map(l => `
+        <tr>
+          <td style="text-align:left;font-weight:600;">${l.feature}</td>
+          <td>${l.python}</td>
+          <td>${l.cppAda}</td>
+          <td style="text-align:left;font-size:0.65rem;">${l.why}</td>
+        </tr>
+      `).join('')}
+      </tbody></table></div>
+    </div>`;
+
+    // Where Python fits
+    html += `<div class="comparison-card">
+      <h3>📍 Where Python Fits in the Safety-Critical Stack</h3>
+      <div style="overflow-x:auto;">
+      <table class="tbl"><thead><tr>
+        <th>Layer</th><th>Language</th><th>Criticality</th>
+      </tr></thead><tbody>
+      ${t.wherePythonFits.map(w => `
+        <tr>
+          <td style="text-align:left;">${w.layer}</td>
+          <td>${w.lang}</td>
+          <td><span class="${w.critical.includes('MAX') ? 'tag-danger' : w.critical === 'High' ? 'tag-danger' : w.critical === 'Medium' ? 'tag-safe' : 'tag-safe'}" style="font-size:0.6rem;">${w.critical}</span></td>
+        </tr>
+      `).join('')}
+      </tbody></table></div>
+    </div>`;
+
+    // Interview answer
+    html += `<div class="callout info">
+      <span class="co-emoji">🎤</span>
+      <span><strong>Your Interview Answer:</strong> "I understand safety programming principles — fail safe, not fail silent. Every input guarded. Every state change logged. Redundancy for critical paths. My error handling architecture (dead-letter queues, circuit breakers, structured logging) follows these same principles. I also understand Python's limits: it's not certifiable for DO-178C Level A because of garbage collection and lack of certified compilers. For truly safety-critical paths, you'd write the certified code in C++ or Ada, and Python handles the non-critical AI and monitoring layers."</span>
+    </div>`;
+  }
+
+  // ── TYPE: QUIZ (Tab 5) ──
+  if (t.type === 'quiz' && t.questions) {
+    html += `<div class="pipeline-card">
+      <div class="pipeline-label">Click an answer for each question</div>`;
+
+    t.questions.forEach((q, qi) => {
+      const answered = quizAnswered[qi];
+      html += `<div class="quiz-card">
+        <h4>❓ ${q.q}</h4>
+        <div class="quiz-options">`;
+      q.options.forEach((opt, oi) => {
+        let cls = '';
+        if (answered !== undefined) {
+          if (oi === q.correct) cls = ' correct';
+          else if (oi === answered) cls = ' wrong';
+        }
+        html += `<button class="quiz-opt${cls}" onclick="answerQuiz(${qi}, ${oi})" ${answered !== undefined ? 'disabled' : ''}>${opt}</button>`;
+      });
+      html += `</div>
+        <div class="quiz-feedback" style="color:${answered === q.correct ? 'var(--green)' : answered !== undefined ? 'var(--red)' : 'var(--tmut)'}">
+          ${answered === q.correct ? '✅ Correct! ' + q.explanation : answered !== undefined ? '❌ Not quite. ' + q.explanation : '👆 Pick an answer above'}
+        </div>
+      </div>`;
+    });
+
+    // Score
+    const totalAnswered = Object.keys(quizAnswered).length;
+    const totalCorrect = Object.entries(quizAnswered).filter(([qi, ai]) => ai === t.questions[parseInt(qi)].correct).length;
+    if (totalAnswered === t.questions.length) {
+      html += `<div class="callout ${totalCorrect === t.questions.length ? '' : 'warn'}">
+        <span class="co-emoji">${totalCorrect === t.questions.length ? '🏆' : '📚'}</span>
+        <span><strong>You scored ${totalCorrect}/${t.questions.length}!</strong> ${totalCorrect === t.questions.length ? 'Perfect! You understand safety programming.' : 'Review the sections above and try again!'}</span>
+      </div>`;
+    }
+
+    html += `</div>`;
+  }
+
+  // ── TYPE: PYTHON BASICS (Tab 6) ──
+  if (t.type === 'pythonBasics' && t.sections) {
+    html += `<div class="pipeline-card">
+      <div class="pipeline-label">Click any section below to expand — beginner-friendly explanations of every Python OOP concept we discussed</div>`;
+
+    t.sections.forEach((sec, i) => {
+      const secId = `py-sec-${i}`;
+      html += `
+      <div style="margin-bottom:0.4rem;">
+        <div onclick="document.getElementById('${secId}').classList.toggle('show');this.querySelector('.sec-arrow').classList.toggle('rotated');"
+             style="background:var(--card);border:2px solid var(--border);border-radius:12px;padding:0.8rem 1rem;cursor:pointer;transition:0.15s;display:flex;align-items:center;gap:0.5rem;"
+             onmouseover="this.style.borderColor='var(--violet)';" onmouseout="this.style.borderColor='var(--border)';">
+          <span class="sec-arrow" style="transition:0.2s;font-size:0.7rem;color:var(--violet);">▶</span>
+          <span style="font-family:'Space Grotesk',sans-serif;font-size:0.75rem;font-weight:700;">${sec.title}</span>
+        </div>
+        <div id="${secId}" class="substeps" style="margin-top:0;border-top:none;border-radius:0 0 12px 12px;">
+          <div style="font-size:0.75rem;color:var(--tdim);line-height:1.7;">${sec.content}</div>
+        </div>
+      </div>`;
+    });
+
+    html += `</div>`;
+  }
+
+  document.getElementById('app-content').innerHTML = html;
+}
+
+// Initial render
+render();
+</script>
+
+</body>
+</html>
