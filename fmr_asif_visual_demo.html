@@ -1303,6 +1303,16 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
       <span style="color:var(--text);"><strong>W</strong></span> = Weight AFTER update
     </div>
 
+    <!-- Weight Trajectory Line Chart -->
+    <div class="learn-canvas-wrap" style="margin:12px 0;">
+      <canvas id="weightTrajectoryCanvas" width="1200" height="200"></canvas>
+    </div>
+    <div class="legend">
+      <span><span class="dot" style="background:#ff5252;"></span> W_sky — decays to zero (useless feature)</span>
+      <span><span class="dot" style="background:#69f0ae;"></span> W_beak — grows large (useful feature)</span>
+      <span><span class="dot" style="background:#ffb300; width:6px; height:6px; border-radius:50%; box-shadow:0 0 6px #ffb300;"></span> Current epoch</span>
+    </div>
+
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
       <h5 style="color:#b388ff; font-family:var(--font-display); font-weight:400; margin:0;">🔢 Live Weight Calculation Table — Step Through Epochs</h5>
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
@@ -3891,12 +3901,166 @@ function populateTable(tbodyId, rows, isBad) {
   tbody.appendChild(tr);
 }
 
+function drawWeightTrajectoryChart() {
+  const canvas = document.getElementById('weightTrajectoryCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { top: 15, right: 30, bottom: 30, left: 55 };
+  const pw = W - pad.left - pad.right, ph = H - pad.top - pad.bottom;
+  const ep = weightTableEpoch;
+
+  // Get per-epoch W values (last batch of each epoch)
+  const skyEpochVals = [], beakEpochVals = [];
+  for (let e = 1; e <= 50; e++) {
+    const last = skyTraj.filter(r => r.epoch === e).pop();
+    if (last) skyEpochVals.push({ epoch: e, W: last.W });
+    const lastB = beakTraj.filter(r => r.epoch === e).pop();
+    if (lastB) beakEpochVals.push({ epoch: e, W: lastB.W });
+  }
+
+  // Y-axis: dual scale — left for sky (0→0.05), right for beak (0→3)
+  const skyMax = 0.06, beakMax = 3.0;
+  function toX(e) { return pad.left + (e / 50) * pw; }
+  function toYSky(v) { return pad.top + ph * (1 - v / skyMax); }
+  function toYBeak(v) { return pad.top + ph * (1 - v / beakMax); }
+
+  // Grid
+  ctx.strokeStyle = '#ffffff08';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 5; i++) {
+    const y = pad.top + (i / 5) * ph;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+  }
+
+  // Y-axis labels (left = sky scale)
+  ctx.fillStyle = '#ff525266';
+  ctx.font = '9px monospace';
+  for (let v = 0; v <= 5; v++) {
+    const val = (v / 5) * skyMax;
+    ctx.fillText(val.toFixed(2), pad.left - 38, pad.top + ph * (1 - v / 5) + 4);
+  }
+  // Y-axis labels (right = beak scale)
+  ctx.fillStyle = '#69f0ae66';
+  for (let v = 0; v <= 5; v++) {
+    const val = (v / 5) * beakMax;
+    ctx.fillText(val.toFixed(1), W - pad.right + 6, pad.top + ph * (1 - v / 5) + 4);
+  }
+
+  // X-axis
+  ctx.fillStyle = '#6b6b80';
+  ctx.font = '9px monospace';
+  for (let e = 0; e <= 50; e += 10) {
+    const x = toX(e);
+    ctx.fillText(e, x - 8, pad.top + ph + 16);
+  }
+  ctx.fillText('Epoch →', W / 2 - 20, pad.top + ph + 28);
+
+  // Draw sky curve (red)
+  ctx.strokeStyle = '#ff5252';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  for (let i = 0; i < skyEpochVals.length; i++) {
+    const x = toX(skyEpochVals[i].epoch), y = toYSky(skyEpochVals[i].W);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Sky area fill
+  ctx.fillStyle = '#ff525211';
+  ctx.beginPath();
+  for (let i = 0; i < skyEpochVals.length; i++) {
+    const x = toX(skyEpochVals[i].epoch), y = toYSky(skyEpochVals[i].W);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.lineTo(toX(50), toYSky(0));
+  ctx.lineTo(toX(1), toYSky(0));
+  ctx.closePath();
+  ctx.fill();
+
+  // Draw beak curve (green)
+  ctx.strokeStyle = '#69f0ae';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i < beakEpochVals.length; i++) {
+    const x = toX(beakEpochVals[i].epoch), y = toYBeak(beakEpochVals[i].W);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // Beak area fill
+  ctx.fillStyle = '#69f0ae11';
+  ctx.beginPath();
+  for (let i = 0; i < beakEpochVals.length; i++) {
+    const x = toX(beakEpochVals[i].epoch), y = toYBeak(beakEpochVals[i].W);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.lineTo(toX(50), toYBeak(0));
+  ctx.lineTo(toX(1), toYBeak(0));
+  ctx.closePath();
+  ctx.fill();
+
+  // Current epoch marker
+  const cx = toX(ep);
+  const skyNow = skyEpochVals.find(v => v.epoch === ep);
+  const beakNow = beakEpochVals.find(v => v.epoch === ep);
+
+  // Vertical dashed line at current epoch
+  ctx.strokeStyle = '#ffb30044';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 5]);
+  ctx.beginPath();
+  ctx.moveTo(cx, pad.top);
+  ctx.lineTo(cx, pad.top + ph);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Dots at current epoch
+  if (skyNow) {
+    ctx.fillStyle = '#ff5252';
+    ctx.beginPath(); ctx.arc(cx, toYSky(skyNow.W), 6, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, toYSky(skyNow.W), 6, 0, Math.PI * 2); ctx.stroke();
+    // Value label
+    ctx.fillStyle = '#ff5252';
+    ctx.font = 'bold 10px monospace';
+    ctx.fillText(skyNow.W.toFixed(4), cx + 10, toYSky(skyNow.W) + 4);
+  }
+  if (beakNow) {
+    ctx.fillStyle = '#69f0ae';
+    ctx.beginPath(); ctx.arc(cx, toYBeak(beakNow.W), 6, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, toYBeak(beakNow.W), 6, 0, Math.PI * 2); ctx.stroke();
+    // Value label
+    ctx.fillStyle = '#69f0ae';
+    ctx.font = 'bold 10px monospace';
+    ctx.fillText(beakNow.W.toFixed(2), cx + 10, toYBeak(beakNow.W) + 4);
+  }
+
+  // Labels
+  ctx.fillStyle = '#ff5252';
+  ctx.font = 'bold 10px monospace';
+  ctx.fillText('W_sky → 0', pad.left + 10, pad.top + 14);
+  ctx.fillStyle = '#69f0ae';
+  ctx.fillText('W_beak → 2.5', W - pad.right - 115, pad.top + 14);
+
+  // Legend for scales
+  ctx.fillStyle = '#ffffff33';
+  ctx.font = '8px monospace';
+  ctx.fillText('← left axis', pad.left + 2, pad.top + ph - 2);
+  ctx.fillText('right axis →', W - pad.right - 70, pad.top + ph - 2);
+}
+
 function drawWeightTable() {
   const ep = weightTableEpoch;
   const skyRows = skyTraj.filter(r => r.epoch === ep);
   const beakRows = beakTraj.filter(r => r.epoch === ep);
   populateTable('wtSkyTbody', skyRows, true);
   populateTable('wtBeakTbody', beakRows, false);
+  drawWeightTrajectoryChart();
   // Update range labels
   const skyStart = skyTraj.filter(r => r.epoch === ep-1).pop()?.W ?? skyTraj[0].W;
   const skyEnd = skyRows.length > 0 ? skyRows[skyRows.length-1].W : skyStart;
