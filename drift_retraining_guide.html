@@ -108,8 +108,10 @@ trainer.train()  # Medical + K8s together</code>
   <tr style="background:rgba(184,112,0,0.03)"><td>Completely new domain</td><td>Medical → Cooking questions</td><td class="warn">⚠️ Fine-tune a SEPARATE model, don't mix</td></tr>
   <tr><td>Seasonal drift</td><td>Tax questions appear in April</td><td>⏰ Schedule retraining, don't react daily</td></tr>
   </tbody>
+  </tbody>
   </table>
 </div>
+<div style="margin-top:0.5rem"><span style="display:inline-block;background:var(--raised);padding:0.2em 0.6em;border-radius:100px;font-family:monospace;font-size:0.6rem;color:var(--violet)">📁 scripts/check_drift.py — Evidently AI compares training vs production distribution. Daily GitHub Actions cron.</span></div>
 
 <div class="card">
   <h2>5. Where Do New Q&A Pairs Come From?</h2>
@@ -121,10 +123,14 @@ trainer.train()  # Medical + K8s together</code>
   <tr style="background:rgba(26,110,52,0.03)"><td><strong>🥇 Business source docs</strong></td><td>Highest</td><td>Free</td><td style="font-size:0.75rem">Phase 4 pipeline: PDF → extract → chunk → format. K8s runbook → Q&A. Docs already exist.</td></tr>
   <tr><td><strong>🥈 Expert seeds → GPT-4o expand</strong></td><td>High</td><td>~$5-10 for 500 pairs</td><td style="font-size:0.75rem">Domain expert writes 20-50 pairs. GPT-4o generates 500. Human spot-checks 10%.</td></tr>
   <tr style="background:rgba(26,110,52,0.03)"><td><strong>🥉 Production logs</strong></td><td>Highest</td><td>Expert time</td><td style="font-size:0.75rem">Collect failed queries (thumbs down, "I don't know"). Expert answers them. Real user needs.</td></tr>
-  <tr style="background:rgba(198,40,40,0.03)"><td><strong>🏴 Pure GPT-4o (no source)</strong></td><td>Low</td><td>~$3-5</td><td style="font-size:0.75rem">No source docs. No expert. HIGH risk: hallucinations, wrong facts, no business context.</td></tr>
+  <tr style="background:rgba(198,40,40,0.03)"><td><strong>🏴 Pure GPT-4o (no source)</strong></td><td>Low</td><td>~$3-5</td><td style="font-size:0.75rem">No source docs. No expert. HIGH risk</td></tr></tbody></table></div>
+<div style="margin-top:0.5rem"><span style="display:inline-block;background:var(--raised);padding:0.2em 0.6em;border-radius:100px;font-family:monospace;font-size:0.6rem;color:var(--violet)">📁 Phase 4 pipeline (PDF→chunk→format) + Phase 5 (SFT) + Phase 5b (Synthetic Data). New Q&A from business docs.</span></div>
+<div style="margin-top:2rem"><!-- placeholder --></div>: hallucinations, wrong facts, no business context.</td></tr>
+  </tbody>
   </tbody>
   </table>
 </div>
+<div style="margin-top:0.5rem"><span style="display:inline-block;background:var(--raised);padding:0.2em 0.6em;border-radius:100px;font-family:monospace;font-size:0.6rem;color:var(--violet)">📁 scripts/check_drift.py — Evidently AI compares training vs production distribution. Daily GitHub Actions cron.</span></div>
 
 <div class="card">
   <h2>6. The Actual Flow — What We Built</h2>
@@ -157,7 +163,8 @@ trainer.train()  # Medical + K8s together</code>
   <span style="color:var(--tdim)">Old adapter (v6, medical only) → Archived<br>New adapter (v7, medical + DevOps) → Production ✅</span>
   </div>
 
-  <div class="callout amber"><strong>🔑 The key insight:</strong> It is not automatic. The drift alert tells you SOMETHING changed. A human decides WHAT to do about it. The pipeline makes the retraining reproducible and verifiable. You never retrain blindly on drift alone.</div>
+  <div class="callout amber"><strong>🔑 The key insight:</strong> It is not automatic. The drift alert tells you SOMETHING changed. A human decides WHAT to do about it. The pipeline makes the retraining reproducible and verifiable. You never retrain blindly on drift alone.</span></div>
+<span style="display:inline-block;background:var(--raised);padding:0.2em 0.6em;border-radius:100px;font-family:monospace;font-size:0.6rem;color:var(--violet);margin-left:1.5rem;margin-top:0.5rem">📁 Full pipeline: check_drift.py → dvc add → dvc repro → train_stage.py → evaluate_stage.py → mlflow promote. All automated in CI/CD.</span> on drift alone.</div>
 </div>
 
 <div style="text-align:center;padding:1.5rem;border-top:1px solid var(--border);margin-top:1.5rem">
