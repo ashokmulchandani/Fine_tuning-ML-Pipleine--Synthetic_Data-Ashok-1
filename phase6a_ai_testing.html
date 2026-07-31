@@ -64,7 +64,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-
 <nav class="topbar">
   <span class="logo">Phase 6A</span>
   <div class="dots" id="dots"></div>
-  <span class="step-label" id="stepLabel">1/11</span>
+  <span class="step-label" id="stepLabel">1/12</span>
 </nav>
 
 <div class="app">
@@ -832,6 +832,158 @@ InstructionSchema.validate(sample_instruction_data)
 </table>
 
 <div class="callout" style="background:rgba(26,110,52,0.06);border:1px solid rgba(26,110,52,0.2);"><strong>🎯 The rule:</strong> The decorator gates only classes that <strong>import from or call Pandera directly</strong>. The other classes use plain Python + pandas — they work regardless. If someone clones the repo without <code>pip install pandera</code>, <strong>10 of 15 tests still run</strong> (TestEdgeCases + TestInstructionFormat). You don't lose everything just because one optional dependency is missing.</div>
+</div></div>`},
+{id:'6A.12',title:'Beginner's Guide — Anatomy of One Line & assert Explained',
+fact:'null_mask = bad_instruction_data["instruction"].isnull() — 5 pieces working together. Plus: what assert really means and why tests use it instead of if/print.',
+render:()=>`
+<div class="slide"><div class="card">
+<h2><span class="num">6A.12</span> Beginner's Guide — One Line, Piece by Piece</h2>
+<p style="font-size:0.9rem;color:var(--tdim);">The line <code>null_mask = bad_instruction_data["instruction"].isnull()</code> at line 118 looks intimidating — but it's just 5 simple pieces chained together. Let's break it down.</p>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem;">🧱 Step 1 — The Fixture: What's Inside <code>bad_instruction_data</code>?</h3>
+<p style="font-size:0.82rem;color:var(--tdim);margin-bottom:0.4rem;">This is a <strong>pandas DataFrame</strong> — think Excel spreadsheet in memory. Defined in <code>conftest.py</code>:55:</p>
+
+<table style="width:100%;border-collapse:collapse;font-size:0.72rem;margin:0.5rem 0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.3rem 0.4rem;">Row</th><th style="text-align:left;padding:0.3rem 0.4rem;">instruction</th><th style="text-align:left;padding:0.3rem 0.4rem;">input</th><th style="text-align:left;padding:0.3rem 0.4rem;">output</th><th style="text-align:left;padding:0.3rem 0.4rem;">Status</th></tr></thead>
+<tbody>
+<tr><td style="padding:0.3rem 0.4rem;">0</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;">"### Instruction: What is Metformin?..."</td><td style="padding:0.3rem 0.4rem;">""</td><td style="padding:0.3rem 0.4rem;">"Metformin is a biguanide."</td><td style="color:var(--green);">✅ valid</td></tr>
+<tr style="background:rgba(198,40,40,0.04);"><td style="padding:0.3rem 0.4rem;">1</td><td style="padding:0.3rem 0.4rem;font-weight:700;color:var(--red);">None</td><td style="padding:0.3rem 0.4rem;">""</td><td style="padding:0.3rem 0.4rem;">"Some answer"</td><td style="color:var(--red);">❌ NULL instruction</td></tr>
+<tr><td style="padding:0.3rem 0.4rem;">2</td><td style="padding:0.3rem 0.4rem;font-size:0.68rem;">"### Instruction: Side effects?..."</td><td style="padding:0.3rem 0.4rem;">""</td><td style="padding:0.3rem 0.4rem;font-weight:700;color:var(--amber);">""</td><td style="color:var(--amber);">❌ EMPTY output</td></tr>
+<tr><td style="padding:0.3rem 0.4rem;">3</td><td style="padding:0.3rem 0.4rem;font-weight:700;color:var(--amber);">""</td><td style="padding:0.3rem 0.4rem;">""</td><td style="padding:0.3rem 0.4rem;">"Some answer"</td><td style="color:var(--amber);">❌ EMPTY instruction</td></tr>
+</tbody>
+</table>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem;">🔬 Step 2 — Select a Column: <code>["instruction"]</code></h3>
+<p style="font-size:0.82rem;color:var(--tdim);margin-bottom:0.4rem;">Bracket notation grabs ONE column from the DataFrame → returns a <strong>pandas Series</strong> (a single column from the spreadsheet).</p>
+
+<div class="code-box" style="font-size:0.78rem;">
+<span style="color:#6a9955;"># bad_instruction_data["instruction"]  →  a pandas Series (1 column, 4 rows)</span>
+
+Index  | Value
+   <span style="color:#ce9178;">0</span>   | <span style="color:#ce9178;">"### Instruction: What is Metformin?\n### Response:"</span>
+   <span style="color:#ce9178;">1</span>   | <span style="color:#569cd6;">None</span>                    <span style="color:#6a9955;">← Python's "nothing" — no value at all</span>
+   <span style="color:#ce9178;">2</span>   | <span style="color:#ce9178;">"### Instruction: Side effects?\n### Response:"</span>
+   <span style="color:#ce9178;">3</span>   | <span style="color:#ce9178;">""</span>                       <span style="color:#6a9955;">← Empty string — a value, just 0 characters long</span></div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem;">🔍 Step 3 — Check Each Row: <code>.isnull()</code></h3>
+<p style="font-size:0.82rem;color:var(--tdim);margin-bottom:0.4rem;"><code>.isnull()</code> is a pandas Series method. It checks every value in the column and returns <code>True</code> if the value is <strong>None</strong> or <strong>NaN</strong>, <code>False</code> otherwise.</p>
+
+<div class="code-box" style="font-size:0.78rem;">
+Index  | Value               | .isnull() result
+   <span style="color:#ce9178;">0</span>   | <span style="color:#ce9178;">"### Instruct..."</span>  | <span style="color:#569cd6;">False</span>    <span style="color:#6a9955;">← real text → NOT null</span>
+   <span style="color:#ce9178;">1</span>   | <span style="color:#569cd6;">None</span>               | <span style="color:#569cd6;">True</span>     <span style="color:#6a9955;">← None → IS null!</span>
+   <span style="color:#ce9178;">2</span>   | <span style="color:#ce9178;">"### Instruct..."</span>  | <span style="color:#569cd6;">False</span>    <span style="color:#6a9955;">← real text → NOT null</span>
+   <span style="color:#ce9178;">3</span>   | <span style="color:#ce9178;">""</span>                  | <span style="color:#569cd6;">False</span>    <span style="color:#6a9955;">← empty string ≠ null! (key difference)</span>
+
+<span style="color:#6a9955;"># The result is a BOOLEAN MASK — a Series of True/False values</span>
+<span style="color:#6a9955;"># True = "this row has a problem", False = "this row is fine"</span></div>
+
+<div class="callout" style="background:rgba(198,40,40,0.06);border:1px solid rgba(198,40,40,0.2);"><strong>⚠️ Crucial distinction:</strong> <code>None</code> → <code>.isnull()</code> = <strong>True</strong> (no value at all). <code>""</code> → <code>.isnull()</code> = <strong>False</strong> (a value, just zero characters). Empty string is NOT null — that's why Row 3 doesn't make <code>null_mask.sum()</code> become 2. Empty strings are caught by a DIFFERENT test.</div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem;">📦 Step 4 — Store It: <code>null_mask = ...</code></h3>
+<p style="font-size:0.82rem;color:var(--tdim);margin-bottom:0.4rem;">The boolean Series gets stored in a variable called <code>null_mask</code>.</p>
+
+<div class="code-box" style="font-size:0.78rem;">
+null_mask
+  <span style="color:#ce9178;">0</span>    <span style="color:#569cd6;">False</span>
+  <span style="color:#ce9178;">1</span>    <span style="color:#569cd6;">True</span>      <span style="color:#6a9955;">← Row 1 has None for instruction</span>
+  <span style="color:#ce9178;">2</span>    <span style="color:#569cd6;">False</span>
+  <span style="color:#ce9178;">3</span>    <span style="color:#569cd6;">False</span></div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem;">✅ Step 5 — Use It (the assert on the next line)</h3>
+
+<div class="code-box" style="font-size:0.78rem;">
+<span style="color:#569cd6;">assert</span> null_mask.sum() > <span style="color:#ce9178;">0</span>, <span style="color:#ce9178;">"Test data should contain nulls"</span>
+<span style="color:#6a9955;">#       └──────────┘</span>
+<span style="color:#6a9955;">#       .sum() on booleans: True=1, False=0</span>
+<span style="color:#6a9955;">#       0 + 1 + 0 + 0 = 1</span>
+<span style="color:#6a9955;">#       1 > 0 → True → test PASSES ✅</span>
+
+<span style="color:#569cd6;">assert</span> null_mask.sum() == <span style="color:#ce9178;">1</span>
+<span style="color:#6a9955;">#       1 == 1 → True → exactly 1 null found ✅</span></div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem;">🖼️ The Full Visual Chain</h3>
+<div class="code-box" style="font-size:0.74rem;">
+conftest.py                          test_data.py:118
+───────────                          ─────────────────
+<span style="color:#569cd6;">@pytest.fixture</span>                     null_mask = bad_instruction_data[<span style="color:#ce9178;">"instruction"</span>].isnull()
+<span style="color:#569cd6;">def</span> <span style="color:#c586c0;">bad_instruction_data</span>():             │              └──────────────┘   └──────┘
+    <span style="color:#569cd6;">return</span> pd.DataFrame([               │               column name       check each
+        {...},   ← row <span style="color:#ce9178;">0</span>              │               (string key)       row for None
+        {              ─────────────────┘
+          <span style="color:#ce9178;">"instruction"</span>: <span style="color:#569cd6;">None</span>,  ← injected by pytest fixture system
+          ...
+        },
+    ])
+
+RESULT (null_mask):
+    [<span style="color:#569cd6;">False</span>, <span style="color:#569cd6;">True</span>, <span style="color:#569cd6;">False</span>, <span style="color:#569cd6;">False</span>]
+        │      │
+        │      └── Row <span style="color:#ce9178;">1</span>: None → .isnull() = True ✅
+        └── Row <span style="color:#ce9178;">0</span>: real text → .isnull() = False
+
+null_mask.sum() → <span style="color:#ce9178;">1</span>  (only one True)</div>
+
+<hr style="border:none;border-top:2px solid var(--border);margin:1.5rem 0;">
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem;">💬 What Does <code>assert</code> Mean? — Python's Truth Checker</h3>
+<p style="font-size:0.82rem;color:var(--tdim);margin-bottom:0.4rem;"><code>assert</code> is Python's built-in "I claim this is True" statement. If you're wrong → program crashes immediately.</p>
+
+<div class="code-box" style="font-size:0.78rem;">
+<span style="color:#569cd6;">assert</span> <span style="color:#ce9178;">2 + 2 == 4</span>     <span style="color:#6a9955;"># True → nothing happens, keeps running ✅</span>
+
+<span style="color:#569cd6;">assert</span> <span style="color:#ce9178;">2 + 2 == 5</span>     <span style="color:#6a9955;"># False → CRASHES with AssertionError ❌</span>
+<span style="color:#6a9955;"># AssertionError (no message — always add one!)</span>
+
+<span style="color:#569cd6;">assert</span> <span style="color:#ce9178;">2 + 2 == 5</span>, <span style="color:#ce9178;">"Math is broken!"</span>
+<span style="color:#6a9955;"># AssertionError: Math is broken!  ← your message appears here</span></div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.82rem;color:var(--violet);margin:1rem 0 0.4rem;">assert vs if/print — Why Not Just Use if?</h3>
+
+<div class="compare">
+<div class="cmp-card left"><h4 style="color:var(--red);">❌ if + print — WRONG for tests</h4>
+<div class="code-box" style="font-size:0.72rem;padding:0.5rem 0.75rem;margin:0;">
+<span style="color:#569cd6;">if</span> null_mask.sum() == <span style="color:#ce9178;">0</span>:
+    print(<span style="color:#ce9178;">"no nulls found"</span>)
+<span style="color:#6a9955;"># prints text but pytest sees NO error</span>
+<span style="color:#6a9955;"># → test PASSES (even though data is bad!)</span>
+</div></div>
+<div class="cmp-card right"><h4 style="color:var(--green);">✅ assert — CORRECT for tests</h4>
+<div class="code-box" style="font-size:0.72rem;padding:0.5rem 0.75rem;margin:0;">
+<span style="color:#569cd6;">assert</span> null_mask.sum() > <span style="color:#ce9178;">0</span>
+<span style="color:#6a9955;"># raises AssertionError if wrong</span>
+<span style="color:#6a9955;"># → pytest catches it → test FAILS</span>
+</div></div>
+</div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.82rem;color:var(--violet);margin:1rem 0 0.4rem;">How pytest Uses assert</h3>
+<div class="code-box" style="font-size:0.78rem;">
+<span style="color:#569cd6;">assert</span> condition
+    │
+    ├── <span style="color:#569cd6;">True</span>  → test <span style="color:#569cd6;">PASSES</span> ✅ (pytest sees no error)
+    │
+    └── <span style="color:#569cd6;">False</span> → AssertionError raised
+                    │
+                    └── pytest catches it → test <span style="color:#569cd6;">FAILS</span> ❌
+                        shows you: the line number, the message, the values</div>
+
+<div class="callout" style="background:var(--vbg);border:1px solid rgba(91,58,168,0.15);"><strong>🧠 The mental model:</strong> <code>assert</code> = "I bet my life this is True." If you're right → nothing happens, move on. If you're wrong → everything stops, you get told exactly where and why. That's exactly what you want in a test — you want to know the MOMENT something isn't what you expected, not keep running with bad data.</div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.82rem;color:var(--violet);margin:1rem 0 0.4rem;">📋 The Data Vocabulary Cheat Sheet</h3>
+<table style="width:100%;border-collapse:collapse;font-size:0.75rem;margin:0.5rem 0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.3rem 0.5rem;">Term</th><th style="text-align:left;padding:0.3rem 0.5rem;">What It Is</th><th style="text-align:left;padding:0.3rem 0.5rem;">Example</th></tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem;font-weight:600;">DataFrame</td><td style="padding:0.3rem 0.5rem;">pandas "spreadsheet" — rows × columns</td><td style="padding:0.3rem 0.5rem;font-size:0.7rem;"><code>bad_instruction_data</code> (4 rows × 3 cols)</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem;font-weight:600;">Series</td><td style="padding:0.3rem 0.5rem;">One column pulled from a DataFrame</td><td style="padding:0.3rem 0.5rem;font-size:0.7rem;"><code>bad_instruction_data["instruction"]</code></td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem;font-weight:600;">Boolean mask</td><td style="padding:0.3rem 0.5rem;">Series of True/False — which rows have a problem?</td><td style="padding:0.3rem 0.5rem;font-size:0.7rem;"><code>[False, True, False, False]</code></td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem;font-weight:600;"><code>None</code></td><td style="padding:0.3rem 0.5rem;">Python's "nothing" — no value at all</td><td style="padding:0.3rem 0.5rem;font-size:0.7rem;">Row 1 instruction = <code>None</code> → isnull() = True</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem;font-weight:600;"><code>""</code> (empty string)</td><td style="padding:0.3rem 0.5rem;">A string with zero characters — it IS a value</td><td style="padding:0.3rem 0.5rem;font-size:0.7rem;">Row 3 instruction = <code>""</code> → isnull() = False</td></tr>
+<tr style="border-bottom:1px solid var(--border);"><td style="padding:0.3rem 0.5rem;font-weight:600;"><code>assert</code></td><td style="padding:0.3rem 0.5rem;">Python keyword — "I claim this is True or crash"</td><td style="padding:0.3rem 0.5rem;font-size:0.7rem;"><code>assert 1 > 0, "Bad data!"</code></td></tr>
+<tr><td style="padding:0.3rem 0.5rem;font-weight:600;">Fixture</td><td style="padding:0.3rem 0.5rem;">pytest function that prepares test data</td><td style="padding:0.3rem 0.5rem;font-size:0.7rem;"><code>bad_instruction_data</code> → returns DataFrame</td></tr>
+</tbody>
+</table>
+
+<div class="callout" style="background:rgba(26,110,52,0.06);border:1px solid rgba(26,110,52,0.2);"><strong>🎯 The big picture:</strong> Every test line follows the same pattern: <strong>grab data</strong> (fixture → DataFrame → column → Series) → <strong>check something</strong> (.isnull(), .str.len(), .startswith()) → <strong>assert it's true</strong> (assert result, "message if wrong"). Once you see this pattern, every test in the file reads the same way.</div>
 </div></div>`}
 ];
 
