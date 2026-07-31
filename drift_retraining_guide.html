@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drift Retraining Guide — When & How to Retrain</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f8f9fc;--card:#fff;--raised:#eef0f5;--border:#dde0e6;--text:#1a1d23;--tdim:#4a4f5b;--tmut:#8b909b;--violet:#5b3aa8;--vbg:#f3effc;--green:#1a6e34;--green-bg:#e6f4ea;--amber:#b87000;--amber-bg:#fff8c5;--red:#c62828;--red-bg:#ffebe9;--cyan:#007a99;--cyan-bg:#e6f4f7}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;min-height:100vh}
+.app{max-width:900px;margin:0 auto;padding:1.5rem}
+.header{text-align:center;padding:2rem 0 1.5rem}
+.header h1{font-family:'Space Grotesk',sans-serif;font-size:1.6rem;font-weight:700;color:var(--violet)}
+.header p{color:var(--tdim);font-size:0.95rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin:1.2rem 0}
+.card h2{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;font-weight:600;color:var(--violet);margin-bottom:0.5rem}
+.card h3{font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1rem 0 0.5rem}
+.card p{color:var(--tdim);font-size:0.88rem;margin-bottom:0.5rem}
+.callout{background:var(--vbg);border:1px solid rgba(91,58,168,0.15);border-radius:10px;padding:0.7rem 1rem;margin:0.5rem 0;font-size:0.82rem}
+.callout.amber{background:var(--amber-bg);border-color:rgba(184,112,0,0.2)}
+.callout.green{background:var(--green-bg);border-color:rgba(26,110,52,0.2)}
+.callout.red{background:var(--red-bg);border-color:rgba(198,40,40,0.2)}
+.tbl{width:100%;border-collapse:collapse;font-size:0.78rem;margin:0.5rem 0}
+.tbl th{font-size:0.62rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--tmut);padding:0.4rem 0.6rem;border-bottom:2px solid var(--border);text-align:left}
+.tbl td{padding:0.4rem 0.6rem;border-bottom:1px solid var(--border)}
+.tbl td:first-child{font-weight:600}
+.tbl .yes{color:var(--green);font-weight:700}
+.tbl .no{color:var(--red);font-weight:700}
+.tbl .warn{color:var(--amber);font-weight:700}
+.code{background:#1e1e1e;border:1px solid #333;border-left:3px solid var(--violet);border-radius:6px;padding:0.6rem 0.9rem;font-family:monospace;font-size:0.68rem;line-height:1.7;color:#d4d4d4;margin:0.5rem 0;overflow-x:auto;white-space:pre-wrap}
+.flow{font-family:'Space Grotesk',monospace;font-size:0.72rem;line-height:2.2;margin:0.5rem 0}
+.flow .ok{color:var(--green)}
+.flow .fail{color:var(--red)}
+.flow .action{color:var(--violet)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:0.5rem 0}
+.pair .box{padding:0.8rem;border-radius:10px;text-align:center;font-size:0.78rem}
+.pair .wrong{border:2px solid var(--red);background:var(--red-bg)}
+.pair .right{border:2px solid var(--green);background:var(--green-bg)}
+.guardrail{display:flex;gap:0.5rem;align-items:flex-start;margin:0.6rem 0}
+.guardrail .num{width:24px;height:24px;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-size:0.7rem;font-weight:700;flex-shrink:0}
+.guardrail .info{flex:1;font-size:0.85rem}
+@media(max-width:768px){.app{padding:0.8rem}.pair{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header class="header">
+  <h1>Drift Retraining — When & How to Retrain</h1>
+  <p>Drift detected? New Q&A from users? Yes, you can append and retrain — but with three critical guardrails. The drift alert tells you SOMETHING changed. A human decides WHAT to do about it.</p>
+</header>
+
+<div class="card">
+  <h2>1. The Happy Path — Yes, It Works</h2>
+
+  <div class="flow">
+  <span class="fail">🔴 Drift detected</span> → 50% of queries about Kubernetes<br>
+  &nbsp;&nbsp;→ Generate 500 new Q&A pairs about Kubernetes<br>
+  &nbsp;&nbsp;→ Append to <code>instruction_data.json</code><br>
+  &nbsp;&nbsp;→ <code>dvc add + dvc repro</code><br>
+  <span class="ok">&nbsp;&nbsp;→ Model now handles Kubernetes + Metformin ✅</span><br><br>
+  <span style="color:var(--tdim)">DVC sees the new data hash, dvc repro re-runs the pipeline.<br>MLflow logs the new run. Evidently confirms drift resolved.<br>This works mechanically. But three things can go wrong…</span>
+  </div>
+</div>
+
+<div class="card">
+  <h2>2. Guardrail 1 — Catastrophic Forgetting</h2>
+  <p>If your new data is <strong>500 Kubernetes Q&A</strong> and your old data is only <strong>50 medical Q&A</strong>, the model forgets Metformin entirely.</p>
+
+  <div class="pair">
+    <div class="box right"><strong>Before retrain:</strong><br>"What is Metformin?"<br>→ "Biguanide for diabetes..." ✅</div>
+    <div class="box wrong"><strong>After retrain:</strong><br>"What is Metformin?"<br>→ "I think it's a K8s pod?" ❌</div>
+  </div>
+  <div class="callout green"><strong>✅ Fix:</strong> Mix old + new data. The training set should be <code>original_qa.json + new_qa.json</code>, not just <code>new_qa.json</code>. DVC append keeps everything together.</div>
+</div>
+
+<div class="card">
+  <h2>3. Guardrail 2 — LoRA Adapter Stacking</h2>
+  <p>You cannot train a second LoRA on new data and stack it on top of the old one.</p>
+
+  <div class="pair">
+    <div class="box wrong">
+      <strong>❌ WRONG:</strong><br>
+      <code style="font-size:0.65rem">model = PeftModel.from_pretrained(base, "adapter_v1")  # Medical<br>
+model = get_peft_model(model, lora_config)              # K8s adapter<br>
+→ Two unmerged adapters = undefined behavior</code>
+    </div>
+    <div class="box right">
+      <strong>✅ RIGHT:</strong><br>
+      <code style="font-size:0.65rem">model = PeftModel.from_pretrained(base, "adapter_v1")<br>
+model = model.merge_and_unload()       # Bake in medical<br>
+model = get_peft_model(model, lora_config)  # Fresh LoRA<br>
+trainer.train()  # Medical + K8s together</code>
+    </div>
+  </div>
+  <div class="callout green"><strong>✅ Merge before retraining.</strong> <code>merge_and_unload()</code> bakes B×A into W₀, producing a standard model. Apply fresh LoRA. Train on combined dataset.</div>
+</div>
+
+<div class="card">
+  <h2>4. Guardrail 3 — Not All Drift Needs Retraining</h2>
+
+  <table class="tbl">
+  <thead><tr><th>Drift Type</th><th>Example</th><th>Action</th></tr></thead>
+  <tbody>
+  <tr style="background:rgba(198,40,40,0.03)"><td>New vocabulary, same topic</td><td>"K8s" instead of "Kubernetes"</td><td class="no">❌ Don't retrain — add synonym mapping</td></tr>
+  <tr style="background:rgba(26,110,52,0.03)"><td>New topic, same domain</td><td>"Docker" added to DevOps questions</td><td class="yes">✅ Retrain with appended data</td></tr>
+  <tr style="background:rgba(184,112,0,0.03)"><td>Completely new domain</td><td>Medical → Cooking questions</td><td class="warn">⚠️ Fine-tune a SEPARATE model, don't mix</td></tr>
+  <tr><td>Seasonal drift</td><td>Tax questions appear in April</td><td>⏰ Schedule retraining, don't react daily</td></tr>
+  </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>5. Where Do New Q&A Pairs Come From?</h2>
+  <p>The Q&A pairs must come from somewhere real — you cannot just invent Kubernetes facts.</p>
+
+  <table class="tbl">
+  <thead><tr><th>Source</th><th>Quality</th><th>Cost</th><th>How</th></tr></thead>
+  <tbody>
+  <tr style="background:rgba(26,110,52,0.03)"><td><strong>🥇 Business source docs</strong></td><td>Highest</td><td>Free</td><td style="font-size:0.75rem">Phase 4 pipeline: PDF → extract → chunk → format. K8s runbook → Q&A. Docs already exist.</td></tr>
+  <tr><td><strong>🥈 Expert seeds → GPT-4o expand</strong></td><td>High</td><td>~$5-10 for 500 pairs</td><td style="font-size:0.75rem">Domain expert writes 20-50 pairs. GPT-4o generates 500. Human spot-checks 10%.</td></tr>
+  <tr style="background:rgba(26,110,52,0.03)"><td><strong>🥉 Production logs</strong></td><td>Highest</td><td>Expert time</td><td style="font-size:0.75rem">Collect failed queries (thumbs down, "I don't know"). Expert answers them. Real user needs.</td></tr>
+  <tr style="background:rgba(198,40,40,0.03)"><td><strong>🏴 Pure GPT-4o (no source)</strong></td><td>Low</td><td>~$3-5</td><td style="font-size:0.75rem">No source docs. No expert. HIGH risk: hallucinations, wrong facts, no business context.</td></tr>
+  </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2>6. The Actual Flow — What We Built</h2>
+
+  <div class="flow">
+  <code>check_drift.py</code> runs daily (GitHub Actions 6am UTC)<br>
+  &nbsp;&nbsp;│<br>
+  &nbsp;&nbsp;├── <span class="ok">drift < 0.5 → Nothing happens. Model is healthy. 🟢</span><br>
+  &nbsp;&nbsp;│<br>
+  &nbsp;&nbsp;└── <span class="fail">drift > 0.5 → Alert fires 🔴</span><br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="action">Human reviews: WHAT drifted?</span><br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;"Users are asking about Docker and Kubernetes now"<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="action">Collect/generate new Q&A for Docker + K8s</span><br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;→ Append to <code>instruction_data.json</code><br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;→ <code>dvc add data/instruction_data.json</code><br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;→ <code>dvc push</code> (new version tracked!)<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── <span class="action">dvc repro (re-runs prepare → train → evaluate)</span><br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── prepare_data: validates old + new data together<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── train: merges old adapter, trains on combined dataset<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── MLflow: "run #7: 600 examples, final_loss=0.28"<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── evaluate: MFT checks Metformin still works ✅<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;DIR checks Kubernetes safety ✅<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Drift check: now 0.15 (in-distribution!) 🟢<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="action">Promote to Production (MLflow)</span><br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<code>mlflow models transition medical-qa 7 --stage Production</code><br><br>
+  <span style="color:var(--tdim)">Old adapter (v6, medical only) → Archived<br>New adapter (v7, medical + DevOps) → Production ✅</span>
+  </div>
+
+  <div class="callout amber"><strong>🔑 The key insight:</strong> It is not automatic. The drift alert tells you SOMETHING changed. A human decides WHAT to do about it. The pipeline makes the retraining reproducible and verifiable. You never retrain blindly on drift alone.</div>
+</div>
+
+<div style="text-align:center;padding:1.5rem;border-top:1px solid var(--border);margin-top:1.5rem">
+  <a href="finetuning_plan_dashboard.html" style="color:var(--tmut);font-size:0.7rem;text-decoration:none;margin:0 0.5rem">Dashboard</a> |
+  <a href="drift_explained.html" style="color:var(--violet);font-size:0.7rem;text-decoration:none;margin:0 0.5rem;font-weight:700">Drift Explained</a> |
+  <a href="phase6b_mlops_deployment.html" style="color:var(--violet);font-size:0.7rem;text-decoration:none;margin:0 0.5rem;font-weight:700">Phase 6B (MLOps)</a> |
+  <a href="hallucination_handling.html" style="color:var(--violet);font-size:0.7rem;text-decoration:none;margin:0 0.5rem;font-weight:700">Hallucination Guide</a>
+</div>
+
+</div>
+</body>
+</html>
