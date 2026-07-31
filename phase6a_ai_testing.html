@@ -623,6 +623,54 @@ render:()=>`
 </div>
 
 <div class="callout" style="background:rgba(26,110,52,0.06);border:1px solid rgba(26,110,52,0.2);"><strong>🎯 The key benefit — separation of concerns:</strong> Fixture's job = "Here is the data, ready to use." Test's job = "Here is what should happen." Assertion's job = "Did it happen? Yes/No." Change test data in <strong>one place</strong> (conftest.py) → all 25 tests pick it up automatically. That's why it's called a <em>fixture</em> — a fixed, reusable setup that holds your test context in place.</div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem;">🧬 Who Defines <code>InstructionSchema.validate()</code>? — Inheritance Chain</h3>
+<p style="font-size:0.82rem;color:var(--tdim);margin-bottom:0.6rem;">When you write <code>InstructionSchema.validate(df)</code> at line 96, it looks like magic — but it's just classic Python inheritance. Pandera provides the engine; you provide the rules.</p>
+
+<div class="code-box" style="font-size:0.78rem;">
+<span style="color:#6a9955;"># ═════════════════════════════════════════════════════════════</span>
+<span style="color:#6a9955;"># LAYER 1: Pandera's library (inside your .venv — you never touch this)</span>
+<span style="color:#6a9955;"># ═════════════════════════════════════════════════════════════</span>
+<span style="color:#569cd6;">class</span> <span style="color:#4ec9b0;">DataFrameModel</span>:              <span style="color:#6a9955;">← pip install pandera provides this</span>
+
+    <span style="color:#569cd6;">@classmethod</span>
+    <span style="color:#569cd6;">def</span> <span style="color:#c586c0;">validate</span>(cls, dataframe):    <span style="color:#6a9955;">← THE METHOD — loops every row/column,</span>
+        <span style="color:#6a9955;"># ...                          checks nullable, runs @pa.check functions,</span>
+        <span style="color:#6a9955;"># ...                          raises SchemaError if any row fails</span>
+
+<span style="color:#6a9955;"># ═════════════════════════════════════════════════════════════</span>
+<span style="color:#6a9955;"># LAYER 2: YOUR schema (test_data.py:34) — inherits everything above</span>
+<span style="color:#6a9955;"># ═════════════════════════════════════════════════════════════</span>
+<span style="color:#569cd6;">class</span> <span style="color:#4ec9b0;">InstructionSchema</span>(pa.DataFrameModel):  <span style="color:#6a9955;">← YOU define this</span>
+    instruction: PaSeries[str] = pa.Field(nullable=<span style="color:#569cd6;">False</span>)  <span style="color:#6a9955;">← your rule: must exist, non-null</span>
+    output: PaSeries[str] = pa.Field(nullable=<span style="color:#569cd6;">False</span>)       <span style="color:#6a9955;">← your rule: must exist, non-null</span>
+
+    <span style="color:#569cd6;">@pa.check</span>(<span style="color:#ce9178;">"instruction"</span>)
+    <span style="color:#569cd6;">def</span> <span style="color:#c586c0;">instruction_not_empty</span>(cls, series):   <span style="color:#6a9955;">← your custom check</span>
+        <span style="color:#569cd6;">return</span> series.str.len() > <span style="color:#ce9178;">0</span>
+
+<span style="color:#6a9955;"># ═════════════════════════════════════════════════════════════</span>
+<span style="color:#6a9955;"># LAYER 3: YOU call validate() (test_data.py:96)</span>
+<span style="color:#6a9955;"># ═════════════════════════════════════════════════════════════</span>
+InstructionSchema.validate(sample_instruction_data)
+<span style="color:#6a9955;">#       └── inherited from pa.DataFrameModel (Pandera)</span>
+<span style="color:#6a9955;">#       runs ALL your rules: nullable=False, str.len() > 0...</span></div>
+
+<table style="width:100%;border-collapse:collapse;font-size:0.75rem;margin:0.5rem 0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.3rem 0.5rem;">Piece</th><th style="text-align:left;padding:0.3rem 0.5rem;">Defined By</th><th style="text-align:left;padding:0.3rem 0.5rem;">Where</th><th style="text-align:left;padding:0.3rem 0.5rem;">Do You Write It?</th></tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--border);background:rgba(91,58,168,0.03);"><td style="padding:0.3rem 0.5rem;"><code>pa.DataFrameModel</code></td><td style="padding:0.3rem 0.5rem;font-weight:600;color:var(--violet);">Pandera</td><td style="padding:0.3rem 0.5rem;font-size:0.68rem;">Inside <code>pandera</code> package</td><td style="padding:0.3rem 0.5rem;">❌ No — it's the library</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(91,58,168,0.03);"><td style="padding:0.3rem 0.5rem;"><code>.validate()</code> method</td><td style="padding:0.3rem 0.5rem;font-weight:600;color:var(--violet);">Pandera</td><td style="padding:0.3rem 0.5rem;font-size:0.68rem;">On <code>DataFrameModel</code> class</td><td style="padding:0.3rem 0.5rem;">❌ No — inherited automatically</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(91,58,168,0.03);"><td style="padding:0.3rem 0.5rem;"><code>pa.Field()</code></td><td style="padding:0.3rem 0.5rem;font-weight:600;color:var(--violet);">Pandera</td><td style="padding:0.3rem 0.5rem;font-size:0.68rem;"><code>pandera</code> module</td><td style="padding:0.3rem 0.5rem;">❌ No — you call it with your rules</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(91,58,168,0.03);"><td style="padding:0.3rem 0.5rem;"><code>@pa.check()</code> decorator</td><td style="padding:0.3rem 0.5rem;font-weight:600;color:var(--violet);">Pandera</td><td style="padding:0.3rem 0.5rem;font-size:0.68rem;"><code>pandera</code> module</td><td style="padding:0.3rem 0.5rem;">❌ No — you decorate your functions</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(26,110,52,0.03);"><td style="padding:0.3rem 0.5rem;"><code>InstructionSchema</code> class</td><td style="padding:0.3rem 0.5rem;font-weight:600;color:var(--green);">You</td><td style="padding:0.3rem 0.5rem;font-size:0.68rem;"><code>tests/test_data.py</code>:34</td><td style="padding:0.3rem 0.5rem;">✅ Yes</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(26,110,52,0.03);"><td style="padding:0.3rem 0.5rem;">Column declarations</td><td style="padding:0.3rem 0.5rem;font-weight:600;color:var(--green);">You</td><td style="padding:0.3rem 0.5rem;font-size:0.68rem;">Inside <code>InstructionSchema</code> body</td><td style="padding:0.3rem 0.5rem;">✅ Yes — <code>instruction: PaSeries[str]</code></td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(26,110,52,0.03);"><td style="padding:0.3rem 0.5rem;"><code>instruction_not_empty()</code></td><td style="padding:0.3rem 0.5rem;font-weight:600;color:var(--green);">You</td><td style="padding:0.3rem 0.5rem;font-size:0.68rem;"><code>tests/test_data.py</code>:47</td><td style="padding:0.3rem 0.5rem;">✅ Yes — your custom check logic</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(26,110,52,0.03);"><td style="padding:0.3rem 0.5rem;"><code>output_not_empty()</code></td><td style="padding:0.3rem 0.5rem;font-weight:600;color:var(--green);">You</td><td style="padding:0.3rem 0.5rem;font-size:0.68rem;"><code>tests/test_data.py</code>:57</td><td style="padding:0.3rem 0.5rem;">✅ Yes — your custom check logic</td></tr>
+</tbody>
+</table>
+
+<div class="callout" style="background:var(--vbg);border:1px solid rgba(91,58,168,0.15);"><strong>🧠 The pattern:</strong> Pandera gives you the engine (<code>validate()</code>) and the tools (<code>Field()</code>, <code>@check</code>). You <strong>declare what valid looks like</strong> — column names, types, rules. Then <code>validate()</code> reads your declarations and enforces them. It's like filling out a form: Pandera gives you the blanks, you fill in your rules, Pandera does the checking. <strong>You never write validation loop logic</strong> — that's Pandera's job.</div>
 </div></div>`}
 ];
 
