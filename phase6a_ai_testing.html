@@ -512,6 +512,43 @@ render:()=>`
 <div class="callout" style="background:rgba(26,110,52,0.06);border:1px solid rgba(26,110,52,0.2);">
 <strong>🔗 File map:</strong> <code>tests/conftest.py</code> (4 fixtures: sample_instruction_data, bad_instruction_data, sample_preference_data, mock_dpo_pipeline) → <code>tests/test_data.py</code> (15 tests: schema, edge cases, format) → <code>tests/test_model.py</code> (10 tests: MFT, INV, DIR, anti-hallucination)
 </div>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.85rem;color:var(--violet);margin:1.2rem 0 0.5rem;">🧩 Who Does What? — pytest vs Pandera vs You</h3>
+<p style="font-size:0.82rem;color:var(--tdim);margin-bottom:0.6rem;">When you read a test like <code>test_valid_instruction_data_passes_schema</code> at line 93, three pieces are working together. None of them are "built into Python" — they all need <code>pip install</code>.</p>
+
+<table style="width:100%;border-collapse:collapse;font-size:0.75rem;margin:0.5rem 0;">
+<thead><tr style="border-bottom:2px solid var(--border);"><th style="text-align:left;padding:0.3rem 0.5rem;">Tool</th><th style="text-align:left;padding:0.3rem 0.5rem;">What It Is</th><th style="text-align:left;padding:0.3rem 0.5rem;">What It Does</th><th style="text-align:left;padding:0.3rem 0.5rem;">What YOU Define</th></tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--border);background:rgba(91,58,168,0.03);"><td style="padding:0.3rem 0.5rem;font-weight:700;color:var(--violet);">pytest</td><td style="padding:0.3rem 0.5rem;">Test runner<br><span style="font-size:0.65rem;color:var(--tmut);">pip install pytest</span></td><td style="padding:0.3rem 0.5rem;">• Discovers functions starting with <code>test_</code><br>• Discovers classes starting with <code>Test</code><br>• Injects fixtures from <code>conftest.py</code><br>• Runs tests, reports pass/fail<br>• <code>pytest.raises()</code> checks for expected errors</td><td style="padding:0.3rem 0.5rem;">• Function names (<code>test_*</code>)<br>• Class names (<code>Test*</code>)<br>• Fixtures in <code>conftest.py</code><br>• <code>assert</code> statements</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(184,112,0,0.03);"><td style="padding:0.3rem 0.5rem;font-weight:700;color:var(--amber);">Pandera</td><td style="padding:0.3rem 0.5rem;">DataFrame validator<br><span style="font-size:0.65rem;color:var(--tmut);">pip install pandera</span></td><td style="padding:0.3rem 0.5rem;">• Provides <code>pa.DataFrameModel</code> base class<br>• <code>pa.Field(nullable=False)</code> declares column rules<br>• <code>@pa.check("col")</code> adds custom validation<br>• <code>.validate(df)</code> runs all checks at once<br>• Raises <code>SchemaError</code> if any row fails</td><td style="padding:0.3rem 0.5rem;">• Your schema class (<code>InstructionSchema</code>)<br>• Column names + types<br>• Nullable rules<br>• Custom check logic (e.g., <code>str.len() > 0</code>)</td></tr>
+<tr style="border-bottom:1px solid var(--border);background:rgba(26,110,52,0.03);"><td style="padding:0.3rem 0.5rem;font-weight:700;color:var(--green);">You</td><td style="padding:0.3rem 0.5rem;">Test author<br><span style="font-size:0.65rem;color:var(--tmut);">your code</span></td><td style="padding:0.3rem 0.5rem;">• Write the test function body<br>• Call <code>Schema.validate()</code> or <code>assert</code><br>• Decide: pass silently = test passes<br>• Decide: exception/assertion fail = test fails</td><td style="padding:0.3rem 0.5rem;">• What to test (happy path, edge case, failure)<br>• What data to use (fixtures)<br>• What "correct" means (<code>assert</code> logic)<br>• Naming convention so others understand</td></tr>
+</tbody>
+</table>
+
+<h3 style="font-family:'Space Grotesk',sans-serif;font-size:0.82rem;color:var(--violet);margin:1rem 0 0.4rem;">🔬 Anatomy of One Test — Line 93 Walkthrough</h3>
+<div class="code-box" style="font-size:0.78rem;">
+<span style="color:#6a9955;"># FILE: tests/test_data.py, line 90-97</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#  ┌── pytest discovers this class (starts with "Test")</span>
+<span style="color:#6a9955;">#  │</span>
+<span style="color:#569cd6;">class</span> <span style="color:#4ec9b0;">TestHappyPath</span>:                          <span style="color:#6a9955;">← YOU define this class</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#      ┌── pytest discovers this (starts with "test_")</span>
+<span style="color:#6a9955;">#      │</span>
+<span style="color:#6a9955;">#      │         ┌── pytest injects this fixture from conftest.py</span>
+<span style="color:#6a9955;">#      │         │</span>
+    <span style="color:#569cd6;">def</span> <span style="color:#c586c0;">test_valid_instruction_data_passes_schema</span>(<span style="color:#569cd6;">self</span>, sample_instruction_data):
+<span style="color:#6a9955;">#                                                  └─────────── fixtures ──────────┘</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#      ┌── Pandera's validate() checks every row against YOUR schema</span>
+<span style="color:#6a9955;">#      │</span>
+        InstructionSchema.validate(sample_instruction_data)
+<span style="color:#6a9955;">#      └── YOU defined ─┘    └── YOU defined in conftest.py ─┘</span>
+<span style="color:#6a9955;">#</span>
+<span style="color:#6a9955;">#      If validate() runs without raising SchemaError → test PASSES ✅</span>
+<span style="color:#6a9955;">#      If validate() raises SchemaError → test FAILS ❌</span></div>
+
+<div class="callout" style="background:var(--vbg);border:1px solid rgba(91,58,168,0.15);"><strong>💡 Key insight:</strong> Neither pytest nor Pandera is "pre-defined" in Python. They're both <code>pip install</code>'d libraries. pytest handles discovery + running; Pandera handles DataFrame validation. Your job is to define <strong>what valid looks like</strong> (the schema) and <strong>what to check</strong> (the test functions). The convention is simple: name your function <code>test_*</code> and put it in a <code>Test*</code> class → pytest finds it automatically.</div>
 </div></div>`}
 ];
 
