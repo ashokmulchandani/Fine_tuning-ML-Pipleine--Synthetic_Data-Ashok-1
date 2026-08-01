@@ -2846,6 +2846,113 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
   <div class="insight-callout" style="margin-top:12px;">
     <strong>🔗 Common Philosophy:</strong> Both papers are by the same first author (Avraham Chapman) and share a deep insight: <strong>neural networks have unwanted biases that hurt generalization when data is scarce</strong>. FMR attacks bias from <strong>pretraining</strong> (features are unevenly prominent). ASIF attacks bias from <strong>overparameterization</strong> (networks memorize instances). Both use <strong>automatic, dynamic weighting</strong> so no manual hyperparameter tuning is needed. If you're doing low-data fine-tuning, <strong>use both</strong> — FMR for the vision encoder, ASIF for the classifier head.
   </div>
+
+  <!-- DIGITAL GARDEN: DGR Formula Deep Dive -->
+  <h5 style="color:var(--amber); margin-top:18px;">🧮 DGR Formula — Every Term in λ = (L_id − L̂_id) / L̂_id</h5>
+  <table style="width:100%; border-collapse:collapse; font-size:0.8rem; margin:10px 0;">
+    <tr style="border-bottom:2px solid var(--border);">
+      <th style="padding:8px; text-align:left; color:var(--amber);">Term</th>
+      <th style="padding:8px; text-align:left; color:var(--amber);">What It Is</th>
+      <th style="padding:8px; text-align:center; color:var(--amber);">Example</th>
+      <th style="padding:8px; text-align:left; color:var(--amber);">How Computed</th>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:8px; font-family:var(--font-mono); font-weight:bold;">L_id</td>
+      <td style="padding:8px;"><strong>Current identification loss</strong> — how well can the Identifier name which training sample this is RIGHT NOW?</td>
+      <td style="padding:8px; text-align:center; font-family:var(--font-mono);">0.10 (very good)<br>or 3.20 (terrible)</td>
+      <td style="padding:8px; font-size:0.75rem;">Standard cross-entropy of Identifier on current batch</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:8px; font-family:var(--font-mono); font-weight:bold;">L̂_id</td>
+      <td style="padding:8px;"><strong>Baseline loss</strong> — the loss if Identifier were <strong>completely guessing</strong> (maximum uncertainty)</td>
+      <td style="padding:8px; text-align:center; font-family:var(--font-mono);">log(30) = <strong>3.40</strong></td>
+      <td style="padding:8px; font-size:0.75rem;">L̂_id = log(N_c) where N_c = number of training samples in that class</td>
+    </tr>
+    <tr style="background:#ffb30011;">
+      <td style="padding:8px; font-family:var(--font-mono); font-weight:bold;">λ</td>
+      <td style="padding:8px;"><strong>Dynamic reversal strength</strong> — how hard to push back against identification</td>
+      <td style="padding:8px; text-align:center; font-family:var(--font-mono);">−0.97 (strong)<br>or −0.06 (weak)</td>
+      <td style="padding:8px; font-size:0.75rem;">λ = (L_id − L̂_id) / L̂_id</td>
+    </tr>
+  </table>
+
+  <div style="margin:10px 0; padding:14px; background:var(--deep); border-radius:8px; border:1px solid var(--border); font-family:var(--font-mono); font-size:0.75rem; line-height:1.8;">
+    <span style="color:var(--amber);">Class "Indigo Bunting" has 30 training images → L̂_id = log(30) = 3.40 (CONSTANT)</span><br><br>
+    <span style="color:var(--amber);">SCENARIO 1 — Identifier is CRUSHING IT (early training):</span><br>
+    <span class="dim">&nbsp;&nbsp;L_id = 0.10 → λ = (0.10−3.40)/3.40 = −0.97 → </span><span style="color:var(--red);">STRONG reversal: "STOP being so good at ID!"</span><br><br>
+    <span style="color:var(--amber);">SCENARIO 2 — Identifier is STRUGGLING (late training):</span><br>
+    <span class="dim">&nbsp;&nbsp;L_id = 3.20 → λ = (3.20−3.40)/3.40 = −0.06 → </span><span style="color:var(--green);">WEAK reversal: "Already confused. CE loss, take over."</span><br><br>
+    <span style="color:var(--amber);">SCENARIO 3 — Identifier is WORSE THAN GUESSING:</span><br>
+    <span class="dim">&nbsp;&nbsp;L_id = 4.00 → λ = (4.00−3.40)/3.40 = +0.18 → </span><span style="color:var(--cyan);">POSITIVE! "Whoa, you're BELOW guessing. Back off!"</span>
+  </div>
+
+  <!-- HOW ASIF SUPPRESSES - THE AUTOMATIC MECHANISM -->
+  <h5 style="color:var(--amber); margin-top:18px;">🤖 How Suppression Actually Works — Automatic, Not Manual</h5>
+  <div class="compare-grid">
+    <div class="compare-card bad">
+      <h5>❌ NOT How ASIF Works</h5>
+      <ul style="font-size:0.78rem;">
+        <li>You do NOT label which features encode identity</li>
+        <li>You do NOT target specific weights like f_227</li>
+        <li>You do NOT need images with visible "scratches"</li>
+        <li>You do NOT manually zero out features</li>
+        <li>The model does NOT explicitly know "f_227 helped me identify #47"</li>
+      </ul>
+    </div>
+    <div class="compare-card good">
+      <h5>✅ How ASIF Actually Works</h5>
+      <ul style="font-size:0.78rem;">
+        <li>The Identifier's "label" is just the <strong>image index</strong> (47 of 200)</li>
+        <li>Gradient from Identifier flows through <strong>ALL 2048 features simultaneously</strong></li>
+        <li>Features carrying identity info get <strong>nudged</strong> to be less identity-revealing</li>
+        <li>Features carrying class info are <strong>protected by CE loss</strong></li>
+        <li>The balance is found through <strong>gradient descent</strong> — no manual selection</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="insight-callout" style="margin-top:10px;">
+    <strong>🎯 The Reversal IS the Identification Gradient, Flipped:</strong><br><br>
+    <table style="width:100%; border-collapse:collapse; font-size:0.78rem;">
+      <tr style="border-bottom:1px solid var(--border);">
+        <th style="padding:6px; text-align:left; color:var(--text-dim);">Feature</th>
+        <th style="padding:6px; text-align:center; color:var(--cyan);">∂L_cls/∂f (Classifier)</th>
+        <th style="padding:6px; text-align:center; color:var(--red);">∂L_id/∂f (Identifier)</th>
+        <th style="padding:6px; text-align:center; color:var(--amber);">After Reversal (−λ×∂L_id)</th>
+        <th style="padding:6px; text-align:left; color:var(--text-dim);">Net Effect</th>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border); background:#69f0ae11;">
+        <td style="padding:6px;">f_beak_shape</td>
+        <td style="padding:6px; text-align:center; color:var(--green);">+0.15 (keep!)</td>
+        <td style="padding:6px; text-align:center; color:var(--red);">+0.02 (helps ID)</td>
+        <td style="padding:6px; text-align:center; color:var(--amber);">−0.02λ</td>
+        <td style="padding:6px; color:var(--green);"><strong>SURVIVES</strong> (CE dominates)</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border); background:#ff525211;">
+        <td style="padding:6px;">f_scratch_detail</td>
+        <td style="padding:6px; text-align:center;">~0.00 (don't care)</td>
+        <td style="padding:6px; text-align:center; color:var(--red);">+0.08 (great for ID!)</td>
+        <td style="padding:6px; text-align:center; color:var(--amber);">−0.08λ</td>
+        <td style="padding:6px; color:var(--red);"><strong>CRUSHED</strong> (no CE protection)</td>
+      </tr>
+      <tr style="background:#69f0ae11;">
+        <td style="padding:6px;">f_wing_color</td>
+        <td style="padding:6px; text-align:center; color:var(--green);">+0.10 (useful)</td>
+        <td style="padding:6px; text-align:center; color:var(--red);">+0.01 (slightly useful)</td>
+        <td style="padding:6px; text-align:center; color:var(--amber);">−0.01λ</td>
+        <td style="padding:6px; color:var(--green);"><strong>SURVIVES</strong> (CE dominates)</td>
+      </tr>
+    </table>
+    <br>
+    <strong>Same pattern as FMR:</strong> CE loss selectively protects what matters. Features that help BOTH classification and identification survive. Features that ONLY help identification get crushed. Features that ONLY help classification thrive. The adversarial game automatically discovers which is which — no human labels needed.
+  </div>
+
+  <div class="insight-callout" style="margin-top:10px;">
+    <strong>🧠 The Analogy:</strong><br>
+    &nbsp;&nbsp;• <strong>Before ASIF:</strong> The feature vector is like a <strong>photograph</strong> — you can recognize exactly who it is<br>
+    &nbsp;&nbsp;• <strong>After ASIF:</strong> The feature vector is like a <strong>police sketch</strong> — you can tell it's an Indigo Bunting, but you CANNOT tell WHICH Indigo Bunting photo it came from<br>
+    &nbsp;&nbsp;• <strong>The Identifier is a snitch</strong> that gets punished for being good at its job. The Feature Extractor learns: "If I produce features that let the Identifier win, I get penalized. Better to produce features that help the Classifier but confuse the Identifier."
+  </div>
 </div>
 
 </div><!-- /panelCompare -->
