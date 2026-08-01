@@ -1509,6 +1509,58 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
     <strong>🎯 The Connection:</strong> Your vision encoder (ResNet/ViT/CNN) was pretrained on ImageNet or COCO — general images. When you fine-tune it on <strong>your specific Q&A dataset</strong> with limited examples, the pretrained feature magnitude bias kicks in. Loud-but-irrelevant features (background textures, sky, grass) can dominate, causing the LLM to answer based on <strong>spurious visual patterns</strong> rather than the actual subject of the question.
   </div>
 
+  <!-- Two Types of Shift -->
+  <h5 style="color:#b388ff; margin-top:14px;">⚠️ Do Q&A Pairs Automatically Create Domain Shift?</h5>
+  <p><strong>Not automatically.</strong> There are <strong>two different kinds</strong> of shift — and Q&A pairs always create the second one:</p>
+
+  <div class="compare-grid">
+    <div class="compare-card" style="border-color:#ffb30055;">
+      <h5 style="color:#ffb300;">1️⃣ Visual Domain Shift (maybe, maybe not)</h5>
+      <p style="font-size:0.8rem;">Your images look <strong>different</strong> from ImageNet images.</p>
+      <p style="font-size:0.78rem; color:var(--text-dim);">
+        ✅ <strong>YES</strong> if your images are: medical X-rays, satellite imagery, microscope photos, industrial parts, specific product shots<br>
+        ❌ <strong>NO</strong> if your images are: everyday photos of birds, cars, people, scenes — same distribution as ImageNet<br>
+        <span style="color:#ffb300;">FMR paper: ImageNet → CUB200 = YES (visual domain shift)</span>
+      </p>
+    </div>
+    <div class="compare-card" style="border-color:#69f0ae55;">
+      <h5 style="color:#69f0ae;">2️⃣ Task-Induced Feature Shift (ALWAYS present with Q&A)</h5>
+      <p style="font-size:0.8rem;">Your <strong>task</strong> needs different features than ImageNet classification.</p>
+      <p style="font-size:0.78rem; color:var(--text-dim);">
+        ✅ <strong>ALWAYS</strong> because: ImageNet asks "what object?" → emphasizes generic shape/texture. Your Q&A asks "what color is the beak?" → needs fine-grained detail features that ImageNet left QUIET.<br>
+        <span style="color:#69f0ae;">Even if your photos are from the same distribution as ImageNet, the features you NEED are different. That's task shift — and FMR fixes it.</span>
+      </p>
+    </div>
+  </div>
+
+  <div class="insight-callout" style="margin-top:10px;">
+    <strong>🔑 Key Insight:</strong> <br><br>
+    <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+      <tr style="border-bottom:1px solid var(--border);">
+        <th style="padding:6px; text-align:left; color:var(--text-dim);">What ImageNet Learned</th>
+        <th style="padding:6px; text-align:left; color:var(--text-dim);">What Your Q&A Task Needs</th>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;">"Has beak = bird" → f_beak_shape: <strong style="color:#ff5252;">0.12</strong> (quiet)</td>
+        <td style="padding:6px;">"What <em>color</em> is the beak?" → needs beak_color: <strong>should be LOUD</strong></td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;">"Has wheels = vehicle" → f_wheel: <strong style="color:#ff5252;">0.15</strong> (quiet)</td>
+        <td style="padding:6px;">"How many wheels visible?" → needs wheel_count: <strong>should be LOUD</strong></td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;">"Green texture = outdoors" → f_foliage: <strong style="color:#ff5252;">0.91</strong> (LOUD)</td>
+        <td style="padding:6px;">"Is the bird in a tree?" → f_foliage is <strong>IRRELEVANT</strong> (bird could be anywhere)</td>
+      </tr>
+      <tr>
+        <td style="padding:6px;">"Blue pixels = sky" → f_sky: <strong style="color:#ff5252;">0.87</strong> (LOUD)</td>
+        <td style="padding:6px;">"What species?" → f_sky is <strong>USELESS</strong> (all birds under blue sky)</td>
+      </tr>
+    </table>
+    <br>
+    <strong>Bottom line:</strong> Even if your images look exactly like ImageNet photos, <strong>your Q&A task asks different questions</strong> — so different features matter. FMR equalizes all features, letting your Q&A loss decide which ones are actually useful, rather than letting ImageNet's biases dictate which features dominate.
+  </div>
+
   <div class="compare-grid">
     <div class="compare-card bad">
       <h5>❌ WITHOUT FMR — What Can Go Wrong</h5>
