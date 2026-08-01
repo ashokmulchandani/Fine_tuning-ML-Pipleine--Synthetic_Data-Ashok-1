@@ -2407,11 +2407,56 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
 
   <p><strong>H_init</strong> is the entropy of the pretrained model BEFORE any training. Measured during "epoch -1" (stats gathering): run the model on all training data, compute feature entropy, average it. For a biased pretrained ResNet-50, H_init ≈ <strong>1.5 – 2.0</strong>.</p>
 
+  <h5 style="color:#b388ff; margin-bottom:10px;">H vs H_init vs H_max — Three Different Things</h5>
+  <table style="width:100%; border-collapse:collapse; font-size:0.82rem; margin-bottom:12px;">
+    <tr style="border-bottom:2px solid var(--border);">
+      <th style="padding:8px; text-align:left; color:#b388ff;">Symbol</th>
+      <th style="padding:8px; text-align:left; color:#b388ff;">Name</th>
+      <th style="padding:8px; text-align:left; color:#b388ff;">What It Is</th>
+      <th style="padding:8px; text-align:left; color:#b388ff;">Changes?</th>
+      <th style="padding:8px; text-align:center; color:#b388ff;">Example Value</th>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border); background:#69f0ae11;">
+      <td style="padding:8px; font-family:var(--font-mono); font-weight:bold; font-size:1.1rem;">H_max</td>
+      <td style="padding:8px;">Maximum Entropy</td>
+      <td style="padding:8px; font-size:0.78rem;">Theoretical ceiling. log(D). Computed from feature dimension.<br><strong>Constant. Pure math. Never changes.</strong></td>
+      <td style="padding:8px; text-align:center; color:var(--red);">❌ NEVER</td>
+      <td style="padding:8px; text-align:center; font-family:var(--font-mono); font-weight:bold;">7.62</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border); background:#ffb30011;">
+      <td style="padding:8px; font-family:var(--font-mono); font-weight:bold; font-size:1.1rem;">H_init</td>
+      <td style="padding:8px;">Initial Entropy</td>
+      <td style="padding:8px; font-size:0.78rem;">Measured ONCE before training (epoch -1).<br><strong>Frozen constant after measurement.</strong></td>
+      <td style="padding:8px; text-align:center; color:var(--amber);">⚡ ONCE</td>
+      <td style="padding:8px; text-align:center; font-family:var(--font-mono); font-weight:bold;">1.50</td>
+    </tr>
+    <tr style="background:#b388ff11;">
+      <td style="padding:8px; font-family:var(--font-mono); font-weight:bold; font-size:1.1rem;">H</td>
+      <td style="padding:8px;">Current Entropy</td>
+      <td style="padding:8px; font-size:0.78rem;">Measured EVERY batch during training.<br><strong>Changes constantly. Rises as FMR works.</strong></td>
+      <td style="padding:8px; text-align:center; color:var(--green);">✅ EVERY BATCH</td>
+      <td style="padding:8px; text-align:center; font-family:var(--font-mono); font-weight:bold;">1.50 → 7.50</td>
+    </tr>
+  </table>
+
   <div class="formula-box">
     <span class="hl-magenta" style="font-size:1.2rem;">λ = (H<sub>max</sub> − H) / (H<sub>max</sub> − H<sub>init</sub>)</span><br><br>
-    <span class="dim">Numerator: (H<sub>max</sub> − H) = "how far are we from perfect uniformity RIGHT NOW?"</span><br>
-    <span class="dim">Denominator: (H<sub>max</sub> − H<sub>init</sub>) = "how far were we when we STARTED?"</span><br>
-    <span class="dim">Ratio: "what FRACTION of the journey remains?" → λ starts at 1.0, decays to ~0</span>
+    <span class="dim">Numerator: (H<sub>max</sub> − H) = "How far are we from perfection RIGHT NOW?" — <strong>SHRINKS as H rises</strong></span><br>
+    <span class="dim">Denominator: (H<sub>max</sub> − H<sub>init</sub>) = "How far were we when we STARTED?" — <strong>CONSTANT, never changes</strong></span><br>
+    <span class="dim">Ratio = λ = "What FRACTION of the journey remains?" — <strong>starts at 1.0, decays to ~0</strong></span>
+  </div>
+
+  <div style="text-align:center; margin:14px 0; padding:16px; background:var(--deep); border-radius:8px; border:1px solid var(--border); font-family:var(--font-mono); font-size:0.78rem; line-height:2;">
+    <span style="color:#b388ff;">VISUAL: The Journey from H_init to H_max</span><br><br>
+    <span style="color:var(--red);">H_init = 1.50</span>
+    <span style="color:var(--text-dim);"> ├─────────────── H (moves right each epoch) ──────────────┤</span>
+    <span style="color:var(--green);"> H_max = 7.62</span><br>
+    <span style="color:var(--text-dim);">◀─────────────────── TOTAL JOURNEY = 6.12 ──────────────────▶</span><br>
+    <span style="color:var(--text-dim);">                                 ◀── REMAINING = H_max − H ──▶</span><br><br>
+    <span style="color:var(--magenta);">λ = REMAINING / TOTAL = (H_max − H) / (H_max − H_init)</span><br><br>
+    <span style="color:var(--text-dim);">Epoch 0:  H=1.50  →  λ = (7.62−1.50)/(7.62−1.50) = 6.12/6.12 = </span><span style="color:var(--magenta); font-weight:bold;">1.00</span>  <span style="color:#6b6b80;">(full push)</span><br>
+    <span style="color:var(--text-dim);">Epoch 10: H=4.20  →  λ = (7.62−4.20)/(7.62−1.50) = 3.42/6.12 = </span><span style="color:var(--magenta); font-weight:bold;">0.56</span>  <span style="color:#6b6b80;">(halfway)</span><br>
+    <span style="color:var(--text-dim);">Epoch 50: H=7.50  →  λ = (7.62−7.50)/(7.62−1.50) = 0.12/6.12 = </span><span style="color:var(--magenta); font-weight:bold;">0.02</span>  <span style="color:#6b6b80;">(done)</span><br>
   </div>
 
   <table style="width:100%; border-collapse:collapse; font-size:0.78rem; margin:12px 0;">
