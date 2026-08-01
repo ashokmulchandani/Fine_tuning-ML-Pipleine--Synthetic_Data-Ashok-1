@@ -2085,6 +2085,143 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
   <div class="insight-callout">
     <strong>💡 The Exact Difference:</strong> Both models saw the SAME two training images. Both saw the SAME Q&A pairs. The ONLY difference: FMR prevented the first model from using the sky shortcut. Without the shortcut, the model was FORCED to learn from the bird itself — beak shape, wing color, body size. Those features are present regardless of background. That's why FMR-trained models generalize to new backgrounds and non-FMR models don't.
   </div>
+
+  <!-- Practical Implementation Guide -->
+  <h5 style="color:#b388ff; margin-top:18px;">💻 How to Add FMR to Your Vision-Language Fine-Tuning Code</h5>
+  <p>Based on Avi Chapman's <a href="https://github.com/avichapman/feature-magnitude-regularization" target="_blank" style="color:var(--cyan);">official FMR implementation</a>. This is what you actually add to your training loop.</p>
+
+  <div class="formula-box" style="font-size:0.78rem; line-height:1.5; text-align:left;">
+    <span style="color:#b388ff;">Step 1 — The FMR Loss Function (add this ONCE, anywhere in your codebase):</span><br>
+    <span class="dim">################################################################</span><br>
+    <span style="color:#69f0ae;">import</span> torch<br>
+    <span style="color:#69f0ae;">import</span> torch.nn <span style="color:#69f0ae;">as</span> nn<br><br>
+    <span style="color:#69f0ae;">class</span> <span style="color:#b388ff;">FMRLoss</span>:</span><br>
+    <span class="dim">&nbsp;&nbsp;"""Feature Magnitude Regularization — drop-in for any PyTorch training loop."""</span><br><br>
+    <span class="dim">&nbsp;&nbsp;</span><span style="color:#69f0ae;">def</span> <span style="color:#ffb300;">__init__</span>(self, feature_dim: int, tau: float = 1.0,<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;beta: float = 50.0):</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.tau = tau &nbsp;</span><span style="color:#6b6b80;"># temperature (1.0 = no change)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.beta = beta &nbsp;</span><span style="color:#6b6b80;"># desired initial coefficient (50 in paper)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.H_max = self._compute_H_max(feature_dim)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.H_init = None &nbsp;</span><span style="color:#6b6b80;"># set after first epoch</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;self.ce = nn.CrossEntropyLoss() &nbsp;</span><span style="color:#6b6b80;"># reused for FMR calc</span><br><br>
+    <span class="dim">&nbsp;&nbsp;</span><span style="color:#69f0ae;">def</span> <span style="color:#ffb300;">_compute_H_max</span>(self, D: int) -> float:<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># Entropy of uniform vector [1/D, 1/D, ...]</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;uniform = torch.ones(1, D) / D</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return self._entropy(uniform)</span><br><br>
+    <span class="dim">&nbsp;&nbsp;</span><span style="color:#69f0ae;">def</span> <span style="color:#ffb300;">_entropy</span>(self, f: torch.Tensor) -> float:<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># H = -sum(p_i * log(p_i)) averaged over batch</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;p = f.float().softmax(dim=-1)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;B, D = p.shape</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;H = torch.zeros(B, device=f.device)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for i in range(D):</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;H = H - p[:, i] * p[:, i].log()</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return H.mean().item()</span><br><br>
+    <span class="dim">&nbsp;&nbsp;</span><span style="color:#69f0ae;">def</span> <span style="color:#ffb300;">compute_lambda</span>(self, H_current: float) -> float:<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># Dynamic λ: ((H_max - H) / H_max) * max_coef</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if self.H_init is None: return 0.0</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;max_coef = (self.beta * self.H_max) / (self.H_max - self.H_init)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return max(0.0, (self.H_max - H_current) / self.H_max * max_coef)</span><br><br>
+    <span class="dim">&nbsp;&nbsp;</span><span style="color:#69f0ae;">def</span> <span style="color:#ffb300;">__call__</span>(self, feature_vectors: torch.Tensor,<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;H_current: float) -> torch.Tensor:</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># FMR loss: -CE(vec/tau, softmax(vec/tau)) * lambda</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;v = feature_vectors / self.tau</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;p = v.float().softmax(dim=-1)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;L_fmr = -self.ce(v, p) &nbsp;</span><span style="color:#6b6b80;"># maximize entropy</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lmbda = self.compute_lambda(H_current)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return L_fmr * lmbda</span><br>
+    <span class="dim">################################################################</span>
+  </div>
+
+  <div class="formula-box" style="font-size:0.78rem; line-height:1.5; text-align:left; margin-top:10px;">
+    <span style="color:#b388ff;">Step 2 — In Your Training Loop (modify existing code):</span><br>
+    <span class="dim">################################################################</span><br>
+    <span style="color:#6b6b80;"># SETUP (once, before training)</span><br>
+    fmr = FMRLoss(feature_dim=<span style="color:#ffb300;">2048</span>) &nbsp;<span style="color:#6b6b80;"># or your vision encoder's output dim</span><br><br>
+    <span style="color:#6b6b80;"># EPOCH -1: Stats gathering (no training, just measure initial H)</span><br>
+    <span style="color:#69f0ae;">for</span> images, questions, answers <span style="color:#69f0ae;">in</span> train_loader:<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;vision_features = vision_encoder(images) &nbsp;</span><span style="color:#6b6b80;"># [B, 2048]</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;H = fmr._entropy(vision_features)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;running_H.update(H)</span><br>
+    <span class="dim">fmr.H_init = running_H.avg &nbsp;</span><span style="color:#6b6b80;"># ≈ 1.5-2.0 for biased pretrained model</span><br><br>
+    <span style="color:#6b6b80;"># MAIN TRAINING LOOP (epoch 0 onwards)</span><br>
+    <span style="color:#69f0ae;">for</span> images, questions, answers <span style="color:#69f0ae;">in</span> train_loader:<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># 1. Forward pass</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;vision_features = vision_encoder(images) &nbsp;</span><span style="color:#6b6b80;"># [B, 2048]</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># ... embed questions, combine with features, feed to LLM ...</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;llm_output = llm(vision_features, question_embeddings)</span><br><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># 2. Standard LLM loss (cross-entropy on answer tokens)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;L_llm = cross_entropy(llm_output, answer_tokens)</span><br><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># 3. ⚡ FMR — TWO LINES ADDED ⚡</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;H_current = fmr._entropy(vision_features)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;L_fmr = fmr(vision_features, H_current)</span><br><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># 4. Total loss</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;L_total = L_llm + L_fmr</span><br><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># 5. Backward + step (unchanged)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;L_total.backward()</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;optimizer.step()</span><br>
+    <span class="dim">################################################################</span>
+  </div>
+
+  <div class="formula-box" style="font-size:0.78rem; line-height:1.5; text-align:left; margin-top:10px;">
+    <span style="color:#b388ff;">Step 3 — Where Exactly in Your Vision-Lang Pipeline:</span><br>
+    <span class="dim">################################################################</span><br>
+    <span style="color:#6b6b80;"># Your pipeline (finetuning_by_data_type.html Vision-Lang FT):</span><br><br>
+    <span class="dim">Image</span><br>
+    <span class="dim">  ↓</span><br>
+    <span class="dim">Vision Encoder (ResNet/ViT/CLIP) → features [B, D] </span><span style="color:#69f0ae;">← FMR APPLIES HERE</span><br>
+    <span class="dim">  ↓</span><br>
+    <span class="dim">Projection Layer → vision tokens</span><br>
+    <span class="dim">  ↓</span><br>
+    <span class="dim">Text: "Describe this bird" → Tokenizer → text tokens</span><br>
+    <span class="dim">  ↓</span><br>
+    <span class="dim">[vision_tokens + text_tokens] → LLM → answer tokens</span><br>
+    <span class="dim">  ↓</span><br>
+    <span class="dim">L_llm = CrossEntropy(answer_tokens, ground_truth)</span><br>
+    <span class="dim">  ↓</span><br>
+    <span style="color:#69f0ae;">L_total = L_llm + fmr(vision_features)  ← FMR on the raw vision features</span><br><br>
+    <span class="dim"># FMR goes on the VISION ENCODER output, BEFORE projection to LLM tokens.</span><br>
+    <span class="dim"># The vision encoder produces 2048 (or 768/1024 for ViT) feature dimensions.</span><br>
+    <span class="dim"># FMR equalizes these BEFORE they get mixed with text for the LLM.</span><br>
+    <span class="dim">################################################################</span>
+  </div>
+
+  <div class="insight-callout" style="margin-top:12px;">
+    <strong>⚙️ Configuration — What You Need to Set:</strong><br><br>
+    <table style="width:100%; border-collapse:collapse; font-size:0.78rem;">
+      <tr style="border-bottom:1px solid var(--border);">
+        <th style="padding:6px; text-align:left; color:var(--text-dim);">Parameter</th>
+        <th style="padding:6px; text-align:left; color:var(--text-dim);">Value</th>
+        <th style="padding:6px; text-align:left; color:var(--text-dim);">Notes</th>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;"><code>feature_dim</code></td>
+        <td style="padding:6px;"><strong>Depends on your encoder</strong></td>
+        <td style="padding:6px;">ResNet-50 = 2048, ViT-B = 768, CLIP ViT-L = 1024</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;"><code>tau</code> (temperature)</td>
+        <td style="padding:6px;"><strong>1.0</strong> (default)</td>
+        <td style="padding:6px;">Paper uses 1.0. Higher = softer distribution, lower = sharper</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;"><code>beta</code> (initial coefficient)</td>
+        <td style="padding:6px;"><strong>50.0</strong> (paper's optimal)</td>
+        <td style="padding:6px;">Determines max FMR strength. Paper found 50 optimal across all datasets</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;">When to apply FMR</td>
+        <td style="padding:6px;"><strong>Every training step</strong></td>
+        <td style="padding:6px;">λ auto-adjusts — strong early, fades to near-zero late</td>
+      </tr>
+      <tr>
+        <td style="padding:6px;">Frozen vs trainable encoder</td>
+        <td style="padding:6px;"><strong>Must be trainable</strong></td>
+        <td style="padding:6px;">FMR needs gradient flow through vision encoder. If using LoRA, FMR gradients flow through LoRA adapters</td>
+      </tr>
+    </table>
+    <br>
+    <strong>That's it.</strong> Two lines in your training loop. Zero architecture changes. The dynamic λ means no hyperparameter search. Works with LoRA, QLoRA, full fine-tuning — any setup where the vision encoder receives gradients.
+  </div>
 </div>
 
 </div><!-- /panelLearn -->
