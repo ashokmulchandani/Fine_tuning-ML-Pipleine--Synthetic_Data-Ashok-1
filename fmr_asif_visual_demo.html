@@ -2785,6 +2785,42 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
   </div>
 
   <div class="insight-callout" style="margin-top:16px;">
+  <!-- ASIF: Which Features Exactly? -->
+  <div class="insight-callout" style="margin-top:16px;">
+    <strong>🔍 ASIF — Which Features Does It Suppress, Exactly?</strong><br><br>
+    ASIF divides features into <strong>two types</strong>:<br><br>
+    <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+      <tr style="border-bottom:2px solid var(--border);">
+        <th style="padding:6px; text-align:left; color:var(--text-dim);">Feature Type</th>
+        <th style="padding:6px; text-align:left; color:var(--text-dim);">Definition</th>
+        <th style="padding:6px; text-align:left; color:var(--text-dim);">Example</th>
+        <th style="padding:6px; text-align:center; color:var(--text-dim);">Keep or Suppress?</th>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border); background:#69f0ae11;">
+        <td style="padding:8px;"><strong style="color:var(--green);">Class-wise Features</strong></td>
+        <td style="padding:8px;">Features shared across <strong>all samples of the same class</strong></td>
+        <td style="padding:8px; font-size:0.75rem;">"Curved beak" = Indigo Bunting, "Has wheels" = Car, "Green foliage" = Forest</td>
+        <td style="padding:8px; text-align:center; color:var(--green); font-weight:bold;">✅ KEEP</td>
+      </tr>
+      <tr style="background:#ff525211;">
+        <td style="padding:8px;"><strong style="color:var(--red);">Identity-wise Features</strong></td>
+        <td style="padding:8px;">Features unique to <strong>one specific training sample</strong></td>
+        <td style="padding:8px; font-size:0.75rem;">"That exact scratch on car #47", "That specific lighting angle in photo #23", "The exact pixel pattern of training image #8"</td>
+        <td style="padding:8px; text-align:center; color:var(--red); font-weight:bold;">❌ SUPPRESS</td>
+      </tr>
+    </table>
+    <br>
+    <strong>How ASIF works:</strong> A secondary "Identifier" network tries to predict <strong>which exact training sample</strong> a feature vector belongs to. The gradient from the Identifier is <strong>reversed</strong> before flowing back to the Feature Extractor. This creates an adversarial game:<br>
+    &nbsp;&nbsp;• Identifier: "I bet I can tell which training image this is!"<br>
+    &nbsp;&nbsp;• Feature Extractor: "I'll produce features so generic you CAN'T tell them apart!"<br>
+    The result: the Feature Extractor learns to <strong>strip out sample-specific details</strong> (the scratch, the lighting, the pose) and keep only <strong>class-level patterns</strong> (beak shape, car silhouette, leaf texture).<br><br>
+    <strong>FMR vs ASIF — What Each Suppresses:</strong><br>
+    &nbsp;&nbsp;• <strong style="color:var(--cyan);">FMR suppresses MAGNITUDE BIAS</strong> — "Don't let sky detector (0.91) shout louder than beak detector (0.12)"<br>
+    &nbsp;&nbsp;• <strong style="color:var(--amber);">ASIF suppresses IDENTITY FEATURES</strong> — "Don't let the model memorize that training image #47 has a unique scratch pattern"<br>
+    &nbsp;&nbsp;• They attack DIFFERENT problems at DIFFERENT levels: FMR at the feature magnitude level, ASIF at the feature content level
+  </div>
+
+  <div class="insight-callout" style="margin-top:12px;">
     <strong>🔗 Common Philosophy:</strong> Both papers are by the same first author (Avraham Chapman) and share a deep insight: <strong>neural networks have unwanted biases that hurt generalization when data is scarce</strong>. FMR attacks bias from <strong>pretraining</strong> (features are unevenly prominent). ASIF attacks bias from <strong>overparameterization</strong> (networks memorize instances). Both use <strong>automatic, dynamic weighting</strong> so no manual hyperparameter tuning is needed. If you're doing low-data fine-tuning, <strong>use both</strong> — FMR for the vision encoder, ASIF for the classifier head.
   </div>
 </div>
