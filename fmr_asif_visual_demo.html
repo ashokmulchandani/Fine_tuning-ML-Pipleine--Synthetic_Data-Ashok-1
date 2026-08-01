@@ -1821,6 +1821,93 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
     <br>
     <strong>Every image — old training, new training, unseen test — flows through the SAME updated backbone. The backbone's conv filters don't remember individual images. They learn which visual patterns to amplify and which to suppress, and apply that universally.</strong>
   </div>
+
+  <h5 style="color:#b388ff; margin-top:14px;">🧪 Concrete Example: LLaVA / GPT-V Fine-Tuning With Q&A Pairs</h5>
+  <p>You're fine-tuning a vision-language model (LLaVA, GPT-V, etc.) using <strong>Alpaca-format Q&A pairs</strong> on bird photos. You have <strong>200 labeled examples</strong>. Let's compare what happens with and without FMR:</p>
+
+  <div class="formula-box" style="font-size:0.75rem; line-height:1.6; text-align:left;">
+    <span style="color:#b388ff;">Training Data (Alpaca format):</span><br>
+    <span class="dim">{</span><br>
+    <span class="dim">&nbsp;&nbsp;"image": "indigo_bunting_01.jpg",</span><br>
+    <span class="dim">&nbsp;&nbsp;"conversations": [</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;{"from": "human", "value": "What color is this bird's beak?"},</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;{"from": "gpt", "value": "Silver-gray with a slight downward curve."}</span><br>
+    <span class="dim">&nbsp;&nbsp;]</span><br>
+    <span class="dim">}</span><br>
+    <span class="dim">... × 200 examples, 10 bird species, various backgrounds</span>
+  </div>
+
+  <div class="compare-grid">
+    <div class="compare-card bad">
+      <h5>❌ ONLY Q&A Fine-Tuning (No FMR)</h5>
+      <p style="font-size:0.78rem; line-height:1.7;">
+        <strong>What happens during training:</strong><br>
+        • Vision encoder still biased — f_sky=0.91, f_beak=0.12<br>
+        • Model latches onto loud features first (sky, grass)<br>
+        • With only 200 examples, model finds shortcut:<br>
+        &nbsp;&nbsp;<em>"Most Indigo Bunting photos have blue sky → sky = Indigo"</em><br>
+        • Overfits to training backgrounds<br><br>
+        <strong>Test-time outcomes:</strong><br>
+        • 🟢 Test photo with <strong>blue sky</strong> → ✅ "Silver-gray beak" (correct — got lucky, sky matched training)<br>
+        • 🔴 Test photo with <strong>cloudy sky</strong> → ❌ "I cannot tell — the image is unclear" (model relied on sky cue, now it's gone)<br>
+        • 🔴 Test photo with <strong>forest background</strong> → ❌ "The beak appears dark brown" (model confused by green foliage feature, hallucinates)<br>
+        • <strong>Accuracy: ~65%</strong> on new backgrounds
+      </p>
+    </div>
+    <div class="compare-card good">
+      <h5>✅ Q&A Fine-Tuning WITH FMR</h5>
+      <p style="font-size:0.78rem; line-height:1.7;">
+        <strong>What happens during training:</strong><br>
+        • FMR forces f_sky≈0.52, f_beak≈0.49 — all features equal<br>
+        • Model CAN'T use sky shortcut (sky not louder than beak)<br>
+        • Must learn from ALL features equally → Q&A loss guides it to beak_color, wing_pattern<br>
+        • Features that help answer questions get reinforced via CE<br><br>
+        <strong>Test-time outcomes:</strong><br>
+        • 🟢 Test photo with <strong>blue sky</strong> → ✅ "Silver-gray with a slight downward curve" (model uses beak features, not sky)<br>
+        • 🟢 Test photo with <strong>cloudy sky</strong> → ✅ "The beak is silver-gray and slightly curved" (background irrelevant — model ignores it)<br>
+        • 🟢 Test photo with <strong>forest background</strong> → ✅ "Silver-gray beak with a conical shape" (model attended to the bird, not the trees)<br>
+        • <strong>Accuracy: ~78-82%</strong> on new backgrounds
+      </p>
+    </div>
+  </div>
+
+  <div class="insight-callout" style="margin-top:12px;">
+    <strong>🎯 What Changes in the Model's Behavior:</strong><br><br>
+    <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+      <tr style="border-bottom:1px solid var(--border);">
+        <th style="padding:6px; text-align:left; color:var(--text-dim);">Dimension</th>
+        <th style="padding:6px; text-align:center; color:#ff5252;">Without FMR</th>
+        <th style="padding:6px; text-align:center; color:#69f0ae;">With FMR</th>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;"><strong>What drives answers</strong></td>
+        <td style="padding:6px; text-align:center;">Background, dominant textures</td>
+        <td style="padding:6px; text-align:center;">Actual object features (beak, wing, eye)</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;"><strong>Generalization to new backgrounds</strong></td>
+        <td style="padding:6px; text-align:center;">❌ Poor — fails on unseen backgrounds</td>
+        <td style="padding:6px; text-align:center;">✅ Good — background-invariant</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;"><strong>Hallucination rate</strong></td>
+        <td style="padding:6px; text-align:center;">Higher — model guesses from spurious cues</td>
+        <td style="padding:6px; text-align:center;">Lower — grounded in object features</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;"><strong>Data efficiency</strong></td>
+        <td style="padding:6px; text-align:center;">Needs more examples to unlearn bias</td>
+        <td style="padding:6px; text-align:center;">Learns from fewer examples (balanced features)</td>
+      </tr>
+      <tr>
+        <td style="padding:6px;"><strong>Fine-grained Q&A accuracy</strong></td>
+        <td style="padding:6px; text-align:center;">~65% (background-dependent)</td>
+        <td style="padding:6px; text-align:center;">~78-82% (object-focused)</td>
+      </tr>
+    </table>
+    <br>
+    <strong>Q&A pairs tell the model WHAT to learn. FMR ensures the model CAN learn it</strong> — by removing the pretrained bias that would otherwise steer the model toward spurious shortcuts. Q&A loss provides the signal ("beak color matters for answering questions"), FMR provides the fairness ("beak color gets equal chance to be heard as sky color").
+  </div>
 </div>
 
 </div><!-- /panelLearn -->
