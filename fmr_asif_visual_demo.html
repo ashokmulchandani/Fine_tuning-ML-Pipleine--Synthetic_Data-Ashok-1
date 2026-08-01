@@ -978,6 +978,29 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
     </div>
   </div>
 
+  <!-- ASIF Feature Suppression Visualizer -->
+  <div class="card card-asif" style="margin-top:24px;">
+    <h3>🔍 Which Features Does ASIF Suppress? <span class="info-badge asif">IDENTITY vs CLASS</span></h3>
+    <p class="card-desc">ASIF doesn't equalize magnitudes like FMR. Instead, it suppresses <strong style="color:var(--red);">identity-wise features</strong> (unique to ONE sample) while preserving <strong style="color:var(--green);">class-wise features</strong> (shared across a class). Watch the Identifier fail as training progresses.</p>
+    <div class="canvas-wrap">
+      <canvas id="asifSuppressionCanvas" width="1200" height="380"></canvas>
+    </div>
+    <div class="metrics-row">
+      <div class="metric metric-asif">
+        <div class="metric-value" id="asifIdentLoss">0.05</div>
+        <div class="metric-label">Identification Loss (↑ = better suppression)</div>
+      </div>
+      <div class="metric" style="--metric-color: var(--green);">
+        <div class="metric-value" style="color:var(--green);" id="asifClassSep">0.82</div>
+        <div class="metric-label">Class Separation (↑ = better classification)</div>
+      </div>
+      <div class="metric metric-asif">
+        <div class="metric-value" id="asifIdentAcc">92%</div>
+        <div class="metric-label">Identifier Accuracy (↓ = identity suppressed)</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Controls -->
   <div class="controls">
     <h4>▸ Simulation Controls</h4>
@@ -4214,6 +4237,136 @@ function drawASIFGradient(epoch, noise) {
   ctx.fill();
 }
 
+function drawASIFFeatureSuppression(epoch, noise) {
+  const canvas = document.getElementById('asifSuppressionCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const progress = epoch / 100;
+
+  // === LEFT: Feature Content Grid (3 training samples from same class) ===
+  const gridX = 30, gridY = 40, cellW = 160, cellH = 90, gap = 10;
+
+  ctx.fillStyle = '#c8c8d4';
+  ctx.font = 'bold 12px monospace';
+  ctx.fillText('3 Training Images of "Indigo Bunting"', gridX, gridY - 10);
+
+  const samples = [
+    { name: 'Sample #1', bg: 'Blue sky', scratch: 'Unique scratch on beak tip', angle: 'Perched left-facing' },
+    { name: 'Sample #2', bg: 'Forest green', scratch: 'No scratch', angle: 'Perched right-facing' },
+    { name: 'Sample #3', bg: 'Cloudy gray', scratch: 'Faint wing bar wear', angle: 'Front-facing' },
+  ];
+
+  samples.forEach((s, i) => {
+    const cx = gridX + i * (cellW + gap);
+    // Card bg
+    ctx.fillStyle = '#14141f'; ctx.strokeStyle = '#ffffff22'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(cx, gridY, cellW, cellH, 6); ctx.fill(); ctx.stroke();
+
+    // Bird icon
+    ctx.fillStyle = '#ffffff15'; ctx.font = '24px sans-serif';
+    ctx.fillText('🐦', cx + 55, gridY + 30);
+
+    // Sample name
+    ctx.fillStyle = '#c8c8d4'; ctx.font = 'bold 10px monospace';
+    ctx.fillText(s.name, cx + 10, gridY + 18);
+
+    // Identity details
+    ctx.fillStyle = '#ff5252'; ctx.font = '8px monospace';
+    ctx.fillText(s.scratch, cx + 8, gridY + 55);
+    ctx.fillText(s.bg, cx + 8, gridY + 68);
+    ctx.fillText(s.angle, cx + 8, gridY + 81);
+
+    // X marks on identity features when suppressed
+    if (progress > 0.3) {
+      ctx.strokeStyle = `rgba(255,82,82,${Math.min(0.8, progress)})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(cx + 5, gridY + 50); ctx.lineTo(cx + cellW - 5, gridY + 85);
+      ctx.moveTo(cx + cellW - 5, gridY + 50); ctx.lineTo(cx + 5, gridY + 85);
+      ctx.stroke();
+    }
+  });
+
+  // === ARROW to Feature Extraction ===
+  const arrowX = gridX + 3 * (cellW + gap) + 20;
+  const arrowY = gridY + cellH / 2;
+  ctx.fillStyle = '#ffffff33'; ctx.font = '20px sans-serif';
+  ctx.fillText('→', arrowX, arrowY + 7);
+
+  // === MIDDLE: Feature Vector Comparison ===
+  const featX = arrowX + 30, featY = gridY;
+  ctx.fillStyle = '#c8c8d4'; ctx.font = 'bold 11px monospace';
+  ctx.fillText('Extracted Features', featX, featY - 10);
+
+  // Class-wise features (preserved)
+  const cfY = featY + 20;
+  ctx.fillStyle = '#69f0ae88'; ctx.font = 'bold 10px monospace';
+  ctx.fillText('Class-wise (preserved):', featX, cfY);
+  const classFeatures = ['f_beak_shape = 0.48', 'f_wing_color = 0.46', 'f_body_size = 0.44'];
+  classFeatures.forEach((cf, i) => {
+    ctx.fillStyle = '#69f0ae'; ctx.font = '9px monospace';
+    ctx.fillText(cf, featX + 10, cfY + 16 + i * 16);
+  });
+
+  // Identity-wise features (suppressed)
+  const idY = cfY + 70;
+  ctx.fillStyle = '#ff525288'; ctx.font = 'bold 10px monospace';
+  ctx.fillText('Identity-wise (suppressed):', featX, idY);
+  const identityFeatures = ['f_scratch_pos = 0.02', 'f_lighting_angle = 0.01', 'f_bg_texture = 0.03'];
+  identityFeatures.forEach((idf, i) => {
+    const alpha = 1 - progress; // fade out as training progresses
+    ctx.fillStyle = `rgba(255, 82, 82, ${Math.max(0.15, alpha)})`;
+    ctx.font = '9px monospace';
+    ctx.fillText(idf, featX + 10, idY + 16 + i * 16);
+    if (alpha < 0.5) {
+      ctx.strokeStyle = `rgba(255, 82, 82, 0.6)`;
+      ctx.lineWidth = 1;
+      const tx = featX + 10 + ctx.measureText(idf).width;
+      ctx.beginPath(); ctx.moveTo(tx + 3, idY + 11 + i * 16); ctx.lineTo(tx + 25, idY + 5 + i * 16); ctx.stroke();
+    }
+  });
+
+  // === ARROW to Identifier ===
+  const arrow2X = featX + 230, arrow2Y = arrowY;
+  ctx.fillStyle = '#ffffff33'; ctx.font = '20px sans-serif';
+  ctx.fillText('→', arrow2X, arrow2Y + 7);
+
+  // === RIGHT: Identifier Challenge ===
+  const idBoxX = arrow2X + 30, idBoxY = gridY;
+  ctx.fillStyle = '#14141f'; ctx.strokeStyle = '#ff525244'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.roundRect(idBoxX, idBoxY, 200, cellH + 50, 8); ctx.fill(); ctx.stroke();
+
+  ctx.fillStyle = '#ff5252'; ctx.font = 'bold 11px monospace';
+  ctx.fillText('IDENTIFIER', idBoxX + 40, idBoxY + 22);
+  ctx.fillText('"Which sample is this?"', idBoxX + 15, idBoxY + 38);
+
+  // Identifier accuracy dropping
+  const identAcc = Math.round(95 - progress * 88);
+  ctx.fillStyle = identAcc > 30 ? '#ff5252' : '#ffb300';
+  ctx.font = 'bold 16px monospace';
+  ctx.fillText(`Accuracy: ${identAcc}%`, idBoxX + 25, idBoxY + 70);
+
+  // Verdict
+  const verdictY = idBoxY + cellH + 10;
+  ctx.fillStyle = progress > 0.5 ? '#69f0ae' : '#ff5252';
+  ctx.font = 'bold 12px monospace';
+  ctx.fillText(progress > 0.5 ? '✅ CANNOT identify samples' : '❌ CAN identify samples', idBoxX + 10, verdictY + 15);
+  ctx.fillText(progress > 0.5 ? '(class features only — good!)' : '(memorizing — bad!)', idBoxX + 10, verdictY + 32);
+
+  // Bottom labels
+  ctx.fillStyle = '#69f0ae88'; ctx.font = 'bold 9px monospace';
+  ctx.fillText('Class-wise = shared by ALL Indigo Buntings → KEEP', gridX + 200, gridY + cellH + 60);
+  ctx.fillStyle = '#ff525288'; ctx.font = 'bold 9px monospace';
+  ctx.fillText('Identity-wise = unique to this ONE photo → SUPPRESS', gridX + 200, gridY + cellH + 78);
+
+  // Update metrics
+  document.getElementById('asifIdentLoss').textContent = (0.05 + progress * 2.5).toFixed(2);
+  document.getElementById('asifClassSep').textContent = (0.5 + progress * 0.32).toFixed(2);
+  document.getElementById('asifIdentAcc').textContent = identAcc + '%';
+}
+
 function updateASIF() {
   const noiseSlider = document.getElementById('asifNoise');
   const epochSlider = document.getElementById('asifEpoch');
@@ -4230,6 +4383,7 @@ function updateASIF() {
   drawASIFArchitecture(asifState.epoch, asifState.noise);
   drawASIFFeatureSpace(asifState.epoch, asifState.noise);
   drawASIFGradient(asifState.epoch, asifState.noise);
+  drawASIFFeatureSuppression(asifState.epoch, asifState.noise);
 
   // Update metrics
   const progress = asifState.epoch / 100;
