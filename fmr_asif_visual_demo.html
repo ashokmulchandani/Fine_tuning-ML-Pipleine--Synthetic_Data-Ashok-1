@@ -1751,6 +1751,76 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
     &nbsp;&nbsp;• <strong>You don't need them anymore</strong> because your behavior permanently changed<br><br>
     <strong>Same principle as Dropout:</strong> Dropout randomly disables neurons during training → network builds redundancy → at inference, dropout is OFF but the network's weights were shaped by it. FMR equalizes features during training → backbone produces balanced features → at inference, FMR is OFF but the backbone's weights were shaped by it.
   </div>
+
+  <h5 style="color:#b388ff; margin-top:14px;">🔬 How the Backbone Actually Changes — NOT Averaging, Reweighting</h5>
+  <p>A deeper question: <strong>"Are the new f values an average of pretrained and new training images? Or does something else happen?"</strong></p>
+  <p><strong>Neither.</strong> The backbone's <strong>convolutional filters are physically reweighted</strong>. It's not averaging — it's recalibrating which visual patterns get amplified vs suppressed.</p>
+
+  <div class="formula-box" style="font-size:0.8rem; line-height:1.9; text-align:left;">
+    <span style="color:#b388ff;">FMR gradient flows backward through the ENTIRE backbone:</span><br><br>
+    <span class="dim">∂L_FMR/∂(conv_filter_sky)  =  +0.03  →  "Sky filter: you're too loud. Turn DOWN."</span><br>
+    <span class="dim">∂L_FMR/∂(conv_filter_beak) =  −0.02  →  "Beak filter: you're too quiet. Turn UP."</span><br>
+    <span class="dim">∂L_FMR/∂(conv_filter_grass)=  +0.02  →  "Grass filter: you too. Dial it back."</span><br><br>
+    <span style="color:#69f0ae;">After SGD update:</span><br>
+    <span class="dim">sky_filter_weight  ←  sky_filter_weight  −  lr × (+0.03)  </span><span style="color:#ff5252;">DECREASES</span><br>
+    <span class="dim">beak_filter_weight ←  beak_filter_weight −  lr × (−0.02)  </span><span style="color:#69f0ae;">INCREASES</span><br>
+    <span class="dim">grass_filter_weight ←  grass_filter_weight − lr × (+0.02)  </span><span style="color:#ff5252;">DECREASES</span>
+  </div>
+
+  <table style="width:100%; border-collapse:collapse; margin:14px 0; font-size:0.78rem;">
+    <tr style="border-bottom:1px solid var(--border);">
+      <th style="padding:8px; text-align:left; color:#b388ff;">Image</th>
+      <th style="padding:8px; text-align:center; color:#ff5252;">f_sky (Before FMR)</th>
+      <th style="padding:8px; text-align:center; color:#69f0ae;">f_sky (After FMR)</th>
+      <th style="padding:8px; text-align:center; color:#ff5252;">f_beak (Before)</th>
+      <th style="padding:8px; text-align:center; color:#69f0ae;">f_beak (After)</th>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:8px;">Training: Indigo Bunting #1</td>
+      <td style="padding:8px; text-align:center;">0.91</td>
+      <td style="padding:8px; text-align:center; color:#69f0ae;">0.52</td>
+      <td style="padding:8px; text-align:center;">0.12</td>
+      <td style="padding:8px; text-align:center; color:#69f0ae;">0.49</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:8px;">Training: Lazuli Bunting #1</td>
+      <td style="padding:8px; text-align:center;">0.89</td>
+      <td style="padding:8px; text-align:center; color:#69f0ae;">0.50</td>
+      <td style="padding:8px; text-align:center;">0.08</td>
+      <td style="padding:8px; text-align:center; color:#69f0ae;">0.46</td>
+    </tr>
+    <tr>
+      <td style="padding:8px;"><strong>NEW:</strong> Unseen Test Image</td>
+      <td style="padding:8px; text-align:center;">0.92</td>
+      <td style="padding:8px; text-align:center; color:#69f0ae;"><strong>0.51</strong></td>
+      <td style="padding:8px; text-align:center;">0.10</td>
+      <td style="padding:8px; text-align:center; color:#69f0ae;"><strong>0.48</strong></td>
+    </tr>
+  </table>
+
+  <div class="insight-callout">
+    <strong>🔑 The key distinction:</strong><br><br>
+    <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+      <tr style="border-bottom:1px solid var(--border);">
+        <th style="padding:6px; text-align:left; color:var(--text-dim);">❌ Wrong Model</th>
+        <th style="padding:6px; text-align:left; color:var(--text-dim);">✅ Correct Model</th>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;">"The f values are averaged between pretrained and new images"</td>
+        <td style="padding:6px; color:#69f0ae;"><strong>"The backbone's filters are reweighted"</strong> — sky detector gets muted, beak detector gets amplified</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;">"Only training images get balanced features"</td>
+        <td style="padding:6px; color:#69f0ae;"><strong>"ALL images get balanced features"</strong> — even images the model has never seen</td>
+      </tr>
+      <tr>
+        <td style="padding:6px;">"It's like mixing old and new knowledge"</td>
+        <td style="padding:6px; color:#69f0ae;"><strong>"It's like recalibrating a microphone array"</strong> — the sky mic gets muted, the beak mic gets amplified, for every recording going forward</td>
+      </tr>
+    </table>
+    <br>
+    <strong>Every image — old training, new training, unseen test — flows through the SAME updated backbone. The backbone's conv filters don't remember individual images. They learn which visual patterns to amplify and which to suppress, and apply that universally.</strong>
+  </div>
 </div>
 
 </div><!-- /panelLearn -->
