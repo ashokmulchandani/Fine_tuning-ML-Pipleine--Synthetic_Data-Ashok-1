@@ -2325,6 +2325,189 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
   </div>
 </div>
 
+<!-- SECTION 3C: Entropy, Cross-Entropy & Lambda Intuition -->
+<div class="learn-section">
+  <div class="section-num">Section 03C</div>
+  <h4>📐 Entropy vs Cross-Entropy — What "Cross" Actually Means</h4>
+
+  <div class="compare-grid">
+    <div class="compare-card" style="border-color:#b388ff55;">
+      <h5 style="color:#b388ff;">Entropy H(p)</h5>
+      <p style="font-size:0.82rem;"><strong>H(p) = −Σ p_i × log(p_i)</strong></p>
+      <p style="font-size:0.78rem; color:var(--text-dim);">Measures the <strong>uncertainty within ONE distribution</strong>.</p>
+      <p style="font-size:0.78rem; color:var(--text-dim);">
+        • High H = flat distribution (all outcomes equally likely)<br>
+        • Low H = peaked distribution (one outcome dominates)<br>
+        • <strong>Uses p_i TWICE</strong> — once as the probability, once as what you take log of<br>
+        • "How surprised would I be by my OWN distribution?"
+      </p>
+    </div>
+    <div class="compare-card" style="border-color:#ffb30055;">
+      <h5 style="color:var(--amber);">Cross-Entropy H(p, q)</h5>
+      <p style="font-size:0.82rem;"><strong>H(p, q) = −Σ p_i × log(<span style="color:var(--amber);">q_i</span>)</strong></p>
+      <p style="font-size:0.78rem; color:var(--text-dim);">Measures how well distribution <strong>q approximates distribution p</strong>.</p>
+      <p style="font-size:0.78rem; color:var(--text-dim);">
+        • p = TRUE distribution (e.g., ground truth labels)<br>
+        • q = PREDICTED distribution (model output)<br>
+        • <strong>CROSSES p and q</strong> — takes p's probability, q's log<br>
+        • "How surprised would p be by q's predictions?"
+      </p>
+    </div>
+  </div>
+
+  <div class="insight-callout" style="margin-top:8px;">
+    <strong>🔑 Why "Cross"?</strong> Regular entropy H(p) uses p for BOTH the probability AND the log: H(p) = −Σ <strong>p_i</strong> × log(<strong>p_i</strong>). Cross-entropy "crosses" them — it uses the TRUE probability (p) but takes the log of the PREDICTED probability (q): H(p,q) = −Σ <strong>p_i</strong> × log(<strong>q_i</strong>). <strong>When q = p, Cross-Entropy = Entropy</strong> (its minimum possible value). In ML classification: p = one-hot true label [0,1,0], q = model's softmax output [0.1, 0.8, 0.1]. The "cross" is between what IS true and what the model THINKS.
+  </div>
+
+  <h5 style="color:#b388ff; margin-top:16px;">📊 Building Intuition — Entropy Examples</h5>
+  <table style="width:100%; border-collapse:collapse; font-size:0.8rem; margin:8px 0;">
+    <tr style="border-bottom:2px solid var(--border);">
+      <th style="padding:8px; text-align:left; color:#b388ff;">Scenario</th>
+      <th style="padding:8px; text-align:center; color:#b388ff;">Distribution</th>
+      <th style="padding:8px; text-align:center; color:#b388ff;">Entropy H</th>
+      <th style="padding:8px; text-align:left; color:#b388ff;">Intuition</th>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border); background:#ff525211;">
+      <td style="padding:8px;"><strong>Perfectly peaked</strong><br><span style="font-size:0.7rem; color:var(--text-dim);">One feature = 1.0, all others = 0</span></td>
+      <td style="padding:8px; text-align:center; font-family:var(--font-mono);">[1.0, 0, 0, ..., 0]</td>
+      <td style="padding:8px; text-align:center; font-family:var(--font-mono); color:var(--red); font-weight:bold;">0.00</td>
+      <td style="padding:8px; font-size:0.78rem;">One feature DOMINATES everything. Maximum bias. FMR's worst nightmare — this is what pretrained models look like (sky=0.91 equivalent after softmax).</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border); background:#ffb30011;">
+      <td style="padding:8px;"><strong>Biased</strong><br><span style="font-size:0.7rem; color:var(--text-dim);">3 features loud, rest quiet</span></td>
+      <td style="padding:8px; text-align:center; font-family:var(--font-mono);">[0.023, 0.009, 0.015, ...]</td>
+      <td style="padding:8px; text-align:center; font-family:var(--font-mono); color:var(--amber); font-weight:bold;">1.80</td>
+      <td style="padding:8px; font-size:0.78rem;">Typical pretrained ResNet-50 at epoch 0. Sky, grass, and texture features dominate the softmax distribution.</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border); background:#b388ff11;">
+      <td style="padding:8px;"><strong>Partially equalized</strong><br><span style="font-size:0.7rem; color:var(--text-dim);">Spreading out</span></td>
+      <td style="padding:8px; text-align:center; font-family:var(--font-mono);">[0.008, 0.006, 0.007, ...]</td>
+      <td style="padding:8px; text-align:center; font-family:var(--font-mono); color:var(--cyan); font-weight:bold;">5.20</td>
+      <td style="padding:8px; font-size:0.78rem;">Mid-training (~epoch 15). FMR is working — features are spreading out. No single feature dominates as strongly.</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border); background:#69f0ae11;">
+      <td style="padding:8px;"><strong>Nearly uniform</strong><br><span style="font-size:0.7rem; color:var(--text-dim);">All ~0.000488</span></td>
+      <td style="padding:8px; text-align:center; font-family:var(--font-mono);">[1/D, 1/D, ..., 1/D]</td>
+      <td style="padding:8px; text-align:center; font-family:var(--font-mono); color:var(--green); font-weight:bold;">7.50</td>
+      <td style="padding:8px; font-size:0.78rem;">Late training (~epoch 40). FMR has nearly achieved its goal. All 2048 features share similar prominence.</td>
+    </tr>
+    <tr style="background:#69f0ae22;">
+      <td style="padding:8px;"><strong>Perfectly uniform</strong><br><span style="font-size:0.7rem; color:var(--text-dim);">H_max = log(2048)</span></td>
+      <td style="padding:8px; text-align:center; font-family:var(--font-mono);">[1/D, 1/D, ..., 1/D]</td>
+      <td style="padding:8px; text-align:center; font-family:var(--font-mono); color:var(--green); font-weight:bold;">7.62 = H_max</td>
+      <td style="padding:8px; font-size:0.78rem;">Theoretical maximum. Every feature has EXACTLY equal probability after softmax. The ceiling FMR aims for.</td>
+    </tr>
+  </table>
+</div>
+
+<!-- SECTION 3D: Lambda Visualization -->
+<div class="learn-section">
+  <div class="section-num">Section 03D</div>
+  <h4>📉 Visualizing Dynamic λ — How the FMR Weight Auto-Decays</h4>
+
+  <p><strong>H_init</strong> is the entropy of the pretrained model BEFORE any training. Measured during "epoch -1" (stats gathering): run the model on all training data, compute feature entropy, average it. For a biased pretrained ResNet-50, H_init ≈ <strong>1.5 – 2.0</strong>.</p>
+
+  <div class="formula-box">
+    <span class="hl-magenta" style="font-size:1.2rem;">λ = (H<sub>max</sub> − H) / (H<sub>max</sub> − H<sub>init</sub>)</span><br><br>
+    <span class="dim">Numerator: (H<sub>max</sub> − H) = "how far are we from perfect uniformity RIGHT NOW?"</span><br>
+    <span class="dim">Denominator: (H<sub>max</sub> − H<sub>init</sub>) = "how far were we when we STARTED?"</span><br>
+    <span class="dim">Ratio: "what FRACTION of the journey remains?" → λ starts at 1.0, decays to ~0</span>
+  </div>
+
+  <table style="width:100%; border-collapse:collapse; font-size:0.78rem; margin:12px 0;">
+    <tr style="border-bottom:2px solid var(--border);">
+      <th style="padding:8px; text-align:center; color:#b388ff;">Epoch</th>
+      <th style="padding:8px; text-align:center; color:var(--green);">H<br>(measured)</th>
+      <th style="padding:8px; text-align:center; color:#b388ff;">H_max − H<br>(gap remaining)</th>
+      <th style="padding:8px; text-align:center; color:#b388ff;">H_max − H_init<br>(total gap)</th>
+      <th style="padding:8px; text-align:center; color:var(--magenta);">λ<br>(ratio)</th>
+      <th style="padding:8px; text-align:center; color:#b388ff;">max_coef<br>(scaled λ)</th>
+      <th style="padding:8px; text-align:left; color:#b388ff;">What's Happening</th>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border); background:#ff525211;">
+      <td style="padding:6px; text-align:center; font-weight:bold;">0</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--red);">1.50</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono);">6.12</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono);">6.12</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--magenta); font-weight:bold;">1.00</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--red); font-weight:bold;">62.3</td>
+      <td style="padding:6px; font-size:0.72rem;">Starting point. H = H_init. Full FMR strength.</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border); background:#ffb30011;">
+      <td style="padding:6px; text-align:center; font-weight:bold;">1</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--amber);">1.80</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono);">5.82</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono);">6.12</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--magenta); font-weight:bold;">0.95</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--red); font-weight:bold;">59.2</td>
+      <td style="padding:6px; font-size:0.72rem;">First epoch. H barely moved. λ still near max.</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:6px; text-align:center; font-weight:bold;">3</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono);">2.40</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono);">5.22</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono);">6.12</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--magenta); font-weight:bold;">0.85</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--red); font-weight:bold;">53.1</td>
+      <td style="padding:6px; font-size:0.72rem;">Features starting to spread. λ still strong.</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:6px; text-align:center; font-weight:bold;">5</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono);">3.00</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono);">4.62</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono);">6.12</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--magenta); font-weight:bold;">0.75</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--amber); font-weight:bold;">47.0</td>
+      <td style="padding:6px; font-size:0.72rem;">Noticeable decay. λ at 75% of initial.</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border); background:#b388ff11;">
+      <td style="padding:6px; text-align:center; font-weight:bold;">10</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono);">4.20</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono);">3.42</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono);">6.12</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--magenta); font-weight:bold;">0.56</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--amber); font-weight:bold;">34.8</td>
+      <td style="padding:6px; font-size:0.72rem;">Halfway point. λ at ~56% of initial. Features noticeably more uniform.</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border); background:#69f0ae11;">
+      <td style="padding:6px; text-align:center; font-weight:bold;">20</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--green);">5.80</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono);">1.82</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono);">6.12</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--magenta); font-weight:bold;">0.30</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--green); font-weight:bold;">18.5</td>
+      <td style="padding:6px; font-size:0.72rem;">Most features near uniform. λ fading fast.</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border); background:#69f0ae22;">
+      <td style="padding:6px; text-align:center; font-weight:bold;">35</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--green);">7.00</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono);">0.62</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono);">6.12</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--magenta); font-weight:bold;">0.10</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--green); font-weight:bold;">6.3</td>
+      <td style="padding:6px; font-size:0.72rem;">FMR nearly done. Only 10% of gap remains. CE loss dominates now.</td>
+    </tr>
+    <tr style="background:#69f0ae33;">
+      <td style="padding:6px; text-align:center; font-weight:bold;">50</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--green);">7.50</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono);">0.12</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono);">6.12</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--magenta); font-weight:bold;">0.02</td>
+      <td style="padding:6px; text-align:center; font-family:var(--font-mono); color:var(--green); font-weight:bold;">1.2</td>
+      <td style="padding:6px; font-size:0.72rem;">Training complete. FMR has gracefully exited. Features are balanced. CE loss finishes undisturbed.</td>
+    </tr>
+  </table>
+
+  <div class="insight-callout">
+    <strong>💡 How to Read This Table:</strong><br>
+    • <strong>H_init = 1.50</strong> — measured during epoch -1 (stats gathering). This is YOUR model's starting point.<br>
+    • <strong>max_coef</strong> = β × H_max / (H_max − H_init) = 50 × 7.62 / (7.62 − 1.50) = 62.3 — this is the maximum λ value, set so λ starts at 1.0<br>
+    • <strong>Actual FMR loss</strong> = λ × H — at epoch 0: 62.3 × 1.5 ≈ 93.4. At epoch 50: 1.2 × 7.5 ≈ 9.0<br>
+    • λ is like a <strong>volume knob</strong>: starts at 10, gradually turns down to ~0.1. FMR is loudest when bias is worst, whispers when features are already balanced.<br>
+    • <strong>H_init varies by model</strong>: ResNet (more biased) ≈ 1.5. ViT (self-attention mixes features) ≈ 2.0-2.5. CLIP (contrastive pretraining) ≈ 2.5-3.0.
+  </div>
+</div>
+
 </div><!-- /panelLearn -->
 
 <!-- ==================== PAPER COMPARISON PANEL ==================== -->
