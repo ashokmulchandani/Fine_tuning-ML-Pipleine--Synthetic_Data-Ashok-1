@@ -1940,6 +1940,125 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
     <br>
     <strong>Q&A pairs tell the model WHAT to learn. FMR ensures the model CAN learn it</strong> — by removing the pretrained bias that would otherwise steer the model toward spurious shortcuts. Q&A loss provides the signal ("beak color matters for answering questions"), FMR provides the fairness ("beak color gets equal chance to be heard as sky color").
   </div>
+
+  <!-- WALKED EXAMPLE -->
+  <h5 style="color:#b388ff; margin-top:18px;">📋 Walked Example: Same Training Data, Two Different Outcomes</h5>
+  <p>Let's trace through <strong>exactly</strong> what happens with 2 training images and 1 unseen test image.</p>
+
+  <div class="compare-grid">
+    <div class="compare-card" style="border-color:#ffb30055;">
+      <h5 style="color:#ffb300;">📸 Training Image A</h5>
+      <p style="font-size:0.75rem; color:var(--text-dim);">Indigo Bunting on a branch. <strong>Bright blue sky</strong> background.</p>
+      <div style="background:var(--deep); border-radius:6px; padding:10px; margin:8px 0; font-family:var(--font-mono); font-size:0.7rem; line-height:1.6;">
+        <span style="color:#b388ff;">Alpaca Format:</span><br>
+        <span class="dim">"instruction":</span> "Describe this bird."<br>
+        <span class="dim">"response":</span> "A small blue bird with a<br>&nbsp;silver-gray curved beak, perched<br>&nbsp;on a branch under blue sky."<br>
+        <span style="color:#ff5252;">→ sky mentioned! (background cue)</span>
+      </div>
+    </div>
+    <div class="compare-card" style="border-color:#ffb30055;">
+      <h5 style="color:#ffb300;">📸 Training Image B</h5>
+      <p style="font-size:0.75rem; color:var(--text-dim);">Same bird species. <strong>Forest/tree</strong> background. <strong>No blue sky.</strong></p>
+      <div style="background:var(--deep); border-radius:6px; padding:10px; margin:8px 0; font-family:var(--font-mono); font-size:0.7rem; line-height:1.6;">
+        <span style="color:#b388ff;">Alpaca Format:</span><br>
+        <span class="dim">"instruction":</span> "Describe this bird."<br>
+        <span class="dim">"response":</span> "A small blue bird with a<br>&nbsp;silver-gray curved beak, sitting<br>&nbsp;on a tree branch."<br>
+        <span style="color:#69f0ae;">→ no sky mentioned (forest bg)</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center; margin:16px 0; padding:12px; background:var(--deep); border-radius:8px; border:1px dashed #ffb30044;">
+    <span style="color:#ffb300; font-family:var(--font-mono); font-size:0.85rem;">🔮 INFERENCE: Unseen Test Image → Model is asked "Describe this bird."</span><br>
+    <span style="color:var(--text-dim); font-size:0.75rem;">Same bird species. Sitting on a <strong>fence post</strong>. <strong>Cloudy gray sky</strong>. Never seen in training.</span>
+  </div>
+
+  <div class="compare-grid">
+    <div class="compare-card bad">
+      <h5>🔴 Trained with Just Q&A Pairs (No FMR)</h5>
+      <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:8px;"><strong>What the model learned during training:</strong></p>
+      <table style="width:100%; border-collapse:collapse; font-size:0.72rem; margin-bottom:10px;">
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:4px 6px;">Image A features</td>
+          <td style="padding:4px 6px;"><span style="color:#ff5252;">f_sky=0.91</span>, f_beak=0.12, f_branch=0.25</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:4px 6px;">Image B features</td>
+          <td style="padding:4px 6px;">f_foliage=0.88, f_beak=0.10, f_branch=0.30</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:4px 6px;">Model's shortcut</td>
+          <td style="padding:4px 6px;"><strong>"Response mentions sky → image has blue sky"</strong></td>
+        </tr>
+        <tr>
+          <td style="padding:4px 6px;">Actually useful?</td>
+          <td style="padding:4px 6px; color:#ff5252;">No — sky irrelevant to bird identity</td>
+        </tr>
+      </table>
+      <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:4px;"><strong>At inference (cloudy sky, fence post):</strong></p>
+      <div style="background:var(--deep); border-radius:6px; padding:10px; font-family:var(--font-mono); font-size:0.72rem; line-height:1.6; border-left:3px solid #ff5252;">
+        <span style="color:#ff5252;">Model's internal state:</span><br>
+        f_sky=0.50 (LOW — cloudy! no blue!)<br>
+        f_beak=0.12 (still quiet)<br>
+        f_fence=0.60 (unfamiliar texture)<br><br>
+        <span style="color:#ff5252;">Model's reasoning:</span><br>
+        "Sky feature is LOW. Training images<br>
+        with 'bird description' had HIGH sky...<br>
+        This doesn't match my training pattern.<br>
+        I'm confused. The background looks weird."<br><br>
+        <span style="color:#ff5252;">Model's RESPONSE:</span><br>
+        <strong>"This appears to be a small bird,<br>
+        but I cannot clearly identify it —<br>
+        the lighting is unusual and the<br>
+        background is unfamiliar."</strong><br>
+        <span style="color:#ff5252;">❌ FAILS — model relied on sky shortcut,<br>now sky is gone, model is lost</span>
+      </div>
+    </div>
+    <div class="compare-card good">
+      <h5>🟢 Trained with Q&A Pairs + FMR</h5>
+      <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:8px;"><strong>What the model learned during training:</strong></p>
+      <table style="width:100%; border-collapse:collapse; font-size:0.72rem; margin-bottom:10px;">
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:4px 6px;">Image A features</td>
+          <td style="padding:4px 6px;"><span style="color:#69f0ae;">f_sky≈0.52</span>, <span style="color:#69f0ae;">f_beak≈0.49</span>, f_branch≈0.20</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:4px 6px;">Image B features</td>
+          <td style="padding:4px 6px;">f_foliage≈0.48, <span style="color:#69f0ae;">f_beak≈0.47</span>, f_branch≈0.28</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:4px 6px;">Model's shortcut</td>
+          <td style="padding:4px 6px;"><strong>NONE — sky not louder than beak</strong></td>
+        </tr>
+        <tr>
+          <td style="padding:4px 6px;">Actually useful?</td>
+          <td style="padding:4px 6px; color:#69f0ae;">Yes — beak/wing features drive answers</td>
+        </tr>
+      </table>
+      <p style="font-size:0.75rem; color:var(--text-dim); margin-bottom:4px;"><strong>At inference (cloudy sky, fence post):</strong></p>
+      <div style="background:var(--deep); border-radius:6px; padding:10px; font-family:var(--font-mono); font-size:0.72rem; line-height:1.6; border-left:3px solid #69f0ae;">
+        <span style="color:#69f0ae;">Model's internal state:</span><br>
+        f_sky=0.48 (cloudy — doesn't matter!)<br>
+        f_beak=0.46 (balanced — clearly visible)<br>
+        f_wing=0.44 (balanced — clearly visible)<br><br>
+        <span style="color:#69f0ae;">Model's reasoning:</span><br>
+        "Beak: silver-gray, curved. Wing: blue<br>
+        with faint bars. Size: small. These<br>
+        match my training patterns for Indigo<br>
+        Bunting. Background is irrelevant."<br><br>
+        <span style="color:#69f0ae;">Model's RESPONSE:</span><br>
+        <strong>"A small blue bird with a silver-gray<br>
+        curved beak and fine wing bars,<br>
+        consistent with an Indigo Bunting.<br>
+        It is perched on a fence post."</strong><br>
+        <span style="color:#69f0ae;">✅ SUCCEEDS — model used bird features,<br>background didn't matter at all</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="insight-callout">
+    <strong>💡 The Exact Difference:</strong> Both models saw the SAME two training images. Both saw the SAME Q&A pairs. The ONLY difference: FMR prevented the first model from using the sky shortcut. Without the shortcut, the model was FORCED to learn from the bird itself — beak shape, wing color, body size. Those features are present regardless of background. That's why FMR-trained models generalize to new backgrounds and non-FMR models don't.
+  </div>
 </div>
 
 </div><!-- /panelLearn -->
