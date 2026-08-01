@@ -2224,6 +2224,107 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
   </div>
 </div>
 
+<!-- SECTION 11: Could FMR Apply to Other Layers? -->
+<div class="learn-section">
+  <div class="section-num">Section 11</div>
+  <h4>🔬 Could FMR Be Applied to Other Layers? (Not Just the Penultimate One)</h4>
+  <p>The paper applies FMR to the <strong>penultimate layer</strong> (2048-dim after Global Avg Pool). But could we apply FMR to <strong>any</strong> layer? Would it help or hurt?</p>
+  <p><strong>Answer: YES, but the layer you choose determines whether FMR helps or breaks your model.</strong></p>
+
+  <div class="insight-callout">
+    <strong>🎯 The Golden Rule:</strong> FMR helps where features are <strong>TASK-SPECIFIC</strong>. FMR hurts where features are <strong>UNIVERSAL</strong>.<br>
+    • Early layers (edges, basic textures) = universal = needed for ALL vision → suppressing them BREAKS the model<br>
+    • Late layers (object parts, concepts) = task-specific = biased by pretraining → suppressing bias FIXES the model<br>
+    • The penultimate layer sits at the SWEET SPOT: semantic enough to carry pretrained bias, late enough that equalizing doesn't destroy basic vision
+  </div>
+
+  <table style="width:100%; border-collapse:collapse; margin:16px 0; font-size:0.8rem;">
+    <tr style="border-bottom:2px solid var(--border);">
+      <th style="padding:8px; text-align:left; color:#b388ff;">Layer</th>
+      <th style="padding:8px; text-align:left; color:#b388ff;">What It Learns</th>
+      <th style="padding:8px; text-align:center; color:#b388ff;">Apply FMR?</th>
+      <th style="padding:8px; text-align:left; color:#b388ff;">Why</th>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border); background:#ff525211;">
+      <td style="padding:8px;"><strong>Conv1 (64-dim)</strong></td>
+      <td style="padding:8px;">Edge detectors (vertical, horizontal, diagonal)</td>
+      <td style="padding:8px; text-align:center; color:var(--red); font-weight:bold;">❌ HURTS</td>
+      <td style="padding:8px; font-size:0.78rem;">Edges are UNIVERSALLY useful for ALL vision tasks. Equalizing edge detectors would suppress basic visual processing. Model would struggle to see ANYTHING. Like dimming ALL pixels equally — you lose signal, not just noise.</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border); background:#ff525211;">
+      <td style="padding:8px;"><strong>Stage1 (256-dim)</strong></td>
+      <td style="padding:8px;">Simple textures (spots, stripes, gradients)</td>
+      <td style="padding:8px; text-align:center; color:var(--red); font-weight:bold;">❌ HURTS</td>
+      <td style="padding:8px; font-size:0.78rem;">Basic textures are needed for ALL downstream layers. Too early in the network — features are not task-specific enough yet.</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border); background:#ffb30011;">
+      <td style="padding:8px;"><strong>Stage2 (512-dim)</strong></td>
+      <td style="padding:8px;">Complex textures (fur, feather, scale patterns)</td>
+      <td style="padding:8px; text-align:center; color:var(--amber); font-weight:bold;">⚠️ MIXED</td>
+      <td style="padding:8px; font-size:0.78rem;">Some textures are ImageNet-specific (fur texture = animal), others are universal. FMR here might reduce texture bias but could also remove useful texture info. Risky.</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border); background:#69f0ae11;">
+      <td style="padding:8px;"><strong>Stage3 (1024-dim)</strong></td>
+      <td style="padding:8px;">Object PARTS (beak, wing, wheel, window)</td>
+      <td style="padding:8px; text-align:center; color:var(--green); font-weight:bold;">✅ HELPS</td>
+      <td style="padding:8px; font-size:0.78rem;">Part detectors are task-specific. Equalizing here helps — beak/wing/eye detectors get balanced prominence. Less risky than Stage4 because features are still compositional.</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border); background:#69f0ae22;">
+      <td style="padding:8px;"><strong>Stage4 (2048-dim)</strong></td>
+      <td style="padding:8px;">Object CONCEPTS (sky, grass, bird-face, car-shape)</td>
+      <td style="padding:8px; text-align:center; color:var(--green); font-weight:bold; font-size:1.1rem;">✅✅ BEST</td>
+      <td style="padding:8px; font-size:0.78rem;"><strong>THIS is where the paper applies FMR.</strong> Concept-level features are most biased by ImageNet pretraining. The sky detector, grass detector, and background-texture detector all live here. Maximum benefit, minimum risk.</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border); background:#69f0ae22;">
+      <td style="padding:8px;"><strong>Stage3 + Stage4</strong></td>
+      <td style="padding:8px;">Parts + Concepts together</td>
+      <td style="padding:8px; text-align:center; color:var(--green); font-weight:bold;">✅✅ BEST?</td>
+      <td style="padding:8px; font-size:0.78rem;"><strong>Multi-layer FMR</strong> — apply at BOTH Stage3 and Stage4. Each layer needs its own λ schedule. Could be MORE effective than single-layer. <strong>Not tested in the paper — research opportunity!</strong></td>
+    </tr>
+    <tr style="background:#ff525122;">
+      <td style="padding:8px;"><strong>All layers</strong></td>
+      <td style="padding:8px;">Everything from edges to concepts</td>
+      <td style="padding:8px; text-align:center; color:var(--red); font-weight:bold;">❌ HURTS</td>
+      <td style="padding:8px; font-size:0.78rem;">Equalizing EVERYTHING would suppress basic edge detection alongside high-level concepts. Model loses hierarchical structure. Like forcing every employee in a company to have equal say on every decision — chaos.</td>
+    </tr>
+  </table>
+
+  <div class="insight-callout" style="margin-top:12px;">
+    <strong>📊 Evidence from the Paper's Own Ablation:</strong><br><br>
+    <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+      <tr style="border-bottom:1px solid var(--border);">
+        <th style="padding:6px; text-align:left; color:var(--text-dim);">Pretraining Method</th>
+        <th style="padding:6px; text-align:center; color:var(--text-dim);">FMR Gain</th>
+        <th style="padding:6px; text-align:left; color:var(--text-dim);">What This Tells Us</th>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;">Supervised ImageNet</td>
+        <td style="padding:6px; text-align:center; color:var(--green);"><strong>+10.4%</strong></td>
+        <td style="padding:6px;">Lots of task-specific bias in later layers to fix</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;">Self-supervised DINO</td>
+        <td style="padding:6px; text-align:center; color:var(--green);"><strong>+15.0%</strong></td>
+        <td style="padding:6px;">DINO has DIFFERENT biases — FMR fixes them too</td>
+      </tr>
+      <tr>
+        <td style="padding:6px;">Random init (no pretraining)</td>
+        <td style="padding:6px; text-align:center;"><strong>+0.9% only</strong></td>
+        <td style="padding:6px;">No pretrained bias to fix — FMR does almost nothing. Proves FMR specifically targets <strong>pretraining-induced bias</strong> which lives in <strong>later layers</strong></td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="insight-callout">
+    <strong>💡 Practical Takeaway for Vision-Language Fine-Tuning:</strong><br>
+    &nbsp;&nbsp;1. Apply FMR to the <strong>penultimate layer</strong> of your vision encoder (standard, proven, safe)<br>
+    &nbsp;&nbsp;2. If using ViT/CLIP: apply to the <strong>[CLS] token output</strong> (768 or 1024-dim) — equivalent to ResNet's penultimate layer<br>
+    &nbsp;&nbsp;3. Advanced: try FMR on BOTH penultimate AND the layer before it (Stage3+Stage4) with separate λ schedules<br>
+    &nbsp;&nbsp;4. Avoid: applying FMR to early layers (Conv1-Stage2) — will degrade basic visual processing<br>
+    &nbsp;&nbsp;5. FMR is NOT weight decay. FMR equalizes FEATURE MAGNITUDES across dimensions. Weight decay pulls individual WEIGHTS to zero. They are complementary.
+  </div>
+</div>
+
 </div><!-- /panelLearn -->
 
 <!-- ==================== PAPER COMPARISON PANEL ==================== -->
