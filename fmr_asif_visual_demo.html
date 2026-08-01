@@ -2506,6 +2506,99 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
     • λ is like a <strong>volume knob</strong>: starts at 10, gradually turns down to ~0.1. FMR is loudest when bias is worst, whispers when features are already balanced.<br>
     • <strong>H_init varies by model</strong>: ResNet (more biased) ≈ 1.5. ViT (self-attention mixes features) ≈ 2.0-2.5. CLIP (contrastive pretraining) ≈ 2.5-3.0.
   </div>
+
+  <h5 style="color:#b388ff; margin-top:16px;">🔧 How to Measure H_init for YOUR Model (GPT-V, LLaVA, or Any Vision Encoder)</h5>
+  <p>Before training with FMR, you need to know your model's starting entropy. Here's the exact code to run <strong>once</strong> before any training begins:</p>
+
+  <div class="formula-box" style="font-size:0.75rem; line-height:1.5; text-align:left;">
+    <span style="color:#b388ff;">Step 1 — Run ALL training images through the FROZEN vision encoder, collect features:</span><br>
+    <span class="dim">################################################################</span><br>
+    <span style="color:#69f0ae;">import</span> torch<br>
+    <span style="color:#69f0ae;">from</span> tqdm <span style="color:#69f0ae;">import</span> tqdm<br><br>
+    <span style="color:#6b6b80;"># Load YOUR pretrained vision encoder (FROZEN, no grads)</span><br>
+    vision_encoder = load_your_pretrained_model()  <span style="color:#6b6b80;"># e.g., CLIP ViT, LLaVA vision tower</span><br>
+    vision_encoder.eval()<br><br>
+    all_entropies = []<br>
+    <span style="color:#69f0ae;">with</span> torch.no_grad():<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#69f0ae;">for</span> images, _, _ <span style="color:#69f0ae;">in</span> tqdm(train_loader, desc=<span style="color:#ce9178;">"Measuring H_init"</span>):<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>images = images.to(device)<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># Get vision features (before projection to LLM)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>features = vision_encoder(images)  <span style="color:#6b6b80;"># shape: [B, D] — e.g., [32, 1024] for ViT-L</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># If your model outputs [CLS] token + patch tokens, take [CLS] only</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#69f0ae;">if</span> features.dim() == 3: features = features[:, 0, :]  <span style="color:#6b6b80;"># [B, N, D] -> [B, D]</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># Compute entropy per image</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>p = features.float().softmax(dim=-1)  <span style="color:#6b6b80;"># [B, D] probability distribution</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>H = -(p * p.log()).sum(dim=-1)  <span style="color:#6b6b80;"># entropy per sample: [B]</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>all_entropies.extend(H.cpu().tolist())<br><br>
+    <span style="color:#6b6b80;"># H_init = average entropy across ALL training images</span><br>
+    H_init = sum(all_entropies) / len(all_entropies)<br>
+    <span style="color:#69f0ae;">print</span>(<span style="color:#ce9178;">f"H_init = {H_init:.2f} (H_max = {torch.log(torch.tensor(features.shape[-1])):.2f})"</span>)<br>
+    <span class="dim">################################################################</span>
+  </div>
+
+  <div class="formula-box" style="font-size:0.75rem; line-height:1.5; text-align:left; margin-top:8px;">
+    <span style="color:#b388ff;">Step 2 — Plug H_init into your FMRLoss setup:</span><br>
+    <span class="dim">################################################################</span><br>
+    <span style="color:#6b6b80;"># Now you know your model's starting point</span><br>
+    fmr = FMRLoss(feature_dim=1024)  <span style="color:#6b6b80;"># or 768, 2048 — whatever YOUR encoder outputs</span><br>
+    fmr.H_init = H_init &nbsp;<span style="color:#6b6b80;"># ← THIS is why we measured it!</span><br><br>
+    <span style="color:#6b6b80;"># The dynamic lambda formula uses H_init:</span><br>
+    <span style="color:#6b6b80;"># max_coef = beta * H_max / (H_max - H_init)</span><br>
+    <span style="color:#6b6b80;"># lambda = (H_max - H_current) / (H_max - H_init) * max_coef</span><br><br>
+    <span style="color:#6b6b80;"># Without H_init, you can't compute max_coef — lambda can't auto-tune.</span><br>
+    <span class="dim">################################################################</span>
+  </div>
+
+  <table style="width:100%; border-collapse:collapse; font-size:0.78rem; margin:10px 0;">
+    <tr style="border-bottom:2px solid var(--border);">
+      <th style="padding:8px; text-align:left; color:#b388ff;">Model</th>
+      <th style="padding:8px; text-align:center; color:#b388ff;">Feature Dim D</th>
+      <th style="padding:8px; text-align:center; color:var(--green);">H_max = log(D)</th>
+      <th style="padding:8px; text-align:center; color:var(--amber);">Typical H_init</th>
+      <th style="padding:8px; text-align:left; color:#b388ff;">Bias Level</th>
+      <th style="padding:8px; text-align:left; color:#b388ff;">How to Get Features</th>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:6px;"><strong>ResNet-50</strong></td>
+      <td style="padding:6px; text-align:center;">2048</td>
+      <td style="padding:6px; text-align:center;">7.62</td>
+      <td style="padding:6px; text-align:center; color:var(--red);">~1.5 – 1.8</td>
+      <td style="padding:6px;">HIGH — CNN features localized</td>
+      <td style="padding:6px; font-size:0.72rem;"><code>model.avgpool(x).flatten(1)</code></td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:6px;"><strong>ViT-Base</strong></td>
+      <td style="padding:6px; text-align:center;">768</td>
+      <td style="padding:6px; text-align:center;">6.64</td>
+      <td style="padding:6px; text-align:center; color:var(--amber);">~2.0 – 2.5</td>
+      <td style="padding:6px;">MEDIUM — attention mixes features</td>
+      <td style="padding:6px; font-size:0.72rem;"><code>model(x)[:, 0, :]</code> ([CLS] token)</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:6px;"><strong>CLIP ViT-L</strong></td>
+      <td style="padding:6px; text-align:center;">1024</td>
+      <td style="padding:6px; text-align:center;">6.93</td>
+      <td style="padding:6px; text-align:center; color:var(--green);">~2.5 – 3.0</td>
+      <td style="padding:6px;">LOWER — contrastive pretraining</td>
+      <td style="padding:6px; font-size:0.72rem;"><code>model.encode_image(x)</code></td>
+    </tr>
+    <tr>
+      <td style="padding:6px;"><strong>LLaVA (CLIP ViT)</strong></td>
+      <td style="padding:6px; text-align:center;">1024</td>
+      <td style="padding:6px; text-align:center;">6.93</td>
+      <td style="padding:6px; text-align:center; color:var(--green);">~2.5 – 3.0</td>
+      <td style="padding:6px;">LOWER — same CLIP backbone</td>
+      <td style="padding:6px; font-size:0.72rem;"><code>model.get_vision_tower()(x)</code></td>
+    </tr>
+  </table>
+
+  <div class="insight-callout">
+    <strong>💡 What H_init Tells You:</strong><br>
+    • <strong>H_init close to H_max</strong> (e.g., 6.5 vs 6.93 for ViT-L): features already fairly balanced. Your pretrained model has LOW bias. FMR will help but gains may be modest (+3-5%).<br>
+    • <strong>H_init far from H_max</strong> (e.g., 1.5 vs 7.62 for ResNet): features heavily biased. Your model has HIGH bias. FMR will help significantly (+10-15%).<br>
+    • <strong>If H_init = H_max</strong>: features already perfectly uniform. FMR does nothing (like the +0.9% on random weights in the paper). Your model has no pretrained bias — lucky you!<br>
+    • <strong>You MUST measure H_init on YOUR training data</strong>, not on ImageNet or any other dataset. The formula needs YOUR model + YOUR images to auto-tune correctly.
+  </div>
 </div>
 
 </div><!-- /panelLearn -->
