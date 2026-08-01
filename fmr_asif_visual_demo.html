@@ -1298,7 +1298,7 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
       <span style="color:var(--text);"><strong>ŷ</strong></span> = Model prediction (probability) &nbsp;|&nbsp;
       <span style="color:var(--text);"><strong>Error</strong></span> = ŷ − y &nbsp;|&nbsp;
       <span style="color:var(--text);"><strong>CE ∂W</strong></span> = (ŷ−y)×f = gradient from cross-entropy &nbsp;|&nbsp;
-      <span style="color:var(--amber);"><strong>W Decay</strong></span> = −2λ_W×W (always pulls to 0) &nbsp;|&nbsp;
+      <span style="color:var(--amber);"><strong>W Decay</strong></span> = −2λ_W×W (standard L2 on W — NOT FMR!) &nbsp;|&nbsp;
       <span style="color:var(--text);"><strong>η·Net</strong></span> = lr×(CE+Decay) = actual weight change &nbsp;|&nbsp;
       <span style="color:var(--text);"><strong>W</strong></span> = Weight AFTER update
     </div>
@@ -1337,6 +1337,9 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
         </div>
         <div style="font-size:0.6rem; color:var(--text-dim); margin-top:4px; font-family:var(--font-mono);">
           CE ∂W = (ŷ−y)×f &nbsp;|&nbsp; W Decay = −2λ<sub>W</sub>W &nbsp;|&nbsp; η·Net = lr×(CE+Decay) &nbsp;|&nbsp; W<sub>new</sub> = W<sub>old</sub> + η·Net
+        </div>
+        <div style="font-size:0.6rem; color:var(--amber); margin-top:2px; font-family:var(--font-mono);">
+          ⚠️ W Decay (standard L2 on classifier weights) is <strong>NOT</strong> the FMR penalty. FMR acts on the <strong>feature vector f</strong> (equalizing magnitudes), not on W.
         </div>
       </div>
       <!-- f_beak table -->
