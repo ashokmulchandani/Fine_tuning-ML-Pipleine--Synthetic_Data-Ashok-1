@@ -2547,6 +2547,7 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
     <strong>💡 How to Read This Table:</strong><br>
     • <strong>H_init = 1.50</strong> — measured during epoch -1 (stats gathering). This is YOUR model's starting point.<br>
     • <strong>max_coef</strong> = β × H_max / (H_max − H_init) = 50 × 7.62 / (7.62 − 1.50) = 62.3 — this is the maximum λ value, set so λ starts at 1.0<br>
+    • <strong>H = H_init at the START of epoch 0</strong> — before any training step. The moment training begins, H starts rising. H_init is then FROZEN as a constant forever.<br>
     • <strong>Actual FMR loss</strong> = λ × H — at epoch 0: 62.3 × 1.5 ≈ 93.4. At epoch 50: 1.2 × 7.5 ≈ 9.0<br>
     • λ is like a <strong>volume knob</strong>: starts at 10, gradually turns down to ~0.1. FMR is loudest when bias is worst, whispers when features are already balanced.<br>
     • <strong>H_init varies by model</strong>: ResNet (more biased) ≈ 1.5. ViT (self-attention mixes features) ≈ 2.0-2.5. CLIP (contrastive pretraining) ≈ 2.5-3.0.
