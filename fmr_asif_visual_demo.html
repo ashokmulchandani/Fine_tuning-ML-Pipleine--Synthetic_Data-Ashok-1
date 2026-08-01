@@ -1711,6 +1711,46 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
   <div class="insight-callout" style="margin-top:12px;">
     <strong>🔗 The Big Picture:</strong> Your existing work — YOLO pipelines, CNN sliding filters, maxpool animations — all involve <strong>pretrained vision backbones extracting features</strong>. FMR is a <strong>drop-in regularization technique</strong> that improves any fine-tuning workflow where a pretrained vision encoder feeds into a downstream task (classification, detection, VQA, captioning). It's one extra line in your loss function, zero architectural changes, and the dynamic λ means no hyperparameter tuning. Given you're working with <strong>limited annotated Q&A data</strong>, this is exactly the low-data regime where FMR shows its biggest gains (+10.4% on CUB200 at 15% data).
   </div>
+
+  <h5 style="color:#b388ff; margin-top:14px;">⏱️ FMR Is Training-Only — But the Behavior Change Sticks</h5>
+  <p>A common question: <strong>"Does FMR run during inference? Does it slow down predictions?"</strong></p>
+  <p><strong>No.</strong> FMR only runs during training. But the backbone <strong>permanently learns</strong> to produce more balanced features.</p>
+
+  <div class="compare-grid" style="margin-top:10px;">
+    <div class="compare-card" style="border-color:#ffb30055;">
+      <h5 style="color:#ffb300;">🏋️ DURING TRAINING (FMR is ACTIVE)</h5>
+      <div style="font-size:0.78rem; line-height:1.7;">
+        Image → Backbone → <strong>f</strong><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├─ <span style="color:#69f0ae;">Classifier → L_CE</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ <span style="color:#ff4081;">FMR: −λ·H(softmax(f))</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"Equalize those magnitudes!"<br><br>
+        <strong>Backbone weights get updated</strong> by both CE and FMR gradients.<br>
+        FMR pushes backbone to suppress loud features, amplify quiet ones.
+      </div>
+    </div>
+    <div class="compare-card" style="border-color:#69f0ae55;">
+      <h5 style="color:#69f0ae;">🚀 DURING INFERENCE (FMR is GONE)</h5>
+      <div style="font-size:0.78rem; line-height:1.7;">
+        Image → Backbone → <strong>f</strong> → Classifier → Prediction<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ f is NOW balanced<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(backbone learned this)<br><br>
+        <strong>Zero overhead.</strong> No entropy calculation.<br>
+        No λ. No regularization. Same speed.<br>
+        Same number of parameters.<br>
+        But the features are balanced — permanently.
+      </div>
+    </div>
+  </div>
+
+  <div class="insight-callout" style="margin-top:12px;">
+    <strong>🎯 Analogy — Training Wheels on a Bicycle:</strong><br>
+    &nbsp;&nbsp;• <strong>During training:</strong> The training wheels (FMR) force you to balance equally on both sides<br>
+    &nbsp;&nbsp;• <strong>After training:</strong> The wheels come off, but you've <strong>learned to balance</strong> — your muscle memory (backbone weights) was shaped by them<br>
+    &nbsp;&nbsp;• <strong>You don't need them anymore</strong> because your behavior permanently changed<br><br>
+    <strong>Same principle as Dropout:</strong> Dropout randomly disables neurons during training → network builds redundancy → at inference, dropout is OFF but the network's weights were shaped by it. FMR equalizes features during training → backbone produces balanced features → at inference, FMR is OFF but the backbone's weights were shaped by it.
+  </div>
 </div>
 
 </div><!-- /panelLearn -->
