@@ -2245,6 +2245,69 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
     <br>
     <strong>That's it.</strong> Two lines in your training loop. Zero architecture changes. The dynamic λ means no hyperparameter search. Works with LoRA, QLoRA, full fine-tuning — any setup where the vision encoder receives gradients.
   </div>
+
+  <!-- ASIF + Q&A for Vision-Language FT -->
+  <h5 style="color:var(--amber); margin-top:18px;">🔀 Would ASIF Also Help Your Q&A Fine-Tuning?</h5>
+  <p><strong>Yes — but for a different reason than FMR.</strong> FMR and ASIF attack completely different problems. Using both together covers both failure modes.</p>
+
+  <div class="compare-grid">
+    <div class="compare-card" style="border-color:var(--cyan);">
+      <h5 style="color:var(--cyan);">🔵 What FMR Fixes</h5>
+      <p style="font-size:0.8rem;"><strong>Pretrained Feature Bias</strong></p>
+      <p style="font-size:0.75rem; color:var(--text-dim);">
+        Your vision encoder was trained on ImageNet. It emphasizes sky, grass, and textures — features that are LOUD but irrelevant to your Q&A task. FMR equalizes all feature magnitudes so the Q&A loss decides which features matter.
+      </p>
+      <p style="font-size:0.75rem; margin-top:6px;"><strong>Problem signal:</strong> Model answers correctly when test images have similar backgrounds to training, fails when backgrounds change.</p>
+    </div>
+    <div class="compare-card" style="border-color:var(--amber);">
+      <h5 style="color:var(--amber);">🟠 What ASIF Fixes</h5>
+      <p style="font-size:0.8rem;"><strong>Training Sample Memorization</strong></p>
+      <p style="font-size:0.75rem; color:var(--text-dim);">
+        With limited Q&A pairs, the model can memorize "Image #47 → answer X" instead of learning "curved beak → Indigo Bunting." ASIF suppresses identity-specific visual details so the model CAN'T cheat by memorizing individual training images.
+      </p>
+      <p style="font-size:0.75rem; margin-top:6px;"><strong>Problem signal:</strong> Perfect accuracy on training images, poor accuracy on any new image — even of the same bird species.</p>
+    </div>
+  </div>
+
+  <table style="width:100%; border-collapse:collapse; font-size:0.78rem; margin:14px 0;">
+    <tr style="border-bottom:2px solid var(--border);">
+      <th style="padding:8px; text-align:left; color:var(--text-dim);">Scenario</th>
+      <th style="padding:8px; text-align:center; color:var(--amber);">Q&A Only</th>
+      <th style="padding:8px; text-align:center; color:var(--cyan);">Q&A + FMR</th>
+      <th style="padding:8px; text-align:center; color:var(--amber);">Q&A + ASIF</th>
+      <th style="padding:8px; text-align:center; color:#b388ff;">Q&A + FMR + ASIF</th>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:6px;">New image, same species, different background</td>
+      <td style="padding:6px; text-align:center; color:var(--red);">❌ Fails (background shortcut)</td>
+      <td style="padding:6px; text-align:center; color:var(--green);">✅ Passes (features balanced)</td>
+      <td style="padding:6px; text-align:center; color:var(--red);">❌ May fail if memorized</td>
+      <td style="padding:6px; text-align:center; color:var(--green);">✅✅ Best</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:6px;">Exact training image, asked differently</td>
+      <td style="padding:6px; text-align:center; color:var(--amber);">⚠️ Memorized answer</td>
+      <td style="padding:6px; text-align:center; color:var(--amber);">⚠️ May still memorize</td>
+      <td style="padding:6px; text-align:center; color:var(--green);">✅ Generalizes</td>
+      <td style="padding:6px; text-align:center; color:var(--green);">✅✅ Best</td>
+    </tr>
+    <tr>
+      <td style="padding:6px;">Small dataset (50-200 Q&A pairs)</td>
+      <td style="padding:6px; text-align:center; color:var(--red);">❌ Overfits badly</td>
+      <td style="padding:6px; text-align:center; color:var(--amber);">⚠️ Better, still memorizes</td>
+      <td style="padding:6px; text-align:center; color:var(--green);">✅ Resists memorization</td>
+      <td style="padding:6px; text-align:center; color:var(--green);">✅✅ Best</td>
+    </tr>
+  </table>
+
+  <div class="insight-callout">
+    <strong>🎯 Recommendation for Your Vision-Language Fine-Tuning:</strong><br><br>
+    <strong>1. Start with Q&A + FMR alone</strong> — FMR is simpler (one loss term, negligible cost). It fixes the most common failure mode: background shortcuts. Most of your gains will come from FMR.<br><br>
+    <strong>2. Add ASIF if you see memorization</strong> — Signs: training accuracy >> validation accuracy, model regurgitates exact training answers, model fails on same-bird-different-photo.<br><br>
+    <strong>3. Use both for best results on very small datasets</strong> — FMR equalizes feature magnitudes, ASIF prevents identity memorization. They're complementary. ASIF adds moderate compute cost (extra Identifier network).<br><br>
+    <strong>4. Both work with LoRA/QLoRA</strong> — FMR gradients flow through LoRA adapters. ASIF needs its own small Identifier head (linear layers, negligible params).<br><br>
+    <strong>5. Neither needs extra labeling</strong> — FMR: zero extra labels. ASIF: the "label" is just the row number in your dataset. Your existing Alpaca-format Q&A data works as-is for both.
+  </div>
 </div>
 
 <!-- SECTION 11: Could FMR Apply to Other Layers? -->
