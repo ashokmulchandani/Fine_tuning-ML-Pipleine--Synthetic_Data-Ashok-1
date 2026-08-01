@@ -1041,6 +1041,72 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
   </div>
 </div>
 
+<!-- SECTION 3B: Key Definitions -->
+<div class="learn-section">
+  <div class="section-num">Section 03B</div>
+  <h4>📖 Key Definitions — Entropy, Feature Dominance &amp; Why They Matter</h4>
+
+  <div class="compare-grid">
+    <div class="compare-card bad">
+      <h5>📉 LOW Entropy = Feature Dominance (BAD)</h5>
+      <p style="font-size:0.82rem;">Some features are <strong>loud</strong> (high magnitude), others are <strong>quiet</strong> (near zero). A few loud features dominate the classifier's decisions — the model ignores 95% of what it sees.</p>
+      <div style="background:var(--deep); border-radius:6px; padding:10px; margin:8px 0; font-family:var(--font-mono); font-size:0.72rem;">
+        f = [<span style="color:#ff5252;">0.91</span>, <span style="color:#ff5252;">0.87</span>, <span style="color:#ff5252;">0.83</span>, 0.05, 0.03, 0.02, ...]<br>
+        H = <span style="color:#ff5252;">1.8</span> &nbsp;(far below H<sub>max</sub> = 3.40)<br>
+        → 3 features control everything
+      </div>
+      <p style="font-size:0.75rem; color:var(--text-dim);"><strong>Real meaning:</strong> The pretrained model shouts "BLUE SKY! GREEN GRASS!" so loudly that the whisper "curved beak..." is never heard by the classifier.</p>
+    </div>
+    <div class="compare-card good">
+      <h5>📈 HIGH Entropy = Uniform Features (GOOD)</h5>
+      <p style="font-size:0.82rem;">All features have <strong>similar magnitude</strong> — no single feature shouts over the others. The classifier considers all features equally and picks the ones that actually help.</p>
+      <div style="background:var(--deep); border-radius:6px; padding:10px; margin:8px 0; font-family:var(--font-mono); font-size:0.72rem;">
+        f = [<span style="color:#69f0ae;">0.52</span>, <span style="color:#69f0ae;">0.49</span>, <span style="color:#69f0ae;">0.51</span>, 0.48, 0.50, 0.47, ...]<br>
+        H = <span style="color:#69f0ae;">3.35</span> &nbsp;(near H<sub>max</sub> = 3.40)<br>
+        → All 2048 features get a fair chance
+      </div>
+      <p style="font-size:0.75rem; color:var(--text-dim);"><strong>Real meaning:</strong> "Blue sky" and "curved beak" now speak at equal volume. The classifier's cross-entropy loss naturally amplifies beak curvature (it helps classify) and ignores sky (it doesn't).</p>
+    </div>
+  </div>
+
+  <table style="width:100%; border-collapse:collapse; margin:16px 0; font-size:0.82rem;">
+    <tr style="border-bottom:1px solid var(--border);">
+      <th style="padding:10px 12px; text-align:left; color:#b388ff;">Term</th>
+      <th style="padding:10px 12px; text-align:left; color:#b388ff;">Definition</th>
+      <th style="padding:10px 12px; text-align:left; color:#b388ff;">Why It Matters</th>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:10px 12px;"><code style="color:var(--green);">Entropy H</code></td>
+      <td style="padding:10px 12px;">H = −Σ p_i × log(p_i) where p = softmax(f)<br><strong>Measures how evenly feature magnitudes are spread out.</strong></td>
+      <td style="padding:10px 12px; color:var(--text-dim);">Low H = biased features (bad).<br>High H = uniform features (good).<br>FMR maximizes H.</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:10px 12px;"><code style="color:var(--green);">H<sub>max</sub></code></td>
+      <td style="padding:10px 12px;">H<sub>max</sub> = log(D) where D = number of feature dimensions (e.g., log(2048) ≈ 7.62)</td>
+      <td style="padding:10px 12px; color:var(--text-dim);">The theoretical ceiling. Reached when ALL D features have exactly equal magnitude. The target FMR aims for.</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:10px 12px;"><code style="color:var(--green);">Softmax(f)</code></td>
+      <td style="padding:10px 12px;">p_i = e^(f_i) / Σ e^(f_j)<br>Converts raw feature values into a <strong>probability distribution</strong> (all p_i ≥ 0, Σ p_i = 1)</td>
+      <td style="padding:10px 12px; color:var(--text-dim);">Entropy is only defined for probability distributions. Softmax normalizes features so we can measure their uniformity.</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:10px 12px;"><code style="color:var(--green);">Feature Dominance</code></td>
+      <td style="padding:10px 12px;">When a few feature dimensions have much larger magnitudes than others, controlling the classifier's output</td>
+      <td style="padding:10px 12px; color:var(--text-dim);">This is FMR's enemy. Dominant features may be irrelevant (background detectors). FMR breaks their dominance.</td>
+    </tr>
+    <tr>
+      <td style="padding:10px 12px;"><code style="color:var(--magenta);">Dynamic λ</code></td>
+      <td style="padding:10px 12px;">λ = (H<sub>max</sub> − H) / (H<sub>max</sub> − H<sub>init</sub>)</td>
+      <td style="padding:10px 12px; color:var(--text-dim);">Large when H is low (features very biased → push hard).<br>Small when H is high (features nearly uniform → ease off).<br><strong>Auto-adjusts — no tuning needed.</strong></td>
+    </tr>
+  </table>
+
+  <div class="insight-callout">
+    <strong>🧠 Intuition:</strong> Entropy is like a <strong>fairness meter</strong> for features. Low entropy = "3 features are shouting, 2045 are whispering — unfair!" High entropy = "everyone speaks at equal volume — fair!" FMR's job is to take the unfair pretrained feature distribution and make it fair. Once fair, the classifier (through CE loss) naturally discovers which features actually help classification — without being bullied by the loud ones.
+  </div>
+</div>
+
 <!-- SECTION 4: The Formula -->
 <div class="learn-section">
   <div class="section-num">Section 04</div>
@@ -1080,6 +1146,26 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
 
   <div class="insight-callout">
     <strong>🔑 Why "−λ·H" not "+λ·(−H)"?</strong> They are mathematically identical. The paper frames it as "minimize L<sub>CE</sub> + λ·(−H)" — adding a penalty for LOW entropy. The code writes "L<sub>CE</sub> − λ·H" because it's cleaner. Both mean: <em>penalize the model when feature magnitudes are uneven.</em>
+  </div>
+
+  <h5 style="color:#b388ff; margin-top:14px;">🧾 The COMPLETE Training Objective (All Three Terms)</h5>
+  <div class="formula-box" style="font-size:0.95rem; line-height:2.2;">
+    <span class="hl-purple" style="font-size:1.2rem;">L<sub>total</sub></span><span class="dim"> = </span><span class="hl-cyan">L<sub>CE</sub></span><span class="dim"> + </span><span class="hl-amber">λ<sub>W</sub>·ΣW²</span><span class="dim"> − </span><span class="hl-magenta">λ</span><span class="dim">·</span><span class="hl-green">H(softmax(f))</span><br><br>
+    <span class="dim"> │     │           │</span><br>
+    <span class="dim"> │     │           └─ </span><span class="hl-green">FMR (this paper's contribution)</span><br>
+    <span class="dim"> │     │              Equalizes feature magnitudes f</span><br>
+    <span class="dim"> │     │              λ = dynamic — auto-decays as H→H<sub>max</sub></span><br>
+    <span class="dim"> │     │</span><br>
+    <span class="dim"> │     └─ </span><span class="hl-amber">Weight Decay (standard L2)</span><br>
+    <span class="dim"> │        Prevents classifier weights W from exploding</span><br>
+    <span class="dim"> │        Pulls ALL W toward zero (irrelevant ones die, useful ones resist via CE)</span><br>
+    <span class="dim"> │</span><br>
+    <span class="dim"> └─ </span><span class="hl-cyan">Cross-Entropy (classification)</span><br>
+    <span class="dim">    "Am I predicting the right bird species?"</span>
+  </div>
+
+  <div class="insight-callout">
+    <strong>💡 The Weight Table shows only the W Decay term</strong> acting on a single classifier weight W. FMR operates on the <strong>feature vector f</strong> (not shown in the weight table). Both run simultaneously during every training step. Weight decay quietly pulls unused W → 0. FMR loudly pushes biased f → uniform. CE loss ties it all together by fighting for features that actually help classification.
   </div>
 </div>
 
