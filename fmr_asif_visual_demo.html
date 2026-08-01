@@ -245,6 +245,31 @@
     color: #7c4dff;
     box-shadow: 0 0 16px #7c4dff33;
   }
+  .tab-btn.active-compare {
+    background: #1a2a10;
+    border-color: #69f0ae;
+    color: #69f0ae;
+    box-shadow: 0 0 24px #69f0ae33, inset 0 0 24px #69f0ae08;
+  }
+  body.light .tab-btn.active-compare {
+    background: #e8f5e9;
+    border-color: #2e7d50;
+    color: #2e7d50;
+    box-shadow: 0 0 16px #2e7d5033;
+  }
+  .tab-btn:hover:not(.active-fmr):not(.active-asif):not(.active-learn):not(.active-compare) {
+    color: var(--text);
+    border-color: #444;
+  }
+
+  /* Paper comparison styles */
+  .paper-compare-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 16px 0; }
+  .paper-compare-table th { font-family: var(--font-display); font-size: 0.72rem; letter-spacing: 0.04em; color: #69f0ae; padding: 10px 12px; border-bottom: 2px solid #69f0ae33; text-align: left; background: var(--surface); position: sticky; top: 0; }
+  .paper-compare-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; }
+  .paper-compare-table tr:hover td { background: #69f0ae05; }
+  .paper-compare-table .dim-header { color: var(--text-dim); font-weight: bold; width: 160px; font-family: var(--font-mono); font-size: 0.72rem; }
+  .paper-compare-table .fmr-cell { border-left: 3px solid var(--cyan); }
+  .paper-compare-table .asif-cell { border-left: 3px solid var(--amber); }
 
   /* === LEARN TAB STYLES === */
   .learn-hero {
@@ -729,6 +754,7 @@
   <button class="tab-btn active-fmr" id="tabFmr" onclick="switchTab('fmr')">◈ FMR — Feature Magnitude Regularization</button>
   <button class="tab-btn" id="tabAsif" onclick="switchTab('asif')">◈ ASIF — Adversarial Suppression</button>
   <button class="tab-btn" id="tabLearn" onclick="switchTab('learn')">◆ Learn — FMR Deep Dive</button>
+  <button class="tab-btn" id="tabCompare" onclick="switchTab('compare')">📄 Paper Comparison</button>
 </div>
 
 <div class="main-container">
@@ -2063,6 +2089,148 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
 
 </div><!-- /panelLearn -->
 
+<!-- ==================== PAPER COMPARISON PANEL ==================== -->
+<div class="panel" id="panelCompare">
+
+<div class="learn-hero" style="text-align:center; padding:24px;">
+  <h2 style="color:#69f0ae;">FMR vs ASIF — Side-by-Side Paper Comparison</h2>
+  <div class="hero-sub">Both papers by Avraham Chapman & Lingqiao Liu · The University of Adelaide</div>
+</div>
+
+<div class="learn-section">
+  <div class="section-num">Overview</div>
+  <h4>Two Papers, One Philosophy: Remove Unwanted Bias from Feature Representations</h4>
+  <p>Both papers share a common author and a common goal — but attack <strong>different enemies</strong> using <strong>different weapons</strong>. FMR fights <strong>pretrained feature magnitude bias</strong>. ASIF fights <strong>instance memorization</strong>. Together they cover the two biggest problems in low-data fine-tuning.</p>
+</div>
+
+<div class="learn-section" style="padding:12px 16px;">
+  <div style="overflow-x:auto;">
+  <table class="paper-compare-table">
+    <thead>
+      <tr><th style="width:140px;">Dimension</th><th style="color:var(--cyan);">FMR</th><th style="color:var(--amber);">ASIF</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="dim-header">Full Title</td>
+        <td class="fmr-cell">Enhancing Fine-Grained Visual Recognition in the Low-Data Regime Through <strong>Feature Magnitude Regularization</strong></td>
+        <td class="asif-cell">Regularizing Neural Network Training via <strong>Identity-wise Discriminative Feature Suppression</strong></td>
+      </tr>
+      <tr>
+        <td class="dim-header">Acronym</td>
+        <td class="fmr-cell"><strong>FMR</strong> — Feature Magnitude Regularization</td>
+        <td class="asif-cell"><strong>ASIF</strong> — Adversarial Suppression of Identity Features</td>
+      </tr>
+      <tr>
+        <td class="dim-header">Venue</td>
+        <td class="fmr-cell">Conference paper (CVPR-style, 8 pages)</td>
+        <td class="asif-cell">DICTA 2022 (IEEE Digital Image Computing)</td>
+      </tr>
+      <tr>
+        <td class="dim-header">The Enemy</td>
+        <td class="fmr-cell"><strong>Feature Magnitude Bias</strong> — pretrained models produce features where some dimensions are naturally much larger than others, regardless of relevance</td>
+        <td class="asif-cell"><strong>Instance Memorization</strong> — large networks memorize unique patterns of individual training samples instead of learning class-level patterns</td>
+      </tr>
+      <tr>
+        <td class="dim-header">How the Enemy Hurts</td>
+        <td class="fmr-cell">Irrelevant but loud features (background, sky) dominate training. With small data, classifier latches onto these → overfitting</td>
+        <td class="asif-cell">Network "cheats" by remembering exactly which sample is which. Works perfectly on training data, fails on new data → poor generalization</td>
+      </tr>
+      <tr>
+        <td class="dim-header">Core Fix</td>
+        <td class="fmr-cell">Force all feature dimensions to be <strong>equally prominent</strong> — no single feature shouts louder than others</td>
+        <td class="asif-cell">Force the network to <strong>forget</strong> which specific training sample it's looking at — only allow features shared across a class</td>
+      </tr>
+      <tr>
+        <td class="dim-header">Approach Type</td>
+        <td class="fmr-cell"><strong>Regularization</strong> (auxiliary loss term)</td>
+        <td class="asif-cell"><strong>Adversarial</strong> (gradient reversal + adversary network)</td>
+      </tr>
+      <tr>
+        <td class="dim-header">How It Works</td>
+        <td class="fmr-cell">① Extract features → ② Softmax-normalize → ③ Compute entropy H → ④ Add loss to <strong>maximize</strong> H → ⑤ Dynamic λ weights the penalty</td>
+        <td class="asif-cell">① Extract features → ② Classifier: "what class?" → ③ Identifier: "which exact sample?" → ④ Gradient Reversal Layer <strong>reverses</strong> identifier gradients → ⑤ Feature extractor forced to defeat identification</td>
+      </tr>
+      <tr>
+        <td class="dim-header">Loss Function</td>
+        <td class="fmr-cell"><code>L_total = L_CE − λ·H(softmax(f))</code><br>Maximize entropy = minimize −H</td>
+        <td class="asif-cell"><code>L_total = L_cls + λ·L_id(reversed_grad)</code><br>Classification + reversed identification</td>
+      </tr>
+      <tr>
+        <td class="dim-header">Dynamic Mechanism</td>
+        <td class="fmr-cell"><strong>Dynamic λ</strong><br>λ = (H<sub>max</sub>−H)/(H<sub>max</sub>−H<sub>init</sub>)<br>Strong early (biased), fades late (uniform)</td>
+        <td class="asif-cell"><strong>DGR</strong> (Dynamic Gradient Reversal)<br>λ = (L<sub>id</sub>−L̂<sub>id</sub>)/L̂<sub>id</sub><br>Reversal auto-adjusts — no manual λ tuning</td>
+      </tr>
+      <tr>
+        <td class="dim-header">What It Acts On</td>
+        <td class="fmr-cell"><strong>Feature vector f</strong> (backbone output)<br>Equalizes feature magnitudes across all 2048 dimensions</td>
+        <td class="asif-cell"><strong>Feature extractor + Identifier</strong><br>Suppresses identity-specific features, preserves class-wise features</td>
+      </tr>
+      <tr>
+        <td class="dim-header">Needs Pretrained Model?</td>
+        <td class="fmr-cell">✅ Yes — designed to debias pretrained features</td>
+        <td class="asif-cell">❌ No — works from scratch, fights own memorization</td>
+      </tr>
+      <tr>
+        <td class="dim-header">Backbone Used</td>
+        <td class="fmr-cell">ResNet-50 (ImageNet pretrained)</td>
+        <td class="asif-cell">ResNet-18</td>
+      </tr>
+      <tr>
+        <td class="dim-header">Datasets</td>
+        <td class="fmr-cell">CUB200 (birds), Stanford Cars, FGVC-Aircraft, iNaturalist</td>
+        <td class="asif-cell">CIFAR-10, Fashion-MNIST</td>
+      </tr>
+      <tr>
+        <td class="dim-header">Data Regimes</td>
+        <td class="fmr-cell">15%, 30%, 50%, 100% of training data</td>
+        <td class="asif-cell">Reduced sets (10k–50k) + label noise (20%–90%)</td>
+      </tr>
+      <tr>
+        <td class="dim-header">Best For</td>
+        <td class="fmr-cell"><strong>Low-data fine-grained recognition</strong> where pretrained model was trained on very different data</td>
+        <td class="asif-cell"><strong>Small datasets, noisy labels</strong> where the network can easily memorize every sample</td>
+      </tr>
+      <tr>
+        <td class="dim-header">Key Result (Low Data)</td>
+        <td class="fmr-cell"><strong>+10.4%</strong> over baseline on CUB200 at 15% data (50.9% → 61.3%)</td>
+        <td class="asif-cell"><strong>+5.1 F1</strong> over CE baseline on CIFAR-10 (10k samples)</td>
+      </tr>
+      <tr>
+        <td class="dim-header">Key Result (High Noise)</td>
+        <td class="fmr-cell">Not tested on label noise</td>
+        <td class="asif-cell"><strong>+8 F1</strong> over CE baseline at 70% symmetric noise</td>
+      </tr>
+      <tr>
+        <td class="dim-header">Extra Compute Cost</td>
+        <td class="fmr-cell"><strong>Negligible</strong> — one entropy calculation per batch</td>
+        <td class="asif-cell"><strong>Moderate</strong> — extra identifier module + per-class params + one extra forward/backward pass</td>
+      </tr>
+      <tr>
+        <td class="dim-header">Code</td>
+        <td class="fmr-cell"><a href="https://github.com/avichapman/feature-magnitude-regularization" target="_blank" style="color:var(--cyan);">github.com/avichapman/feature-magnitude-regularization</a></td>
+        <td class="asif-cell"><a href="https://github.com/avichapman/identity-feature-suppression" target="_blank" style="color:var(--amber);">github.com/avichapman/identity-feature-suppression</a></td>
+      </tr>
+      <tr>
+        <td class="dim-header">One-Line TL;DR</td>
+        <td class="fmr-cell" style="color:var(--cyan);"><strong>"Pretrained models have loud-but-dumb features → make all features equally loud so the smart ones can compete"</strong></td>
+        <td class="asif-cell" style="color:var(--amber);"><strong>"Big networks cheat by memorizing individual samples → force them to forget which sample is which so they learn real patterns"</strong></td>
+      </tr>
+      <tr>
+        <td class="dim-header">Analogy</td>
+        <td class="fmr-cell">A teacher making sure <strong>every student gets equal attention</strong>, not just the loud ones</td>
+        <td class="asif-cell">A teacher forcing students to <strong>learn concepts</strong>, not just memorize the answer key</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="insight-callout" style="margin-top:16px;">
+    <strong>🔗 Common Philosophy:</strong> Both papers are by the same first author (Avraham Chapman) and share a deep insight: <strong>neural networks have unwanted biases that hurt generalization when data is scarce</strong>. FMR attacks bias from <strong>pretraining</strong> (features are unevenly prominent). ASIF attacks bias from <strong>overparameterization</strong> (networks memorize instances). Both use <strong>automatic, dynamic weighting</strong> so no manual hyperparameter tuning is needed. If you're doing low-data fine-tuning, <strong>use both</strong> — FMR for the vision encoder, ASIF for the classifier head.
+  </div>
+</div>
+
+</div><!-- /panelCompare -->
+
 </div><!-- /main-container -->
 
 <script>
@@ -2099,28 +2267,29 @@ function switchTab(tab) {
   document.getElementById('tabFmr').className = tab === 'fmr' ? 'tab-btn active-fmr' : 'tab-btn';
   document.getElementById('tabAsif').className = tab === 'asif' ? 'tab-btn active-asif' : 'tab-btn';
   document.getElementById('tabLearn').className = tab === 'learn' ? 'tab-btn active-learn' : 'tab-btn';
+  document.getElementById('tabCompare').className = tab === 'compare' ? 'tab-btn active-compare' : 'tab-btn';
   document.getElementById('panelFmr').className = tab === 'fmr' ? 'panel active' : 'panel';
   document.getElementById('panelAsif').className = tab === 'asif' ? 'panel active' : 'panel';
   document.getElementById('panelLearn').className = tab === 'learn' ? 'panel active' : 'panel';
+  document.getElementById('panelCompare').className = tab === 'compare' ? 'panel active' : 'panel';
 
   // Stop all animation loops
   cancelAnimationFrame(fmrAnimId);
   cancelAnimationFrame(asifAnimId);
   cancelAnimationFrame(learnLoopId);
-  fmrAnimId = null; asifAnimId = null; learnLoopId = null;
+  cancelAnimationFrame(asifArchLoop);
+  fmrAnimId = null; asifAnimId = null; learnLoopId = null; asifArchLoop = null;
 
   if (tab === 'fmr') {
-    cancelAnimationFrame(asifArchLoop); asifArchLoop = null;
     updateFMR();
   } else if (tab === 'asif') {
-    cancelAnimationFrame(asifArchLoop); asifArchLoop = null;
     updateASIF();
     if (!asifArchLoop) animateASIFArch();
   } else if (tab === 'learn') {
-    cancelAnimationFrame(asifArchLoop); asifArchLoop = null;
     drawLearnDiagrams();
     animateLearnLoop();
   }
+  // compare tab: static content, no animation needed
 }
 
 // ==================== FMR VISUALIZATION ====================
