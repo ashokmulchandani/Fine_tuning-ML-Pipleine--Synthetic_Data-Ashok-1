@@ -1871,13 +1871,45 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
     </div>
   </div>
 
+  <!-- HEAD-TO-HEAD SUMMARY -->
+  <h5 style="color:#b388ff; margin-top:18px;">🥊 Head-to-Head: FMR + Q&A vs Just Q&A Fine-Tuning</h5>
+
+  <div class="compare-grid">
+    <div class="compare-card bad">
+      <h5>🔴 Just Q&A Fine-Tuning (No FMR)</h5>
+      <table style="width:100%; border-collapse:collapse; font-size:0.75rem; margin-top:8px;">
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 8px;">Training Loss</td><td style="padding:6px 8px; font-family:var(--font-mono);">L_total = L_LLM</td></tr>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 8px;">Vision Features</td><td style="padding:6px 8px;">Biased — sky/grass dominate</td></tr>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 8px;">What model learns</td><td style="padding:6px 8px;">Background shortcuts</td></tr>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 8px;">200 training examples</td><td style="padding:6px 8px;">Overfits — memorizes training backgrounds</td></tr>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 8px;">New background (cloudy)</td><td style="padding:6px 8px;">❌ Confused, hallucinates</td></tr>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 8px;">New background (forest)</td><td style="padding:6px 8px;">❌ Wrong answer</td></tr>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 8px;">Fine-grained Q accuracy</td><td style="padding:6px 8px; color:#ff5252;"><strong>~65%</strong></td></tr>
+        <tr><td style="padding:6px 8px;">Extra compute cost</td><td style="padding:6px 8px;">None</td></tr>
+      </table>
+    </div>
+    <div class="compare-card good">
+      <h5>🟢 FMR + Q&A Fine-Tuning</h5>
+      <table style="width:100%; border-collapse:collapse; font-size:0.75rem; margin-top:8px;">
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 8px;">Training Loss</td><td style="padding:6px 8px; font-family:var(--font-mono);">L_total = L_LLM − λ·H(softmax(f))</td></tr>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 8px;">Vision Features</td><td style="padding:6px 8px;">Balanced — all equal prominence</td></tr>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 8px;">What model learns</td><td style="padding:6px 8px;">Object features (beak, wing, eye)</td></tr>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 8px;">200 training examples</td><td style="padding:6px 8px;">Generalizes — uses balanced features</td></tr>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 8px;">New background (cloudy)</td><td style="padding:6px 8px;">✅ Correct answer</td></tr>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 8px;">New background (forest)</td><td style="padding:6px 8px;">✅ Correct answer</td></tr>
+        <tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 8px;">Fine-grained Q accuracy</td><td style="padding:6px 8px; color:#69f0ae;"><strong>~78-82%</strong></td></tr>
+        <tr><td style="padding:6px 8px;">Extra compute cost</td><td style="padding:6px 8px; color:#69f0ae;">Negligible (one entropy calc/batch)</td></tr>
+      </table>
+    </div>
+  </div>
+
   <div class="insight-callout" style="margin-top:12px;">
     <strong>🎯 What Changes in the Model's Behavior:</strong><br><br>
     <table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
       <tr style="border-bottom:1px solid var(--border);">
         <th style="padding:6px; text-align:left; color:var(--text-dim);">Dimension</th>
-        <th style="padding:6px; text-align:center; color:#ff5252;">Without FMR</th>
-        <th style="padding:6px; text-align:center; color:#69f0ae;">With FMR</th>
+        <th style="padding:6px; text-align:center; color:#ff5252;">Just Q&A (No FMR)</th>
+        <th style="padding:6px; text-align:center; color:#69f0ae;">FMR + Q&A</th>
       </tr>
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:6px;"><strong>What drives answers</strong></td>
@@ -1891,7 +1923,7 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
       </tr>
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:6px;"><strong>Hallucination rate</strong></td>
-        <td style="padding:6px; text-align:center;">Higher — model guesses from spurious cues</td>
+        <td style="padding:6px; text-align:center;">Higher — guesses from spurious cues</td>
         <td style="padding:6px; text-align:center;">Lower — grounded in object features</td>
       </tr>
       <tr style="border-bottom:1px solid var(--border);">
