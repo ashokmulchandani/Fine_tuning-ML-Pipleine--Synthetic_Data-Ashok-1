@@ -2308,6 +2308,128 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
     <strong>4. Both work with LoRA/QLoRA</strong> — FMR gradients flow through LoRA adapters. ASIF needs its own small Identifier head (linear layers, negligible params).<br><br>
     <strong>5. Neither needs extra labeling</strong> — FMR: zero extra labels. ASIF: the "label" is just the row number in your dataset. Your existing Alpaca-format Q&A data works as-is for both.
   </div>
+
+  <!-- ASIF Implementation in Vision-Lang FT -->
+  <h5 style="color:var(--amber); margin-top:16px;">💻 Where to Implement ASIF in Your Vision-Language FT Pipeline</h5>
+  <p>Based on Avi Chapman's <a href="https://github.com/avichapman/identity-feature-suppression" target="_blank" style="color:var(--amber);">official ASIF implementation</a> — specifically <code>model_asif.py</code> and the Gradient Reversal Layer.</p>
+
+  <div class="formula-box" style="font-size:0.75rem; line-height:1.5; text-align:left;">
+    <span style="color:var(--amber);">Your Vision-Language FT Pipeline + ASIF — Where It Plugs In:</span><br>
+    <span class="dim">################################################################</span><br>
+    <span class="dim">Image → Vision Encoder (ResNet/ViT/CLIP) → features [B, D]</span><br>
+    <span class="dim">           │</span><br>
+    <span class="dim">           ├──→ </span><span style="color:var(--cyan);">Classifier (normal): "What species?" → L_cls</span><br>
+    <span class="dim">           │         Uses: species labels from Alpaca</span><br>
+    <span class="dim">           │</span><br>
+    <span class="dim">           ├──→ </span><span style="color:var(--amber);">⚡ ASIF Identifier ⚡: "Which training image?" → L_id</span><br>
+    <span class="dim">           │         Uses: image index (0, 1, 2, ..., N-1) as "label"</span><br>
+    <span class="dim">           │         Gradient REVERSED before flowing back to encoder</span><br>
+    <span class="dim">           │</span><br>
+    <span class="dim">           ├──→ Projection → vision tokens → LLM → answer → L_llm</span><br>
+    <span class="dim">           │</span><br>
+    <span class="dim">           └── L_total = L_llm + L_cls + λ × L_id(reversed_gradient)</span><br>
+    <span class="dim">################################################################</span>
+  </div>
+
+  <div class="formula-box" style="font-size:0.75rem; line-height:1.5; text-align:left; margin-top:8px;">
+    <span style="color:var(--amber);">The ASIF Gradient Reversal Layer — From the Official Repo:</span><br>
+    <span class="dim">################################################################</span><br>
+    <span style="color:#69f0ae;">class</span> <span style="color:#b388ff;">GradientReverse</span>(torch.autograd.Function):<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># Forward: pass through unchanged</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#69f0ae;">@staticmethod</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#69f0ae;">def</span> forward(ctx, x, lambda_):<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>ctx.lambda_ = lambda_<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#69f0ae;">return</span> x.clone()  <span style="color:#6b6b80;"># features pass through untouched</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#69f0ae;">@staticmethod</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#69f0ae;">def</span> backward(ctx, grad_output):<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># REVERSE the gradient and scale by lambda</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#69f0ae;">return</span> grad_output * ctx.lambda_, <span style="color:#69f0ae;">None</span><br><br>
+    <span style="color:#6b6b80;"># DGR lambda update (called each epoch):</span><br>
+    <span style="color:#69f0ae;">def</span> update_lambda(prev_avg_loss, goal, count):<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># goal = -log(1/count) = log(count) = max entropy baseline</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># lambda = (prev_loss - goal) / goal</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># Positive lambda = no reversal (Identifier failing)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># Negative lambda = reversal active (Identifier succeeding)</span><br>
+    <span class="dim">################################################################</span>
+  </div>
+
+  <div class="formula-box" style="font-size:0.75rem; line-height:1.5; text-align:left; margin-top:8px;">
+    <span style="color:var(--amber);">Step-by-Step — Adding ASIF to Your Training Loop:</span><br>
+    <span class="dim">################################################################</span><br>
+    <span style="color:#6b6b80;"># SETUP (once, before training)</span><br>
+    <span style="color:#69f0ae;">from</span> model_asif <span style="color:#69f0ae;">import</span> AsifModel, IdentityClassifier, GradientReverse<br><br>
+    <span style="color:#6b6b80;"># Your existing vision encoder becomes feature_extractor</span><br>
+    feature_extractor = your_vision_encoder  <span style="color:#6b6b80;"># ResNet/ViT/CLIP</span><br>
+    <span style="color:#6b6b80;"># ASIF Identifier — a small MLP that predicts image index</span><br>
+    identifier = IdentityClassifier(<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span>feature_count=D,  <span style="color:#6b6b80;"># 2048 for ResNet, 1024 for ViT-L</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span>class_count=num_classes,  <span style="color:#6b6b80;"># e.g., 200 bird species</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span>sample_count=len(train_dataset),  <span style="color:#6b6b80;"># TOTAL training images</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span>use_gradient_reversal=<span style="color:#69f0ae;">True</span><br>
+    )<br><br>
+    <span style="color:#6b6b80;"># TRAINING LOOP</span><br>
+    <span style="color:#69f0ae;">for</span> images, questions, answers, image_indices <span style="color:#69f0ae;">in</span> train_loader:<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># 1. Forward: vision encoder (EXISTING)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span>features = feature_extractor(images)  <span style="color:#6b6b80;"># [B, D]</span><br><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># 2. LLM answer prediction (EXISTING)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span>L_llm = your_llm_loss(features, questions, answers)<br><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># 3. ⚡ ASIF Identifier (3 NEW LINES) ⚡</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span>id_logits = identifier(features)  <span style="color:#6b6b80;"># predict image index [0..N-1]</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span>L_id = CrossEntropy(id_logits, image_indices)  <span style="color:#6b6b80;"># can it ID the sample?</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span>L_id_reversed = GradientReverse.apply(L_id, lambda_)  <span style="color:#6b6b80;"># REVERSE it</span><br><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># 4. Total loss</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span>L_total = L_llm + L_id_reversed<br><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># 5. Backward + step (unchanged)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span>L_total.backward()<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span>optimizer.step()<br><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># 6. End of epoch: update DGR lambda</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span>identifier.update_lambda(avg_id_loss, log(num_images), num_images)<br>
+    <span class="dim">################################################################</span>
+  </div>
+
+  <div class="insight-callout" style="margin-top:10px;">
+    <strong>⚙️ ASIF Configuration for Vision-Language FT:</strong><br><br>
+    <table style="width:100%; border-collapse:collapse; font-size:0.78rem;">
+      <tr style="border-bottom:1px solid var(--border);">
+        <th style="padding:6px; text-align:left; color:var(--text-dim);">Parameter</th>
+        <th style="padding:6px; text-align:left; color:var(--text-dim);">Value</th>
+        <th style="padding:6px; text-align:left; color:var(--text-dim);">Notes</th>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;"><code>feature_count</code></td>
+        <td style="padding:6px;"><strong>Same as your vision encoder output</strong></td>
+        <td style="padding:6px;">ResNet-50 = 2048, ViT-B = 768, ViT-L = 1024</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;"><code>sample_count</code></td>
+        <td style="padding:6px;"><strong>Total number of training images</strong></td>
+        <td style="padding:6px;">This is the number of "identity classes" the Identifier must distinguish</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;">Identifier architecture</td>
+        <td style="padding:6px;"><strong>Small MLP (2-3 linear layers)</strong></td>
+        <td style="padding:6px;">From ASIF paper: 1024→ReLU→Dropout→2048→ReLU→Dropout→(per-class heads)</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;">When to update λ</td>
+        <td style="padding:6px;"><strong>End of each epoch</strong></td>
+        <td style="padding:6px;">DGR recomputes λ from previous epoch's average ID loss</td>
+      </tr>
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px;">Where in pipeline</td>
+        <td style="padding:6px;"><strong>After vision encoder, BEFORE LLM projection</strong></td>
+        <td style="padding:6px;">Identifier sees raw vision features. Gradient reversal flows back into encoder.</td>
+      </tr>
+      <tr>
+        <td style="padding:6px;">Extra compute cost</td>
+        <td style="padding:6px;"><strong>~1-5% overhead</strong></td>
+        <td style="padding:6px;">Small Identifier MLP + one extra CE loss. Negligible vs LLM forward pass.</td>
+      </tr>
+    </table>
+    <br>
+    <strong>📋 What You Need That You Already Have:</strong> Your Alpaca-format Q&A data already has images. You just need to assign each image an index (0, 1, 2, ...). That index IS the Identifier's "label." No extra annotation needed.<br><br>
+    <strong>🔗 FMR + ASIF Together:</strong> Both plug into the SAME place (after vision encoder, before LLM). FMR adds an entropy maximization loss on features. ASIF adds a reversed identification loss on features. They run simultaneously, attacking different problems, with zero conflict.
+  </div>
 </div>
 
 <!-- SECTION 11: Could FMR Apply to Other Layers? -->
