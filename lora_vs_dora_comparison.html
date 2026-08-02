@@ -1328,6 +1328,114 @@
       </div>
     </div>
   </div>
+</div><!-- Real-World Text Example -->
+  <div style="margin-top:18px;">
+    <h4 style="font-family:var(--font-display); color:var(--green); font-weight:400; font-size:1.1rem; margin-bottom:10px;">💬 Real Scenario — How LoRA vs DoRA Affects LLM Responses</h4>
+
+    <div class="explain" style="margin-bottom:12px;">
+      <strong>Scenario:</strong> You fine-tune Llama 3 on a <strong>medical Q&A dataset</strong>. The training data has structured responses with medical terminology, urgency assessments, and treatment recommendations. After training on the <strong>same data with the same hyperparameters</strong>, here's how the model responds differently depending on whether you used LoRA or DoRA.
+    </div>
+
+    <!-- Training example -->
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; margin:10px 0;">
+      <h4 style="color:var(--amber); font-size:0.8rem; margin-bottom:8px;">📚 Training Data (one Q&A pair the model sees during fine-tuning)</h4>
+      <div style="background:var(--deep); border-left:3px solid var(--blue); border-radius:0 8px 8px 0; padding:12px; margin-bottom:8px;">
+        <strong style="color:var(--blue);">Q:</strong> <em>"I've been having sharp chest pain and shortness of breath for 3 days. What should I do?"</em>
+      </div>
+      <div style="background:var(--deep); border-left:3px solid var(--green); border-radius:0 8px 8px 0; padding:12px;">
+        <strong style="color:var(--green);">A:</strong> <em>"Sharp chest pain with shortness of breath <strong>requires immediate emergency care</strong>. Call 911 or go to the ER now. While waiting: sit upright, loosen tight clothing. Do NOT self-medicate. These symptoms could indicate pulmonary embolism, heart attack, or severe pericarditis — only a doctor can diagnose."</em>
+      </div>
+      <div style="font-size:0.65rem; color:var(--text-dim); margin-top:6px;">
+        This example teaches: medical terminology (pulmonary embolism, pericarditis), urgent tone, structured response format, and cautious disclaimer.
+      </div>
+    </div>
+
+    <!-- TEST: Mild symptom query -->
+    <div style="background:var(--surface); border:2px solid var(--amber); border-radius:12px; padding:18px; margin:14px 0;">
+      <h4 style="color:var(--amber); font-size:0.85rem; margin-bottom:10px;">🧪 Test Query (NOT in training data — mild, non-urgent symptom)</h4>
+      <div style="background:var(--deep); border-left:3px solid var(--blue); border-radius:0 8px 8px 0; padding:12px; margin-bottom:14px;">
+        <strong style="color:var(--blue);">Q:</strong> <em>"I have a mild headache and feel slightly dizzy after working long hours. Is this something serious?"</em>
+      </div>
+
+      <div class="compare-grid">
+        <!-- LoRA response -->
+        <div style="background:var(--deep); border:2px solid var(--cyan); border-radius:10px; padding:14px;">
+          <h4 style="color:var(--cyan); margin-bottom:8px;">🔵 Fine-Tuned with LoRA</h4>
+          <div style="background:var(--surface); border-left:3px solid var(--cyan); border-radius:0 6px 6px 0; padding:10px; font-size:0.78rem; line-height:1.7;">
+            <em>"A headache with dizziness <strong>could indicate a serious underlying condition</strong>. While it may be related to fatigue, you should <strong>seek medical evaluation promptly</strong>. Possible causes include:<br>
+            &nbsp;&nbsp;1) Migraine with vestibular symptoms<br>
+            &nbsp;&nbsp;2) Dehydration-related cephalalgia<br>
+            &nbsp;&nbsp;3) Tension-type headache with orthostatic component<br>
+            Rest and hydrate, but <strong>consult a physician within 24 hours</strong> if symptoms persist."</em>
+          </div>
+          <div style="margin-top:8px; font-size:0.7rem;">
+            <span style="color:var(--red);">❌ Over-medicalizes a mild symptom</span><br>
+            <span style="color:var(--red);">❌ Uses urgent framing for non-urgent case</span><br>
+            <span style="color:var(--red);">❌ Lists rare conditions (cephalalgia) for common headache</span>
+          </div>
+          <div class="callout cyan" style="margin-top:8px; font-size:0.7rem;">
+            <strong>🔍 Why LoRA fails here:</strong> LoRA's <strong>coupled update (+0.83)</strong> means learning medical terminology (direction) ALSO increased the urgency/confidence (magnitude) <strong>proportionally</strong>. The model can't separate "use medical words" from "sound urgent." Every response gets the same high-magnitude, high-urgency treatment.
+          </div>
+        </div>
+
+        <!-- DoRA response -->
+        <div style="background:var(--deep); border:2px solid var(--magenta); border-radius:10px; padding:14px;">
+          <h4 style="color:var(--magenta); margin-bottom:8px;">🟣 Fine-Tuned with DoRA</h4>
+          <div style="background:var(--surface); border-left:3px solid var(--magenta); border-radius:0 6px 6px 0; padding:10px; font-size:0.78rem; line-height:1.7;">
+            <em>"A mild headache with slight dizziness after long work hours is <strong>most likely benign</strong> — commonly caused by eye strain, dehydration, or posture fatigue. Try:<br>
+            &nbsp;&nbsp;1) Drinking water and taking a short break<br>
+            &nbsp;&nbsp;2) Stretching your neck and shoulders<br>
+            &nbsp;&nbsp;3) Checking your screen brightness and posture<br>
+            These symptoms typically resolve with rest. However, <strong>if you experience sudden severe headache, vision changes, or one-sided weakness, seek immediate care</strong>."</em>
+          </div>
+          <div style="margin-top:8px; font-size:0.7rem;">
+            <span style="color:var(--green);">✅ Correctly assesses low urgency</span><br>
+            <span style="color:var(--green);">✅ Gives practical, proportionate advice</span><br>
+            <span style="color:var(--green);">✅ Still mentions red-flag symptoms (safety)</span>
+          </div>
+          <div class="callout magenta" style="margin-top:8px; font-size:0.7rem;">
+            <strong>🔍 Why DoRA succeeds:</strong> DoRA's <strong>decoupled update (−0.31)</strong> means the direction learned "use medical knowledge when relevant" while magnitude independently learned "how confident/urgent should this sound?" The model can <strong>turn the medical-direction knob</strong> without being forced to also <strong>crank the urgency-volume knob</strong>.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- What happened under the hood -->
+    <div class="key-insight" style="margin-top:10px;">
+      <div class="big">🔬 What Actually Happened Inside the Weights</div>
+      <table style="width:100%; border-collapse:collapse; font-size:0.72rem; margin-top:8px;">
+        <tr style="border-bottom:1px solid var(--border);">
+          <th style="padding:6px 8px; text-align:left; color:var(--amber); width:80px;">Aspect</th>
+          <th style="padding:6px 8px; text-align:center; color:var(--cyan);">LoRA</th>
+          <th style="padding:6px 8px; text-align:center; color:var(--magenta);">DoRA</th>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:6px 8px; color:var(--amber);">Medical terminology column</td>
+          <td style="padding:6px 8px; text-align:center;">Direction ↗ + Magnitude ↗ together</td>
+          <td style="padding:6px 8px; text-align:center;">Direction ↗ but Magnitude ↔ (calibrated)</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:6px 8px; color:var(--amber);">Urgency/confidence column</td>
+          <td style="padding:6px 8px; text-align:center;">Always HIGH (coupled to terminology)</td>
+          <td style="padding:6px 8px; text-align:center;">Context-dependent (decoupled)</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:6px 8px; color:var(--amber);">Casual language column</td>
+          <td style="padding:6px 8px; text-align:center;">Suppressed (drowned by medical features)</td>
+          <td style="padding:6px 8px; text-align:center;">Preserved (independent magnitude control)</td>
+        </tr>
+        <tr>
+          <td style="padding:6px 8px; color:var(--amber);">Net effect</td>
+          <td style="padding:6px 8px; text-align:center; color:var(--red);">One-size-fits-all: everything sounds urgent</td>
+          <td style="padding:6px 8px; text-align:center; color:var(--green);">Nuanced: urgency matches the actual situation</td>
+        </tr>
+      </table>
+      <div style="margin-top:10px; font-size:0.78rem; line-height:1.7;">
+        <strong>Think of it like this:</strong> The training data had a pattern — "chest pain → urgent." LoRA learned this as a <strong>single knob</strong>: turning up medical knowledge also turns up urgency. It can't help it — they're welded together (the +0.83 correlation). DoRA learned this as <strong>two knobs</strong>: one for "how medical should I sound?" and another for "how urgent is this?" For a new question about a mild headache, it turns the urgency knob <strong>down</strong> while keeping the medical-knowledge knob appropriately tuned.
+      </div>
+    </div>
+  </div>
+
 </div><!-- /panelCompare -->
 
 
