@@ -1374,7 +1374,7 @@
             <span style="color:var(--red);">❌ Lists rare conditions (cephalalgia) for common headache</span>
           </div>
           <div class="callout cyan" style="margin-top:8px; font-size:0.7rem;">
-            <strong>🔍 Why LoRA fails here:</strong> LoRA's <strong>coupled update (+0.83)</strong> means learning medical terminology (direction) ALSO increased the urgency/confidence (magnitude) <strong>proportionally</strong>. The model can't separate "use medical words" from "sound urgent." Every response gets the same high-magnitude, high-urgency treatment.
+            <strong>🔍 Why LoRA generalizes poorly:</strong> Both models fit the training data (chest pain → urgent) correctly. The problem is <strong>how the weights were shaped during training</strong>. LoRA's gradient ∇BA L = ∇W' L flows <strong>uncut</strong> — when the training loss says "be more medical AND more urgent," BA must satisfy BOTH demands with ONE update. The weight columns for "medical terminology" and "urgency" get updated <strong>together</strong> (coupled +0.83). On a NEW query, the model can't activate medical terminology WITHOUT also triggering urgency — they're welded.
           </div>
         </div>
 
@@ -1394,10 +1394,22 @@
             <span style="color:var(--green);">✅ Still mentions red-flag symptoms (safety)</span>
           </div>
           <div class="callout magenta" style="margin-top:8px; font-size:0.7rem;">
-            <strong>🔍 Why DoRA succeeds:</strong> DoRA's <strong>decoupled update (−0.31)</strong> means the direction learned "use medical knowledge when relevant" while magnitude independently learned "how confident/urgent should this sound?" The model can <strong>turn the medical-direction knob</strong> without being forced to also <strong>crank the urgency-volume knob</strong>.
+            <strong>🔍 Why DoRA generalizes better:</strong> Both models fit the training data correctly. But during training, DoRA <strong>splits the gradient</strong>: the perpendicular part updates direction V' ("learn medical terms"), the parallel part updates magnitude m ("how loud?"). These are <strong>separate knobs</strong>. The training data says chest pain = urgent, so BOTH knobs turn up. But on a NEW query about a mild headache, the model can activate medical-direction WITHOUT cranking urgency-magnitude — because they were learned as <strong>independent parameters</strong> with separate gradient paths.
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- CRITICAL CLARIFICATION -->
+    <div class="insight-callout green" style="margin-top:12px;">
+      <strong>⚠️ Important: Both models fit the training data correctly!</strong><br><br>
+      For the training query (chest pain), both LoRA and DoRA would produce a correct urgent response. The training loss goes down for both. The difference is <strong>NOT</strong> about fitting the training data — it's about <strong>how the gradients shaped the weights</strong> during those training steps, which determines what happens on <strong>unseen queries</strong>.<br><br>
+      <strong>During training on "chest pain → urgent":</strong><br>
+      &nbsp;&nbsp;• <strong style="color:var(--cyan);">LoRA:</strong> ∇BA L says "change BA to reduce loss." BA must satisfy ALL demands at once — be more medical, more urgent, more structured. The gradient is ONE signal. BA's columns get updated in a way that <strong>couples</strong> these qualities.<br>
+      &nbsp;&nbsp;• <strong style="color:var(--magenta);">DoRA:</strong> The gradient is <strong>split into two</strong> — direction V' gets the perpendicular part ("learn what medical language looks like"), magnitude m gets the parallel part ("how strongly to express each aspect"). These learn at <strong>different rates</strong> through different paths.<br><br>
+      <strong>At test time on "mild headache":</strong><br>
+      &nbsp;&nbsp;• <strong style="color:var(--cyan);">LoRA's</strong> coupled weights fire the same pattern — medical terms come with urgency because they were learned as one.<br>
+      &nbsp;&nbsp;• <strong style="color:var(--magenta);">DoRA's</strong> decoupled weights allow the model to activate medical-direction (V') while independently setting urgency-magnitude (m) based on context. The input "mild headache" doesn't trigger the high-urgency magnitude the way "chest pain" did, because m learned to respond to input context, not just follow direction.
     </div>
 
     <!-- What happened under the hood -->
