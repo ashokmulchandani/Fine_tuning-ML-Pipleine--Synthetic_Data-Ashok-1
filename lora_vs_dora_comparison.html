@@ -1333,83 +1333,79 @@
     <h4 style="font-family:var(--font-display); color:var(--green); font-weight:400; font-size:1.1rem; margin-bottom:10px;">💬 Real Scenario — How LoRA vs DoRA Affects LLM Responses</h4>
 
     <div class="explain" style="margin-bottom:12px;">
-      <strong>Scenario:</strong> You fine-tune Llama 3 on a <strong>medical Q&A dataset</strong>. The training data has structured responses with medical terminology, urgency assessments, and treatment recommendations. After training on the <strong>same data with the same hyperparameters</strong>, here's how the model responds differently depending on whether you used LoRA or DoRA.
+      <strong>Same training data. Same test question. Different responses.</strong> Here's why.
     </div>
 
     <!-- Training example -->
     <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; margin:10px 0;">
-      <h4 style="color:var(--amber); font-size:0.8rem; margin-bottom:8px;">📚 Training Data (one Q&A pair the model sees during fine-tuning)</h4>
+      <h4 style="color:var(--amber); font-size:0.8rem; margin-bottom:8px;">📚 The ONE Q&A Pair Used for Fine-Tuning</h4>
       <div style="background:var(--deep); border-left:3px solid var(--blue); border-radius:0 8px 8px 0; padding:12px; margin-bottom:8px;">
-        <strong style="color:var(--blue);">Q:</strong> <em>"I've been having sharp chest pain and shortness of breath for 3 days. What should I do?"</em>
+        <strong style="color:var(--blue);">Q:</strong> <em>"My chest hurts sharply and I can't breathe properly. What should I do?"</em>
       </div>
       <div style="background:var(--deep); border-left:3px solid var(--green); border-radius:0 8px 8px 0; padding:12px;">
-        <strong style="color:var(--green);">A:</strong> <em>"Sharp chest pain with shortness of breath <strong>requires immediate emergency care</strong>. Call 911 or go to the ER now. While waiting: sit upright, loosen tight clothing. Do NOT self-medicate. These symptoms could indicate pulmonary embolism, heart attack, or severe pericarditis — only a doctor can diagnose."</em>
+        <strong style="color:var(--green);">A:</strong> <em>"This sounds serious — <strong>go to the ER immediately</strong>. Sharp chest pain with breathing difficulty could be a pulmonary embolism or heart attack. Do not wait. Call 911."</em>
       </div>
       <div style="font-size:0.65rem; color:var(--text-dim); margin-top:6px;">
-        This example teaches: medical terminology (pulmonary embolism, pericarditis), urgent tone, structured response format, and cautious disclaimer.
+        The model learns from this: medical terms (pulmonary embolism), urgent tone (immediately, do not wait), short direct sentences.
       </div>
     </div>
 
-    <!-- TEST: Mild symptom query -->
+    <!-- Both fit training -->
+    <div class="insight-callout green">
+      <strong>✅ After fine-tuning, BOTH LoRA and DoRA correctly answer the training question</strong> with an urgent, medically accurate response. Both loss curves go down. Both look great on the training data.
+    </div>
+
+    <!-- TEST -->
     <div style="background:var(--surface); border:2px solid var(--amber); border-radius:12px; padding:18px; margin:14px 0;">
-      <h4 style="color:var(--amber); font-size:0.85rem; margin-bottom:10px;">🧪 Test Query (NOT in training data — mild, non-urgent symptom)</h4>
+      <h4 style="color:var(--amber); font-size:0.85rem; margin-bottom:10px;">🧪 Now Ask Both Models the SAME New Question (unseen in training)</h4>
       <div style="background:var(--deep); border-left:3px solid var(--blue); border-radius:0 8px 8px 0; padding:12px; margin-bottom:14px;">
-        <strong style="color:var(--blue);">Q:</strong> <em>"I have a mild headache and feel slightly dizzy after working long hours. Is this something serious?"</em>
+        <strong style="color:var(--blue);">Q:</strong> <em>"I worked 12 hours today and now I have a mild headache. Should I be worried?"</em>
       </div>
 
       <div class="compare-grid">
         <!-- LoRA response -->
         <div style="background:var(--deep); border:2px solid var(--cyan); border-radius:10px; padding:14px;">
-          <h4 style="color:var(--cyan); margin-bottom:8px;">🔵 Fine-Tuned with LoRA</h4>
+          <h4 style="color:var(--cyan); margin-bottom:8px;">🔵 LoRA's Response</h4>
           <div style="background:var(--surface); border-left:3px solid var(--cyan); border-radius:0 6px 6px 0; padding:10px; font-size:0.78rem; line-height:1.7;">
-            <em>"A headache with dizziness <strong>could indicate a serious underlying condition</strong>. While it may be related to fatigue, you should <strong>seek medical evaluation promptly</strong>. Possible causes include:<br>
-            &nbsp;&nbsp;1) Migraine with vestibular symptoms<br>
-            &nbsp;&nbsp;2) Dehydration-related cephalalgia<br>
-            &nbsp;&nbsp;3) Tension-type headache with orthostatic component<br>
-            Rest and hydrate, but <strong>consult a physician within 24 hours</strong> if symptoms persist."</em>
+            <em>"Headaches can indicate <strong>serious neurological conditions</strong>. A persistent headache after exertion could be a <strong>warning sign of cerebral aneurysm or hypertensive crisis</strong>. You should <strong>seek immediate medical evaluation</strong>. Do not ignore this. Monitor for vision changes or numbness and <strong>go to the ER if symptoms worsen</strong>."</em>
           </div>
           <div style="margin-top:8px; font-size:0.7rem;">
-            <span style="color:var(--red);">❌ Over-medicalizes a mild symptom</span><br>
-            <span style="color:var(--red);">❌ Uses urgent framing for non-urgent case</span><br>
-            <span style="color:var(--red);">❌ Lists rare conditions (cephalalgia) for common headache</span>
-          </div>
-          <div class="callout cyan" style="margin-top:8px; font-size:0.7rem;">
-            <strong>🔍 Why LoRA generalizes poorly:</strong> Both models fit the training data (chest pain → urgent) correctly. The problem is <strong>how the weights were shaped during training</strong>. LoRA's gradient ∇BA L = ∇W' L flows <strong>uncut</strong> — when the training loss says "be more medical AND more urgent," BA must satisfy BOTH demands with ONE update. The weight columns for "medical terminology" and "urgency" get updated <strong>together</strong> (coupled +0.83). On a NEW query, the model can't activate medical terminology WITHOUT also triggering urgency — they're welded.
+            <span style="color:var(--red);">❌ Overreacts — suggests ER for a mild headache</span><br>
+            <span style="color:var(--red);">❌ Mentions cerebral aneurysm for a common symptom</span><br>
+            <span style="color:var(--red);">❌ Training's urgent tone leaked into every response</span>
           </div>
         </div>
 
         <!-- DoRA response -->
         <div style="background:var(--deep); border:2px solid var(--magenta); border-radius:10px; padding:14px;">
-          <h4 style="color:var(--magenta); margin-bottom:8px;">🟣 Fine-Tuned with DoRA</h4>
+          <h4 style="color:var(--magenta); margin-bottom:8px;">🟣 DoRA's Response</h4>
           <div style="background:var(--surface); border-left:3px solid var(--magenta); border-radius:0 6px 6px 0; padding:10px; font-size:0.78rem; line-height:1.7;">
-            <em>"A mild headache with slight dizziness after long work hours is <strong>most likely benign</strong> — commonly caused by eye strain, dehydration, or posture fatigue. Try:<br>
-            &nbsp;&nbsp;1) Drinking water and taking a short break<br>
-            &nbsp;&nbsp;2) Stretching your neck and shoulders<br>
-            &nbsp;&nbsp;3) Checking your screen brightness and posture<br>
-            These symptoms typically resolve with rest. However, <strong>if you experience sudden severe headache, vision changes, or one-sided weakness, seek immediate care</strong>."</em>
+            <em>"A mild headache after a long workday is <strong>very common</strong> — likely from eye strain, dehydration, or neck tension. <strong>No need to worry</strong>. Try drinking water, taking a short walk, and resting your eyes for 15 minutes. <strong>However</strong>, if you ever experience a sudden severe headache unlike any you've had before, or headache with confusion and stiff neck — <strong>that</strong> would warrant immediate medical care."</em>
           </div>
           <div style="margin-top:8px; font-size:0.7rem;">
-            <span style="color:var(--green);">✅ Correctly assesses low urgency</span><br>
-            <span style="color:var(--green);">✅ Gives practical, proportionate advice</span><br>
-            <span style="color:var(--green);">✅ Still mentions red-flag symptoms (safety)</span>
-          </div>
-          <div class="callout magenta" style="margin-top:8px; font-size:0.7rem;">
-            <strong>🔍 Why DoRA generalizes better:</strong> Both models fit the training data correctly. But during training, DoRA <strong>splits the gradient</strong>: the perpendicular part updates direction V' ("learn medical terms"), the parallel part updates magnitude m ("how loud?"). These are <strong>separate knobs</strong>. The training data says chest pain = urgent, so BOTH knobs turn up. But on a NEW query about a mild headache, the model can activate medical-direction WITHOUT cranking urgency-magnitude — because they were learned as <strong>independent parameters</strong> with separate gradient paths.
+            <span style="color:var(--green);">✅ Correctly assesses this as non-urgent</span><br>
+            <span style="color:var(--green);">✅ Gives practical, simple advice</span><br>
+            <span style="color:var(--green);">✅ Still mentions real red flags (responsible)</span>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- CRITICAL CLARIFICATION -->
-    <div class="insight-callout green" style="margin-top:12px;">
-      <strong>⚠️ Important: Both models fit the training data correctly!</strong><br><br>
-      For the training query (chest pain), both LoRA and DoRA would produce a correct urgent response. The training loss goes down for both. The difference is <strong>NOT</strong> about fitting the training data — it's about <strong>how the gradients shaped the weights</strong> during those training steps, which determines what happens on <strong>unseen queries</strong>.<br><br>
-      <strong>During training on "chest pain → urgent":</strong><br>
-      &nbsp;&nbsp;• <strong style="color:var(--cyan);">LoRA:</strong> ∇BA L says "change BA to reduce loss." BA must satisfy ALL demands at once — be more medical, more urgent, more structured. The gradient is ONE signal. BA's columns get updated in a way that <strong>couples</strong> these qualities.<br>
-      &nbsp;&nbsp;• <strong style="color:var(--magenta);">DoRA:</strong> The gradient is <strong>split into two</strong> — direction V' gets the perpendicular part ("learn what medical language looks like"), magnitude m gets the parallel part ("how strongly to express each aspect"). These learn at <strong>different rates</strong> through different paths.<br><br>
-      <strong>At test time on "mild headache":</strong><br>
-      &nbsp;&nbsp;• <strong style="color:var(--cyan);">LoRA's</strong> coupled weights fire the same pattern — medical terms come with urgency because they were learned as one.<br>
-      &nbsp;&nbsp;• <strong style="color:var(--magenta);">DoRA's</strong> decoupled weights allow the model to activate medical-direction (V') while independently setting urgency-magnitude (m) based on context. The input "mild headache" doesn't trigger the high-urgency magnitude the way "chest pain" did, because m learned to respond to input context, not just follow direction.
+    <!-- WHY -->
+    <div class="insight-callout green" style="margin-top:10px;">
+      <strong>🔬 Why are the responses different? Both were trained on the SAME single Q&A pair.</strong><br><br>
+      <strong>During training</strong> on "chest pain → ER now":<br>
+      &nbsp;&nbsp;• The loss says: "make this response more urgent and more medical." The gradient ∇W' L carries this signal.<br><br>
+      <strong style="color:var(--cyan);">LoRA's ∇BA L = ∇W' L (one signal, uncut):</strong><br>
+      &nbsp;&nbsp;• BA gets the full gradient. It updates weight columns so that "urgent tone" and "medical terminology" increase <strong>together</strong> — one knob controls both. The model learns: urgent ↔ medical. They're coupled (+0.83).<br><br>
+      <strong style="color:var(--magenta);">DoRA splits the gradient into two independent paths:</strong><br>
+      &nbsp;&nbsp;• ∇V' L = projected gradient → direction learns <strong>what</strong> medical language looks like (the "which way")<br>
+      &nbsp;&nbsp;• ∇m L = parallel component → magnitude learns <strong>how strongly</strong> to express each aspect (the "how loud")<br>
+      &nbsp;&nbsp;• During training, both knobs turn up because chest pain IS urgent. But they learned <strong>separately</strong>.<br><br>
+      <strong>At test time</strong> on "mild headache after work":<br>
+      &nbsp;&nbsp;• <strong style="color:var(--cyan);">LoRA:</strong> The input activates the medical-direction column → the urgency column fires too (welded together). ER recommended.<br>
+      &nbsp;&nbsp;• <strong style="color:var(--magenta);">DoRA:</strong> The input activates the medical-direction column → but the urgency-magnitude column responds to <strong>the actual input context</strong> ("mild headache" ≠ "chest pain"), so it stays low. Calm, practical advice given.<br><br>
+      <strong>Same training. Same test question. Different knob design → different response.</strong>
     </div>
 
     <!-- What happened under the hood -->
