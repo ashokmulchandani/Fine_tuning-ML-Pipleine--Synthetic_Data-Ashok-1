@@ -1934,15 +1934,22 @@ function drawDemoCanvas(canvasId, mode, progress, rank, biasPct) {
   ctx.clearRect(0, 0, W, H);
 
   const numFeatures = 24;
-  const pad = { l: 40, r: 10, t: 10, b: 50 };
+  const pad = { l: 40, r: 10, t: 10, b: 80 }; // extra bottom space for direction strip
 
-  // Generate base features with bias
+  // Generate base features with bias + DIRECTION info for each "column"
   const features = [];
   const targetUniform = 0.45;
   for (let i = 0; i < numFeatures; i++) {
     const isBiased = i < Math.floor(numFeatures * biasPct / 100);
     const baseMag = isBiased ? (0.55 + 0.4 * Math.sin(i * 1.7)) : (0.08 + 0.22 * Math.sin(i * 2.3 + 1));
-    features.push({ base: baseMag, isBiased });
+    // Each feature has a 3-element direction vector (like a column of W)
+    // Store 3 components that define its "direction"
+    const baseDir = [
+      0.4 + 0.3 * Math.sin(i * 0.7),
+      -0.2 + 0.35 * Math.cos(i * 0.9 + 1),
+      0.3 - 0.25 * Math.sin(i * 1.1 + 2)
+    ];
+    features.push({ base: baseMag, isBiased, baseDir: baseDir, dir: [...baseDir] });
   }
 
   // Apply training progress
@@ -1953,18 +1960,25 @@ function drawDemoCanvas(canvasId, mode, progress, rank, biasPct) {
     const t = progress / 100;
 
     if (mode === 'lora') {
-      // LoRA: BA updates the FULL weight matrix → magnitude & direction change together
-      // Biased features stay relatively biased (proportional update)
-      // Rank controls SELECTIVITY: lower rank = fewer singular directions, less spread
-      const selectivity = rank / 64; // r=1 → very selective, r=64 → almost full rank
-      const pullStrength = 0.55 + selectivity * 0.3; // 0.55–0.85 range
+      // LoRA: BA updates FULL weight → magnitude & direction change TOGETHER (coupled)
+      const selectivity = rank / 64;
+      const pullStrength = 0.55 + selectivity * 0.3;
       const uniformPull = (targetUniform - f.base) * t * pullStrength;
       f.current = f.base + uniformPull;
+      // Direction changes proportionally to magnitude change (coupled +0.83)
+      const dirChange = uniformPull / (f.base + 0.001);
+      f.dir = f.baseDir.map(d => d * (1 + dirChange * 0.8));
     } else {
-      // DoRA: magnitude m updated independently from direction BA
-      // Much stronger rebalancing — decoupled magnitude can change freely
+      // DoRA: magnitude updated independently, direction gets projected gradient
       const magnitudePull = (targetUniform - f.base) * t * 0.85;
       f.current = f.base + magnitudePull;
+      // Direction changes LESS than LoRA (decoupled -0.31)
+      // Direction rotates slightly but independently of magnitude
+      const dirRotate = t * 0.15; // mild rotation
+      f.dir = f.baseDir.map((d, j) => {
+        const theta = dirRotate * (j === 0 ? 1 : (j === 1 ? -0.7 : 0.5));
+        return d * Math.cos(theta) + (j === 1 ? 0.1 : -0.1) * Math.sin(theta) * t;
+      });
     }
     f.current = Math.max(0.03, Math.min(0.95, f.current));
   });
@@ -2032,6 +2046,78 @@ function drawDemoCanvas(canvasId, mode, progress, rank, biasPct) {
   ctx.font = '9px monospace';
   ctx.textAlign = 'left';
   ctx.fillText('uniform target', barAreaX + 4, targetY - 4);
+
+  // ── DIRECTION VISUALIZATION STRIP ──
+  // Show 3 representative column vectors as mini component-bars
+  const dirY = pad.t + barAreaH + 8;
+  const dirH = pad.b - 20;
+  const dirLabelY = dirY - 4;
+
+  ctx.fillStyle = '#ffffff55';
+  ctx.font = '8px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText('Direction (3 column vectors):', barAreaX, dirLabelY);
+
+  // Pick 3 representative features: most biased, median, most uniform
+  const repIndices = [0, Math.floor(numFeatures/2), numFeatures-1];
+  const repFeatures = repIndices.map(i => sorted[i]);
+  const colNames = ['Loudest col', 'Median col', 'Quietest col'];
+
+  const dirStartX = barAreaX;
+  const dirTotalW = barAreaW;
+  const colGap = dirTotalW / 3;
+
+  repFeatures.forEach((f, ci) => {
+    const cx = dirStartX + colGap * (ci + 0.5);
+    const compW = Math.min(14, colGap / 5);
+
+    // Column label
+    ctx.fillStyle = '#ffffff66';
+    ctx.font = '7px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(colNames[ci], cx, dirY + dirH - 2);
+
+    // Draw 3 mini-bars for the 3 direction components
+    f.dir.forEach((d, di) => {
+      const bx = cx - compW * 1.8 + di * compW * 1.2;
+      const absD = Math.abs(d);
+      const maxD = 0.8;
+      const dh = (absD / maxD) * (dirH - 12);
+      const by = dirY + (dirH - 12) - dh;
+
+      // Color: green=positive, red=negative
+      const col = d >= 0 ?
+        `rgba(105,240,174,${0.3 + absD/maxD * 0.7})` :
+        `rgba(255,82,82,${0.3 + absD/maxD * 0.7})`;
+
+      ctx.fillStyle = col;
+      ctx.fillRect(bx, by, compW * 0.9, Math.max(1, dh));
+
+      // Tiny label
+      ctx.fillStyle = d >= 0 ? '#69f0ae88' : '#ff525288';
+      ctx.font = '6px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(d >= 0 ? '+' : '−', bx + compW/2, by - 2);
+    });
+
+    // cos(theta) from original direction
+    const origNorm = Math.sqrt(f.baseDir.reduce((s,d)=>s+d*d,0));
+    const currNorm = Math.sqrt(f.dir.reduce((s,d)=>s+d*d,0));
+    const dotProd = f.baseDir.reduce((s,d,i)=>s+d*f.dir[i],0);
+    const cosTheta = origNorm > 0 && currNorm > 0 ? dotProd/(origNorm*currNorm) : 1;
+    const dirDelta = 1 - cosTheta;
+
+    ctx.fillStyle = dirDelta < 0.05 ? '#69f0ae' : (dirDelta < 0.2 ? '#ffb300' : '#ff5252');
+    ctx.font = 'bold 7px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('cosθ=' + cosTheta.toFixed(2), cx, dirY + 6);
+  });
+
+  // Legend for direction strip
+  ctx.fillStyle = '#ffffff33';
+  ctx.font = '6px monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText('🟢=+ve element  🔴=−ve element  |  cosθ=1→no change, <1→direction changed', barAreaX + barAreaW, dirLabelY);
 
   // Mode label
   ctx.fillStyle = mode === 'lora' ? '#00e5ff' : '#ff4081';
