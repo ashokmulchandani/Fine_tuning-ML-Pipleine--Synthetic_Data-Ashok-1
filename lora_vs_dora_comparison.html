@@ -1426,13 +1426,25 @@
 
   <!-- Legend / Explanation -->
   <div class="insight-callout purple" style="margin-top:16px;">
-    <strong>🎮 How to read the demo:</strong><br>
-    &nbsp;&nbsp;• <strong style="color:var(--amber);">Bar height</strong> = feature magnitude (how "loud" each feature is)<br>
-    &nbsp;&nbsp;• <strong style="color:var(--red);">Red bars</strong> = biased (pretrained model over-emphasizes these features)<br>
-    &nbsp;&nbsp;• <strong style="color:var(--cyan);">Cyan bars</strong> = uniform (FMR/DoRA pushes toward equal prominence)<br>
-    &nbsp;&nbsp;• <strong>LoRA</strong> updates all features proportionally — biased features stay biased<br>
-    &nbsp;&nbsp;• <strong>DoRA</strong> decouples magnitude from direction — biased features get rebalanced while useful directions are preserved<br>
-    &nbsp;&nbsp;• <strong>Drag the sliders</strong> to see how rank, bias, and training progress interact
+    <strong>🎮 How to read the demo:</strong><br><br>
+    <strong>📊 TOP — Magnitude Bars:</strong><br>
+    &nbsp;&nbsp;• <strong style="color:var(--amber);">Bar height</strong> = column magnitude (how "loud" each column is, like FMR features)<br>
+    &nbsp;&nbsp;• <strong style="color:var(--red);">Red bars</strong> = biased (pretrained model over-emphasizes these columns)<br>
+    &nbsp;&nbsp;• <strong style="color:var(--cyan);">Cyan bars</strong> = uniform (DoRA's m pushes toward equal prominence)<br>
+    &nbsp;&nbsp;• <strong>LoRA</strong> updates all columns proportionally — biased columns stay biased<br>
+    &nbsp;&nbsp;• <strong>DoRA</strong> decouples magnitude from direction — biased columns get rebalanced<br><br>
+    <strong>🧭 BOTTOM — Direction Strip (3 column vectors shown as mini component-bars):</strong><br>
+    <table style="width:100%; border-collapse:collapse; font-size:0.7rem; margin:4px 0;">
+      <tr><td style="padding:2px 8px;">🟢 <strong>Green bar</strong></td><td style="padding:2px 8px; color:var(--text-dim);">Positive element of the column vector (e.g., +0.68)</td></tr>
+      <tr><td style="padding:2px 8px;">🔴 <strong>Red bar</strong></td><td style="padding:2px 8px; color:var(--text-dim);">Negative element (e.g., −0.22)</td></tr>
+      <tr><td style="padding:2px 8px;"><strong>Bar height</strong></td><td style="padding:2px 8px; color:var(--text-dim);">Absolute value — taller = larger in that dimension</td></tr>
+      <tr><td style="padding:2px 8px;"><strong>cosθ</strong></td><td style="padding:2px 8px; color:var(--text-dim);">1.0 = no direction change, lower = rotated — the pattern of green/red bars changed</td></tr>
+    </table><br>
+    <strong>🧠 Direction Intuition:</strong> Each column is a 3D vector. The <strong>pattern of signs and sizes</strong> across its elements IS its direction.<br>
+    <code style="font-size:0.68rem;">Col₀ = [+0.68, −0.22, +0.54] → Direction = "mostly + in dim 0, slightly − in dim 1, medium + in dim 2"</code><br><br>
+    &nbsp;&nbsp;• <strong>LoRA:</strong> cosθ drops <strong>together</strong> with magnitude changes (coupled +0.83) — you can't turn without accelerating<br>
+    &nbsp;&nbsp;• <strong>DoRA:</strong> cosθ changes <strong>independently</strong> from magnitude (decoupled −0.31) — you can turn while coasting<br><br>
+    &nbsp;&nbsp;• <strong>Drag the sliders</strong> and watch the green/red mini-bars change shape — that's the direction rotating!
   </div>
 </div><!-- /panelDemo -->
 
