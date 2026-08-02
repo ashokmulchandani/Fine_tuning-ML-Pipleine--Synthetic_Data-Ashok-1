@@ -1651,6 +1651,39 @@ function renderCompareStep3() {
       </div>
     </div>
 
+    <!-- Why -0.31 is closer than +0.83 -->
+    <div class="callout green" style="margin-top:8px;">
+      <strong>🤔 Wait — how is −0.31 "closer" to −0.62 than +0.83?</strong><br><br>
+      <strong>Absolute distance on the number line:</strong><br>
+      &nbsp;&nbsp;LoRA: &nbsp;|+0.83 − (−0.62)| = |+0.83 + 0.62| = <strong style="color:var(--red);">1.45</strong> ← far<br>
+      &nbsp;&nbsp;DoRA: |−0.31 − (−0.62)| = |−0.31 + 0.62| = <strong style="color:var(--green);">0.31</strong> ← close<br><br>
+      <strong>DoRA is ~5× closer.</strong> But more importantly, the <strong>sign</strong> is what really matters:<br><br>
+      <table style="width:100%; border-collapse:collapse; font-size:0.72rem;">
+        <tr style="border-bottom:1px solid var(--border);">
+          <th style="padding:4px 8px; text-align:center;">Method</th>
+          <th style="padding:4px 8px; text-align:center;">Sign</th>
+          <th style="padding:4px 8px; text-align:left;">What It Means</th>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:4px 8px; text-align:center; color:var(--green);">Full FT</td>
+          <td style="padding:4px 8px; text-align:center; color:var(--green);"><strong>−</strong> (negative)</td>
+          <td style="padding:4px 8px;">Mag & dir <strong>trade off</strong>. Big direction change → small mag change.</td>
+        </tr>
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:4px 8px; text-align:center; color:var(--magenta);">DoRA</td>
+          <td style="padding:4px 8px; text-align:center; color:var(--magenta);"><strong>−</strong> (negative)</td>
+          <td style="padding:4px 8px; color:var(--green);">Same pattern ✓. Correct direction of behavior, just milder.</td>
+        </tr>
+        <tr>
+          <td style="padding:4px 8px; text-align:center; color:var(--red);">LoRA</td>
+          <td style="padding:4px 8px; text-align:center; color:var(--red);"><strong>+</strong> (positive)</td>
+          <td style="padding:4px 8px; color:var(--red);"><strong>Opposite direction ✗.</strong> Mag & dir move together — wrong type of behavior entirely.</td>
+        </tr>
+      </table>
+      <br>
+      <strong>Analogy:</strong> A car going 83 mph EAST (+0.83) is not "closer" to a car going 62 mph WEST (−0.62) than a car going 31 mph WEST (−0.31). The 31 mph car is at least heading in the <strong>right direction</strong>.
+    </div>
+
     <div class="key-insight" style="margin-top:12px;">
       <div class="big">🎯 The One-Sentence Intuition</div>
       <div style="margin-top:6px; font-size:0.85rem;">
