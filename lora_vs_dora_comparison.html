@@ -1573,11 +1573,17 @@ function drawDoraCorrelation() {
   function toScreenX(v) { return pad.l + v * pw; }
   function toScreenY(v) { return pad.t + ph - v * ph; }
 
-  // Draw trend lines
-  function drawTrend(points, color, dash) {
-    if (dash) ctx.setLineDash([4, 3]);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
+  // Draw trend lines — each gets a DISTINCT color and direct label
+  const lineColors = {
+    lora:   { color: '#ff5252', dash: false, label: 'LoRA',   corr: '+0.83', thick: 3 },
+    dora:   { color: '#00e5ff', dash: false, label: 'DoRA',   corr: '−0.31', thick: 3.5 },
+    fullft: { color: '#69f0ae', dash: true,  label: 'Full FT', corr: '−0.62', thick: 2.5 },
+  };
+
+  function drawTrend(points, style) {
+    if (style.dash) ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = style.color;
+    ctx.lineWidth = style.thick;
     ctx.beginPath();
     ctx.moveTo(toScreenX(points[0].x), toScreenY(points[0].y));
     for (let i = 1; i < points.length; i++) {
@@ -1585,13 +1591,28 @@ function drawDoraCorrelation() {
     }
     ctx.stroke();
     ctx.setLineDash([]);
+
+    // Draw a LABEL directly on the line (at the midpoint)
+    const mid = Math.floor(points.length / 2);
+    const mx = toScreenX(points[mid].x);
+    const my = toScreenY(points[mid].y);
+    ctx.fillStyle = style.color;
+    ctx.font = 'bold 10px "Space Grotesk", monospace';
+    ctx.textAlign = 'left';
+    // Offset label slightly from the line
+    const offsetX = style.label === 'DoRA' ? -55 : (style.label === 'LoRA' ? 8 : -60);
+    const offsetY = style.label === 'DoRA' ? -14 : (style.label === 'LoRA' ? -10 : 18);
+    ctx.fillText(style.label + ' ' + style.corr, mx + offsetX, my + offsetY);
   }
 
-  drawTrend(loraPoints, '#ff5252');
-  drawTrend(ftPoints, '#69f0ae', true);
-  drawTrend(doraPoints, '#ff4081');
+  // Draw LoRA FIRST (bottom layer)
+  drawTrend(loraPoints, lineColors.lora);
+  // Draw Full FT SECOND (middle) — dashed green, very distinct
+  drawTrend(ftPoints, lineColors.fullft);
+  // Draw DoRA LAST (top layer, most prominent) — bright CYAN, stands out from red and green
+  drawTrend(doraPoints, lineColors.dora);
 
-  // Draw points
+  // Draw points (small dots along each line)
   function drawPoints(points, color, size) {
     points.forEach(p => {
       ctx.fillStyle = color;
@@ -1602,30 +1623,45 @@ function drawDoraCorrelation() {
   }
   drawPoints(loraPoints, '#ff5252aa', 2.5);
   drawPoints(ftPoints, '#69f0aeaa', 2.5);
-  drawPoints(doraPoints, '#ff4081aa', 3);
+  drawPoints(doraPoints, '#00e5ffaa', 3);
 
-  // Legend
-  const lx = pad.l + pw - 160, ly = pad.t + 8;
+  // Legend box — clearly visible
+  const lx = pad.l + pw - 155, ly = pad.t + 5;
+  // Background
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.strokeStyle = '#ffffff33';
+  ctx.lineWidth = 1;
+  ctx.fillRect(lx - 6, ly - 6, 152, 64);
+  ctx.strokeRect(lx - 6, ly - 6, 152, 64);
+
   [
-    { label: 'LoRA +0.83', color: '#ff5252' },
-    { label: 'DoRA −0.31', color: '#ff4081' },
-    { label: 'Full FT −0.62', color: '#69f0ae' },
+    { label: 'LoRA  +0.83', color: '#ff5252', dash: false },
+    { label: 'DoRA  −0.31', color: '#00e5ff', dash: false },
+    { label: 'Full FT  −0.62', color: '#69f0ae', dash: true },
   ].forEach((item, i) => {
-    const y = ly + i * 16;
-    ctx.fillStyle = item.color;
-    ctx.fillRect(lx, y - 4, 12, 3);
-    ctx.fillStyle = '#ffffffaa';
-    ctx.font = '10px monospace';
+    const y = ly + i * 18;
+    // Draw colored line segment
+    if (item.dash) ctx.setLineDash([4, 3]);
+    ctx.strokeStyle = item.color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(lx, y);
+    ctx.lineTo(lx + 22, y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // Text
+    ctx.fillStyle = '#ffffffcc';
+    ctx.font = 'bold 10px monospace';
     ctx.textAlign = 'left';
-    ctx.fillText(item.label, lx + 18, y + 1);
+    ctx.fillText(item.label, lx + 28, y + 4);
   });
 
-  // Annotation
-  ctx.fillStyle = '#ffffff44';
+  // Annotation explaining the slopes (top-right of chart)
+  ctx.fillStyle = '#ffffff55';
   ctx.font = '9px system-ui';
   ctx.textAlign = 'right';
-  ctx.fillText('LoRA couples magnitude & direction', W - 14, 14);
-  ctx.fillText('DoRA decouples them like Full FT', W - 14, 26);
+  ctx.fillText('↗ Positive slope = COUPLED (wrong)', W - 14, 14);
+  ctx.fillText('↘ Negative slope = DECOUPLED (correct)', W - 14, 26);
 }
 
 // ==================== CANVAS: DORA RANK ====================
