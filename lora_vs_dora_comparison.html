@@ -1355,6 +1355,34 @@
       <strong>✅ After fine-tuning, BOTH LoRA and DoRA correctly answer the training question</strong> with an urgent, medically accurate response. Both loss curves go down. Both look great on the training data.
     </div>
 
+    <!-- SAME QUESTION TEST -->
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; margin:14px 0;">
+      <h4 style="color:var(--text); font-size:0.85rem; margin-bottom:10px;">🧪 First: Ask the SAME question from training (chest pain)</h4>
+      <div style="background:var(--deep); border-left:3px solid var(--blue); border-radius:0 8px 8px 0; padding:12px; margin-bottom:12px;">
+        <strong style="color:var(--blue);">Q:</strong> <em>"My chest hurts sharply and I can't breathe properly. What should I do?"</em>
+      </div>
+
+      <div class="compare-grid">
+        <div style="background:var(--deep); border:1px solid var(--cyan); border-radius:8px; padding:12px;">
+          <h4 style="color:var(--cyan); font-size:0.75rem; margin-bottom:4px;">🔵 LoRA</h4>
+          <div style="font-size:0.75rem; line-height:1.6; color:var(--text-dim);">
+            <em>"This sounds serious — <strong>go to the ER immediately</strong>. Sharp chest pain with breathing difficulty could be a pulmonary embolism or heart attack. Do not wait. Call 911."</em>
+          </div>
+          <div style="font-size:0.65rem; color:var(--green); margin-top:4px;">✅ Correct — matches training</div>
+        </div>
+        <div style="background:var(--deep); border:1px solid var(--magenta); border-radius:8px; padding:12px;">
+          <h4 style="color:var(--magenta); font-size:0.75rem; margin-bottom:4px;">🟣 DoRA</h4>
+          <div style="font-size:0.75rem; line-height:1.6; color:var(--text-dim);">
+            <em>"This sounds serious — <strong>go to the ER immediately</strong>. Sharp chest pain with breathing difficulty could be a pulmonary embolism or heart attack. Do not wait. Call 911."</em>
+          </div>
+          <div style="font-size:0.65rem; color:var(--green); margin-top:4px;">✅ Correct — matches training</div>
+        </div>
+      </div>
+      <div style="font-size:0.68rem; color:var(--text-dim); text-align:center; margin-top:6px;">
+        <strong>Same question as training → same answer.</strong> No difference between LoRA and DoRA here. The difference only appears when the question CHANGES.
+      </div>
+    </div>
+
     <!-- TEST -->
     <div style="background:var(--surface); border:2px solid var(--amber); border-radius:12px; padding:18px; margin:14px 0;">
       <h4 style="color:var(--amber); font-size:0.85rem; margin-bottom:10px;">🧪 Now Ask Both Models the SAME New Question (unseen in training)</h4>
