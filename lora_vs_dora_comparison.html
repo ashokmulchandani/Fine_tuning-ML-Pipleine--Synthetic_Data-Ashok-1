@@ -1,0 +1,1947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LoRA vs DoRA — Paper Comparison &amp; Interactive Demo</title>
+<style>
+  :root {
+    --void: #060609;
+    --deep: #0d0d16;
+    --surface: #14141f;
+    --elevated: #1a1a2e;
+    --border: #252538;
+    --text: #c8c8d4;
+    --text-dim: #6b6b80;
+    --cyan: #00e5ff;
+    --cyan-glow: #00e5ff44;
+    --cyan-dim: #005060;
+    --amber: #ffb300;
+    --amber-glow: #ffb30044;
+    --amber-dim: #604800;
+    --magenta: #ff4081;
+    --magenta-glow: #ff408144;
+    --magenta-dim: #500020;
+    --green: #69f0ae;
+    --green-glow: #69f0ae44;
+    --purple: #b388ff;
+    --purple-glow: #b388ff33;
+    --red: #ff5252;
+    --font-display: 'Georgia', 'Times New Roman', serif;
+    --font-mono: 'Courier New', 'Consolas', 'Fira Code', monospace;
+    --font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }
+
+  /* === LIGHT THEME === */
+  body.light {
+    --void: #f4f4f7;
+    --deep: #ffffff;
+    --surface: #fafafc;
+    --elevated: #f0f0f5;
+    --border: #d4d4dd;
+    --text: #1a1a28;
+    --text-dim: #707088;
+    --cyan: #008499;
+    --cyan-glow: #00849933;
+    --cyan-dim: #cceff5;
+    --amber: #b37b00;
+    --amber-glow: #b37b0033;
+    --amber-dim: #fff3d6;
+    --magenta: #c62850;
+    --magenta-glow: #c6285033;
+    --magenta-dim: #fce4ec;
+    --green: #2e7d50;
+    --green-glow: #2e7d5033;
+    --purple: #7c4dff;
+    --purple-glow: #7c4dff33;
+    --red: #c62828;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--void);
+    color: var(--text);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    min-height: 100vh;
+    transition: background 0.4s, color 0.4s;
+  }
+
+  /* Ambient background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 15% 40%, #00e5ff06 0%, transparent 60%),
+      radial-gradient(ellipse 80% 60% at 85% 40%, #ff408106 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 50% 80%, #b388ff05 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+    transition: background 0.4s;
+  }
+  body.light::before {
+    background:
+      radial-gradient(ellipse 80% 60% at 15% 40%, #00849904 0%, transparent 60%),
+      radial-gradient(ellipse 80% 60% at 85% 40%, #c6285004 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 50% 80%, #7c4dff03 0%, transparent 70%);
+  }
+
+  /* Grid overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+    background-size: 44px 44px;
+    pointer-events: none;
+    z-index: 0;
+    mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 30%, transparent 70%);
+    transition: background-image 0.4s;
+  }
+  body.light::after {
+    background-image:
+      linear-gradient(rgba(0,0,0,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,0.025) 1px, transparent 1px);
+  }
+
+  /* === HEADER === */
+  .header {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 36px 24px 12px;
+  }
+  .header h1 {
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 4.5vw, 2.8rem);
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    background: linear-gradient(135deg, var(--cyan), #aaaacc, var(--magenta));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+  }
+  .header .subtitle {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .header .author-note {
+    margin-top: 10px;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+  .header .author-note span { color: var(--cyan); }
+  .header .author-note span.do { color: var(--magenta); }
+
+  /* === THEME TOGGLE === */
+  .theme-toggle {
+    position: fixed;
+    top: 18px;
+    right: 22px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 5px;
+    width: 56px;
+    height: 30px;
+    transition: all 0.4s ease;
+  }
+  .theme-toggle:hover { border-color: #8888aa; }
+  .theme-knob {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--magenta);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 10px var(--magenta-glow);
+    position: relative;
+    left: 0;
+  }
+  body.light .theme-knob {
+    background: var(--cyan);
+    box-shadow: 0 0 10px var(--cyan-glow);
+    left: 26px;
+  }
+  .theme-icon {
+    position: absolute;
+    font-size: 12px;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .theme-icon.moon { left: 6px; opacity: 1; }
+  .theme-icon.sun { right: 6px; opacity: 0.3; }
+  body.light .theme-icon.moon { opacity: 0.3; }
+  body.light .theme-icon.sun { opacity: 1; }
+
+  /* === TABS === */
+  .tabs {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    margin: 18px 24px 28px;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 11px 26px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    transition: all 0.35s ease;
+    position: relative;
+    border-radius: 6px;
+  }
+  @media (max-width: 860px) {
+    .tab-btn { padding: 10px 16px; font-size: 0.7rem; }
+    .tabs { gap: 3px; margin: 12px 8px 20px; }
+  }
+  .tab-btn.active-lora {
+    background: var(--cyan-dim);
+    border-color: var(--cyan);
+    color: var(--cyan);
+    box-shadow: 0 0 20px var(--cyan-glow), inset 0 0 20px #00e5ff06;
+  }
+  .tab-btn.active-dora {
+    background: var(--magenta-dim);
+    border-color: var(--magenta);
+    color: var(--magenta);
+    box-shadow: 0 0 20px var(--magenta-glow), inset 0 0 20px #ff408106;
+  }
+  .tab-btn.active-compare {
+    background: #1a2a10;
+    border-color: var(--green);
+    color: var(--green);
+    box-shadow: 0 0 20px var(--green-glow), inset 0 0 20px #69f0ae06;
+  }
+  .tab-btn.active-demo {
+    background: #1a1030;
+    border-color: var(--purple);
+    color: var(--purple);
+    box-shadow: 0 0 20px var(--purple-glow), inset 0 0 20px #b388ff06;
+  }
+  body.light .tab-btn.active-compare {
+    background: #e8f5e9;
+    border-color: var(--green);
+    color: var(--green);
+    box-shadow: 0 0 14px var(--green-glow);
+  }
+  body.light .tab-btn.active-demo {
+    background: #ede7f6;
+    border-color: var(--purple);
+    color: var(--purple);
+    box-shadow: 0 0 14px var(--purple-glow);
+  }
+  .tab-btn:hover:not(.active-lora):not(.active-dora):not(.active-compare):not(.active-demo) {
+    color: var(--text);
+    border-color: #555;
+  }
+
+  /* === MAIN CONTAINER === */
+  .main-container {
+    position: relative;
+    z-index: 1;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+
+  .panel {
+    display: none;
+    animation: fadeSlideIn 0.5s ease;
+  }
+  .panel.active { display: block; }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* === CARDS & LAYOUT === */
+  .viz-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+    margin-bottom: 22px;
+  }
+  @media (max-width: 900px) { .viz-grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    opacity: 0.5;
+  }
+  .card.card-lora::before { background: linear-gradient(90deg, transparent, var(--cyan), transparent); }
+  .card.card-dora::before { background: linear-gradient(90deg, transparent, var(--magenta), transparent); }
+  .card.card-green::before { background: linear-gradient(90deg, transparent, var(--green), transparent); }
+  .card:hover { border-color: #444; }
+
+  .card h3 {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 400;
+    letter-spacing: 0.03em;
+    margin-bottom: 4px;
+  }
+  .card-lora h3 { color: var(--cyan); }
+  .card-dora h3 { color: var(--magenta); }
+  .card-green h3 { color: var(--green); }
+
+  .card .card-desc {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  .full-width { grid-column: 1 / -1; }
+
+  /* === CANVAS === */
+  .canvas-wrap {
+    position: relative;
+    background: var(--deep);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    margin: 10px 0;
+    transition: background 0.3s;
+  }
+  .canvas-wrap canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* === METRICS === */
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .metric {
+    background: var(--deep);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    text-align: center;
+    transition: all 0.3s;
+  }
+  .metric:hover { border-color: #555; transform: translateY(-1px); }
+  .metric .metric-value {
+    font-family: var(--font-mono);
+    font-size: 1.4rem;
+    font-weight: bold;
+    transition: color 0.4s;
+  }
+  .metric .metric-label {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 3px;
+  }
+  .metric-lora .metric-value { color: var(--cyan); }
+  .metric-dora .metric-value { color: var(--magenta); }
+  .metric-green .metric-value { color: var(--green); }
+
+  /* === FORMULA BOX === */
+  .formula-box {
+    background: var(--deep);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 22px;
+    margin: 12px 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    text-align: center;
+    letter-spacing: 0.03em;
+    overflow-x: auto;
+    line-height: 1.9;
+    transition: all 0.3s;
+  }
+  .formula-box.border-cyan { border-color: #00e5ff33; }
+  .formula-box.border-magenta { border-color: #ff408133; }
+  .formula-box.border-green { border-color: #69f0ae33; }
+  .formula-box.border-purple { border-color: #b388ff33; }
+  .hl-cyan { color: var(--cyan); font-weight: bold; }
+  .hl-magenta { color: var(--magenta); font-weight: bold; }
+  .hl-amber { color: var(--amber); font-weight: bold; }
+  .hl-green { color: var(--green); font-weight: bold; }
+  .hl-purple { color: var(--purple); font-weight: bold; }
+  .hl-red { color: var(--red); }
+  .dim { color: var(--text-dim); }
+
+  /* === INSIGHT CALLOUT === */
+  .insight-callout {
+    border-left: 3px solid;
+    padding: 12px 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    transition: all 0.3s;
+  }
+  .insight-callout.cyan { border-color: var(--cyan); background: #00e5ff05; }
+  .insight-callout.magenta { border-color: var(--magenta); background: #ff408105; }
+  .insight-callout.green { border-color: var(--green); background: #69f0ae05; }
+  .insight-callout.purple { border-color: var(--purple); background: #b388ff05; }
+  .insight-callout strong { color: inherit; }
+
+  /* === COMPARISON TABLE === */
+  .paper-compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.78rem;
+    margin: 14px 0;
+  }
+  .paper-compare-table thead th {
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    padding: 10px 12px;
+    border-bottom: 2px solid var(--border);
+    text-align: left;
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+  }
+  .paper-compare-table thead th:first-child { color: var(--green); }
+  .paper-compare-table thead th:nth-child(2) { color: var(--cyan); }
+  .paper-compare-table thead th:nth-child(3) { color: var(--magenta); }
+  .paper-compare-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  .paper-compare-table tr:hover td { background: #ffffff03; }
+  .paper-compare-table .dim-header {
+    color: var(--text-dim);
+    font-weight: bold;
+    width: 150px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+  }
+  .paper-compare-table .lora-cell { border-left: 3px solid var(--cyan); }
+  .paper-compare-table .dora-cell { border-left: 3px solid var(--magenta); }
+
+  /* === CODE SNIPPET === */
+  .code-snip {
+    background: var(--deep);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 13px 16px;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    line-height: 1.6;
+    color: var(--text-dim);
+    margin-top: 10px;
+    overflow-x: auto;
+    transition: all 0.3s;
+  }
+  .code-snip .kw { color: #82b1ff; }
+  .code-snip .fn { color: var(--cyan); }
+  .code-snip .comment { color: #546e7a; }
+  .code-snip .num { color: var(--amber); }
+  .code-snip .str { color: var(--green); }
+
+  /* === BADGE === */
+  .info-badge {
+    display: inline-block;
+    font-size: 0.62rem;
+    padding: 3px 8px;
+    border-radius: 10px;
+    margin-left: 6px;
+    font-family: var(--font-mono);
+    vertical-align: middle;
+  }
+  .info-badge.lora { background: var(--cyan-dim); color: var(--cyan); border: 1px solid #00e5ff33; }
+  .info-badge.dora { background: var(--magenta-dim); color: var(--magenta); border: 1px solid #ff408133; }
+  .info-badge.green { background: #69f0ae15; color: var(--green); border: 1px solid #69f0ae33; }
+
+  /* === BENCHMARK TABLE === */
+  .bench-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.75rem;
+    margin: 10px 0;
+  }
+  .bench-table th {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.04em;
+    padding: 8px 10px;
+    border-bottom: 2px solid var(--border);
+    text-align: center;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+  .bench-table td {
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.73rem;
+  }
+  .bench-table td.best { color: var(--green); font-weight: bold; }
+  .bench-table td.gain { color: var(--amber); font-weight: bold; }
+  .bench-table td.label { text-align: left; color: var(--text); }
+  .bench-table tbody tr:hover { background: #ffffff02; }
+
+  /* === KEY TAKEAWAY CARDS === */
+  .key-takeaway-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
+    margin: 14px 0;
+  }
+  .takeaway-card {
+    background: var(--deep);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    transition: all 0.3s;
+  }
+  .takeaway-card:hover { border-color: #555; transform: translateY(-2px); }
+  .takeaway-card .emoji { font-size: 1.4rem; margin-bottom: 5px; }
+  .takeaway-card h5 { font-family: var(--font-mono); font-size: 0.74rem; margin-bottom: 3px; }
+  .takeaway-card.cyan h5 { color: var(--cyan); }
+  .takeaway-card.magenta h5 { color: var(--magenta); }
+  .takeaway-card.green h5 { color: var(--green); }
+  .takeaway-card p { font-size: 0.74rem; color: var(--text-dim); line-height: 1.5; }
+
+  /* === CONTROLS === */
+  .controls {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-top: 14px;
+  }
+  .controls h4 {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 12px;
+  }
+  .control-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .control-row:last-child { margin-bottom: 0; }
+  .control-row label {
+    font-size: 0.76rem;
+    color: var(--text);
+    min-width: 90px;
+  }
+  .control-row input[type="range"] {
+    -webkit-appearance: none;
+    flex: 1;
+    min-width: 100px;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+    outline: none;
+  }
+  .control-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid var(--surface);
+    transition: all 0.2s;
+  }
+  .lora-slider::-webkit-slider-thumb { background: var(--cyan); box-shadow: 0 0 12px var(--cyan-glow); }
+  .dora-slider::-webkit-slider-thumb { background: var(--magenta); box-shadow: 0 0 12px var(--magenta-glow); }
+  .control-row .val {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    min-width: 36px;
+    text-align: right;
+    color: var(--text);
+  }
+
+  .btn {
+    padding: 9px 20px;
+    border: 1px solid;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    letter-spacing: 0.04em;
+    transition: all 0.3s;
+    background: transparent;
+  }
+  .btn-cyan { border-color: var(--cyan); color: var(--cyan); }
+  .btn-cyan:hover { background: var(--cyan-dim); box-shadow: 0 0 16px var(--cyan-glow); }
+  .btn-magenta { border-color: var(--magenta); color: var(--magenta); }
+  .btn-magenta:hover { background: var(--magenta-dim); box-shadow: 0 0 16px var(--magenta-glow); }
+
+  /* === ANIMATIONS === */
+  @keyframes pulse-cyan {
+    0%, 100% { box-shadow: 0 0 6px var(--cyan-glow); }
+    50% { box-shadow: 0 0 20px var(--cyan), 0 0 34px var(--cyan-glow); }
+  }
+  @keyframes pulse-magenta {
+    0%, 100% { box-shadow: 0 0 6px var(--magenta-glow); }
+    50% { box-shadow: 0 0 20px var(--magenta), 0 0 34px var(--magenta-glow); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+  }
+
+  .pulse-cyan { animation: pulse-cyan 2s infinite; }
+  .pulse-magenta { animation: pulse-magenta 2s infinite; }
+
+  .scroll-reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .scroll-reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--deep); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+  /* === EXPANDABLE SECTIONS === */
+  .expandable {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-bottom: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+  }
+  .expandable:hover { border-color: #555; }
+  .expandable h4 {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .expandable .expand-icon {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    transition: transform 0.3s;
+    color: var(--text-dim);
+  }
+  .expandable.open .expand-icon { transform: rotate(90deg); }
+  .expandable .expand-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease, margin-top 0.3s ease;
+    margin-top: 0;
+  }
+  .expandable.open .expand-content {
+    max-height: 3000px;
+    margin-top: 14px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>LoRA vs DoRA — Paper Comparison</h1>
+  <div class="subtitle">Interactive Visualization · Low-Rank Adaptation &amp; Weight-Decomposed Low-Rank Adaptation</div>
+  <div class="author-note">
+    <strong>Authors are NOT the same:</strong>
+    <span>LoRA</span> → Microsoft (Hu, Shen, Wallis, Allen-Zhu, Li, Wang, Chen) · ICLR 2022 ·
+    <span class="do">DoRA</span> → NVIDIA (Liu, Wang, Yin, Molchanov, Wang, Cheng, Chen) · ICML 2024 Oral
+  </div>
+</div>
+
+<!-- Theme Toggle -->
+<div class="theme-toggle" onclick="toggleTheme()" title="Toggle Day/Night Mode">
+  <span class="theme-icon moon">🌙</span>
+  <span class="theme-icon sun">☀️</span>
+  <div class="theme-knob"></div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab-btn active-lora" id="tabLora" onclick="switchTab('lora')">◈ LoRA — Low-Rank Adaptation</button>
+  <button class="tab-btn" id="tabDora" onclick="switchTab('dora')">◈ DoRA — Weight-Decomposed</button>
+  <button class="tab-btn" id="tabCompare" onclick="switchTab('compare')">📊 Full Comparison</button>
+  <button class="tab-btn" id="tabDemo" onclick="switchTab('demo')">🎮 Interactive Demo</button>
+</div>
+
+<div class="main-container">
+
+<!-- ==================== LORA PANEL ==================== -->
+<div class="panel active" id="panelLora">
+
+  <!-- Hero -->
+  <div style="text-align:center; padding:16px 0 24px;">
+    <h2 style="color:var(--cyan); font-family:var(--font-display); font-weight:400; font-size:1.6rem;">LoRA: Low-Rank Adaptation of Large Language Models</h2>
+    <div style="font-family:var(--font-mono); font-size:0.72rem; color:var(--text-dim); letter-spacing:0.06em; margin-top:4px;">
+      Edward J. Hu et al. (Microsoft) · ICLR 2022 · <a href="https://arxiv.org/abs/2106.09685" target="_blank" style="color:var(--cyan);">arXiv 2106.09685</a>
+    </div>
+  </div>
+
+  <div class="viz-grid">
+    <!-- Left: Core Formula -->
+    <div class="card card-lora">
+      <h3>The Core Idea <span class="info-badge lora">FOUNDATION</span></h3>
+      <p class="card-desc">Freeze pretrained weights <strong style="color:var(--cyan);">W₀</strong> and inject trainable <strong>low-rank decomposition matrices</strong> into each Transformer layer.</p>
+
+      <div class="formula-box border-cyan">
+        <span class="dim">h = </span><span class="hl-cyan">W₀</span><span class="dim">x + ΔWx = </span><span class="hl-cyan">W₀</span><span class="dim">x + </span><span class="hl-amber">BA</span><span class="dim">x</span><br><br>
+        <span class="dim">where </span><span class="hl-cyan">W₀</span><span class="dim"> ∈ ℝ<sup>d×k</sup> (frozen), </span>
+        <span class="hl-amber">B</span><span class="dim"> ∈ ℝ<sup>d×r</sup>, </span>
+        <span class="hl-amber">A</span><span class="dim"> ∈ ℝ<sup>r×k</sup>, rank r ≪ min(d,k)</span>
+      </div>
+
+      <div class="insight-callout cyan">
+        <strong>💡 The Hypothesis:</strong> Weight updates during fine-tuning have a <strong>low "intrinsic rank"</strong> — you don't need 175B independent parameter changes. A small number of directions captures the meaningful adaptation.
+      </div>
+
+      <div class="code-snip">
+<span class="comment">// LoRA in PyTorch — the essence</span>
+<span class="kw">class</span> <span class="fn">LoRALayer</span>(nn.Module):
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="kw">self</span>, d, k, r, alpha):
+        <span class="kw">self</span>.W0 = frozen_pretrained_weight  <span class="comment">// ❄️ frozen</span>
+        <span class="kw">self</span>.A  = nn.Parameter(torch.randn(r, k))   <span class="comment">// 🔥 trainable</span>
+        <span class="kw">self</span>.B  = nn.Parameter(torch.zeros(d, r))  <span class="comment">// 🔥 trainable</span>
+        <span class="kw">self</span>.scale = alpha / r
+
+    <span class="kw">def</span> <span class="fn">forward</span>(<span class="kw">self</span>, x):
+        <span class="kw">return</span> <span class="kw">self</span>.W0 @ x + <span class="kw">self</span>.scale * (<span class="kw">self</span>.B @ <span class="kw">self</span>.A @ x)
+      </div>
+    </div>
+
+    <!-- Right: Key Findings -->
+    <div class="card card-lora">
+      <h3>Why It Works <span class="info-badge lora">INSIGHT</span></h3>
+      <p class="card-desc">Subspace analysis of the learned update ΔW reveals the mechanism behind LoRA's success.</p>
+
+      <div class="canvas-wrap">
+        <canvas id="loraSubspaceCanvas" width="560" height="220"></canvas>
+      </div>
+
+      <div class="insight-callout cyan" style="margin-top:8px;">
+        <strong>🔬 The Amplification Effect:</strong> ΔW is <strong>correlated with W₀</strong> — it doesn't learn new features, it <strong>amplifies features already present but not emphasized</strong> during pretraining. The amplification factor is massive: ~<strong>21.5×</strong> for r=4.
+      </div>
+    </div>
+  </div>
+
+  <!-- Benchmark Results -->
+  <div class="card card-lora full-width" style="margin-bottom:16px;">
+    <h3>GPT-3 175B Results <span class="info-badge lora">BENCHMARKS</span></h3>
+    <p class="card-desc">LoRA matches or beats full fine-tuning with <strong>10,000× fewer</strong> trainable parameters and <strong>3× less</strong> GPU memory.</p>
+
+    <div style="overflow-x:auto;">
+    <table class="bench-table">
+      <thead>
+        <tr><th style="text-align:left;">Method</th><th>Trainable Params</th><th>WikiSQL</th><th>MNLI-m</th><th>SAMSum R1/R2/RL</th><th>Checkpoint</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="label">Full Fine-Tuning</td><td>175,255.8M</td><td>73.8</td><td>89.5</td><td>52.0/28.0/44.5</td><td>350 GB</td>
+        </tr>
+        <tr>
+          <td class="label">BitFit (bias-only)</td><td>14.2M</td><td>71.3</td><td>91.0</td><td>51.3/27.4/43.5</td><td>—</td>
+        </tr>
+        <tr>
+          <td class="label">AdapterH (large)</td><td>40.1M</td><td>73.2</td><td>91.5</td><td>53.2/29.0/45.1</td><td>—</td>
+        </tr>
+        <tr>
+          <td class="label" style="color:var(--cyan);">LoRA (r=4, Wq+Wv)</td><td class="best">4.7M</td><td>73.4</td><td class="best">91.7</td><td class="best">53.8/29.8/45.9</td><td class="best">35 MB</td>
+        </tr>
+        <tr>
+          <td class="label" style="color:var(--cyan);">LoRA (r=16, Wq+Wv)</td><td>37.7M</td><td class="best">74.0</td><td>91.6</td><td>53.4/29.2/45.1</td><td>—</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="metrics-row" style="margin-top:12px;">
+      <div class="metric metric-lora">
+        <div class="metric-value">10,000×</div>
+        <div class="metric-label">Fewer Params vs FT</div>
+      </div>
+      <div class="metric metric-lora">
+        <div class="metric-value">3×</div>
+        <div class="metric-label">Less GPU Memory</div>
+      </div>
+      <div class="metric metric-lora">
+        <div class="metric-value">+25%</div>
+        <div class="metric-label">Faster Training</div>
+      </div>
+      <div class="metric metric-lora">
+        <div class="metric-value">Zero</div>
+        <div class="metric-label">Inference Latency</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rank Analysis -->
+  <div class="viz-grid">
+    <div class="card card-lora">
+      <h3>Rank Robustness <span class="info-badge lora">ABLATION</span></h3>
+      <p class="card-desc">Surprisingly, a rank as small as <strong>r=1</strong> already nearly saturates performance on many tasks.</p>
+
+      <div style="overflow-x:auto;">
+      <table class="bench-table">
+        <thead><tr><th>Weights</th><th>r=1</th><th>r=2</th><th>r=4</th><th>r=8</th><th>r=64</th></tr></thead>
+        <tbody>
+          <tr><td class="label">Wq (WikiSQL)</td><td>68.8</td><td>69.6</td><td>70.5</td><td>70.4</td><td>70.0</td></tr>
+          <tr><td class="label" style="color:var(--cyan);">Wq+Wv (WikiSQL)</td><td>73.4</td><td>73.3</td><td class="best">73.7</td><td class="best">73.8</td><td>73.5</td></tr>
+          <tr><td class="label">Wq (MNLI)</td><td>90.7</td><td>90.9</td><td>91.1</td><td>90.7</td><td>90.7</td></tr>
+          <tr><td class="label" style="color:var(--cyan);">Wq+Wv (MNLI)</td><td>91.3</td><td>91.4</td><td>91.3</td><td class="best">91.6</td><td>91.4</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <div class="insight-callout cyan" style="margin-top:10px;">
+        <strong>🧠 Key insight:</strong> "A rank as small as <strong>one</strong> suffices for adapting both Wq and Wv." Higher ranks mostly capture <strong>random noise</strong>, not meaningful task signal. The top singular vectors of r=8 and r=64 overlap heavily (>0.5).
+      </div>
+    </div>
+
+    <div class="card card-lora">
+      <h3>Where to Apply LoRA <span class="info-badge lora">DESIGN</span></h3>
+      <p class="card-desc">Which weight matrices give the best bang-for-buck at a fixed 18M parameter budget?</p>
+
+      <div style="overflow-x:auto;">
+      <table class="bench-table">
+        <thead><tr><th>Weight Type</th><th>Rank</th><th>WikiSQL</th><th>MultiNLI</th></tr></thead>
+        <tbody>
+          <tr><td class="label">Wq only</td><td>8</td><td>70.4</td><td>91.0</td></tr>
+          <tr><td class="label">Wv only</td><td>8</td><td>73.0</td><td>91.0</td></tr>
+          <tr><td class="label">Wo only</td><td>8</td><td>73.2</td><td>91.3</td></tr>
+          <tr style="background:#00e5ff08;"><td class="label" style="color:var(--cyan);">Wq+Wv</td><td>4</td><td class="best">73.7</td><td>91.3</td></tr>
+          <tr style="background:#00e5ff08;"><td class="label" style="color:var(--cyan);">Wq+Wk+Wv+Wo</td><td>2</td><td>73.7</td><td class="best">91.7</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <div class="insight-callout cyan" style="margin-top:10px;">
+        <strong>🎯 Default config:</strong> Apply LoRA to <strong>Wq and Wv only</strong>. Spreading the parameter budget across more weight types beats using a larger rank on fewer types.
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Takeaways -->
+  <div style="margin-top:14px;">
+    <h4 style="font-family:var(--font-display); color:var(--cyan); font-weight:400; font-size:1.1rem; margin-bottom:10px;">LoRA's Three Contributions</h4>
+    <div class="key-takeaway-grid">
+      <div class="takeaway-card cyan">
+        <div class="emoji">📐</div>
+        <h5>The Low-Rank Hypothesis</h5>
+        <p>Weight updates during adaptation live in a low-dimensional subspace. You only need to tune a handful of directions, not all 175B parameters.</p>
+      </div>
+      <div class="takeaway-card cyan">
+        <div class="emoji">🔬</div>
+        <h5>The Amplification Analysis</h5>
+        <p>ΔW amplifies task-relevant features <strong>already learned</strong> (but not emphasized) during pretraining. LoRA doesn't learn new features — it turns up the volume on existing ones.</p>
+      </div>
+      <div class="takeaway-card cyan">
+        <div class="emoji">⚡</div>
+        <h5>Zero Inference Cost</h5>
+        <p>Weights merge: W = W₀ + BA. No extra layers, no extra latency. Task switching is as simple as subtracting BA and adding B′A′.</p>
+      </div>
+    </div>
+  </div>
+</div><!-- /panelLora -->
+
+
+<!-- ==================== DORA PANEL ==================== -->
+<div class="panel" id="panelDora">
+
+  <!-- Hero -->
+  <div style="text-align:center; padding:16px 0 24px;">
+    <h2 style="color:var(--magenta); font-family:var(--font-display); font-weight:400; font-size:1.6rem;">DoRA: Weight-Decomposed Low-Rank Adaptation</h2>
+    <div style="font-family:var(--font-mono); font-size:0.72rem; color:var(--text-dim); letter-spacing:0.06em; margin-top:4px;">
+      Shih-Yang Liu et al. (NVIDIA Research) · ICML 2024 <strong style="color:var(--magenta);">Oral</strong> · <a href="https://arxiv.org/abs/2402.09353" target="_blank" style="color:var(--magenta);">arXiv 2402.09353</a>
+    </div>
+  </div>
+
+  <div class="viz-grid">
+    <!-- Left: Weight Decomposition -->
+    <div class="card card-dora">
+      <h3>The Core Innovation: Weight Decomposition <span class="info-badge dora">KEY</span></h3>
+      <p class="card-desc">LoRA updates the full weight matrix directly. DoRA first <strong style="color:var(--magenta);">decomposes</strong> it into magnitude and direction, then applies LoRA <strong>only to the direction</strong>.</p>
+
+      <div class="formula-box border-magenta">
+        <span class="dim">W = </span><span class="hl-amber">m</span><span class="dim"> · </span><span class="hl-purple">V</span><span class="dim"> / ||</span><span class="hl-purple">V</span><span class="dim">||<sub>c</sub></span><br><br>
+        <span class="dim">After adaptation:</span><br>
+        <span class="dim">W' = </span><span class="hl-amber">m</span><span class="dim"> · </span><span style="color:var(--magenta); font-weight:bold;">(W₀ + BA)</span><span class="dim"> / ||</span><span style="color:var(--magenta); font-weight:bold;">W₀ + BA</span><span class="dim">||<sub>c</sub></span><br><br>
+        <span class="dim">🔶 </span><span class="hl-amber">m</span><span class="dim"> ∈ ℝ<sup>1×k</sup> — magnitude (</span><span class="hl-amber">trainable</span><span class="dim">)</span><br>
+        <span class="dim">🟣 </span><span class="hl-purple">V = W₀</span><span class="dim"> — direction (</span><span class="dim">frozen</span><span class="dim">)</span><br>
+        <span class="dim">🟪 </span><span style="color:var(--magenta); font-weight:bold;">BA</span><span class="dim"> — LoRA update applied to direction only</span>
+      </div>
+
+      <div class="insight-callout magenta">
+        <strong>💡 The Key Insight:</strong> LoRA couples magnitude and direction changes (all-or-nothing update). DoRA <strong>decouples</strong> them — you can change "how much" a feature fires (magnitude) independently of "which direction" it points (direction), matching the behavior of full fine-tuning.
+      </div>
+    </div>
+
+    <!-- Right: Correlation Analysis -->
+    <div class="card card-dora">
+      <h3>The Critical Finding: Magnitude-Direction Correlation <span class="info-badge dora">ANALYSIS</span></h3>
+      <p class="card-desc">The paper analyzed how magnitude and direction changes correlate across training — the finding that motivated DoRA.</p>
+
+      <div class="canvas-wrap">
+        <canvas id="doraCorrelationCanvas" width="560" height="220"></canvas>
+      </div>
+
+      <div class="metrics-row">
+        <div class="metric" style="border-left:2px solid var(--red);">
+          <div class="metric-value" style="color:var(--red);">+0.83</div>
+          <div class="metric-label">LoRA (bad)</div>
+        </div>
+        <div class="metric" style="border-left:2px solid var(--green);">
+          <div class="metric-value" style="color:var(--green);">−0.62</div>
+          <div class="metric-label">Full FT (ideal)</div>
+        </div>
+        <div class="metric" style="border-left:2px solid var(--magenta);">
+          <div class="metric-value" style="color:var(--magenta);">−0.31</div>
+          <div class="metric-label">DoRA (close!)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gradient Analysis -->
+  <div class="card card-dora full-width" style="margin-bottom:16px;">
+    <h3>Gradient Analysis: Why It Works <span class="info-badge dora">THEORY</span></h3>
+    <p class="card-desc">The weight decomposition introduces two beneficial gradient effects inherited from Weight Normalization.</p>
+
+    <div class="formula-box border-magenta">
+      <span class="dim">∇</span><span class="hl-magenta">V'</span><span class="dim"> L = </span><span style="color:var(--amber);">(m / ||V'||<sub>c</sub>)</span><span class="dim"> · </span><span style="color:var(--purple);">(I − V'V'<sup>T</sup> / ||V'||<sub>c</sub><sup>2</sup>)</span><span class="dim"> · ∇</span><span class="hl-magenta">W'</span><span class="dim"> L</span><br><br>
+      <span class="dim">🔶 </span><span style="color:var(--amber);">Scaling</span><span class="dim">: gradient scaled by m/||V'||</span><br>
+      <span class="dim">🟣 </span><span style="color:var(--purple);">Projection</span><span class="dim">: gradient projected away from current weight direction</span><br>
+      <span class="dim">→ Both operations push the gradient covariance matrix closer to identity → </span><span style="color:var(--green);">better optimization conditioning</span>
+    </div>
+
+    <div class="insight-callout magenta">
+      <strong>🔧 Training Memory Optimization:</strong> The raw DoRA gradient differs from LoRA's, requiring extra activation memory. The fix: detach the norm ||V'|| from the gradient graph (treat as constant). This saves <strong>~24% training memory</strong> on LLaMA-7B with <strong>±0.2 accuracy change</strong>.
+    </div>
+  </div>
+
+  <!-- Benchmark Results -->
+  <div class="card card-dora full-width" style="margin-bottom:16px;">
+    <h3>Commonsense Reasoning Benchmarks <span class="info-badge dora">RESULTS</span></h3>
+    <p class="card-desc">Average accuracy over 8 datasets: BoolQ, PIQA, SIQA, HellaSwag, WinoGrande, ARC-e, ARC-c, OBQA.</p>
+
+    <div style="overflow-x:auto;">
+    <table class="bench-table">
+      <thead><tr><th style="text-align:left;">Model</th><th>Method</th><th>Params %</th><th>Accuracy</th><th>Δ vs LoRA</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="label" rowspan="3">LLaMA-7B</td>
+          <td>LoRA</td><td>0.83%</td><td>74.7</td><td>—</td>
+        </tr>
+        <tr><td style="color:var(--magenta);">DoRA</td><td>0.84%</td><td class="best">78.4</td><td class="gain">+3.7</td></tr>
+        <tr><td style="color:var(--magenta);">DoRA† (half-rank)</td><td>0.43%</td><td class="best">77.5</td><td class="gain">+2.8</td></tr>
+
+        <tr style="border-top:2px solid var(--border);">
+          <td class="label" rowspan="3">LLaMA-13B</td>
+          <td>LoRA</td><td>0.67%</td><td>80.5</td><td>—</td>
+        </tr>
+        <tr><td style="color:var(--magenta);">DoRA</td><td>0.68%</td><td class="best">81.5</td><td class="gain">+1.0</td></tr>
+        <tr><td style="color:var(--magenta);">DoRA† (half-rank)</td><td>0.35%</td><td>80.8</td><td class="gain">+1.0</td></tr>
+
+        <tr style="border-top:2px solid var(--border);">
+          <td class="label" rowspan="3">LLaMA2-7B</td>
+          <td>LoRA</td><td>0.83%</td><td>77.6</td><td>—</td>
+        </tr>
+        <tr><td style="color:var(--magenta);">DoRA</td><td>0.84%</td><td class="best">79.7</td><td class="gain">+2.1</td></tr>
+        <tr><td style="color:var(--magenta);">DoRA† (half-rank)</td><td>0.43%</td><td class="best">80.5</td><td class="gain">+2.9</td></tr>
+
+        <tr style="border-top:2px solid var(--border);">
+          <td class="label" rowspan="3">LLaMA3-8B</td>
+          <td>LoRA</td><td>0.70%</td><td>80.8</td><td>—</td>
+        </tr>
+        <tr><td style="color:var(--magenta);">DoRA</td><td>0.71%</td><td class="best">85.2</td><td class="gain">+4.4</td></tr>
+        <tr><td style="color:var(--magenta);">DoRA† (half-rank)</td><td>0.35%</td><td class="best">85.0</td><td class="gain">+4.2</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="insight-callout magenta" style="margin-top:10px;">
+      <strong>🏆 DoRA† at half LoRA's rank still beats full-rank LoRA</strong> on every model. On LLaMA3-8B, DoRA even beats <strong>ChatGPT zero-shot CoT (77.0)</strong> by a wide margin.
+    </div>
+  </div>
+
+  <!-- Other results -->
+  <div class="viz-grid">
+    <div class="card card-dora">
+      <h3>Beyond Language <span class="info-badge dora">MULTI-DOMAIN</span></h3>
+
+      <div style="overflow-x:auto;">
+      <table class="bench-table">
+        <thead><tr><th style="text-align:left;">Task</th><th>LoRA</th><th>DoRA</th><th>Δ</th></tr></thead>
+        <tbody>
+          <tr><td class="label">VL-BART image-text</td><td>—</td><td class="best">—</td><td class="gain">+0.9</td></tr>
+          <tr><td class="label">VL-BART video-text</td><td>—</td><td class="best">—</td><td class="gain">+1.9</td></tr>
+          <tr><td class="label">LLaVA-1.5-7B (vision)</td><td>—</td><td class="best">—</td><td class="gain">+0.7</td></tr>
+          <tr><td class="label">MT-Bench (GPT-4 scored)</td><td>—</td><td class="best">—</td><td class="gain">+0.4</td></tr>
+        </tbody>
+      </table>
+      </div>
+
+      <div class="insight-callout magenta" style="margin-top:10px;">
+        <strong>QDoRA</strong> (DoRA + QLoRA 4-bit quantization) <strong>beats full fine-tuning</strong> on the Orca-Math benchmark while using dramatically less memory. DoRA also composes with VeRA → <strong>DVoRA</strong>, matching LoRA/DoRA performance with far fewer parameters.
+      </div>
+    </div>
+
+    <div class="card card-dora">
+      <h3>Rank Robustness <span class="info-badge dora">ABLATION</span></h3>
+      <p class="card-desc">DoRA beats LoRA at <strong>every tested rank</strong> {4, 8, 16, 32, 64}. At r=4 the gap is enormous.</p>
+
+      <div class="canvas-wrap">
+        <canvas id="doraRankCanvas" width="560" height="200"></canvas>
+      </div>
+
+      <div class="insight-callout magenta" style="margin-top:8px;">
+        <strong>📊 Tuning Granularity:</strong> Update direction+magnitude on QKV and <strong>only magnitude</strong> on Gate/Up/Down layers → beats LoRA by +2.8 (LLaMA-7B) with <strong>under half</strong> the trainable parameters.
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Takeaways -->
+  <div style="margin-top:14px;">
+    <h4 style="font-family:var(--font-display); color:var(--magenta); font-weight:400; font-size:1.1rem; margin-bottom:10px;">DoRA's Three Innovations</h4>
+    <div class="key-takeaway-grid">
+      <div class="takeaway-card magenta">
+        <div class="emoji">🔀</div>
+        <h5>Weight Decomposition</h5>
+        <p>Splits each weight into <strong>magnitude</strong> (how strong) and <strong>direction</strong> (which way). LoRA is applied to direction only, enabling fine-grained control.</p>
+      </div>
+      <div class="takeaway-card magenta">
+        <div class="emoji">📉</div>
+        <h5>Negative Correlation Pattern</h5>
+        <p>DoRA achieves a −0.31 magnitude-direction correlation, much closer to full FT's −0.62 than LoRA's +0.83 — evidence of superior learning capacity.</p>
+      </div>
+      <div class="takeaway-card magenta">
+        <div class="emoji">🔄</div>
+        <h5>Drop-in LoRA Replacement</h5>
+        <p>Same API, same merge step, same inference cost. DoRA at <strong>half LoRA's rank</strong> still beats full-rank LoRA. Available in Hugging Face PEFT.</p>
+      </div>
+    </div>
+  </div>
+</div><!-- /panelDora -->
+
+
+<!-- ==================== COMPARISON PANEL ==================== -->
+<div class="panel" id="panelCompare">
+
+  <div style="text-align:center; padding:16px 0 20px;">
+    <h2 style="color:var(--green); font-family:var(--font-display); font-weight:400; font-size:1.6rem;">LoRA vs DoRA — Side-by-Side Paper Comparison</h2>
+    <div style="font-family:var(--font-mono); font-size:0.72rem; color:var(--text-dim); letter-spacing:0.05em; margin-top:4px;">
+      Different authors, different organizations, different years — complementary ideas
+    </div>
+  </div>
+
+  <!-- Author comparison highlight -->
+  <div class="viz-grid" style="margin-bottom:16px;">
+    <div class="card card-lora" style="text-align:center; padding:18px;">
+      <h3 style="color:var(--cyan); margin-bottom:8px;">LoRA Authors</h3>
+      <p style="font-size:0.8rem; line-height:1.6; color:var(--text-dim);">
+        Edward J. Hu · Yelong Shen · Phillip Wallis<br>
+        Zeyuan Allen-Zhu · Yuanzhi Li<br>
+        Shean Wang · Lu Wang · Weizhu Chen<br><br>
+        <strong style="color:var(--cyan);">🏢 Microsoft Corporation</strong><br>
+        <span style="font-size:0.7rem;">📍 ICLR 2022</span>
+      </p>
+    </div>
+    <div class="card card-dora" style="text-align:center; padding:18px;">
+      <h3 style="color:var(--magenta); margin-bottom:8px;">DoRA Authors</h3>
+      <p style="font-size:0.8rem; line-height:1.6; color:var(--text-dim);">
+        Shih-Yang Liu · Chien-Yi Wang · Hongxu Yin<br>
+        Pavlo Molchanov · Yu-Chiang Frank Wang<br>
+        Kwang-Ting Cheng · Min-Hung Chen<br><br>
+        <strong style="color:var(--magenta);">🏢 NVIDIA Research</strong><br>
+        <span style="font-size:0.7rem;">📍 ICML 2024 (Oral)</span>
+      </p>
+    </div>
+  </div>
+
+  <div class="insight-callout green" style="margin-bottom:14px;">
+    <strong>❌ The authors are completely different.</strong> LoRA comes from Microsoft Research; DoRA comes from NVIDIA Research Taiwan and the NVIDIA Learning and Perception Research Group. There is <strong>zero author overlap</strong> between the two papers. DoRA builds on LoRA's idea but comes from an entirely independent team.
+  </div>
+
+  <!-- Main Comparison Table -->
+  <div class="card card-green" style="margin-bottom:16px;">
+    <h3>Full Technical Comparison</h3>
+    <p class="card-desc">Every dimension compared — from mathematical formulation to practical deployment.</p>
+
+    <div style="overflow-x:auto;">
+    <table class="paper-compare-table">
+      <thead>
+        <tr><th style="width:140px;">Dimension</th><th style="color:var(--cyan);">LoRA</th><th style="color:var(--magenta);">DoRA</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="dim-header">Full Name</td>
+          <td class="lora-cell"><strong>Low-Rank Adaptation</strong> of Large Language Models</td>
+          <td class="dora-cell"><strong>Weight-Decomposed Low-Rank Adaptation</strong></td>
+        </tr>
+        <tr>
+          <td class="dim-header">Venue</td>
+          <td class="lora-cell">ICLR 2022</td>
+          <td class="dora-cell">ICML 2024 <strong style="color:var(--magenta);">(Oral Presentation)</strong></td>
+        </tr>
+        <tr>
+          <td class="dim-header">Organization</td>
+          <td class="lora-cell">Microsoft</td>
+          <td class="dora-cell">NVIDIA Research</td>
+        </tr>
+        <tr>
+          <td class="dim-header">Core Formula</td>
+          <td class="lora-cell"><code>W' = W₀ + BA</code></td>
+          <td class="dora-cell"><code>W' = m · (W₀ + BA) / ||W₀ + BA||<sub>c</sub></code></td>
+        </tr>
+        <tr>
+          <td class="dim-header">What's Learned</td>
+          <td class="lora-cell">Low-rank update <strong>BA</strong> applied to the <strong>full weight matrix</strong></td>
+          <td class="dora-cell"><strong>Magnitude m</strong> (scalar per column) + <strong>LoRA on direction only</strong></td>
+        </tr>
+        <tr>
+          <td class="dim-header">Extra Parameters</td>
+          <td class="lora-cell">d×r + r×k (same as DoRA)</td>
+          <td class="dora-cell">d×r + r×k <strong>+ 1×k</strong> (negligible ~0.01%)</td>
+        </tr>
+        <tr>
+          <td class="dim-header">Initialization</td>
+          <td class="lora-cell">A ~ Kaiming uniform, B = 0<br>→ W' = W₀ at start</td>
+          <td class="dora-cell">A ~ Kaiming uniform, B = 0, m = ||W₀||<sub>c</sub><br>→ W' = W₀ at start</td>
+        </tr>
+        <tr>
+          <td class="dim-header">Gradient Behavior</td>
+          <td class="lora-cell">∇L flows directly through BA<br>Identical to full FT's gradient shape</td>
+          <td class="dora-cell">Gradient <strong>scaled</strong> by m/||V'|| and <strong>projected</strong> away from current direction → better conditioning</td>
+        </tr>
+        <tr>
+          <td class="dim-header">Mag-Dir Correlation</td>
+          <td class="lora-cell"><strong style="color:var(--red);">+0.83</strong> — magnitude and direction change together (proportional, limiting)</td>
+          <td class="dora-cell"><strong style="color:var(--green);">−0.31</strong> — decoupled, negative-slope pattern much closer to full FT's −0.62</td>
+        </tr>
+        <tr>
+          <td class="dim-header">Inference Cost</td>
+          <td class="lora-cell" style="color:var(--green);">✅ Zero — weights merge: W = W₀ + BA</td>
+          <td class="dora-cell" style="color:var(--green);">✅ Zero — weights merge: m and BA fold into W₀</td>
+        </tr>
+        <tr>
+          <td class="dim-header">LLaMA-7B (8 tasks)</td>
+          <td class="lora-cell">74.7</td>
+          <td class="dora-cell" style="color:var(--green);"><strong>78.4 (+3.7)</strong></td>
+        </tr>
+        <tr>
+          <td class="dim-header">LLaMA3-8B (8 tasks)</td>
+          <td class="lora-cell">80.8</td>
+          <td class="dora-cell" style="color:var(--green);"><strong>85.2 (+4.4)</strong></td>
+        </tr>
+        <tr>
+          <td class="dim-header">Half-Rank vs Full LoRA</td>
+          <td class="lora-cell">N/A</td>
+          <td class="dora-cell" style="color:var(--green);"><strong>DoRA† beats full-rank LoRA</strong> on every model tested</td>
+        </tr>
+        <tr>
+          <td class="dim-header">VL-BART (Image)</td>
+          <td class="lora-cell">Baseline</td>
+          <td class="dora-cell" style="color:var(--green);"><strong>+0.9 over LoRA</strong></td>
+        </tr>
+        <tr>
+          <td class="dim-header">VL-BART (Video)</td>
+          <td class="lora-cell">Baseline</td>
+          <td class="dora-cell" style="color:var(--green);"><strong>+1.9 over LoRA</strong></td>
+        </tr>
+        <tr>
+          <td class="dim-header">Quantization Support</td>
+          <td class="lora-cell">QLoRA (4-bit, Dettmers et al.)</td>
+          <td class="dora-cell" style="color:var(--green);"><strong>QDoRA > QLoRA > Full FT</strong> on Orca-Math</td>
+        </tr>
+        <tr>
+          <td class="dim-header">Composability</td>
+          <td class="lora-cell">Works with prefix-tuning, adapters</td>
+          <td class="dora-cell" style="color:var(--green);">Works with <strong>VeRA → DVoRA</strong>, QLoRA → QDoRA, any LoRA variant</td>
+        </tr>
+        <tr>
+          <td class="dim-header">Training Memory</td>
+          <td class="lora-cell">Standard LoRA memory</td>
+          <td class="dora-cell">~24% more than LoRA (solved via norm-detaching to near parity)</td>
+        </tr>
+        <tr>
+          <td class="dim-header">When to Use</td>
+          <td class="lora-cell">Solid baseline for all PEFT tasks. Vast ecosystem, well-tested.</td>
+          <td class="dora-cell" style="color:var(--green);">When you <strong>need the last 1-4% accuracy</strong> — close the gap to full FT at zero inference cost.</td>
+        </tr>
+        <tr>
+          <td class="dim-header">Code</td>
+          <td class="lora-cell"><a href="https://github.com/microsoft/LoRA" target="_blank" style="color:var(--cyan);">github.com/microsoft/LoRA</a></td>
+          <td class="dora-cell"><a href="https://github.com/NVlabs/DoRA" target="_blank" style="color:var(--magenta);">github.com/NVlabs/DoRA</a></td>
+        </tr>
+        <tr>
+          <td class="dim-header">One-Line TL;DR</td>
+          <td class="lora-cell" style="color:var(--cyan);"><strong>"Weight updates have low rank — freeze the big matrix, learn two small ones."</strong></td>
+          <td class="dora-cell" style="color:var(--magenta);"><strong>"Also separate magnitude from direction — change 'how much' independently of 'which way'."</strong></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <!-- Evolution Summary -->
+  <div style="margin-top:14px;">
+    <h4 style="font-family:var(--font-display); color:var(--green); font-weight:400; font-size:1.1rem; margin-bottom:10px;">The Evolution: LoRA → DoRA</h4>
+    <div class="key-takeaway-grid">
+      <div class="takeaway-card green">
+        <div class="emoji">🧬</div>
+        <h5>What LoRA Got Right</h5>
+        <p>Low-rank updates work. Freezing pretrained weights + learnable decomposition is the right paradigm. Zero inference cost through weight merging is essential.</p>
+      </div>
+      <div class="takeaway-card green">
+        <div class="emoji">🔍</div>
+        <h5>What LoRA Missed</h5>
+        <p>LoRA couples magnitude and direction updates. The positive correlation (+0.83) means it can't independently adjust "how much" vs "which way" — limiting its expressive range.</p>
+      </div>
+      <div class="takeaway-card green">
+        <div class="emoji">✨</div>
+        <h5>What DoRA Adds</h5>
+        <p>Just 1×k extra scalars (the magnitude vector) plus Weight Normalization. This tiny change unlocks decoupled learning, matching full FT's behavior at zero extra inference cost.</p>
+      </div>
+      <div class="takeaway-card green">
+        <div class="emoji">🚀</div>
+        <h5>Practical Takeaway</h5>
+        <p>If you're using LoRA today, switch to DoRA. It's a drop-in replacement available in Hugging Face PEFT. Better accuracy, same inference cost, half the rank still wins.</p>
+      </div>
+    </div>
+  </div>
+</div><!-- /panelCompare -->
+
+
+<!-- ==================== INTERACTIVE DEMO PANEL ==================== -->
+<div class="panel" id="panelDemo">
+
+  <div style="text-align:center; padding:16px 0 20px;">
+    <h2 style="color:var(--purple); font-family:var(--font-display); font-weight:400; font-size:1.6rem;">Interactive Demo: See the Difference</h2>
+    <div style="font-family:var(--font-mono); font-size:0.72rem; color:var(--text-dim); letter-spacing:0.05em; margin-top:4px;">
+      Animate and compare how LoRA and DoRA update weights during fine-tuning
+    </div>
+  </div>
+
+  <!-- WHAT THE BARS MEAN -->
+  <div class="insight-callout purple" style="margin-bottom:18px;">
+    <strong>📊 What do these bars represent?</strong><br><br>
+    Each bar is the <strong>L2 norm of one column</strong> of a weight matrix <strong>W ∈ ℝ<sup>d×k</sup></strong> — for example, the Query projection <strong>W<sub>q</sub></strong> in a Transformer attention layer.<br><br>
+    <strong>d = 24</strong> input dimensions, <strong>k = 24</strong> output neurons (simplified for visualization).<br>
+    Each column's magnitude = <strong>||W<sub>:,j</sub>||<sub>2</sub></strong> = how "loud" that output neuron is.<br><br>
+    <strong style="color:var(--red);">🔴 Tall red bars</strong> = high-magnitude features. The pretrained model over-emphasizes these — e.g., a "background texture" neuron fires at 0.91 regardless of what you're classifying. In low-data fine-tuning, the classifier latches onto these loud-but-irrelevant features → <strong>overfitting</strong>.<br>
+    <strong style="color:var(--cyan);">🔵 Short cyan bars</strong> = features that are useful but quiet — e.g., a "beak shape" neuron at 0.12 that would actually help classify birds. They get drowned out.<br>
+    <strong>Goal:</strong> Push all bars toward the <strong>dashed uniform target</strong> — every feature gets equal opportunity to influence the classifier.
+  </div>
+
+  <!-- Animation Canvas -->
+  <div class="viz-grid">
+    <div class="card" style="border-left: 3px solid var(--cyan);">
+      <h3 style="color:var(--cyan);">LoRA: Direct Low-Rank Update</h3>
+      <p class="card-desc">LoRA applies <strong>BA</strong> to the <strong>entire weight matrix</strong>. Magnitude and direction change <strong>together</strong> (coupled) — if a feature was loud before, it stays relatively loud. Biased features remain biased.</p>
+      <div class="canvas-wrap">
+        <canvas id="loraDemoCanvas" width="540" height="300"></canvas>
+      </div>
+      <div class="metrics-row">
+        <div class="metric metric-lora">
+          <div class="metric-value" id="loraMagChange">0.00</div>
+          <div class="metric-label">Magnitude Δ</div>
+        </div>
+        <div class="metric metric-lora">
+          <div class="metric-value" id="loraDirChange">0.00</div>
+          <div class="metric-label">Direction Δ</div>
+        </div>
+        <div class="metric metric-lora">
+          <div class="metric-value" style="color:var(--red);" id="loraCorr">+0.83</div>
+          <div class="metric-label">Correlation</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="border-left: 3px solid var(--magenta);">
+      <h3 style="color:var(--magenta);">DoRA: Decomposed Update</h3>
+      <p class="card-desc">DoRA updates <strong style="color:var(--amber);">magnitude m</strong> separately from <strong style="color:var(--purple);">direction V</strong> (where LoRA's BA is applied only to direction). This <strong>decouples</strong> "how much" a feature fires from "which way" it points — biased features get aggressively rebalanced while useful directions are preserved.</p>
+      <div class="canvas-wrap">
+        <canvas id="doraDemoCanvas" width="540" height="300"></canvas>
+      </div>
+      <div class="metrics-row">
+        <div class="metric metric-dora">
+          <div class="metric-value" id="doraMagChange">0.00</div>
+          <div class="metric-label">Magnitude Δ</div>
+        </div>
+        <div class="metric metric-dora">
+          <div class="metric-value" id="doraDirChange">0.00</div>
+          <div class="metric-label">Direction Δ</div>
+        </div>
+        <div class="metric metric-dora">
+          <div class="metric-value" style="color:var(--green);" id="doraCorr">−0.31</div>
+          <div class="metric-label">Correlation</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <h4>🎛 Animation Controls</h4>
+    <div class="control-row">
+      <label>Training Progress</label>
+      <input type="range" id="progressSlider" class="lora-slider" min="0" max="100" value="50" oninput="updateDemo()">
+      <span class="val" id="progressVal">50%</span>
+    </div>
+    <div class="control-row">
+      <label>Rank (r)</label>
+      <input type="range" id="rankSlider" class="dora-slider" min="1" max="64" value="4" oninput="updateDemo()">
+      <span class="val" id="rankVal">4</span>
+    </div>
+    <div class="control-row">
+      <label>Feature Bias</label>
+      <input type="range" id="biasSlider" class="dora-slider" min="0" max="100" value="60" oninput="updateDemo()">
+      <span class="val" id="biasVal">60%</span>
+    </div>
+    <div class="control-row" style="margin-top:12px;">
+      <button class="btn btn-cyan" onclick="autoAnimate()">▶ Play Animation</button>
+      <button class="btn btn-magenta" onclick="stopAnimation()">⏹ Stop</button>
+      <span style="font-size:0.72rem; color:var(--text-dim); margin-left:8px;">Watch how LoRA and DoRA diverge as training progresses</span>
+    </div>
+  </div>
+
+  <!-- Legend / Explanation -->
+  <div class="insight-callout purple" style="margin-top:16px;">
+    <strong>🎮 How to read the demo:</strong><br>
+    &nbsp;&nbsp;• <strong style="color:var(--amber);">Bar height</strong> = feature magnitude (how "loud" each feature is)<br>
+    &nbsp;&nbsp;• <strong style="color:var(--red);">Red bars</strong> = biased (pretrained model over-emphasizes these features)<br>
+    &nbsp;&nbsp;• <strong style="color:var(--cyan);">Cyan bars</strong> = uniform (FMR/DoRA pushes toward equal prominence)<br>
+    &nbsp;&nbsp;• <strong>LoRA</strong> updates all features proportionally — biased features stay biased<br>
+    &nbsp;&nbsp;• <strong>DoRA</strong> decouples magnitude from direction — biased features get rebalanced while useful directions are preserved<br>
+    &nbsp;&nbsp;• <strong>Drag the sliders</strong> to see how rank, bias, and training progress interact
+  </div>
+</div><!-- /panelDemo -->
+
+</div><!-- /main-container -->
+
+<script>
+// ==================== STATE ====================
+let currentTab = 'lora';
+let animationId = null;
+
+// ==================== THEME TOGGLE ====================
+function toggleTheme() {
+  document.body.classList.toggle('light');
+}
+
+// ==================== TAB SWITCHING ====================
+function switchTab(tab) {
+  currentTab = tab;
+  ['lora','dora','compare','demo'].forEach(t => {
+    const btn = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+    const panel = document.getElementById('panel' + t.charAt(0).toUpperCase() + t.slice(1));
+    btn.className = tab === t ? 'tab-btn active-' + t : 'tab-btn';
+    panel.className = tab === t ? 'panel active' : 'panel';
+  });
+
+  // Stop any running animation
+  stopAnimation();
+
+  // Draw static canvases when their tabs are shown
+  if (tab === 'lora') {
+    setTimeout(drawLoraSubspace, 100);
+  } else if (tab === 'dora') {
+    setTimeout(drawDoraCorrelation, 100);
+    setTimeout(drawDoraRankChart, 150);
+  } else if (tab === 'demo') {
+    setTimeout(updateDemo, 100);
+  }
+}
+
+// ==================== CANVAS: LORA SUBSPACE ====================
+function drawLoraSubspace() {
+  const canvas = document.getElementById('loraSubspaceCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Draw a conceptual diagram: W₀'s top singular directions vs ΔW's directions
+  const cx = W * 0.35, cy = H * 0.5, r = 70;
+
+  // W₀ circle
+  ctx.fillStyle = '#ffffff08';
+  ctx.strokeStyle = '#00e5ff44';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // W₀ top directions (long arrows)
+  const dirs = [
+    { a: -0.3, len: 0.9, label: 'Top\nsingular\ndirections' },
+    { a: 0.8, len: 0.85 },
+    { a: 2.1, len: 0.8 },
+  ];
+  dirs.forEach(d => {
+    const dx = Math.cos(d.a) * r * d.len;
+    const dy = Math.sin(d.a) * r * d.len;
+    ctx.strokeStyle = '#ffffff33';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + dx, cy + dy);
+    ctx.stroke();
+    // arrow head
+    ctx.fillStyle = '#ffffff33';
+    ctx.beginPath();
+    ctx.arc(cx + dx, cy + dy, 4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Label W₀
+  ctx.fillStyle = '#ffffff55';
+  ctx.font = '11px system-ui';
+  ctx.textAlign = 'center';
+  ctx.fillText('W₀', cx, cy - r - 12);
+  ctx.fillText('(pretrained)', cx, cy + r + 16);
+
+  // ΔW
+  const cx2 = W * 0.72, cy2 = H * 0.5, r2 = 60;
+  ctx.strokeStyle = '#ffb30055';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 3]);
+  ctx.beginPath();
+  ctx.arc(cx2, cy2, r2, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // ΔW amplifies a subset of W₀ directions
+  const ampDirs = [
+    { a: -0.3, len: 1.0, w: 4, color: '#ffb300' },
+    { a: 2.1, len: 0.7, w: 3, color: '#ffb30099' },
+  ];
+  ampDirs.forEach(d => {
+    const dx = Math.cos(d.a) * r2 * d.len;
+    const dy = Math.sin(d.a) * r2 * d.len;
+    ctx.strokeStyle = d.color;
+    ctx.lineWidth = d.w;
+    ctx.beginPath();
+    ctx.moveTo(cx2, cy2);
+    ctx.lineTo(cx2 + dx, cy2 + dy);
+    ctx.stroke();
+    ctx.fillStyle = d.color;
+    ctx.beginPath();
+    ctx.arc(cx2 + dx, cy2 + dy, 5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  ctx.fillStyle = '#ffb300';
+  ctx.font = '11px system-ui';
+  ctx.fillText('ΔW', cx2, cy2 - r2 - 12);
+  ctx.fillStyle = '#ffffff44';
+  ctx.font = '9px system-ui';
+  ctx.fillText('(amplifies)', cx2, cy2 + r2 + 16);
+  ctx.fillText('~21.5× amplification factor', cx2, cy2 + r2 + 30);
+
+  // Arrow between
+  ctx.strokeStyle = '#ffffff22';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 4]);
+  ctx.beginPath();
+  ctx.moveTo(cx + r + 5, cy);
+  ctx.lineTo(cx2 - r2 - 5, cy2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  // arrow head
+  ctx.fillStyle = '#ffffff22';
+  ctx.beginPath();
+  ctx.moveTo(cx2 - r2 - 5, cy2);
+  ctx.lineTo(cx2 - r2 - 14, cy2 - 7);
+  ctx.lineTo(cx2 - r2 - 14, cy2 + 7);
+  ctx.fill();
+
+  // Note at bottom
+  ctx.fillStyle = '#6b6b80';
+  ctx.font = '10px system-ui';
+  ctx.textAlign = 'right';
+  ctx.fillText('ΔW does NOT repeat W₀\'s top directions —', W - 14, H - 30);
+  ctx.fillText('it amplifies directions that were learned but not emphasized', W - 14, H - 14);
+}
+
+// ==================== CANVAS: DORA CORRELATION ====================
+function drawDoraCorrelation() {
+  const canvas = document.getElementById('doraCorrelationCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 55, r: 25, t: 30, b: 40 };
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+
+  // Axes
+  ctx.strokeStyle = '#ffffff22';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(pad.l, pad.t);
+  ctx.lineTo(pad.l, pad.t + ph);
+  ctx.lineTo(pad.l + pw, pad.t + ph);
+  ctx.stroke();
+
+  // Labels
+  ctx.fillStyle = '#ffffff55';
+  ctx.font = '10px system-ui';
+  ctx.textAlign = 'center';
+  ctx.fillText('Direction Change ΔD →', pad.l + pw / 2, pad.t + ph + 30);
+  ctx.save();
+  ctx.translate(pad.l - 38, pad.t + ph / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('Magnitude Change ΔM →', 0, 0);
+  ctx.restore();
+
+  // Generate scatter data
+  const steps = 20;
+  const loraPoints = [];
+  const doraPoints = [];
+  const ftPoints = [];
+
+  for (let i = 0; i < steps; i++) {
+    const t = i / steps;
+    // LoRA: positive correlation
+    const lx = 0.1 + t * 0.8 + (Math.random() - 0.5) * 0.12;
+    const ly = 0.1 + t * 0.75 + (Math.random() - 0.5) * 0.1;
+    loraPoints.push({ x: lx, y: ly });
+
+    // Full FT: negative correlation
+    const fx = 0.1 + t * 0.8 + (Math.random() - 0.5) * 0.2;
+    const fy = 0.85 - t * 0.7 + (Math.random() - 0.5) * 0.2;
+    ftPoints.push({ x: fx, y: Math.max(0.05, fy) });
+
+    // DoRA: mild negative
+    const dx = 0.1 + t * 0.8 + (Math.random() - 0.5) * 0.15;
+    const dy = 0.7 - t * 0.55 + (Math.random() - 0.5) * 0.15;
+    doraPoints.push({ x: dx, y: Math.max(0.05, dy) });
+  }
+
+  function toScreenX(v) { return pad.l + v * pw; }
+  function toScreenY(v) { return pad.t + ph - v * ph; }
+
+  // Draw trend lines
+  function drawTrend(points, color, dash) {
+    if (dash) ctx.setLineDash([4, 3]);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(toScreenX(points[0].x), toScreenY(points[0].y));
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(toScreenX(points[i].x), toScreenY(points[i].y));
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  drawTrend(loraPoints, '#ff5252');
+  drawTrend(ftPoints, '#69f0ae', true);
+  drawTrend(doraPoints, '#ff4081');
+
+  // Draw points
+  function drawPoints(points, color, size) {
+    points.forEach(p => {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(toScreenX(p.x), toScreenY(p.y), size, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+  drawPoints(loraPoints, '#ff5252aa', 2.5);
+  drawPoints(ftPoints, '#69f0aeaa', 2.5);
+  drawPoints(doraPoints, '#ff4081aa', 3);
+
+  // Legend
+  const lx = pad.l + pw - 160, ly = pad.t + 8;
+  [
+    { label: 'LoRA +0.83', color: '#ff5252' },
+    { label: 'DoRA −0.31', color: '#ff4081' },
+    { label: 'Full FT −0.62', color: '#69f0ae' },
+  ].forEach((item, i) => {
+    const y = ly + i * 16;
+    ctx.fillStyle = item.color;
+    ctx.fillRect(lx, y - 4, 12, 3);
+    ctx.fillStyle = '#ffffffaa';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(item.label, lx + 18, y + 1);
+  });
+
+  // Annotation
+  ctx.fillStyle = '#ffffff44';
+  ctx.font = '9px system-ui';
+  ctx.textAlign = 'right';
+  ctx.fillText('LoRA couples magnitude & direction', W - 14, 14);
+  ctx.fillText('DoRA decouples them like Full FT', W - 14, 26);
+}
+
+// ==================== CANVAS: DORA RANK ====================
+function drawDoraRankChart() {
+  const canvas = document.getElementById('doraRankCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const pad = { l: 45, r: 20, t: 20, b: 35 };
+  const pw = W - pad.l - pad.r, ph = H - pad.t - pad.b;
+
+  const ranks = [4, 8, 16, 32, 64];
+  const loraVals = [39.49, 40.74, 74.7, 74.7, 74.7]; // approximate
+  const doraVals = [61.89, 77.96, 78.0, 78.2, 78.4];
+
+  const minY = 30, maxY = 85;
+  function sx(i) { return pad.l + (i / (ranks.length - 1)) * pw; }
+  function sy(v) { return pad.t + ph - ((v - minY) / (maxY - minY)) * ph; }
+
+  // Grid
+  ctx.strokeStyle = '#ffffff08';
+  ctx.lineWidth = 0.5;
+  for (let v = 40; v <= 80; v += 10) {
+    const y = sy(v);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + pw, y); ctx.stroke();
+    ctx.fillStyle = '#ffffff33';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(v + '%', pad.l - 5, y + 3);
+  }
+
+  // Axes
+  ctx.strokeStyle = '#ffffff22';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + ph); ctx.lineTo(pad.l + pw, pad.t + ph); ctx.stroke();
+
+  // X labels
+  ranks.forEach((r, i) => {
+    ctx.fillStyle = '#ffffff55';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('r=' + r, sx(i), pad.t + ph + 18);
+  });
+
+  // Lines
+  function drawLine(vals, color, dash) {
+    if (dash) ctx.setLineDash([4, 3]);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(sx(0), sy(vals[0]));
+    for (let i = 1; i < vals.length; i++) ctx.lineTo(sx(i), sy(vals[i]));
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  drawLine(loraVals, '#ff5252');
+  drawLine(doraVals, '#ff4081');
+
+  // Points
+  function drawPts(vals, color) {
+    vals.forEach((v, i) => {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(sx(i), sy(v), 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 9px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(v.toFixed(1), sx(i), sy(v) - 10);
+    });
+  }
+  drawPts(loraVals, '#ff5252aa');
+  drawPts(doraVals, '#ff4081');
+
+  // Legend
+  ctx.fillStyle = '#ff5252';
+  ctx.fillRect(pad.l + pw - 130, pad.t + 4, 14, 3);
+  ctx.fillStyle = '#fff';
+  ctx.font = '10px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText('LoRA', pad.l + pw - 112, pad.t + 7);
+  ctx.fillStyle = '#ff4081';
+  ctx.fillRect(pad.l + pw - 130, pad.t + 18, 14, 3);
+  ctx.fillText('DoRA', pad.l + pw - 112, pad.t + 21);
+}
+
+// ==================== INTERACTIVE DEMO ====================
+function updateDemo() {
+  const progress = parseInt(document.getElementById('progressSlider').value);
+  const rank = parseInt(document.getElementById('rankSlider').value);
+  const bias = parseInt(document.getElementById('biasSlider').value);
+
+  document.getElementById('progressVal').textContent = progress + '%';
+  document.getElementById('rankVal').textContent = rank;
+  document.getElementById('biasVal').textContent = bias + '%';
+
+  drawDemoCanvas('loraDemoCanvas', 'lora', progress, rank, bias);
+  drawDemoCanvas('doraDemoCanvas', 'dora', progress, rank, bias);
+
+  updateMetrics(progress, bias);
+}
+
+function drawDemoCanvas(canvasId, mode, progress, rank, biasPct) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const numFeatures = 24;
+  const pad = { l: 40, r: 10, t: 10, b: 50 };
+
+  // Generate base features with bias
+  const features = [];
+  const targetUniform = 0.45;
+  for (let i = 0; i < numFeatures; i++) {
+    const isBiased = i < Math.floor(numFeatures * biasPct / 100);
+    const baseMag = isBiased ? (0.55 + 0.4 * Math.sin(i * 1.7)) : (0.08 + 0.22 * Math.sin(i * 2.3 + 1));
+    features.push({ base: baseMag, isBiased });
+  }
+
+  // Apply training progress
+  const barAreaX = pad.l, barAreaW = W - pad.l - pad.r;
+  const barAreaH = H - pad.t - pad.b;
+
+  features.forEach((f, i) => {
+    const t = progress / 100;
+
+    if (mode === 'lora') {
+      // LoRA: BA updates the FULL weight matrix → magnitude & direction change together
+      // Biased features stay relatively biased (proportional update)
+      // Rank controls SELECTIVITY: lower rank = fewer singular directions, less spread
+      const selectivity = rank / 64; // r=1 → very selective, r=64 → almost full rank
+      const pullStrength = 0.55 + selectivity * 0.3; // 0.55–0.85 range
+      const uniformPull = (targetUniform - f.base) * t * pullStrength;
+      f.current = f.base + uniformPull;
+    } else {
+      // DoRA: magnitude m updated independently from direction BA
+      // Much stronger rebalancing — decoupled magnitude can change freely
+      const magnitudePull = (targetUniform - f.base) * t * 0.85;
+      f.current = f.base + magnitudePull;
+    }
+    f.current = Math.max(0.03, Math.min(0.95, f.current));
+  });
+
+  // Sort by magnitude
+  const sorted = [...features].sort((a, b) => b.current - a.current);
+
+  const barWidth = (barAreaW / numFeatures) - 1.5;
+
+  // Grid
+  ctx.strokeStyle = '#ffffff06';
+  ctx.lineWidth = 0.5;
+  for (let v = 0; v <= 0.8; v += 0.2) {
+    const y = pad.t + barAreaH * (1 - v);
+    ctx.beginPath();
+    ctx.moveTo(barAreaX, y);
+    ctx.lineTo(barAreaX + barAreaW, y);
+    ctx.stroke();
+  }
+
+  // Bars
+  sorted.forEach((f, i) => {
+    const x = barAreaX + i * (barAreaW / numFeatures);
+    const barH = f.current * barAreaH;
+    const y = pad.t + barAreaH - barH;
+
+    // Color: red for biased (above target), cyan for uniform
+    const deviation = Math.max(0, Math.min(1, (f.current - targetUniform) / 0.5));
+    const r = Math.floor(255 * deviation + 0 * (1 - deviation));
+    const g = Math.floor(82 * deviation + 229 * (1 - deviation));
+    const b = Math.floor(82 * deviation + 255 * (1 - deviation));
+    const alpha = 0.5 + 0.5 * (1 - deviation);
+
+    ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
+
+    // Glow on biased bars
+    if (deviation > 0.45) {
+      ctx.shadowColor = `rgba(${mode === 'lora' ? '255,82,82' : '255,64,129'}, ${0.25 + deviation * 0.35})`;
+      ctx.shadowBlur = 3 + deviation * 6;
+    } else if (deviation < 0.25) {
+      ctx.shadowColor = `rgba(0,229,255,${0.15 + (1 - deviation) * 0.2})`;
+      ctx.shadowBlur = 2 + (1 - deviation) * 3;
+    } else {
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+    }
+
+    const bw = Math.max(1, barWidth);
+    ctx.fillRect(x, y, bw, barH);
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+  });
+
+  // Target line
+  const targetY = pad.t + barAreaH * (1 - targetUniform);
+  ctx.strokeStyle = '#ffffff22';
+  ctx.lineWidth = 0.8;
+  ctx.setLineDash([5, 5]);
+  ctx.beginPath();
+  ctx.moveTo(barAreaX, targetY);
+  ctx.lineTo(barAreaX + barAreaW, targetY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#ffffff33';
+  ctx.font = '9px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillText('uniform target', barAreaX + 4, targetY - 4);
+
+  // Mode label
+  ctx.fillStyle = mode === 'lora' ? '#00e5ff' : '#ff4081';
+  ctx.font = 'bold 12px system-ui';
+  ctx.textAlign = 'left';
+  ctx.fillText(mode === 'lora' ? 'LoRA Update' : 'DoRA Update', barAreaX, pad.t - 2);
+
+  // X-axis labels
+  ctx.fillStyle = '#ffffff33';
+  ctx.font = '8px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('← Biased features (high magnitude)', barAreaX + barAreaW * 0.25, pad.t + barAreaH + 14);
+  ctx.fillText('Uniform features →', barAreaX + barAreaW * 0.75, pad.t + barAreaH + 14);
+
+  // Rank indicator
+  ctx.fillStyle = '#ffffff44';
+  ctx.font = '9px monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText(`rank=${rank}`, W - pad.r - 2, pad.t + 12);
+}
+
+function updateMetrics(progress, biasPct) {
+  const t = progress / 100;
+  const bias = biasPct / 100;
+
+  // LoRA metrics: proportional update = magnitude and direction change together
+  const loraMag = (t * 0.35 * (1 + bias * 0.5)).toFixed(2);
+  const loraDir = (t * 0.32 * (1 + bias * 0.4)).toFixed(2);
+
+  // DoRA metrics: decoupled — magnitude changes more, direction changes less
+  const doraMag = (t * 0.52 * (1 + bias * 0.7)).toFixed(2);
+  const doraDir = (t * 0.28).toFixed(2);
+
+  document.getElementById('loraMagChange').textContent = loraMag;
+  document.getElementById('loraDirChange').textContent = loraDir;
+  document.getElementById('doraMagChange').textContent = doraMag;
+  document.getElementById('doraDirChange').textContent = doraDir;
+
+  // Dynamic correlation values
+  const loraCorr = (0.78 + t * 0.05).toFixed(2);
+  const doraCorr = (-0.35 + t * 0.04).toFixed(2);
+  document.getElementById('loraCorr').textContent = '+' + loraCorr;
+  document.getElementById('doraCorr').textContent = doraCorr;
+}
+
+// ==================== AUTO ANIMATION ====================
+function autoAnimate() {
+  stopAnimation();
+  const slider = document.getElementById('progressSlider');
+  slider.value = 0;
+  document.getElementById('progressVal').textContent = '0%';
+  updateDemo();
+
+  let direction = 1;
+  function step() {
+    let val = parseInt(slider.value);
+    val += direction;
+    if (val >= 100) { val = 100; direction = -1; }
+    if (val <= 0) { val = 0; direction = 1; }
+    slider.value = val;
+    document.getElementById('progressVal').textContent = val + '%';
+    updateDemo();
+    animationId = requestAnimationFrame(step);
+  }
+  animationId = requestAnimationFrame(step);
+}
+
+function stopAnimation() {
+  if (animationId) {
+    cancelAnimationFrame(animationId);
+    animationId = null;
+  }
+}
+
+// ==================== SCROLL REVEAL ====================
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.scroll-reveal').forEach(el => revealObserver.observe(el));
+
+// ==================== EXPANDABLE SECTIONS ====================
+document.querySelectorAll('.expandable').forEach(el => {
+  el.addEventListener('click', function(e) {
+    // Don't toggle if clicking a link or button inside
+    if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON') return;
+    this.classList.toggle('open');
+  });
+});
+
+// ==================== INIT ====================
+function init() {
+  drawLoraSubspace();
+}
+
+window.addEventListener('load', init);
+window.addEventListener('resize', () => {
+  if (currentTab === 'lora') drawLoraSubspace();
+  if (currentTab === 'dora') { drawDoraCorrelation(); drawDoraRankChart(); }
+  if (currentTab === 'demo') updateDemo();
+});
+</script>
+
+</body>
+</html>

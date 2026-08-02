@@ -1,0 +1,1964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LoRA vs DoRA — Step-by-Step Matrix Animation</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a12;
+    --surface: #131320;
+    --elevated: #1a1a2e;
+    --border: #2a2a3d;
+    --text: #d4d4e0;
+    --text-dim: #787894;
+    --cyan: #00e5ff;
+    --cyan-bg: #00e5ff15;
+    --magenta: #ff4081;
+    --magenta-bg: #ff408115;
+    --amber: #ffb300;
+    --amber-bg: #ffb30015;
+    --green: #69f0ae;
+    --green-bg: #69f0ae15;
+    --purple: #b388ff;
+    --purple-bg: #b388ff15;
+    --red: #ff5252;
+    --red-bg: #ff525215;
+    --blue: #448aff;
+    --blue-bg: #448aff15;
+    --white: #e8e8f0;
+  }
+  body.light {
+    --bg: #f5f5f8;
+    --surface: #ffffff;
+    --elevated: #f0f0f5;
+    --border: #d8d8e0;
+    --text: #1a1a28;
+    --text-dim: #6a6a80;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    padding: 24px 16px 8px;
+  }
+  .header h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.4rem, 3.5vw, 2rem);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .header .subtitle {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-top: 4px;
+    letter-spacing: 0.04em;
+  }
+
+  /* Mode tabs */
+  .mode-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin: 14px 12px 10px;
+    flex-wrap: wrap;
+  }
+  .mode-btn {
+    padding: 8px 22px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    background: var(--surface);
+    color: var(--text-dim);
+    transition: all 0.3s;
+    letter-spacing: 0.03em;
+  }
+  .mode-btn:hover { border-color: #666; color: var(--text); }
+  .mode-btn.active-lora { background: var(--cyan-bg); border-color: var(--cyan); color: var(--cyan); box-shadow: 0 0 14px #00e5ff22; }
+  .mode-btn.active-dora { background: var(--magenta-bg); border-color: var(--magenta); color: var(--magenta); box-shadow: 0 0 14px #ff408122; }
+  .mode-btn.active-compare { background: var(--green-bg); border-color: var(--green); color: var(--green); box-shadow: 0 0 14px #69f0ae22; }
+
+  /* Step indicator */
+  .step-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin: 8px 12px 16px;
+    flex-wrap: wrap;
+  }
+  .step-dot {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.7rem; font-weight: 600;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .step-dot:hover { border-color: #666; }
+  .step-dot.active { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-bg); box-shadow: 0 0 10px #00e5ff22; }
+  .step-dot.done { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+  .step-arrow { color: var(--text-dim); font-size: 0.7rem; }
+
+  /* Main content */
+  .main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 16px 40px;
+  }
+
+  /* Flow blocks */
+  .flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-start;
+    justify-content: center;
+    margin: 12px 0;
+  }
+  .flow-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    text-align: center;
+    min-width: 80px;
+    transition: all 0.5s ease;
+  }
+  .flow-block.input { border-left: 3px solid var(--blue); }
+  .flow-block.op { border-left: 3px solid #5b3aa8; background: rgba(91,58,168,0.08); }
+  .flow-block.frozen { border-left: 3px solid #555; background: #ffffff03; }
+  .flow-block.trainable { border-left: 3px solid var(--green); }
+  .flow-block.output { border-left: 3px solid var(--cyan); }
+  .flow-block.magnitude { border-left: 3px solid var(--amber); }
+  .flow-block.direction { border-left: 3px solid var(--purple); }
+  .flow-block.decomposed { border-left: 3px solid var(--magenta); }
+  .flow-block.highlight {
+    animation: highlightPulse 0.6s ease;
+    border-color: var(--amber) !important;
+    box-shadow: 0 0 20px var(--amber-bg);
+  }
+  @keyframes highlightPulse {
+    0% { transform: scale(0.97); }
+    50% { transform: scale(1.03); }
+    100% { transform: scale(1); }
+  }
+
+  .flow-block .label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .flow-block .value {
+    font-family: 'Space Grotesk', monospace;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--white);
+  }
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    font-size: 1.4rem;
+    color: var(--text-dim);
+    padding-top: 24px;
+  }
+
+  /* Number grids (for matrices) */
+  .num-grid {
+    display: inline-grid;
+    gap: 1px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .num-cell {
+    background: var(--surface);
+    padding: 5px 8px;
+    text-align: center;
+    font-family: 'Space Grotesk', monospace;
+    font-size: 0.7rem;
+    min-width: 40px;
+    color: var(--text);
+    transition: all 0.5s ease;
+  }
+  .num-cell.froz { color: var(--text-dim); }
+  .num-cell.pos { color: var(--green); }
+  .num-cell.neg { color: var(--red); }
+  .num-cell.res { color: var(--cyan); font-weight: 700; }
+  .num-cell.mag { color: var(--amber); font-weight: 700; }
+  .num-cell.dir { color: var(--purple); font-weight: 700; }
+  .num-cell.dora-res { color: var(--magenta); font-weight: 700; }
+  .num-cell.highlight-cell {
+    animation: cellGlow 0.8s ease;
+    background: #ffb30020;
+  }
+  @keyframes cellGlow {
+    0% { background: #ffb30040; transform: scale(1.12); }
+    100% { background: transparent; transform: scale(1); }
+  }
+
+  /* Explanation */
+  .explain {
+    background: var(--elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 12px 0;
+    font-size: 0.84rem;
+    line-height: 1.7;
+    transition: all 0.4s;
+  }
+  .explain strong { color: var(--amber); }
+  .explain .cyan { color: var(--cyan); }
+  .explain .magenta { color: var(--magenta); }
+  .explain .green { color: var(--green); }
+  .explain .purple { color: var(--purple); }
+
+  /* Formula box */
+  .formula-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 12px 0;
+    text-align: center;
+    font-family: 'Space Grotesk', monospace;
+    font-size: 0.8rem;
+    line-height: 2;
+    overflow-x: auto;
+  }
+  .formula-box .tok { display: inline-block; padding: 2px 5px; border-radius: 3px; margin: 1px; }
+  .formula-box .tok.cyan { background: var(--cyan-bg); color: var(--cyan); }
+  .formula-box .tok.magenta { background: var(--magenta-bg); color: var(--magenta); }
+  .formula-box .tok.amber { background: var(--amber-bg); color: var(--amber); }
+  .formula-box .tok.purple { background: var(--purple-bg); color: var(--purple); }
+  .formula-box .tok.green { background: var(--green-bg); color: var(--green); }
+  .formula-box .tok.dim { color: var(--text-dim); }
+
+  /* Column norm display */
+  .norm-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 6px 0;
+  }
+  .norm-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-family: 'Space Grotesk', monospace;
+    font-size: 0.7rem;
+    text-align: center;
+  }
+  .norm-item .norm-val { font-weight: 700; font-size: 0.85rem; }
+  .norm-item.amber .norm-val { color: var(--amber); }
+  .norm-item.purple .norm-val { color: var(--purple); }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 0 6px;
+    flex-wrap: wrap;
+  }
+  .ctrl-btn {
+    padding: 8px 18px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    cursor: pointer;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.76rem;
+    font-weight: 500;
+    background: var(--surface);
+    color: var(--text);
+    transition: all 0.3s;
+  }
+  .ctrl-btn:hover { border-color: #666; background: var(--elevated); }
+  .ctrl-btn:disabled { opacity: 0.3; cursor: default; }
+  .ctrl-btn.auto-on { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+  .step-label {
+    font-family: 'Space Grotesk', monospace;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    min-width: 80px;
+    text-align: center;
+  }
+
+  /* Comparison side-by-side */
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 10px 0;
+  }
+  @media (max-width: 700px) { .compare-grid { grid-template-columns: 1fr; } }
+
+  /* Callout */
+  .callout {
+    border-left: 3px solid var(--amber);
+    background: var(--amber-bg);
+    padding: 12px 16px;
+    margin: 10px 0;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.8rem;
+    line-height: 1.6;
+  }
+  .callout.cyan { border-color: var(--cyan); background: var(--cyan-bg); }
+  .callout.magenta { border-color: var(--magenta); background: var(--magenta-bg); }
+  .callout.green { border-color: var(--green); background: var(--green-bg); }
+
+  /* Theme toggle */
+  .theme-toggle {
+    position: fixed;
+    top: 14px; right: 16px;
+    z-index: 10;
+    cursor: pointer;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 10px;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    transition: all 0.3s;
+  }
+  .theme-toggle:hover { border-color: #666; }
+
+  /* Animated section highlight */
+  .section-divider {
+    text-align: center;
+    margin: 20px 0 10px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .section-divider span { padding: 4px 14px; border: 1px solid var(--border); border-radius: 12px; }
+  .section-divider.lora span { border-color: var(--cyan); color: var(--cyan); }
+  .section-divider.dora span { border-color: var(--magenta); color: var(--magenta); }
+
+  /* Key insight box */
+  .key-insight {
+    background: var(--surface);
+    border: 2px solid var(--amber);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin: 14px 0;
+    text-align: center;
+    font-size: 0.85rem;
+    line-height: 1.7;
+  }
+  .key-insight .big { font-size: 1.1rem; font-weight: 700; }
+
+  /* Gradient intuition blocks */
+  .grad-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 10px 0;
+    font-family: 'Space Grotesk', monospace;
+    font-size: 0.72rem;
+  }
+  .grad-step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    text-align: center;
+  }
+  .grad-step .g-label { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.05em; }
+  .grad-step .g-val { font-weight: 600; margin-top: 2px; }
+  .grad-arrow { font-size: 1.2rem; color: var(--text-dim); }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .flow { gap: 6px; }
+    .flow-block { padding: 8px 10px; min-width: 60px; }
+    .num-cell { padding: 3px 5px; font-size: 0.62rem; min-width: 30px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🔬 LoRA vs DoRA — Every Matrix, Every Step</h1>
+  <div class="subtitle">Same input, same weights, same A & B — see exactly what changes</div>
+</div>
+
+<div class="theme-toggle" onclick="toggleTheme()">🌓 Theme</div>
+
+<div class="mode-tabs">
+  <button class="mode-btn active-lora" id="btnLora" onclick="switchMode('lora')">◈ LoRA Path</button>
+  <button class="mode-btn" id="btnDora" onclick="switchMode('dora')">◈ DoRA Path</button>
+  <button class="mode-btn" id="btnCompare" onclick="switchMode('compare')">⚖ Side-by-Side</button>
+</div>
+
+<div class="step-bar" id="stepBar"></div>
+
+<div class="main" id="mainContent"></div>
+
+<div class="controls">
+  <button class="ctrl-btn" id="btnPrev" onclick="prevStep()">◀ Prev</button>
+  <span class="step-label" id="stepLabel">Step 1/6</span>
+  <button class="ctrl-btn" id="btnNext" onclick="nextStep()">Next ▶</button>
+  <button class="ctrl-btn" id="btnAuto" onclick="toggleAuto()">▶ Auto</button>
+</div>
+
+<script>
+// ==================== DATA ====================
+// The shared example (same as existing LoRA animation)
+const x = [0.8, -0.3, 0.5]; // input vector (d=3)
+const W0 = [
+  [0.5, -0.3, 0.2],
+  [-0.1, 0.4, -0.2],
+  [0.3, -0.2, 0.6]
+]; // pretrained weight matrix (3×3, frozen)
+const A = [[0.6, 0.1, -0.3]]; // A matrix (r×d = 1×3)
+const B = [[0.3], [-0.2], [0.4]]; // B matrix (d×r = 3×1)
+
+// Computed values
+function matMul(A, B) {
+  const rows = A.length, cols = B[0].length, inner = B.length;
+  const C = Array.from({length: rows}, () => Array(cols).fill(0));
+  for (let i = 0; i < rows; i++)
+    for (let j = 0; j < cols; j++)
+      for (let k = 0; k < inner; k++)
+        C[i][j] += A[i][k] * B[k][j];
+  return C;
+}
+function matVecMul(M, v) {
+  return M.map(row => row.reduce((s, mij, j) => s + mij * v[j], 0));
+}
+function colNorms(M) {
+  const cols = M[0].length;
+  return Array.from({length: cols}, (_, j) => {
+    let s = 0;
+    for (let i = 0; i < M.length; i++) s += M[i][j] * M[i][j];
+    return Math.sqrt(s);
+  });
+}
+function addMat(A, B) {
+  return A.map((row, i) => row.map((v, j) => v + B[i][j]));
+}
+function scaleMat(M, s) {
+  return M.map(row => row.map(v => v * s));
+}
+function scaleCols(M, scales) {
+  return M.map((row, i) => row.map((v, j) => v / scales[j]));
+}
+function mulCols(M, scales) {
+  return M.map((row, i) => row.map((v, j) => v * scales[j]));
+}
+
+// Pre-compute everything
+const BA = matMul(B, A); // 3×3
+const Ax = matVecMul(A, x); // [1 value] since r=1
+const BAx = matVecMul(BA, x); // [3 values]
+const W0x = matVecMul(W0, x);
+const W_plus_BA = addMat(W0, BA); // LoRA result: W0 + BA
+const loraOut = matVecMul(W_plus_BA, x);
+
+// DoRA decomposition
+const m = colNorms(W0); // magnitude: [||W0_col0||, ||W0_col1||, ||W0_col2||]
+// m = [sqrt(0.35), sqrt(0.29), sqrt(0.44)] = [0.5916, 0.5385, 0.6633]
+// V = W0 / ||W0||_c (column-wise normalization)
+const V = scaleCols(W0, m);
+
+// DoRA: W' = m · (W0 + BA) / ||W0 + BA||_c
+const norms_WplusBA = colNorms(W_plus_BA);
+const dir_DoRA = scaleCols(W_plus_BA, norms_WplusBA); // (W0+BA) / ||W0+BA||
+const doraW = mulCols(dir_DoRA, m); // m * normalized direction
+const doraOut = matVecMul(doraW, x);
+
+// State
+let mode = 'lora'; // 'lora' | 'dora' | 'compare'
+let step = 0;
+let autoTimer = null;
+
+// ==================== RENDER HELPERS ====================
+function fmt(n) {
+  if (Math.abs(n) < 0.001) return '0.00';
+  const s = n.toFixed(2);
+  return n >= 0 ? '+' + s : s;
+}
+function fmt4(n) {
+  if (Math.abs(n) < 0.0001) return '0.0000';
+  return n.toFixed(4);
+}
+
+function renderMatrix(M, cls, highlight) {
+  const rows = M.length, cols = M[0].length;
+  let h = `<div class="num-grid" style="grid-template-columns:repeat(${cols},1fr);">`;
+  for (let i = 0; i < rows; i++) {
+    for (let j = 0; j < cols; j++) {
+      let c = cls || '';
+      if (!c) {
+        if (M[i][j] > 0.001) c = 'pos';
+        else if (M[i][j] < -0.001) c = 'neg';
+        else c = 'froz';
+      }
+      h += `<div class="num-cell ${c}">${fmt(M[i][j])}</div>`;
+    }
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderVector(v, cls) {
+  let h = `<div class="num-grid" style="grid-template-columns:1fr;">`;
+  for (let i = 0; i < v.length; i++) {
+    let c = cls || (v[i] >= 0 ? 'pos' : 'neg');
+    h += `<div class="num-cell ${c}">${fmt(v[i])}</div>`;
+  }
+  h += '</div>';
+  return h;
+}
+
+function renderFlowBlock(label, type, content, extraClass) {
+  return `<div class="flow-block ${type} ${extraClass||''}">
+    <div class="label">${label}</div>
+    <div class="value">${content}</div>
+  </div>`;
+}
+
+function flowArrow() {
+  return '<div class="flow-arrow">→</div>';
+}
+
+function renderNormDisplay(values, color, labels) {
+  let h = '<div class="norm-row">';
+  values.forEach((v, i) => {
+    h += `<div class="norm-item ${color}">
+      <div style="font-size:0.6rem;color:var(--text-dim);">${labels ? labels[i] : 'col '+i}</div>
+      <div class="norm-val">${fmt4(v)}</div>
+    </div>`;
+  });
+  h += '</div>';
+  return h;
+}
+
+// ==================== MODE SETUP ====================
+function setupStepBar() {
+  const bar = document.getElementById('stepBar');
+  let totalSteps, labels;
+  if (mode === 'lora') {
+    totalSteps = 4;
+    labels = ['1','2','3','4'];
+  } else if (mode === 'dora') {
+    totalSteps = 8;
+    labels = ['1','2','3','4','5','6','7','8'];
+  } else {
+    totalSteps = 5;
+    labels = ['1','2','3','4','5'];
+  }
+
+  let h = '';
+  labels.forEach((l, i) => {
+    if (i > 0) h += '<span class="step-arrow">→</span>';
+    let cls = 'step-dot';
+    if (i === step) cls += ' active';
+    else if (i < step) cls += ' done';
+    h += `<div class="${cls}" onclick="goTo(${i})">${l}</div>`;
+  });
+  bar.innerHTML = h;
+  document.getElementById('stepLabel').textContent = `Step ${step+1}/${totalSteps}`;
+  document.getElementById('btnPrev').disabled = step === 0;
+  document.getElementById('btnNext').disabled = step === totalSteps - 1;
+}
+
+// ==================== LORA STEPS ====================
+function renderLoRaStep0() {
+  // Step 1: The Setup — W₀ (frozen) + A & B (trainable) + input x
+  return `
+    <div class="section-divider lora"><span>LoRA Step 1 — The Setup</span></div>
+    <div class="explain">
+      <strong>Goal:</strong> Fine-tune a pretrained weight <strong class="cyan">W₀</strong> (3×3, frozen ❄️) on a new task.
+      Instead of updating all 9 numbers, LoRA injects two <strong>tiny trainable</strong> matrices <strong style="color:var(--green);">A</strong> (r×d) and <strong style="color:var(--green);">B</strong> (d×r).
+      Here <strong>rank r = 1</strong>, so instead of 9 trainable params we have only <strong>3+3 = 6</strong>.
+    </div>
+    <div class="flow">
+      ${renderFlowBlock('W₀<br><small>3×3 frozen ❄️</small>', 'frozen', renderMatrix(W0, 'froz'))}
+      ${flowArrow()}
+      ${renderFlowBlock('x<br><small>3×1 input</small>', 'input', renderVector(x))}
+      ${flowArrow()}
+      ${renderFlowBlock('W₀·x<br><small>frozen output</small>', 'frozen', renderVector(W0x, 'froz'))}
+    </div>
+    <div class="flow" style="margin-top:6px;">
+      ${renderFlowBlock('A<br><small>1×3 trainable 🔥</small>', 'trainable', renderMatrix(A, 'pos'))}
+      ${flowArrow()}
+      ${renderFlowBlock('B<br><small>3×1 trainable 🔥</small>', 'trainable', renderMatrix(B, 'pos'))}
+    </div>
+    <div class="explain" style="margin-top:10px;">
+      <strong>LoRA formula:</strong> <code>h = W₀·x + <span style="color:var(--green);">B·A</span>·x</code><br>
+      B×A is <strong>never</strong> computed as a full 3×3 matrix — we compute <strong>A·x</strong> first (cheap!), then B·(A·x).
+      Total trainable: <strong>6 params</strong> vs 9 (33% fewer — at real scale it's 10,000× fewer).
+    </div>`;
+}
+
+function renderLoRaStep1() {
+  // Step 2: A·x — project input into low-rank space
+  const ax = Ax[0]; // scalar since r=1
+  return `
+    <div class="section-divider lora"><span>LoRA Step 2 — A·x: Project into Rank-1 Space</span></div>
+    <div class="explain">
+      <strong>Step 1 of the LoRA path:</strong> Multiply <strong style="color:var(--green);">A</strong> (1×3) by input <strong>x</strong> (3×1).
+      This <strong style="color:var(--amber);">compresses</strong> the 3-dim input into just 1 dimension (the rank space).
+      At real scale: 4096-dim → 8-dim. <strong>This is why LoRA is cheap.</strong>
+    </div>
+    <div class="flow">
+      ${renderFlowBlock('A<br><small>1×3 (r×d) 🔥</small>', 'op', renderMatrix(A, 'pos'))}
+      ${flowArrow()}
+      ${renderFlowBlock('x<br><small>3×1 input</small>', 'input', renderVector(x))}
+      ${flowArrow()}
+      ${renderFlowBlock('A·x<br><small>r=1 number</small>', 'output', `<span style="font-size:1.2rem;">${fmt(ax)}</span>`)}
+    </div>
+    <p style="font-size:0.65rem;color:var(--text-dim);text-align:center;margin-top:4px;">A (1×3) · x (3×1) → inner dims match (3=3) → 1×1 = <strong>1 number</strong>. Real: A (8×4096) · x (4096×1) → 8×1 = <strong>8 numbers</strong>.</p>
+    <div class="formula-box" style="margin-top:10px;">
+      <span class="tok dim">A·x =</span>
+      <span class="tok green">[0.6, 0.1, −0.3]</span><span class="tok dim"> · </span><span class="tok dim">[0.8, −0.3, 0.5]</span>
+      <span class="tok dim">= 0.6×0.8 + 0.1×(−0.3) + (−0.3)×0.5</span>
+      <span class="tok dim">= 0.48 − 0.03 − 0.15 =</span>
+      <span class="tok amber">${fmt(ax)}</span>
+    </div>
+    <div class="callout cyan">
+      <strong>💡 Intuition:</strong> A acts like a <strong>"summary projector"</strong> — it takes the full input and squeezes it into the bottleneck. Only r=1 number comes out. This single number captures "what needs to change" for this specific task.
+    </div>`;
+}
+
+function renderLoRaStep2() {
+  // Step 3: B·(A·x) — project back up
+  const ax = Ax[0];
+  return `
+    <div class="section-divider lora"><span>LoRA Step 3 — B·(A·x): Expand Back to Full Dimension</span></div>
+    <div class="explain">
+      <strong>Step 2 of the LoRA path:</strong> Multiply <strong style="color:var(--green);">B</strong> (3×1) by the scalar <strong style="color:var(--amber);">A·x = ${fmt(ax)}</strong>.
+      This <strong>expands</strong> the rank-1 signal back into the full 3-dimensional space.
+      Each row of B says "how much should output dimension i respond to this task signal?"
+    </div>
+    <div class="flow">
+      ${renderFlowBlock('B<br><small>3×1 (d×r) 🔥</small>', 'op', renderMatrix(B, 'pos'))}
+      ${flowArrow()}
+      ${renderFlowBlock('A·x<br><small>r=1 number</small>', 'input', `<span style="font-size:1.1rem;">${fmt(ax)}</span>`)}
+      ${flowArrow()}
+      ${renderFlowBlock('B·(A·x)<br><small>ΔW·x (d=3)</small>', 'output', renderVector(BAx, 'res'))}
+    </div>
+    <p style="font-size:0.65rem;color:var(--text-dim);text-align:center;margin-top:4px;">B (3×1) · (A·x) (1×1) → inner dims match (1=1) → 3×1 = <strong>3 numbers</strong>. Real: B (4096×8) · (A·x) (8×1) → 4096×1.</p>
+    <div class="formula-box">
+      <span class="tok dim">B·(A·x) =</span>
+      <span class="tok green">[0.3, −0.2, 0.4]</span><span class="tok dim"> × </span><span class="tok amber">${fmt(ax)}</span>
+      <span class="tok dim">= [${fmt(BAx[0])}, ${fmt(BAx[1])}, ${fmt(BAx[2])}]</span>
+    </div>
+    <div class="callout cyan">
+      <strong>💡 Intuition:</strong> B's column tells us <strong>which output dimensions to boost or suppress</strong>. Here B=[0.3,−0.2,0.4] means: "Dimension 0 gets +30% of the signal, dim 1 gets −20% (suppressed), dim 2 gets +40%." This directional pattern is what makes LoRA effective.
+    </div>`;
+}
+
+function renderLoRaStep3() {
+  // Step 4: Combine — frozen path + LoRA path
+  return `
+    <div class="section-divider lora"><span>LoRA Step 4 — Combine: Frozen + LoRA = Final Output</span></div>
+    <div class="explain">
+      <strong>Final step:</strong> Add the frozen pretrained output <strong>W₀·x</strong> and the LoRA correction <strong>B·(A·x)</strong>.
+      The pretrained path handles general knowledge; the LoRA path adds <strong>task-specific adjustments</strong>.
+    </div>
+    <div class="flow">
+      ${renderFlowBlock('W₀·x<br><small>frozen</small>', 'frozen', renderVector(W0x, 'froz'))}
+      <div class="flow-arrow">+</div>
+      ${renderFlowBlock('B·(A·x)<br><small>LoRA Δ</small>', 'trainable', renderVector(BAx, 'res'))}
+      ${flowArrow()}
+      ${renderFlowBlock('Final Output<br><small>merged</small>', 'output', renderVector(loraOut, 'res'), 'highlight')}
+    </div>
+    <div class="formula-box">
+      <span class="tok dim">Output = W₀·x + B·A·x</span><br>
+      <span class="tok dim">= [${fmt(W0x[0])}, ${fmt(W0x[1])}, ${fmt(W0x[2])}]</span>
+      <span class="tok dim">+ [${fmt(BAx[0])}, ${fmt(BAx[1])}, ${fmt(BAx[2])}]</span><br>
+      <span class="tok dim">= </span><span class="tok cyan">[${fmt(loraOut[0])}, ${fmt(loraOut[1])}, ${fmt(loraOut[2])}]</span>
+    </div>
+    <div class="key-insight">
+      <div class="big">🔑 The Full ΔW Matrix (B×A)</div>
+      <div style="margin-top:8px;">
+        ${renderMatrix(BA, 'res')}
+      </div>
+      <div style="margin-top:8px; font-size:0.78rem;">
+        B×A = <strong style="color:var(--green);">rank-1</strong> matrix → every row is proportional to every other row.<br>
+        This is a <strong>very constrained</strong> update — LoRA can only change weights along 1 direction (out of 9 possible).
+      </div>
+      <div style="margin-top:8px; font-size:0.75rem; color:var(--text-dim);">
+        At inference: W = W₀ + B×A → merged into one matrix → <strong>zero overhead</strong>
+      </div>
+    </div>`;
+}
+
+// ==================== DORA STEPS ====================
+function renderDoRaStep0() {
+  return `
+    <div class="section-divider dora"><span>DoRA Step 1 — The Setup (Same Starting Point)</span></div>
+    <div class="explain">
+      <strong>Same as LoRA:</strong> We have the same <strong class="cyan">W₀</strong> (3×3, frozen ❄️), same <strong style="color:var(--green);">A & B</strong> (trainable), same input <strong>x</strong>.
+      But DoRA will use them <strong>differently</strong> — instead of updating W₀ directly, it <strong>decomposes</strong> W₀ first.
+    </div>
+    <div class="flow">
+      ${renderFlowBlock('W₀<br><small>3×3 frozen ❄️</small>', 'frozen', renderMatrix(W0, 'froz'))}
+      ${flowArrow()}
+      ${renderFlowBlock('x<br><small>3×1 input</small>', 'input', renderVector(x))}
+    </div>
+    <div class="flow" style="margin-top:6px;">
+      ${renderFlowBlock('A<br><small>1×3 🔥</small>', 'trainable', renderMatrix(A, 'pos'))}
+      ${renderFlowBlock('B<br><small>3×1 🔥</small>', 'trainable', renderMatrix(B, 'pos'))}
+    </div>
+    <div class="callout magenta" style="margin-top:10px;">
+      <strong>🔮 What's about to happen (preview):</strong> DoRA asks: <em>"Instead of updating the whole weight, what if we separately control <strong>how strong</strong> each feature is (magnitude) and <strong>which direction</strong> it points?"</em><br><br>
+      <strong>DoRA formula:</strong> <code>W' = <span style="color:var(--amber);">m</span> · (<span style="color:var(--cyan);">W₀</span> + <span style="color:var(--green);">BA</span>) / ||<span style="color:var(--cyan);">W₀</span> + <span style="color:var(--green);">BA</span>||<sub>c</sub></code>
+    </div>`;
+}
+
+function renderDoRaStep1() {
+  return `
+    <div class="section-divider dora"><span>DoRA Step 2 — Reparameterize: W = m · V / ||V||<sub>c</sub></span></div>
+    <div class="explain">
+      <strong>This is the KEY difference from LoRA.</strong> DoRA <strong>reparameterizes</strong> the weight into two parts using an identity:<br><br>
+      <div class="formula-box border-magenta" style="font-size:0.85rem;">
+        <span class="tok dim">W₀ = </span><span class="tok amber">m</span><span class="tok dim"> · </span><span class="tok purple">V</span><span class="tok dim"> / ||</span><span class="tok purple">V</span><span class="tok dim">||<sub>c</sub></span>
+      </div>
+      &nbsp;&nbsp;🔶 <strong style="color:var(--amber);">m = ||W₀||<sub>c</sub></strong> — column norms [0.5916, 0.5385, 0.6633] — "<strong>how loud</strong> is each neuron?"<br>
+      &nbsp;&nbsp;🟣 <strong style="color:var(--purple);">V = W₀</strong> — initialized as the <strong>entire pretrained weight</strong> (NOT normalized!)<br><br>
+      <strong>Important:</strong> The /||V||<sub>c</sub> normalization is <strong>part of the formula</strong>, not part of V. V itself is just W₀. At initialization this is trivially true: m × V/||V|| = ||W₀|| × W₀/||W₀|| = W₀. <strong>During training, m, V, and ||V|| can each change independently.</strong>
+    </div>
+
+    <div style="text-align:center; margin:8px 0; font-family:'Space Grotesk',monospace; font-size:0.75rem; color:var(--text-dim);">
+      Step 2a — Extract magnitude: m = column norms of W₀
+    </div>
+    ${renderNormDisplay(m, 'amber', ['||col₀||', '||col₁||', '||col₂||'])}
+
+    <div class="formula-box" style="margin-top:6px; font-size:0.75rem; line-height:2.0;">
+      <div style="margin-bottom:4px; color:var(--amber);"><strong>How each column norm is computed (L2 norm = square → sum → sqrt):</strong></div>
+
+      <span class="tok dim">||col₀|| = √(</span><span class="tok amber">0.50²</span><span class="tok dim"> + </span><span class="tok amber">(−0.10)²</span><span class="tok dim"> + </span><span class="tok amber">0.30²</span><span class="tok dim">)</span><br>
+      <span class="tok dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= √(0.25 + 0.01 + 0.09)</span><br>
+      <span class="tok dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= √0.35 = </span><span class="tok amber">0.5916</span><br><br>
+
+      <span class="tok dim">||col₁|| = √(</span><span class="tok amber">(−0.30)²</span><span class="tok dim"> + </span><span class="tok amber">0.40²</span><span class="tok dim"> + </span><span class="tok amber">(−0.20)²</span><span class="tok dim">)</span><br>
+      <span class="tok dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= √(0.09 + 0.16 + 0.04)</span><br>
+      <span class="tok dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= √0.29 = </span><span class="tok amber">0.5385</span><br><br>
+
+      <span class="tok dim">||col₂|| = √(</span><span class="tok amber">0.20²</span><span class="tok dim"> + </span><span class="tok amber">(−0.20)²</span><span class="tok dim"> + </span><span class="tok amber">0.60²</span><span class="tok dim">)</span><br>
+      <span class="tok dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= √(0.04 + 0.04 + 0.36)</span><br>
+      <span class="tok dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= √0.44 = </span><span class="tok amber">0.6633</span>
+    </div>
+
+    <div class="flow">
+      ${renderFlowBlock('W₀<br><small>original 3×3</small>', 'frozen', renderMatrix(W0, 'froz'))}
+      <div class="flow-arrow">→</div>
+      ${renderFlowBlock('m<br><small>magnitude 🔶<br>(trainable)</small>', 'magnitude', `<div style="font-size:0.75rem;">[${m.map(v=>fmt4(v)).join(', ')}]</div>`)}
+      <div style="display:flex;align-items:center;padding-top:24px;font-size:0.7rem;color:var(--text-dim);">+</div>
+      ${renderFlowBlock('V = W₀<br><small>direction 🟣<br>(= W₀ exactly)</small>', 'direction', renderMatrix(W0, 'dir'))}
+    </div>
+
+    <div class="formula-box" style="margin-top:8px;">
+      <span class="tok dim">Identity check — W₀ = m · V/||V||<sub>c</sub>:</span><br>
+      <span class="tok dim">Column 0: </span><span class="tok amber">0.5916</span><span class="tok dim"> × [0.5,−0.1,0.3] / 0.5916 = [0.5,−0.1,0.3] ✓</span><br>
+      <span class="tok dim">Column 1: </span><span class="tok amber">0.5385</span><span class="tok dim"> × [−0.3,0.4,−0.2] / 0.5385 = [−0.3,0.4,−0.2] ✓</span><br>
+      <span class="tok dim">Column 2: </span><span class="tok amber">0.6633</span><span class="tok dim"> × [0.2,−0.2,0.6] / 0.6633 = [0.2,−0.2,0.6] ✓</span>
+    </div>
+
+    <div class="callout magenta">
+      <strong>🧠 Key insight:</strong> At initialization, this is just a mathematical identity — W₀ equals itself. The magic happens <strong>during training</strong>: m and V are updated <strong>independently</strong> through different gradient paths. m gets its own gradient. V gets a <strong>projected</strong> gradient (via the normalization step). This decoupling is what gives DoRA its superior learning capacity.
+    </div>`;
+}
+
+function renderDoRaStep2() {
+  const ax = Ax[0];
+  return `
+    <div class="section-divider dora"><span>DoRA Step 3 — Apply LoRA's BA to the DIRECTION (V), NOT W₀</span></div>
+    <div class="explain">
+      <strong>This is where DoRA and LoRA diverge.</strong> Recall from Step 2: we decomposed <strong style="color:var(--cyan);">W₀</strong> = <strong style="color:var(--amber);">m</strong> × <strong style="color:var(--purple);">V</strong>.<br><br>
+      Now, <strong>BA is added to the DIRECTION V</strong> (not to W₀ directly!):<br>
+      &nbsp;&nbsp;🟣 <strong>V' = V + BA</strong> — update the <strong>direction</strong> with LoRA's low-rank Δ<br>
+      &nbsp;&nbsp;🔶 <strong>m</strong> — magnitude stays independent, updated by its own gradient<br><br>
+      <strong>Since V = W₀ at initialization</strong>, numerically V + BA = W₀ + BA. But conceptually, BA is updating the <strong>direction component</strong>, not the full weight. This distinction is what enables the decoupled gradient flow.
+    </div>
+
+    <div class="flow">
+      ${renderFlowBlock('A<br><small>1×3 (r×d) 🔥</small>', 'op', renderMatrix(A, 'pos'))}
+      ${flowArrow()}
+      ${renderFlowBlock('x<br><small>input</small>', 'input', renderVector(x))}
+      ${flowArrow()}
+      ${renderFlowBlock('A·x<br><small>r=1</small>', 'output', `<span style="font-size:1rem;">${fmt(ax)}</span>`)}
+    </div>
+    <div class="flow" style="margin-top:4px;">
+      ${renderFlowBlock('B<br><small>3×1 (d×r) 🔥</small>', 'op', renderMatrix(B, 'pos'))}
+      ${flowArrow()}
+      ${renderFlowBlock('A·x<br><small>r=1</small>', 'input', `<span style="font-size:1rem;">${fmt(ax)}</span>`)}
+      ${flowArrow()}
+      ${renderFlowBlock('B·(A·x)<br><small>ΔV·x</small>', 'output', renderVector(BAx, 'res'))}
+    </div>
+
+    <div style="text-align:center; margin:10px 0;">
+      <div style="font-size:0.7rem; color:var(--text-dim); margin-bottom:4px;">The full ΔV = B×A (same numbers as LoRA's ΔW):</div>
+      ${renderMatrix(BA, 'res')}
+    </div>
+
+    <div class="flow" style="margin-top:8px;">
+      ${renderFlowBlock('V (= W₀)<br><small>direction 🟣<br>(un-normalized)</small>', 'direction', renderMatrix(W0, 'dir'))}
+      <div class="flow-arrow">+</div>
+      ${renderFlowBlock('B×A<br><small>Δ to direction 🔥</small>', 'trainable', renderMatrix(BA, 'res'))}
+      ${flowArrow()}
+      ${renderFlowBlock('V + BA<br><small>= W₀ + BA<br>(updated direction)</small>', 'decomposed', renderMatrix(W_plus_BA, 'dora-res'), 'highlight')}
+    </div>
+
+    <div class="formula-box" style="margin-top:8px; font-size:0.72rem;">
+      <span class="tok dim">Check [0][0]: V[0][0] + BA[0][0] = </span><span class="tok purple">0.50</span><span class="tok dim"> + </span><span class="tok green">0.18</span><span class="tok dim"> = </span><span class="tok magenta">0.68</span><span class="tok dim"> ✓</span><br>
+      <span class="tok dim">Check [1][1]: V[1][1] + BA[1][1] = </span><span class="tok purple">0.40</span><span class="tok dim"> + </span><span class="tok green">(−0.02)</span><span class="tok dim"> = </span><span class="tok magenta">0.38</span><span class="tok dim"> ✓</span><br>
+      <span class="tok dim">Check [2][0]: V[2][0] + BA[2][0] = </span><span class="tok purple">0.30</span><span class="tok dim"> + </span><span class="tok green">0.24</span><span class="tok dim"> = </span><span class="tok magenta">0.54</span><span class="tok dim"> ✓</span>
+    </div>
+
+    <div class="callout magenta" style="margin-top:12px;">
+      <strong>🔑 KEY — BA is added to V (direction), NOT directly to W₀:</strong><br><br>
+      <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:6px; text-align:center;"><strong style="color:var(--cyan);">LoRA</strong></td>
+          <td style="padding:6px;"><code>W' = W₀ + BA</code></td>
+          <td style="padding:6px; color:var(--text-dim);">BA updates the <strong>full weight matrix</strong> directly</td>
+        </tr>
+        <tr>
+          <td style="padding:6px; text-align:center;"><strong style="color:var(--magenta);">DoRA</strong></td>
+          <td style="padding:6px;"><code>V' = V + BA</code><br><span style="font-size:0.65rem; color:var(--text-dim);">then: W' = m · V'/||V'||<sub>c</sub></span></td>
+          <td style="padding:6px; color:var(--text-dim);">BA updates only the <strong>direction</strong>.<br>Magnitude m is separate.</td>
+        </tr>
+      </table>
+      <br>
+      ⚠️ In LoRA, W₀+BA is the <strong>final answer</strong>. In DoRA, V+BA is just <strong>step 1 of 3</strong> — we still need to normalize (÷ ||·||) and scale (× m).
+    </div>`;
+}
+
+function renderDoRaStep3() {
+  return `
+    <div class="section-divider dora"><span>DoRA Step 4 — Re-Normalize: V' = (V + BA) / ||V + BA||<sub>c</sub></span></div>
+    <div class="explain">
+      <strong>After adding BA to V, the columns are no longer unit vectors.</strong> We normalize each column back to length 1. This gives us the <strong>pure direction</strong> (no magnitude).
+    </div>
+
+    <div style="text-align:center; margin:8px 0; font-family:'Space Grotesk',monospace; font-size:0.75rem; color:var(--text-dim);">
+      Column norms of (V + BA):
+    </div>
+    ${renderNormDisplay(norms_WplusBA, 'purple', ['||col₀\'||', '||col₁\'||', '||col₂\'||'])}
+
+    <div class="flow">
+      ${renderFlowBlock('V + BA<br><small>updated direction 🟣</small>', 'decomposed', renderMatrix(W_plus_BA, 'dora-res'))}
+      <div class="flow-arrow">÷</div>
+      ${renderFlowBlock('||V+BA||<sub>c</sub><br><small>column norms</small>', 'direction', `<div style="font-size:0.72rem;">[${norms_WplusBA.map(v=>fmt4(v)).join(', ')}]</div>`)}
+      ${flowArrow()}
+      ${renderFlowBlock('V\' / ||V\'||<br><small>normalized direction 🟣<br>(unit vectors)</small>', 'direction', renderMatrix(dir_DoRA, 'dir'))}
+    </div>
+
+    <div class="formula-box" style="margin-top:8px; font-size:0.75rem; line-height:2.2;">
+      <div style="margin-bottom:6px; color:var(--amber);"><strong>How column norms are computed (L2 norm = √ of sum of squares):</strong></div>
+
+      <span class="tok dim">||col₀|| = √(</span><span class="tok magenta">0.68</span><span class="tok dim">² + </span><span class="tok magenta">(−0.22)</span><span class="tok dim">² + </span><span class="tok magenta">0.54</span><span class="tok dim">²)</span><br>
+      <span class="tok dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= √(0.4624 + 0.0484 + 0.2916)</span><br>
+      <span class="tok dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= √0.8024 = </span><span class="tok purple">0.8958</span><br>
+      <span class="tok dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ Normalized: [0.68,−0.22,0.54] / 0.8958 = </span><span class="tok purple">[0.759, −0.246, 0.603]</span><br>
+      <span class="tok dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ Verify: 0.759² + 0.246² + 0.603² = 0.576 + 0.061 + 0.364 = </span><span class="tok green">1.000 ✓</span><br><br>
+
+      <span class="tok dim">||col₁|| = √(</span><span class="tok magenta">(−0.27)</span><span class="tok dim">² + </span><span class="tok magenta">0.38</span><span class="tok dim">² + </span><span class="tok magenta">(−0.16)</span><span class="tok dim">²)</span><br>
+      <span class="tok dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= √(0.0729 + 0.1444 + 0.0256) = √0.2429 = </span><span class="tok purple">0.4929</span><br>
+      <span class="tok dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ Normalized: </span><span class="tok purple">[−0.548, 0.771, −0.325]</span><br><br>
+
+      <span class="tok dim">||col₂|| = √(</span><span class="tok magenta">0.11</span><span class="tok dim">² + </span><span class="tok magenta">(−0.14)</span><span class="tok dim">² + </span><span class="tok magenta">0.48</span><span class="tok dim">²)</span><br>
+      <span class="tok dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= √(0.0121 + 0.0196 + 0.2304) = √0.2621 = </span><span class="tok purple">0.5120</span><br>
+      <span class="tok dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;→ Normalized: </span><span class="tok purple">[0.215, −0.273, 0.938]</span>
+    </div>
+
+    <div class="callout magenta">
+      <strong>🧠 Why normalize?</strong> This is the <strong>projection</strong> step from the gradient formula. By forcing each column to be a unit vector, DoRA ensures the direction update is <strong>pure rotation</strong> — no magnitude leak. The magnitude will be controlled separately by <strong style="color:var(--amber);">m</strong>.
+    </div>`;
+}
+
+function renderDoRaStep4() {
+  // Projection deep dive using actual numbers — column 0 of V+BA
+  return `
+    <div class="section-divider dora"><span>DoRA Step 5 — Projection Deep Dive: (I − vv<sup>T</sup>/||v||²) × g</span></div>
+    <div class="explain">
+      <strong>Let's compute the projection for ONE column</strong> of V' = V+BA, using actual numbers.
+      We'll take <strong>column 0</strong>: v = [0.68, −0.22, 0.54] with ||v|| = 0.8958.
+      Then we'll apply it to a <strong>sample gradient g = [1.0, 0.5, −0.3]</strong>.
+    </div>
+
+    <!-- STEP 1: vvT -->
+    <div style="background:var(--surface); border-left:4px solid var(--purple); border-radius:0 10px 10px 0; padding:14px 16px; margin:12px 0;">
+      <h4 style="color:var(--purple); font-size:0.85rem; margin-bottom:6px;">Step 1: Compute vv<sup>T</sup> — the Outer Product</h4>
+      <p style="font-size:0.74rem; color:var(--text-dim); line-height:1.6; margin-bottom:8px;">
+        <strong>What is vv<sup>T</sup>?</strong> Multiply a 3×1 column by a 1×3 row → 3×3 matrix.
+        Each cell [i][j] = v<sub>i</sub> × v<sub>j</sub>. This matrix <strong>projects any vector onto v</strong> — it answers:
+        <em>"how much of this vector points along v?"</em>
+      </p>
+      <div style="overflow-x:auto;">
+        <table style="border-collapse:collapse; font-family:'Space Grotesk',monospace; font-size:0.7rem; margin:0 auto;">
+          <tr><td style="padding:4px 8px; color:var(--text-dim);">vv<sup>T</sup> =</td><td style="padding:2px 4px;">[0.68]</td><td style="padding:2px 4px; color:var(--text-dim);">×</td><td style="padding:2px 8px;">[0.68, −0.22, 0.54]</td><td style="padding:2px 6px; color:var(--text-dim);">=</td></tr>
+        </table>
+      </div>
+      <div class="num-grid" style="grid-template-columns:repeat(3,1fr); margin:8px auto;">
+        <div class="num-cell pos">+0.462</div><div class="num-cell neg" style="color:var(--red);">−0.150</div><div class="num-cell pos">+0.367</div>
+        <div class="num-cell neg" style="color:var(--red);">−0.150</div><div class="num-cell pos">+0.048</div><div class="num-cell neg" style="color:var(--red);">−0.119</div>
+        <div class="num-cell pos">+0.367</div><div class="num-cell neg" style="color:var(--red);">−0.119</div><div class="num-cell pos">+0.292</div>
+      </div>
+      <p style="font-size:0.65rem; color:var(--text-dim); text-align:center;">
+        [0][0] = 0.68×0.68 = 0.462 &nbsp;|&nbsp; [0][1] = 0.68×(−0.22) = −0.150 &nbsp;|&nbsp; [1][1] = (−0.22)×(−0.22) = 0.048 &nbsp;|&nbsp; ...
+      </p>
+      <p style="font-size:0.72rem; color:var(--text-dim); margin-top:6px;">
+        <strong>Notice:</strong> vv<sup>T</sup> is <strong>symmetric</strong> (cell [i][j] = cell [j][i]) and every row is proportional to every other row — it's a <strong>rank-1</strong> matrix. All the information is in v itself.
+      </p>
+    </div>
+
+    <!-- STEP 2: Divide by ||v||² -->
+    <div style="background:var(--surface); border-left:4px solid var(--amber); border-radius:0 10px 10px 0; padding:14px 16px; margin:12px 0;">
+      <h4 style="color:var(--amber); font-size:0.85rem; margin-bottom:6px;">Step 2: Divide by ||v||² — the Projection Matrix P</h4>
+      <p style="font-size:0.74rem; color:var(--text-dim); line-height:1.6; margin-bottom:6px;">
+        <strong>Why divide?</strong> vv<sup>T</sup> projects onto v, but it also <strong>scales by ||v||²</strong>.
+        To get a <strong>pure</strong> projection (no scaling), we divide by ||v||².<br>
+        ||v||² = 0.68² + (−0.22)² + 0.54² = 0.4624 + 0.0484 + 0.2916 = <strong style="color:var(--amber);">0.8024</strong>
+      </p>
+      <div style="font-size:0.7rem; font-family:'Space Grotesk',monospace; color:var(--purple); text-align:center; margin:6px 0;">
+        P = vv<sup>T</sup> / ||v||² = (1/0.8024) × vv<sup>T</sup>
+      </div>
+      <div class="num-grid" style="grid-template-columns:repeat(3,1fr); margin:8px auto;">
+        <div class="num-cell" style="color:var(--purple);">+0.576</div><div class="num-cell" style="color:var(--purple);">−0.186</div><div class="num-cell" style="color:var(--purple);">+0.458</div>
+        <div class="num-cell" style="color:var(--purple);">−0.186</div><div class="num-cell" style="color:var(--purple);">+0.060</div><div class="num-cell" style="color:var(--purple);">−0.148</div>
+        <div class="num-cell" style="color:var(--purple);">+0.458</div><div class="num-cell" style="color:var(--purple);">−0.148</div><div class="num-cell" style="color:var(--purple);">+0.363</div>
+      </div>
+      <p style="font-size:0.72rem; color:var(--text-dim); margin-top:6px;">
+        <strong>P × (any vector) = the component of that vector parallel to v.</strong>
+        Try it: P × v = v (because v is 100% parallel to itself). P × (something ⟂ to v) = 0.
+      </p>
+    </div>
+
+    <!-- STEP 3: I - P -->
+    <div style="background:var(--surface); border-left:4px solid var(--green); border-radius:0 10px 10px 0; padding:14px 16px; margin:12px 0;">
+      <h4 style="color:var(--green); font-size:0.85rem; margin-bottom:6px;">Step 3: I − P — the "Steering Wheel" Matrix</h4>
+      <p style="font-size:0.74rem; color:var(--text-dim); line-height:1.6; margin-bottom:6px;">
+        <strong>I = identity matrix</strong> (1s on diagonal, 0s elsewhere). "Do nothing."<br>
+        <strong>I − P = "Do nothing MINUS project onto v."</strong> This <strong>removes</strong> the v-component from whatever you multiply it by. What's left is <strong>perpendicular to v</strong>.
+      </p>
+      <div style="font-size:0.7rem; font-family:'Space Grotesk',monospace; color:var(--green); text-align:center; margin:6px 0;">
+        I − P = I − vv<sup>T</sup>/||v||²
+      </div>
+      <div class="num-grid" style="grid-template-columns:repeat(3,1fr); margin:8px auto;">
+        <div class="num-cell" style="color:var(--green);">+0.424</div><div class="num-cell" style="color:var(--green);">+0.186</div><div class="num-cell" style="color:var(--green);">−0.458</div>
+        <div class="num-cell" style="color:var(--green);">+0.186</div><div class="num-cell" style="color:var(--green);">+0.940</div><div class="num-cell" style="color:var(--green);">+0.148</div>
+        <div class="num-cell" style="color:var(--green);">−0.458</div><div class="num-cell" style="color:var(--green);">+0.148</div><div class="num-cell" style="color:var(--green);">+0.637</div>
+      </div>
+      <p style="font-size:0.65rem; color:var(--text-dim); text-align:center;">
+        [0][0] = 1 − 0.576 = 0.424 &nbsp;|&nbsp; [0][1] = 0 − (−0.186) = +0.186 &nbsp;|&nbsp; [0][2] = 0 − 0.458 = −0.458 &nbsp;|&nbsp; ...
+      </p>
+    </div>
+
+    <!-- STEP 4: Apply to g -->
+    <div style="background:var(--surface); border-left:4px solid var(--magenta); border-radius:0 10px 10px 0; padding:14px 16px; margin:12px 0;">
+      <h4 style="color:var(--magenta); font-size:0.85rem; margin-bottom:6px;">Step 4: Apply to Sample Gradient g = [1.0, 0.5, −0.3]</h4>
+      <p style="font-size:0.74rem; color:var(--text-dim); line-height:1.6;">
+        This is where the magic happens. We multiply the raw gradient g by (I − P).
+      </p>
+      <div class="formula-box border-magenta" style="font-size:0.72rem; line-height:2.0; margin:8px 0;">
+        <span class="tok dim">g<sub>⟂</sub> = (I − P) · g</span><br>
+        <span class="tok dim">= [</span><span class="tok green">0.424</span><span class="tok dim">×1.0 + </span><span class="tok green">0.186</span><span class="tok dim">×0.5 + </span><span class="tok green">(−0.458)</span><span class="tok dim">×(−0.3),</span><br>
+        <span class="tok dim">&nbsp;&nbsp;&nbsp;</span><span class="tok green">0.186</span><span class="tok dim">×1.0 + </span><span class="tok green">0.940</span><span class="tok dim">×0.5 + </span><span class="tok green">0.148</span><span class="tok dim">×(−0.3),</span><br>
+        <span class="tok dim">&nbsp;&nbsp;&nbsp;</span><span class="tok green">(−0.458)</span><span class="tok dim">×1.0 + </span><span class="tok green">0.148</span><span class="tok dim">×0.5 + </span><span class="tok green">0.637</span><span class="tok dim">×(−0.3)]</span><br>
+        <span class="tok dim">= [0.424 + 0.093 + 0.137, 0.186 + 0.470 − 0.044, −0.458 + 0.074 − 0.191]</span><br>
+        <span class="tok dim">= </span><span class="tok magenta">[0.654, 0.612, −0.575]</span>
+      </div>
+    </div>
+
+    <!-- STEP 5: Verify -->
+    <div style="background:var(--surface); border-left:4px solid var(--green); border-radius:0 10px 10px 0; padding:14px 16px; margin:12px 0;">
+      <h4 style="color:var(--green); font-size:0.85rem; margin-bottom:6px;">Step 5: Verify — Is g<sub>⟂</sub> Really ⟂ to v?</h4>
+      <div class="formula-box" style="border-color:#69f0ae44; font-size:0.8rem; margin:8px 0;">
+        <span class="tok dim">v · g<sub>⟂</sub> = </span><span class="tok purple">[0.68, −0.22, 0.54]</span><span class="tok dim"> · </span><span class="tok magenta">[0.654, 0.612, −0.575]</span><br>
+        <span class="tok dim">= 0.68×0.654 + (−0.22)×0.612 + 0.54×(−0.575)</span><br>
+        <span class="tok dim">= 0.445 − 0.135 − 0.310 = </span><span class="tok green">0.000 ✓</span>
+      </div>
+      <p style="font-size:0.74rem; color:var(--text-dim); line-height:1.6;">
+        <strong>Zero!</strong> The projected gradient is perfectly perpendicular to v. It can <strong>rotate</strong> v (change direction) but can <strong>never stretch</strong> v (change length).
+      </p>
+    </div>
+
+    <!-- Summary -->
+    <div class="key-insight" style="margin-top:12px;">
+      <div class="big">🔑 What Just Happened — In Plain English</div>
+      <div style="margin-top:8px; font-size:0.8rem; line-height:2.0;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:6px 10px;"><strong style="color:var(--purple);">vv<sup>T</sup></strong></td>
+            <td style="padding:6px 10px; color:var(--text-dim);">"The v-detector." Multiply any vector by this → get the part pointing along v.</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:6px 10px;"><strong style="color:var(--amber);">/ ||v||²</strong></td>
+            <td style="padding:6px 10px; color:var(--text-dim);">"Normalize." Without this, the detector is too sensitive (scales by ||v||²).</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:6px 10px;"><strong style="color:var(--green);">I − P</strong></td>
+            <td style="padding:6px 10px; color:var(--text-dim);">"The steering wheel." Removes the v-component. What's left is ⟂ to v — pure rotation, zero stretch.</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 10px;"><strong style="color:var(--magenta);">× g</strong></td>
+            <td style="padding:6px 10px; color:var(--text-dim);">Apply to the raw gradient. The result <strong>only tells V' how to turn</strong>, never how to stretch.</td>
+          </tr>
+        </table>
+        <br>
+        <strong>🧒 Layman version:</strong> Imagine v is a laser pointer aimed at a dot on the wall. The raw gradient g says "move the dot 2 inches left and 1 inch into the wall." The projection (I−P) <strong>cancels the "into the wall" part</strong> and keeps only "2 inches left along the wall." The dot stays on the wall — only its position changes, not its distance from the laser.
+      </div>
+    </div>
+
+    <!-- Scale step -->
+    <div class="callout magenta" style="margin-top:10px;">
+      <strong>🔶 Final step — Scale by m/||v||:</strong> After projection, the gradient is multiplied by m/||v|| = 0.5916/0.8958 = <strong>0.660</strong>.<br>
+      Final ∇V' for this column = 0.660 × [0.654, 0.612, −0.575] = <strong>[0.432, 0.404, −0.380]</strong><br><br>
+      Meanwhile, ∇m for this column = (g · v) / ||v|| = (0.68×1.0 + (−0.22)×0.5 + 0.54×(−0.3)) / 0.8958<br>
+      = (0.68 − 0.11 − 0.162) / 0.8958 = 0.408 / 0.8958 = <strong>+0.455</strong> → "turn the volume UP for this neuron"<br><br>
+      <strong>One gradient. Two independent signals. That's DoRA.</strong>
+    </div>
+  `;
+}
+
+function renderDoRaStep5() {
+  return `
+    <div class="section-divider dora"><span>DoRA Step 6 — Apply Magnitude: W' = m × Direction</span></div>
+    <div class="explain">
+      <strong>The final step:</strong> Multiply each normalized direction column by its <strong style="color:var(--amber);">learned magnitude m</strong>.
+      Direction was updated by BA, magnitude was updated by its own independent gradient.
+      <br><br>
+      <strong>This is the decoupling:</strong> direction and magnitude learned <strong>at different rates</strong> through different gradient paths.
+    </div>
+
+    <div class="flow">
+      ${renderFlowBlock('m<br><small>magnitude 🔶<br>(trainable)</small>', 'magnitude', `<div style="font-size:0.72rem;">[${m.map(v=>fmt4(v)).join(', ')}]</div>`)}
+      <div class="flow-arrow">×</div>
+      ${renderFlowBlock('V\' / ||V\'||<br><small>direction 🟣<br>(unit vectors)</small>', 'direction', renderMatrix(dir_DoRA, 'dir'))}
+      ${flowArrow()}
+      ${renderFlowBlock("W'<sub>DoRA</sub><br><small>Final weight ✅</small>", 'decomposed', renderMatrix(doraW, 'dora-res'), 'highlight')}
+    </div>
+
+    <div class="formula-box" style="margin-top:8px;">
+      <span class="tok dim">W'<sub>DoRA</sub> = </span><span class="tok amber">m</span><span class="tok dim"> · (V+BA) / ||V+BA||<sub>c</sub></span><br>
+      <span class="tok dim">Column 0: </span><span class="tok amber">0.5916</span><span class="tok dim"> × </span><span class="tok purple">[0.759, −0.246, 0.603]</span><span class="tok dim"> = </span><span class="tok magenta">[0.449, −0.145, 0.357]</span><br>
+      <span class="tok dim">Column 1: </span><span class="tok amber">0.5385</span><span class="tok dim"> × </span><span class="tok purple">[−0.548, 0.771, −0.325]</span><span class="tok dim"> = </span><span class="tok magenta">[−0.295, 0.415, −0.175]</span><br>
+      <span class="tok dim">Column 2: </span><span class="tok amber">0.6633</span><span class="tok dim"> × </span><span class="tok purple">[0.215, −0.273, 0.938]</span><span class="tok dim"> = </span><span class="tok magenta">[0.143, −0.181, 0.622]</span>
+    </div>
+
+    <div class="callout magenta">
+      <strong>🔑 Why this works:</strong> The direction V' = V+BA learns <strong>which features matter</strong> (the "what"). The magnitude m learns <strong>how loudly each fires</strong> (the "how much"). By separating them, DoRA can independently say: "Feature 2 is useful, but tone it down" — something LoRA's coupled update cannot express.
+    </div>
+  `;
+}
+
+function renderDoRaStep6() {
+  return `
+    <div class="section-divider dora"><span>DoRA Step 7 — Final Output: W'<sub>DoRA</sub> · x</span></div>
+    <div class="explain">
+      <strong>The final output.</strong> Compare the DoRA output with LoRA's output (same input, same A & B!).
+    </div>
+
+    <div class="compare-grid">
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; text-align:center;">
+        <div style="color:var(--cyan); font-weight:700; margin-bottom:8px;">LoRA Output</div>
+        ${renderVector(loraOut, 'res')}
+        <div style="margin-top:6px; font-size:0.65rem; color:var(--text-dim);">
+          W'<sub>LoRA</sub> = W₀ + BA<br>
+          Direct update, magnitude & direction coupled
+        </div>
+      </div>
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; text-align:center;">
+        <div style="color:var(--magenta); font-weight:700; margin-bottom:8px;">DoRA Output</div>
+        ${renderVector(doraOut, 'dora-res')}
+        <div style="margin-top:6px; font-size:0.65rem; color:var(--text-dim);">
+          W'<sub>DoRA</sub> = m · (W₀+BA)/||W₀+BA||<br>
+          Decoupled — direction updated, magnitude preserved
+        </div>
+      </div>
+    </div>
+
+    <div class="key-insight" style="margin-top:10px;">
+      <div class="big">🔑 Same A & B, Different Result</div>
+      <table style="width:100%; margin-top:8px; font-family:'Space Grotesk',monospace; font-size:0.78rem;">
+        <tr><td style="color:var(--text-dim); text-align:right; padding-right:10px;">LoRA:</td><td style="color:var(--cyan);">[${loraOut.map(v=>fmt(v)).join(', ')}]</td></tr>
+        <tr><td style="color:var(--text-dim); text-align:right; padding-right:10px;">DoRA:</td><td style="color:var(--magenta);">[${doraOut.map(v=>fmt(v)).join(', ')}]</td></tr>
+        <tr><td style="color:var(--text-dim); text-align:right; padding-right:10px;">Diff:</td><td style="color:var(--amber);">[${loraOut.map((v,i)=>fmt(v-doraOut[i])).join(', ')}]</td></tr>
+      </table>
+      <div style="margin-top:8px; font-size:0.78rem;">
+        DoRA produces a <strong>different output</strong> from the same A & B because the weight decomposition <strong>changes how gradients flow</strong> during training. Magnitude gets its own gradient; direction gets a <strong>projected</strong> gradient. A & B would learn different values under DoRA training.
+      </div>
+    </div>
+  `;
+}
+
+function renderDoRaStep7() {
+  return `
+    <div class="section-divider dora"><span>DoRA Step 8 — Matrix Notation Cheat Sheet: All 5 Matrices</span></div>
+    <div class="explain">
+      <strong>Here are ALL the matrices in one place</strong> — what they look like, their shapes, and how they fit into the formula <strong>W' = m · V' / ||V'||<sub>c</sub></strong>.
+    </div>
+
+    <!-- MATRIX 1: m -->
+    <div style="background:var(--surface); border-left:4px solid var(--amber); border-radius:0 10px 10px 0; padding:14px 16px; margin:12px 0;">
+      <h4 style="color:var(--amber); font-size:0.85rem; margin-bottom:6px;">① m — Magnitude (1×3 row vector, trainable 🔶)</h4>
+      <p style="font-size:0.74rem; color:var(--text-dim); line-height:1.6; margin-bottom:6px;">
+        <strong>What:</strong> Column norms of W₀. One scalar per output neuron. <strong>"How loud is each column?"</strong><br>
+        <strong>Computed:</strong> ||col_j|| = √(sum of squares of column j)
+      </p>
+      <div style="text-align:center; font-family:'Space Grotesk',monospace; font-size:0.85rem; color:var(--amber); font-weight:700;">
+        m = [0.5916, 0.5385, 0.6633]
+      </div>
+      <div style="font-size:0.65rem; color:var(--text-dim); text-align:center; margin-top:2px;">
+        1 row × 3 columns (one per output neuron)
+      </div>
+    </div>
+
+    <!-- MATRIX 2: V' -->
+    <div style="background:var(--surface); border-left:4px solid var(--magenta); border-radius:0 10px 10px 0; padding:14px 16px; margin:12px 0;">
+      <h4 style="color:var(--magenta); font-size:0.85rem; margin-bottom:6px;">② V' = V + BA — Updated Direction (3×3 matrix) 🟪</h4>
+      <p style="font-size:0.74rem; color:var(--text-dim); line-height:1.6; margin-bottom:6px;">
+        <strong>What:</strong> The direction after adding BA. <strong>V' = V + BA = W₀ + BA</strong> (since V = W₀ initially).<br>
+        <strong>Each column</strong> is a 3D direction vector. It has BOTH direction AND length — <strong>not yet normalized</strong>.
+      </p>
+      <div style="text-align:center;">
+        ${renderMatrix(W_plus_BA, 'dora-res')}
+      </div>
+      <div style="font-size:0.65rem; color:var(--text-dim); text-align:center; margin-top:4px;">
+        3 rows × 3 columns | Each column j = [v₀ⱼ, v₁ⱼ, v₂ⱼ]<br>
+        Col₀ = [0.68, −0.22, 0.54] &nbsp; Col₁ = [−0.27, 0.38, −0.16] &nbsp; Col₂ = [0.11, −0.14, 0.48]
+      </div>
+    </div>
+
+    <!-- MATRIX 3: ||V'||c -->
+    <div style="background:var(--surface); border-left:4px solid var(--purple); border-radius:0 10px 10px 0; padding:14px 16px; margin:12px 0;">
+      <h4 style="color:var(--purple); font-size:0.85rem; margin-bottom:6px;">③ ||V'||<sub>c</sub> — Column Norms (1×3 row vector) 🟣</h4>
+      <p style="font-size:0.74rem; color:var(--text-dim); line-height:1.6; margin-bottom:6px;">
+        <strong>What:</strong> The L2 norm (length) of each column of V'. <strong>One scalar per column.</strong><br>
+        <strong>Computed column by column:</strong> ||col_j|| = √(v₀ⱼ² + v₁ⱼ² + v₂ⱼ²)
+      </p>
+      <div style="text-align:center; font-family:'Space Grotesk',monospace; font-size:0.85rem; color:var(--purple); font-weight:700;">
+        ||V'||<sub>c</sub> = [0.8958, 0.4928, 0.5120]
+      </div>
+      <div style="font-size:0.65rem; color:var(--text-dim); text-align:center; margin-top:2px;">
+        1 row × 3 columns | Same shape as m
+      </div>
+    </div>
+
+    <!-- MATRIX 4: V' / ||V'||c -->
+    <div style="background:var(--surface); border-left:4px solid var(--green); border-radius:0 10px 10px 0; padding:14px 16px; margin:12px 0;">
+      <h4 style="color:var(--green); font-size:0.85rem; margin-bottom:6px;">④ V' / ||V'||<sub>c</sub> — Normalized Direction (3×3 matrix, unit vectors) 🟢</h4>
+      <p style="font-size:0.74rem; color:var(--text-dim); line-height:1.6; margin-bottom:6px;">
+        <strong>What:</strong> Divide each column of V' by its norm. <strong>Every column is now a unit vector</strong> (length = 1).<br>
+        <strong>This is "pure direction"</strong> — no magnitude information. Steering wheel only, no gas pedal.<br>
+        <strong>Column by column:</strong> V'<sub>:,j</sub> / ||col_j||
+      </p>
+      <div style="text-align:center;">
+        ${renderMatrix(dir_DoRA, 'dir')}
+      </div>
+      <div style="font-size:0.65rem; color:var(--text-dim); text-align:center; margin-top:4px;">
+        Check: Col₀ = [0.76² + 0.25² + 0.60²] = 0.58 + 0.06 + 0.36 = <strong style="color:var(--green);">1.00 ✓</strong><br>
+        Same for Col₁ and Col₂ — all unit vectors.
+      </div>
+    </div>
+
+    <!-- MATRIX 5: W' -->
+    <div style="background:var(--surface); border-left:4px solid var(--magenta); border-radius:0 10px 10px 0; padding:14px 16px; margin:12px 0;">
+      <h4 style="color:var(--magenta); font-size:0.85rem; margin-bottom:6px;">⑤ W' = m × (V'/||V'||<sub>c</sub>) — Final Weight (3×3 matrix) 🟪</h4>
+      <p style="font-size:0.74rem; color:var(--text-dim); line-height:1.6; margin-bottom:6px;">
+        <strong>What:</strong> Scale each normalized column by its magnitude. <strong>Column j:</strong> mⱼ × (V'<sub>:,j</sub> / ||col_j||)<br>
+        Example: Column 0 = 0.5916 × [0.76, −0.25, 0.60] = [0.45, −0.15, 0.36]
+      </p>
+      <div style="text-align:center;">
+        ${renderMatrix(doraW, 'dora-res')}
+      </div>
+    </div>
+
+    <!-- SUMMARY TABLE -->
+    <div style="background:var(--surface); border:2px solid var(--amber); border-radius:12px; padding:16px; margin:14px 0; overflow-x:auto;">
+      <h4 style="color:var(--amber); font-size:0.85rem; margin-bottom:10px; text-align:center;">📋 All 5 Matrices — Quick Reference</h4>
+      <table style="width:100%; border-collapse:collapse; font-size:0.7rem; font-family:'Space Grotesk',monospace;">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border);">
+            <th style="padding:6px 8px; text-align:left; color:var(--amber);">Symbol</th>
+            <th style="padding:6px 8px; text-align:center; color:var(--amber);">Shape</th>
+            <th style="padding:6px 8px; text-align:left; color:var(--amber);">What It Is</th>
+            <th style="padding:6px 8px; text-align:left; color:var(--amber);">Plain English</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:6px 8px; color:var(--amber); font-weight:700;">m</td>
+            <td style="padding:6px 8px; text-align:center;">1×3</td>
+            <td style="padding:6px 8px;">||W₀||<sub>c</sub></td>
+            <td style="padding:6px 8px; color:var(--text-dim);">"How loud is each neuron?" — volume knob per column</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:6px 8px; color:var(--magenta); font-weight:700;">V'</td>
+            <td style="padding:6px 8px; text-align:center;">3×3</td>
+            <td style="padding:6px 8px;">V + BA = W₀ + BA</td>
+            <td style="padding:6px 8px; color:var(--text-dim);">Updated direction (un-normalized, has both direction and length)</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:6px 8px; color:var(--purple); font-weight:700;">||V'||<sub>c</sub></td>
+            <td style="padding:6px 8px; text-align:center;">1×3</td>
+            <td style="padding:6px 8px;">Column L2 norms</td>
+            <td style="padding:6px 8px; color:var(--text-dim);">"How long is each column right now?" — current length</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:6px 8px; color:var(--green); font-weight:700;">V'/||V'||<sub>c</sub></td>
+            <td style="padding:6px 8px; text-align:center;">3×3</td>
+            <td style="padding:6px 8px;">Column-wise division</td>
+            <td style="padding:6px 8px; color:var(--text-dim);">Pure direction — each column is a unit vector (length = 1)</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 8px; color:var(--magenta); font-weight:700;">W'</td>
+            <td style="padding:6px 8px; text-align:center;">3×3</td>
+            <td style="padding:6px 8px;">m × (V'/||V'||<sub>c</sub>)</td>
+            <td style="padding:6px 8px; color:var(--text-dim);">Final weight — direction scaled to desired magnitude</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout magenta">
+      <strong>🎯 One-line summary:</strong> V' is just a shorthand for V+BA. <strong>V' = V + BA = W₀ + BA.</strong> The paper writes V' so it doesn't have to keep writing V+BA everywhere.<br><br>
+      <strong>The formula W' = m · V' / ||V'||<sub>c</sub></strong> is identical to <strong>W' = m · (W₀+BA) / ||W₀+BA||<sub>c</sub></strong> — just cleaner notation. Same matrices, same numbers, same result.
+    </div>
+  `;
+}
+
+// ==================== COMPARE STEPS ====================
+function renderCompareStep0() {
+  return `
+    <div class="section-divider"><span style="border-color:var(--green);color:var(--green);">Side-by-Side — What Actually Changes?</span></div>
+    <div class="explain">
+      <strong>Both start with the same W₀, same A, same B, same x.</strong> The difference is <strong>how</strong> the update is applied.
+    </div>
+    <div class="compare-grid">
+      <div style="background:var(--surface); border:2px solid var(--cyan); border-radius:12px; padding:16px;">
+        <h3 style="color:var(--cyan); margin-bottom:8px;">LoRA Update</h3>
+        <div class="formula-box" style="border-color:#00e5ff44;">
+          <span class="tok dim">W' = </span><span class="tok cyan">W₀</span><span class="tok dim"> + </span><span class="tok green">BA</span>
+        </div>
+        <div style="font-size:0.72rem; color:var(--text-dim); margin:6px 0;">1 step. BA added directly to W₀.</div>
+        ${renderMatrix(W_plus_BA, 'res')}
+      </div>
+      <div style="background:var(--surface); border:2px solid var(--magenta); border-radius:12px; padding:16px;">
+        <h3 style="color:var(--magenta); margin-bottom:8px;">DoRA Update</h3>
+        <div class="formula-box" style="border-color:#ff408144;">
+          <span class="tok dim">W' = </span><span class="tok amber">m</span><span class="tok dim"> · (</span><span class="tok purple">V</span><span class="tok dim">+</span><span class="tok green">BA</span><span class="tok dim">)/||</span><span class="tok purple">V</span><span class="tok dim">+</span><span class="tok green">BA</span><span class="tok dim">||<sub>c</sub></span>
+        </div>
+        <div style="font-size:0.72rem; color:var(--text-dim); margin:6px 0;">3 steps: BA → direction V → normalize → scale by m.</div>
+        ${renderMatrix(doraW, 'dora-res')}
+      </div>
+    </div>
+  `;
+}
+
+function renderCompareStep1() {
+  return `
+    <div class="section-divider"><span style="border-color:var(--green);color:var(--green);">Anatomy of the Gradient — Every Symbol Explained</span></div>
+
+    <!-- SYMBOL DICTIONARY -->
+    <div class="explain">
+      <strong>First, let's decode every symbol.</strong> If you can read the notation, the formulas become obvious.
+    </div>
+
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; margin:10px 0; overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:0.72rem; line-height:1.8;">
+        <tr style="border-bottom:1px solid var(--border);">
+          <th style="padding:6px 10px; text-align:left; color:var(--amber); width:80px;">Symbol</th>
+          <th style="padding:6px 10px; text-align:left; color:var(--amber); width:100px;">Pronounced</th>
+          <th style="padding:6px 10px; text-align:left; color:var(--amber);">Meaning (in plain English)</th>
+        </tr>
+        <tr><td style="padding:5px 10px; font-family:'Space Grotesk',monospace; color:var(--magenta);">∇</td><td style="padding:5px 10px; color:var(--text-dim);">"nabla" or "grad"</td><td style="padding:5px 10px;"><strong>"Which direction should I move to reduce the loss?"</strong> Think of it as a compass needle pointing downhill.</td></tr>
+        <tr><td style="padding:5px 10px; font-family:'Space Grotesk',monospace; color:var(--amber);">L</td><td style="padding:5px 10px; color:var(--text-dim);">"Loss"</td><td style="padding:5px 10px;">How wrong the model is. Lower = better.</td></tr>
+        <tr><td style="padding:5px 10px; font-family:'Space Grotesk',monospace; color:var(--green);">∇<sub>X</sub> L</td><td style="padding:5px 10px; color:var(--text-dim);">"gradient of L with respect to X"</td><td style="padding:5px 10px;"><strong>"If I nudge X a tiny bit, how does the loss change?"</strong> The answer tells you which way to update X. Think: <em>X's personal GPS</em>.</td></tr>
+        <tr><td style="padding:5px 10px; font-family:'Space Grotesk',monospace; color:var(--amber);">m</td><td style="padding:5px 10px; color:var(--text-dim);">"magnitude"</td><td style="padding:5px 10px;">A vector of k scalars — one per output neuron. <strong>"How loud is neuron j?"</strong> Each is a volume knob.</td></tr>
+        <tr><td style="padding:5px 10px; font-family:'Space Grotesk',monospace; color:var(--purple);">V'</td><td style="padding:5px 10px; color:var(--text-dim);">"V prime"</td><td style="padding:5px 10px;">The updated direction matrix = V + BA. <strong>"Which way does each neuron point?"</strong></td></tr>
+        <tr><td style="padding:5px 10px; font-family:'Space Grotesk',monospace; color:var(--purple);">||V'||<sub>c</sub></td><td style="padding:5px 10px; color:var(--text-dim);">"norm of V' column-wise"</td><td style="padding:5px 10px;">The L2 length of each column of V'. One number per column. <strong>||col_j|| = √(sum of squares)</strong></td></tr>
+        <tr><td style="padding:5px 10px; font-family:'Space Grotesk',monospace; color:var(--cyan);">I</td><td style="padding:5px 10px; color:var(--text-dim);">"Identity matrix"</td><td style="padding:5px 10px;">A matrix with 1s on the diagonal, 0s elsewhere. <strong>"Do nothing"</strong> matrix. I·x = x for any x.</td></tr>
+        <tr><td style="padding:5px 10px; font-family:'Space Grotesk',monospace; color:var(--purple);">V'V'<sup>T</sup></td><td style="padding:5px 10px; color:var(--text-dim);">"V' times V' transpose"</td><td style="padding:5px 10px;">Outer product. For a single column v: <strong>vv<sup>T</sup></strong> is the matrix that projects any vector onto v. Think: <em>"the v-direction detector"</em>.</td></tr>
+        <tr><td style="padding:5px 10px; font-family:'Space Grotesk',monospace; color:var(--magenta);">W'</td><td style="padding:5px 10px; color:var(--text-dim);">"W prime"</td><td style="padding:5px 10px;">The final weight after updates = m · V'/||V'||<sub>c</sub>. <strong>"The actual weight used in forward pass."</strong></td></tr>
+        <tr><td style="padding:5px 10px; font-family:'Space Grotesk',monospace; color:var(--amber);">·</td><td style="padding:5px 10px; color:var(--text-dim);">"dot" or "times"</td><td style="padding:5px 10px;">When between two vectors: <strong>dot product</strong> (a·b = a₁b₁ + a₂b₂ + ...). When between scalar and matrix: <strong>scalar multiplication</strong> (scale every element).</td></tr>
+      </table>
+    </div>
+
+    <!-- WHERE THE GRADIENT FORMULA COMES FROM -->
+    <div style="background:var(--surface); border:2px solid var(--amber); border-radius:12px; padding:18px; margin:14px 0;">
+      <h3 style="color:var(--amber); margin-bottom:10px;">🔗 Where Do These Gradient Formulas Come From? — The Chain Rule</h3>
+      <p style="font-size:0.78rem; color:var(--text-dim); line-height:1.7; margin-bottom:12px;">
+        Both gradient formulas are derived using the <strong>chain rule</strong> from calculus. You differentiate the forward formula <strong>W' = m · V' / ||V'||<sub>c</sub></strong> with respect to each parameter.
+      </p>
+
+      <div class="formula-box" style="border-color:#ffb30044; font-size:0.82rem; line-height:2.2;">
+        <div style="margin-bottom:4px; color:var(--text-dim);"><strong>Forward pass:</strong></div>
+        <span class="tok dim">W' = </span><span class="tok amber">m</span><span class="tok dim"> · </span><span class="tok purple">V'</span><span class="tok dim"> / ||</span><span class="tok purple">V'</span><span class="tok dim">||<sub>c</sub></span>
+      </div>
+
+      <div style="text-align:center; font-size:1.2rem; color:var(--text-dim); margin:6px 0;">↓ differentiate ↓</div>
+
+      <div class="formula-box" style="border-color:#ffb30044; font-size:0.82rem; line-height:2.4;">
+        <div style="margin-bottom:4px; color:var(--text-dim);"><strong>Differentiate W' with respect to V' (the direction):</strong></div>
+        <span class="tok dim">∂W'/∂V' = </span><span class="tok amber">m</span><span class="tok dim"> · ∂(</span><span class="tok purple">V'</span><span class="tok dim">/||</span><span class="tok purple">V'</span><span class="tok dim">||<sub>c</sub>) / ∂V'</span><br>
+        <span class="tok dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= </span><span class="tok amber">m</span><span class="tok dim"> · </span><span class="tok purple">(I − V'V'<sup>T</sup>/||V'||<sub>c</sub><sup>2</sup>)</span><span class="tok dim"> / ||V'||<sub>c</sub></span><br>
+        <span class="tok dim">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= </span><span class="tok amber">(m / ||V'||<sub>c</sub>)</span><span class="tok dim"> · </span><span class="tok purple">(I − V'V'<sup>T</sup>/||V'||<sub>c</sub><sup>2</sup>)</span>
+      </div>
+
+      <div class="formula-box" style="border-color:#ffb30044; font-size:0.82rem; line-height:2.2; margin-top:10px;">
+        <div style="margin-bottom:4px; color:var(--text-dim);"><strong>Differentiate W' with respect to m (the magnitude):</strong></div>
+        <span class="tok dim">∂W'/∂m = </span><span class="tok purple">V'</span><span class="tok dim"> / ||</span><span class="tok purple">V'</span><span class="tok dim">||<sub>c</sub></span>
+      </div>
+
+      <div style="margin-top:12px; font-size:0.78rem; line-height:1.8; color:var(--text);">
+        <strong>Then multiply by ∇<sub>W'</sub>L via the chain rule</strong> to get the actual parameter gradients:<br><br>
+
+        <strong>For V':</strong> &nbsp; ∇<sub>V'</sub>L = (∂W'/∂V') · ∇<sub>W'</sub>L &nbsp;= <span style="color:var(--magenta);">(m/||V'||<sub>c</sub>) · (I − V'V'<sup>T</sup>/||V'||<sup>2</sup>) · ∇<sub>W'</sub>L</span><br>
+        <strong>For m:</strong> &nbsp; ∇<sub>m</sub>L = (∂W'/∂m) · ∇<sub>W'</sub>L &nbsp;= <span style="color:var(--amber);">(∇<sub>W'</sub>L · V') / ||V'||<sub>c</sub></span>
+      </div>
+
+      <div class="callout amber" style="margin-top:12px;">
+        <strong>💡 Key takeaway:</strong> The <span style="color:var(--amber);">m</span> that <strong>multiplied</strong> in the forward pass becomes <span style="color:var(--amber);">m / ||V'||<sub>c</sub></span> (a <strong>division</strong> by the norm) in the gradient. That's just how the derivative of V'/||V'|| works — same reason the derivative of x/√(x²) gives you a division by the norm.<br><br>
+        The projection <strong>(I − V'V'<sup>T</sup>/||V'||²)</strong> is not an extra trick. It's the mathematically exact derivative of keeping a vector normalized. The chain rule turns "divide by norm" (forward) into "project away from V' and divide by norm" (backward).
+      </div>
+    </div>
+
+    <!-- FORMULA 1: LORA -->
+    <div style="background:var(--surface); border:2px solid var(--cyan); border-radius:12px; padding:18px; margin:14px 0;">
+      <h3 style="color:var(--cyan); margin-bottom:8px;">Formula ① — LoRA Gradient (the baseline)</h3>
+
+      <!-- WHAT IS L? -->
+      <div class="callout cyan" style="margin-bottom:10px;">
+        <strong>🅻 First: What is "L"?</strong><br><br>
+        <strong>L = Loss</strong> — a single number that answers: <em>"How wrong is the model right now?"</em><br><br>
+        <strong>Example:</strong> You show the model a bird photo. It predicts: Bird 30%, Car 60%, Dog 10%. The correct answer is Bird 100%. The Loss L might be ~1.2 (cross-entropy). If it had predicted Bird 95%, L would be ~0.05. <strong>Lower L = better model.</strong><br><br>
+        <strong>∇<sub>something</sub> L</strong> = <em>"If I nudge 'something' by a tiny amount, does L go up or down? And by how much?"</em> The answer tells you which direction to adjust that parameter to make the model less wrong. Think of it as each parameter's personal GPS pointing toward lower loss.
+      </div>
+
+      <div class="formula-box border-cyan" style="font-size:1rem;">
+        <span class="tok dim">∇</span><span class="tok green">BA</span><span class="tok dim"> L = ∇</span><span class="tok cyan">W'</span><span class="tok dim"> L</span>
+      </div>
+      <div style="font-size:0.78rem; line-height:1.8; color:var(--text); margin-top:8px;">
+        <strong>Reading it aloud:</strong> <em>"The gradient for BA equals the gradient for W', unchanged."</em><br><br>
+        <strong>Why?</strong> Because W' = W₀ + BA. When you nudge BA by some amount Δ, W' changes by exactly Δ. There's nothing in between — no normalization, no scaling. The gradient flows straight through.<br><br>
+        <strong>Consequence:</strong> Whatever the loss wants W' to do (change direction AND magnitude together), BA must do directly. BA can't say "I'll just change direction and let magnitude handle itself." This <strong>coupling</strong> is the +0.83 correlation we saw earlier.
+      </div>
+    </div>
+
+    <!-- FORMULA 2: DORA DIRECTION -->
+    <div style="background:var(--surface); border:2px solid var(--magenta); border-radius:12px; padding:18px; margin:14px 0;">
+      <h3 style="color:var(--magenta); margin-bottom:8px;">Formula ② — DoRA Direction Gradient (the clever one)</h3>
+      <div class="formula-box border-magenta" style="font-size:0.85rem; line-height:2.4;">
+        <span class="tok dim">∇</span><span class="tok purple">V'</span><span class="tok dim"> L = </span>
+        <span class="tok amber">(m / ||V'||<sub>c</sub>)</span>
+        <span class="tok dim"> · </span>
+        <span class="tok purple">(I − V'V'<sup>T</sup> / ||V'||<sub>c</sub><sup>2</sup>)</span>
+        <span class="tok dim"> · </span>
+        <span class="tok magenta">∇<sub>W'</sub> L</span>
+      </div>
+
+      <div style="font-size:0.78rem; line-height:1.8; color:var(--text); margin-top:8px;">
+        <strong>Read it RIGHT TO LEFT</strong> (that's the order things happen to the gradient):
+      </div>
+
+      <!-- Step by step breakdown -->
+      <div style="display:grid; gap:8px; margin-top:8px;">
+
+        <div style="background:var(--deep); border-left:3px solid var(--magenta); border-radius:0 8px 8px 0; padding:12px 14px;">
+          <div style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em;">Step 1 — Start Here</div>
+          <div style="font-family:'Space Grotesk',monospace; font-size:0.8rem; color:var(--magenta); margin:4px 0;">∇<sub>W'</sub> L</div>
+          <div style="font-size:0.74rem; color:var(--text-dim);">
+            <strong>What it is:</strong> The raw gradient from the loss. "If I could change the final weight W' freely, which way would reduce the loss?"<br>
+            <strong>Analogy:</strong> Your GPS saying <em>"your destination is 3 miles northeast."</em> Useful info, but the GPS doesn't know you can only steer (rotate), not teleport.
+          </div>
+        </div>
+
+        <div style="text-align:center; font-size:1.2rem; color:var(--text-dim);">↓</div>
+
+        <div style="background:var(--deep); border-left:3px solid var(--purple); border-radius:0 8px 8px 0; padding:12px 14px;">
+          <div style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em;">Step 2 — PROJECT (the steering wheel)</div>
+          <div style="font-family:'Space Grotesk',monospace; font-size:0.8rem; color:var(--purple); margin:4px 0;">(I − V'V'<sup>T</sup> / ||V'||<sub>c</sub><sup>2</sup>) · ∇<sub>W'</sub> L</div>
+          <div style="font-size:0.74rem; color:var(--text-dim);">
+            <strong>What it does:</strong> Takes the raw gradient and <strong>removes any component parallel to V'</strong>. What's left is purely perpendicular — it can only <strong>rotate</strong> the direction, never stretch it.<br>
+            <strong>For a single column vector v:</strong> (I − vv<sup>T</sup>/||v||²)g = g − (v·g/||v||²)·v. That is: <em>"Take gradient g, subtract the part pointing along v."</em> The remainder is tangent to the unit sphere.<br>
+            <strong>Analogy:</strong> A <strong>steering wheel</strong>. Turning it changes WHERE you point, not how FAST you go. If the GPS says "go northeast" but you're already pointing north, the steering wheel extracts only the "turn right" part and ignores the "keep going north" part.
+          </div>
+        </div>
+
+        <!-- WHERE THIS COMES FROM -->
+        <div style="background:var(--amber-bg); border:1px dashed var(--amber); border-radius:8px; padding:10px 14px; margin-top:4px;">
+          <div style="font-size:0.68rem; color:var(--amber);">
+            <strong>🔗 Where does this come from?</strong> It's the <strong>partial derivative</strong> of the normalization step:<br><br>
+            <span style="font-family:'Space Grotesk',monospace; font-size:0.75rem;">
+              Forward: W' = m · <span style="border-bottom:2px solid var(--purple);">V' / ||V'||<sub>c</sub></span><br>
+              ∂/∂V' of the underlined part = <span style="color:var(--purple);">(I − V'V'<sup>T</sup>/||V'||<sub>c</sub><sup>2</sup>) / ||V'||<sub>c</sub></span>
+            </span><br><br>
+            <strong>In plain English:</strong> The normalization V'/||V'|| in the forward pass becomes the projection (I − V'V'<sup>T</sup>/||V'||²) in the backward pass. The chain rule turns "divide by norm" into "project away from V' and divide by norm." The projection is <strong>not an extra trick</strong> — it's the mathematically exact derivative of keeping a vector normalized.
+          </div>
+        </div>
+
+        <div style="text-align:center; font-size:1.2rem; color:var(--text-dim);">↓</div>
+
+        <div style="background:var(--deep); border-left:3px solid var(--amber); border-radius:0 8px 8px 0; padding:12px 14px;">
+          <div style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em;">Step 3 — SCALE (the volume knob)</div>
+          <div style="font-family:'Space Grotesk',monospace; font-size:0.8rem; color:var(--amber); margin:4px 0;">(m / ||V'||<sub>c</sub>) · [result from step 2]</div>
+          <div style="font-size:0.74rem; color:var(--text-dim);">
+            <strong>What it does:</strong> Multiplies the projected gradient by the ratio of the <strong>learned magnitude m</strong> to the <strong>current norm ||V'||</strong>.<br>
+            <strong>Why:</strong> If m (your target volume) is bigger than ||V'|| (your current volume), the gradient gets amplified → <em>"turn up!"</em> If they're already close, the gradient shrinks → <em>"volume is fine, no big changes needed."</em><br>
+            <strong>Analogy:</strong> A <strong>gain knob</strong> that auto-adjusts. The further you are from the target volume, the harder it turns.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- FORMULA 3: DORA MAGNITUDE -->
+    <div style="background:var(--surface); border:2px solid var(--amber); border-radius:12px; padding:18px; margin:14px 0;">
+      <h3 style="color:var(--amber); margin-bottom:8px;">Formula ③ — DoRA Magnitude Gradient (the other half)</h3>
+      <div class="formula-box" style="border-color:#ffb30044; font-size:1rem;">
+        <span class="tok dim">∇</span><span class="tok amber">m</span><span class="tok dim"> L = (∇</span><span class="tok magenta">W'</span><span class="tok dim"> L · </span><span class="tok purple">V'</span><span class="tok dim">) / ||</span><span class="tok purple">V'</span><span class="tok dim">||<sub>c</sub></span>
+      </div>
+      <div style="font-size:0.78rem; line-height:1.8; color:var(--text); margin-top:8px;">
+        <strong>Reading it aloud:</strong> <em>"The gradient for magnitude m is: take the raw gradient ∇W' L, dot it with V', divide by the norm of V'."</em><br><br>
+        <strong>What ∇W' L · V' means:</strong> The dot product measures <strong>how much of the gradient is pointing along V'</strong>. If the gradient says "go the same way V' is already pointing," the dot product is large. If the gradient says "go perpendicular to V'," the dot product is zero.<br><br>
+        <strong>Dividing by ||V'||<sub>c</sub>:</strong> Normalizes by the current length so the gradient isn't artificially large for long vectors.
+      </div>
+
+      <div class="callout amber" style="margin-top:10px;">
+        <strong>🔑 The Beautiful Symmetry:</strong> The raw gradient ∇W' L gets <strong>split into two orthogonal pieces</strong>:<br><br>
+        &nbsp;&nbsp;🟣 <strong>Perpendicular part</strong> → goes to <strong>V'</strong> (direction) → "turn the steering wheel"<br>
+        &nbsp;&nbsp;🔶 <strong>Parallel part</strong> → goes to <strong>m</strong> (magnitude) → "adjust the volume"<br><br>
+        <strong>LoRA gives BOTH pieces to BA.</strong> DoRA splits them — direction gets one, magnitude gets the other. That's the entire trick. From one gradient, DoRA creates two independent learning signals. The cost is just k extra scalars (m).
+      </div>
+    </div>
+
+    <!-- THE CHAIN -->
+    <div style="background:var(--surface); border:2px solid var(--green); border-radius:12px; padding:18px; margin:14px 0;">
+      <h3 style="color:var(--green); margin-bottom:10px;">🔗 The Chain: All Three Formulas Target the Same L</h3>
+      <div style="font-family:'Space Grotesk',monospace; font-size:0.82rem; line-height:2.8; text-align:center;">
+        <span style="color:var(--cyan);">∇<sub>BA</sub> L</span>
+        <span style="color:var(--text-dim);"> = </span>
+        <span style="color:var(--cyan);">∇<sub>W'</sub> L</span>
+        <span style="color:var(--text-dim); font-size:0.65rem; margin:0 8px;">← LoRA: "change BA to reduce L"</span>
+        <br>
+        <span style="color:var(--magenta);">∇<sub>V'</sub> L</span>
+        <span style="color:var(--text-dim);"> = </span>
+        <span style="color:var(--amber);">(scale)</span>
+        <span style="color:var(--text-dim);"> × </span>
+        <span style="color:var(--purple);">(project)</span>
+        <span style="color:var(--text-dim);"> × </span>
+        <span style="color:var(--cyan);">∇<sub>W'</sub> L</span>
+        <span style="color:var(--text-dim); font-size:0.65rem; margin:0 8px;">← DoRA direction: "change V' to reduce L"</span>
+        <br>
+        <span style="color:var(--amber);">∇<sub>m</sub> L</span>
+        <span style="color:var(--text-dim);"> = (</span>
+        <span style="color:var(--cyan);">∇<sub>W'</sub> L</span>
+        <span style="color:var(--text-dim);"> · </span>
+        <span style="color:var(--purple);">V'</span>
+        <span style="color:var(--text-dim);">) / ||</span>
+        <span style="color:var(--purple);">V'</span>
+        <span style="color:var(--text-dim);">||<sub>c</sub></span>
+        <span style="color:var(--text-dim); font-size:0.65rem; margin:0 8px;">← DoRA magnitude: "change m to reduce L"</span>
+      </div>
+      <div style="margin-top:12px; font-size:0.8rem; line-height:1.8; color:var(--text); text-align:center;">
+        All three ask the same question: <strong>"How do I change THIS parameter to reduce the loss L?"</strong><br>
+        LoRA's path is <strong>direct</strong> (straight through). DoRA's path <strong>splits the signal into two</strong> — direction gets the turn, magnitude gets the volume.<br>
+        Same destination (lower L). Different routing.
+      </div>
+    </div>
+
+    <!-- ONE-LINER SUMMARY -->
+    <div class="key-insight">
+      <div class="big">🧒 The 10-Second Version</div>
+      <div style="margin-top:6px; font-size:0.85rem; line-height:2.0;">
+        <strong>LoRA:</strong> <span style="color:var(--cyan);">∇BA L = ∇W' L</span> — "here's the gradient, good luck"<br>
+        <strong>DoRA direction:</strong> <span style="color:var(--magenta);">∇V' L = scale × project × ∇W' L</span> — "strip out the volume-change part, keep only the turn"<br>
+        <strong>DoRA magnitude:</strong> <span style="color:var(--amber);">∇m L = (∇W' L · V') / ||V'||</span> — "the volume-change part we stripped — give it to m"<br><br>
+        <strong>The one sentence:</strong> <em>DoRA splits the gradient into "which way" (direction) and "how loud" (magnitude) and learns them separately. LoRA learns both together and can't tell them apart.</em>
+      </div>
+    </div>
+  `;
+}
+
+function renderCompareStep2() {
+  return `
+    <div class="section-divider"><span style="border-color:var(--green);color:var(--green);">Gradient Intuition — Interactive Visual Breakdown</span></div>
+
+    <div class="formula-box border-green" style="font-size:0.78rem; line-height:2.0; margin-bottom:10px;">
+      <span style="font-size:0.9rem;">∇</span><span class="tok purple">V'</span><span style="font-size:0.9rem;"> L = </span>
+      <span class="tok amber">(m / ||V'||<sub>c</sub>)</span>
+      <span style="font-size:0.9rem;"> · </span>
+      <span class="tok purple">(I − V'V'<sup>T</sup> / ||V'||<sub>c</sub><sup>2</sup>)</span>
+      <span style="font-size:0.9rem;"> · </span>
+      <span class="tok magenta">∇<sub>W'</sub> L</span>
+      <br>
+      <span style="font-size:0.6rem; color:var(--text-dim);">
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔶 VOLUME KNOB &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        🟣 STEERING WHEEL &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        🟪 RAW GRADIENT
+      </span>
+    </div>
+
+    <!-- CANVAS VISUALIZATION -->
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; margin:10px 0;">
+      <h4 style="color:var(--green); margin-bottom:4px; font-family:'Space Grotesk',sans-serif;">🔍 See the Projection — Drag the Gradient</h4>
+      <p style="font-size:0.7rem; color:var(--text-dim); margin-bottom:10px;">
+        Each column of V' is a vector. The projection (I − vv<sup>T</sup>/||v||²) <strong>removes any component parallel to v</strong> — it only lets you ROTATE, never stretch.<br>
+        <strong>Move the sliders</strong> to change the raw gradient g and see how the projection always stays perpendicular to v.
+      </p>
+
+      <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-start;">
+        <div style="flex:1; min-width:300px;">
+          <div class="canvas-wrap" style="margin:0;">
+            <canvas id="gradProjCanvas" width="500" height="380"></canvas>
+          </div>
+        </div>
+        <div style="flex:0; min-width:180px;">
+          <div style="background:var(--deep); border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:8px;">
+            <div style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px;">Current Vector v</div>
+            <div style="font-family:'Space Grotesk',monospace; font-size:0.8rem;">v = [<span style="color:var(--blue);" id="gvValX">3.0</span>, <span style="color:var(--blue);" id="gvValY">1.0</span>]</div>
+            <div style="font-family:'Space Grotesk',monospace; font-size:0.7rem; color:var(--text-dim);">||v|| = <span id="gvNorm">3.162</span></div>
+          </div>
+
+          <div style="background:var(--deep); border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:8px;">
+            <div style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px;">Raw Gradient g = ∇<sub>W'</sub>L</div>
+            <div style="margin:6px 0;">
+              <div style="display:flex; align-items:center; gap:6px; font-size:0.7rem;">
+                <span style="color:var(--text-dim); min-width:20px;">g<sub>x</sub></span>
+                <input type="range" id="gradSliderX" min="-40" max="40" value="10" step="1" oninput="drawGradProjection()" style="flex:1; accent-color:#ff5252;">
+                <span style="font-family:'Space Grotesk',monospace; min-width:32px; text-align:right; color:var(--red);" id="gradValX">1.0</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px; font-size:0.7rem;">
+                <span style="color:var(--text-dim); min-width:20px;">g<sub>y</sub></span>
+                <input type="range" id="gradSliderY" min="-40" max="40" value="20" step="1" oninput="drawGradProjection()" style="flex:1; accent-color:#ff5252;">
+                <span style="font-family:'Space Grotesk',monospace; min-width:32px; text-align:right; color:var(--red);" id="gradValY">2.0</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:var(--deep); border:1px solid var(--border); border-radius:8px; padding:12px;">
+            <div style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px;">Live Computation</div>
+            <div style="font-family:'Space Grotesk',monospace; font-size:0.65rem; line-height:1.8; color:var(--text-dim);">
+              v·g = <span id="gvDot" style="color:var(--amber);">5.00</span><br>
+              (v·g/||v||²)·v = <span id="gvParallel" style="color:var(--red);">[1.50, 0.50]</span><br>
+              g<sub>⟂</sub> = g − ∥ = <span id="gvPerp" style="color:var(--green);">[−0.50, 1.50]</span><br>
+              <span style="color:var(--green);">✓ ⟂ v: dot = <span id="gvDotCheck">0.00</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:8px; font-size:0.65rem;">
+        <span>🟦 <strong style="color:var(--blue);">v</strong> = current direction</span>
+        <span>🟥 <strong style="color:var(--red);">g</strong> = raw gradient (∇L)</span>
+        <span style="color:var(--red);">- - -</span> <span>parallel part (REMOVED)</span>
+        <span>🟩 <strong style="color:var(--green);">g<sub>⟂</sub></strong> = projected gradient (USED)</span>
+        <span style="color:var(--amber);">○</span> <span>unit circle</span>
+      </div>
+    </div>
+
+    <!-- What this means -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px;">
+        <h4 style="color:var(--amber); font-size:0.8rem; margin-bottom:6px;">🔶 The Volume Knob (m/||V'||)</h4>
+        <p style="font-size:0.72rem; line-height:1.6; color:var(--text-dim);">
+          After projection, the remaining perpendicular gradient is <strong>scaled</strong> by m/||V'||.<br><br>
+          <strong>Analogy:</strong> A <strong>gain knob</strong> on an amplifier. If the learned magnitude m says "be loud" but the current norm ||V'|| is quiet, the knob turns <strong>up</strong> (big gradient). If it's already loud enough, the knob turns <strong>down</strong>.<br><br>
+          <strong>Why it matters:</strong> This lets the magnitude m and direction V' <strong>negotiate</strong> — m pulls V' toward its target volume without fighting the direction.
+        </p>
+      </div>
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px;">
+        <h4 style="color:var(--purple); font-size:0.8rem; margin-bottom:6px;">🟣 The Steering Wheel (I − vv<sup>T</sup>/||v||²)</h4>
+        <p style="font-size:0.72rem; line-height:1.6; color:var(--text-dim);">
+          This matrix <strong>projects</strong> any gradient onto the space <strong>perpendicular to v</strong>. Try the sliders — no matter what g you pick, the green arrow (what's actually used) is always ⟂ to v.<br><br>
+          <strong>Analogy:</strong> A <strong>laser pointer taped to a sphere</strong>. You can only slide the dot along the surface — any "push into the sphere" is rejected. This ensures the direction update is a <strong>pure rotation</strong>, never a stretch.<br><br>
+          <strong>Why it matters:</strong> Without this, the gradient would change both direction AND length, coupling them like LoRA does. The projection <strong>decouples</strong> them.
+        </p>
+      </div>
+    </div>
+
+    <div class="callout green" style="margin-top:10px;">
+      <strong>🧠 The Big Picture:</strong> The full formula reads right-to-left:<br>
+      &nbsp;&nbsp;1. Take the <strong style="color:var(--magenta);">raw gradient ∇L</strong> (what LoRA uses directly)<br>
+      &nbsp;&nbsp;2. <strong style="color:var(--purple);">Project it</strong> — strip out any "change the length" component, keep only "change the direction"<br>
+      &nbsp;&nbsp;3. <strong style="color:var(--amber);">Scale it</strong> — adjust based on how far the current magnitude is from the target<br><br>
+      <strong>LoRA skips steps 2 and 3</strong> — its gradient flows directly through BA, coupling magnitude and direction. DoRA's extra two operations cost almost nothing (just k extra scalars for m) but unlock independent control.
+    </div>
+  `;
+}
+
+function renderCompareStep3() {
+  return `
+    <div class="section-divider"><span style="border-color:var(--green);color:var(--green);">The Proof: Magnitude-Direction Correlation</span></div>
+    <div class="explain">
+      The paper's <strong>experimental proof</strong> that this decomposition matters. They measured how magnitude changes (ΔM) and direction changes (ΔD) correlate across training steps.
+    </div>
+
+    <div class="compare-grid">
+      <div style="background:var(--surface); border:2px solid var(--red); border-radius:12px; padding:16px; text-align:center;">
+        <h4 style="color:var(--red); margin-bottom:6px;">LoRA</h4>
+        <div style="font-size:2rem; font-weight:700; color:var(--red);">+0.83</div>
+        <div style="font-size:0.72rem; color:var(--text-dim);">Positive correlation</div>
+        <div style="font-size:0.7rem; margin-top:6px; line-height:1.5;">
+          Magnitude ↑ when Direction ↑<br>
+          <strong>Coupled.</strong> Can't change one without the other.<br>
+          Like a car where the <strong>steering wheel is welded to the gas pedal</strong>.
+        </div>
+      </div>
+      <div style="background:var(--surface); border:2px solid var(--magenta); border-radius:12px; padding:16px; text-align:center;">
+        <h4 style="color:var(--magenta); margin-bottom:6px;">DoRA</h4>
+        <div style="font-size:2rem; font-weight:700; color:var(--magenta);">−0.31</div>
+        <div style="font-size:0.72rem; color:var(--text-dim);">Negative correlation</div>
+        <div style="font-size:0.7rem; margin-top:6px; line-height:1.5;">
+          Magnitude ↓ when Direction ↑<br>
+          <strong>Decoupled.</strong> They trade off.<br>
+          Like a car with <strong>independent steering and gas</strong> — you can turn while coasting, or accelerate straight.
+        </div>
+      </div>
+      <div style="background:var(--surface); border:2px solid var(--green); border-radius:12px; padding:16px; text-align:center;">
+        <h4 style="color:var(--green); margin-bottom:6px;">Full Fine-Tuning</h4>
+        <div style="font-size:2rem; font-weight:700; color:var(--green);">−0.62</div>
+        <div style="font-size:0.72rem; color:var(--text-dim);">Strong negative correlation</div>
+        <div style="font-size:0.7rem; margin-top:6px; line-height:1.5;">
+          <strong>The ideal.</strong> DoRA gets much closer to this than LoRA does. This is why DoRA matches full FT's performance.
+        </div>
+      </div>
+    </div>
+
+    <div class="key-insight" style="margin-top:12px;">
+      <div class="big">🎯 The One-Sentence Intuition</div>
+      <div style="margin-top:6px; font-size:0.85rem;">
+        <strong>LoRA:</strong> "Here's a low-rank update BA — add it to the weight."<br>
+        <strong>DoRA:</strong> "Here's a low-rank update BA — but only for the <strong>direction</strong>. The <strong>volume knob</strong> m is separate."
+      </div>
+    </div>
+  `;
+}
+
+function renderCompareStep4() {
+  return `
+    <div class="section-divider"><span style="border-color:var(--green);color:var(--green);">Memory Trick — How to Remember the Formulas Forever</span></div>
+
+    <div class="key-insight">
+      <div class="big">🧩 W' = m · (V + BA) / ||V + BA||<sub>c</sub></div>
+      <div style="margin-top:8px; font-size:0.8rem; line-height:1.8;">
+        <strong>Read it as a recipe:</strong><br>
+        &nbsp;&nbsp;1. <strong style="color:var(--green);">(V + BA)</strong> — "Update the direction V with LoRA's low-rank Δ"<br>
+        &nbsp;&nbsp;2. <strong style="color:var(--purple);">÷ ||·||<sub>c</sub></strong> — "Normalize each column to unit length (pure direction)"<br>
+        &nbsp;&nbsp;3. <strong style="color:var(--amber);">× m</strong> — "Scale back by the learned magnitude"<br><br>
+        <strong>Mnemonic:</strong> <em>"Update direction, normalize, then set the volume."</em><br>
+        Or: <em>"LoRA gives you a direction; m decides how loud."</em>
+      </div>
+    </div>
+
+    <div class="key-insight">
+      <div class="big">🧩 ∇<sub>V'</sub>L = (m/||V'||) · (I − V'V'<sup>T</sup>/||V'||²) · ∇<sub>W'</sub>L</div>
+      <div style="margin-top:8px; font-size:0.8rem; line-height:1.8;">
+        <strong>Read it as a pipeline:</strong><br>
+        &nbsp;&nbsp;1. <strong style="color:var(--cyan);">∇<sub>W'</sub>L</strong> — "Get the regular gradient (what LoRA uses)"<br>
+        &nbsp;&nbsp;2. <strong style="color:var(--purple);">(I − V'V'<sup>T</sup>/||V'||²)</strong> — "Project it: remove any component along V' (keep it a unit vector)"<br>
+        &nbsp;&nbsp;3. <strong style="color:var(--amber);">× m/||V'||</strong> — "Scale it: how big should the adjustment be?"<br><br>
+        <strong>Mnemonic:</strong> <em>"Gradient → Project → Scale."</em><br>
+        Or: <em>"Take the LoRA gradient, strip out the length-change part, then adjust volume."</em>
+      </div>
+    </div>
+
+    <div class="callout green" style="margin-top:10px;">
+      <strong>🎓 Beginner's Summary:</strong> LoRA is like adjusting a TV picture by tweaking a single knob that changes both brightness AND contrast together. DoRA is like having <strong>two separate knobs</strong> — one for brightness (magnitude m) and one for contrast (direction via BA). Both use the same LoRA mechanism for the direction knob. The extra cost is just k scalars (the magnitude vector) — negligible at any scale.
+    </div>
+  `;
+}
+
+// ==================== MAIN RENDER ====================
+function render() {
+  setupStepBar();
+  const mc = document.getElementById('mainContent');
+
+  if (mode === 'lora') {
+    const fns = [renderLoRaStep0, renderLoRaStep1, renderLoRaStep2, renderLoRaStep3];
+    mc.innerHTML = fns[step]();
+  } else if (mode === 'dora') {
+    const fns = [renderDoRaStep0, renderDoRaStep1, renderDoRaStep2, renderDoRaStep3, renderDoRaStep4, renderDoRaStep5, renderDoRaStep6, renderDoRaStep7];
+    mc.innerHTML = fns[step]();
+  } else {
+    const fns = [renderCompareStep0, renderCompareStep1, renderCompareStep2, renderCompareStep3, renderCompareStep4];
+    mc.innerHTML = fns[step]();
+  }
+
+  // Scroll to top of main content
+  mc.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Redraw gradient projection canvas if on Compare Step 2
+  if (mode === 'compare' && step === 2) {
+    setTimeout(drawGradProjection, 150);
+  }
+}
+
+// ==================== NAVIGATION ====================
+function switchMode(m) {
+  mode = m;
+  step = 0;
+  document.getElementById('btnLora').className = 'mode-btn' + (m === 'lora' ? ' active-lora' : '');
+  document.getElementById('btnDora').className = 'mode-btn' + (m === 'dora' ? ' active-dora' : '');
+  document.getElementById('btnCompare').className = 'mode-btn' + (m === 'compare' ? ' active-compare' : '');
+  stopAuto();
+  render();
+}
+
+function nextStep() {
+  const maxSteps = mode === 'lora' ? 4 : (mode === 'dora' ? 8 : 5);
+  if (step < maxSteps - 1) { step++; render(); }
+}
+
+function prevStep() {
+  if (step > 0) { step--; render(); }
+}
+
+function goTo(s) {
+  step = s;
+  stopAuto();
+  render();
+}
+
+function toggleAuto() {
+  if (autoTimer) { stopAuto(); return; }
+  document.getElementById('btnAuto').textContent = '⏸ Auto';
+  document.getElementById('btnAuto').classList.add('auto-on');
+  autoTimer = setInterval(() => {
+    const maxSteps = mode === 'lora' ? 4 : (mode === 'dora' ? 8 : 5);
+    step = (step + 1) % maxSteps;
+    render();
+  }, 3500);
+}
+
+function stopAuto() {
+  if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+  document.getElementById('btnAuto').textContent = '▶ Auto';
+  document.getElementById('btnAuto').classList.remove('auto-on');
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight') nextStep();
+  else if (e.key === 'ArrowLeft') prevStep();
+  else if (e.key === '1') switchMode('lora');
+  else if (e.key === '2') switchMode('dora');
+  else if (e.key === '3') switchMode('compare');
+});
+
+// Theme toggle
+function toggleTheme() {
+  document.body.classList.toggle('light');
+}
+
+// ==================== GRADIENT PROJECTION CANVAS ====================
+function drawGradProjection() {
+  const canvas = document.getElementById('gradProjCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Read slider values (raw value / 10 = gradient component)
+  const gxRaw = parseInt(document.getElementById('gradSliderX')?.value || 10);
+  const gyRaw = parseInt(document.getElementById('gradSliderY')?.value || 20);
+  const gx = gxRaw / 10; // 1.0
+  const gy = gyRaw / 10; // 2.0
+
+  // Update slider labels
+  const gxEl = document.getElementById('gradValX');
+  const gyEl = document.getElementById('gradValY');
+  if (gxEl) gxEl.textContent = gx.toFixed(1);
+  if (gyEl) gyEl.textContent = gy.toFixed(1);
+
+  // Fixed vector v (the current direction column)
+  const vx = 3.0, vy = 1.0;
+  const vNorm = Math.sqrt(vx*vx + vy*vy); // ≈ 3.162
+
+  // Compute projection
+  const vDotG = vx*gx + vy*gy;
+  const scale = vDotG / (vNorm * vNorm);
+  const parX = scale * vx; // parallel component
+  const parY = scale * vy;
+  const perpX = gx - parX; // perpendicular component
+  const perpY = gy - parY;
+  const dotCheck = vx*perpX + vy*perpY; // should be ≈0
+
+  // Update live computation labels
+  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setVal('gvDot', vDotG.toFixed(2));
+  setVal('gvParallel', '[' + parX.toFixed(2) + ', ' + parY.toFixed(2) + ']');
+  setVal('gvPerp', '[' + perpX.toFixed(2) + ', ' + perpY.toFixed(2) + ']');
+  setVal('gvDotCheck', dotCheck.toFixed(2));
+
+  // Canvas coordinate system: center at (cx, cy), scale 50px per unit
+  const cx = W * 0.55, cy = H * 0.52;
+  const pxPerUnit = 45;
+
+  function toScreen(ux, uy) {
+    return { x: cx + ux * pxPerUnit, y: cy - uy * pxPerUnit };
+  }
+
+  // Draw grid
+  ctx.strokeStyle = '#ffffff06';
+  ctx.lineWidth = 0.5;
+  for (let u = -6; u <= 6; u++) {
+    const { x } = toScreen(u, 0);
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+    const { y } = toScreen(0, u);
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  // Draw axes
+  ctx.strokeStyle = '#ffffff18';
+  ctx.lineWidth = 1;
+  const origin = toScreen(0, 0);
+  ctx.beginPath(); ctx.moveTo(origin.x, 0); ctx.lineTo(origin.x, H); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, origin.y); ctx.lineTo(W, origin.y); ctx.stroke();
+
+  // Draw unit circle
+  ctx.strokeStyle = '#ffb30033';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.arc(cx, cy, pxPerUnit, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  // Label
+  ctx.fillStyle = '#ffb30055';
+  ctx.font = '9px monospace';
+  ctx.fillText('unit circle', cx + pxPerUnit + 5, cy + 4);
+
+  // Draw v-circle (circle at radius ||v||)
+  ctx.strokeStyle = '#448aff22';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 6]);
+  ctx.beginPath();
+  ctx.arc(cx, cy, vNorm * pxPerUnit, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  function drawArrow(fromX, fromY, toX, toY, color, width, dashed, label, labelOffset) {
+    const f = toScreen(fromX, fromY);
+    const t = toScreen(toX, toY);
+    const dx = t.x - f.x, dy = t.y - f.y;
+    const len = Math.sqrt(dx*dx + dy*dy);
+    if (len < 1) return;
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    if (dashed) ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    ctx.moveTo(f.x, f.y);
+    ctx.lineTo(t.x, t.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Arrowhead
+    const nx = dx / len, ny = dy / len;
+    const headLen = 10;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(t.x, t.y);
+    ctx.lineTo(t.x - headLen*nx + headLen*0.4*ny, t.y - headLen*ny - headLen*0.4*nx);
+    ctx.lineTo(t.x - headLen*nx - headLen*0.4*ny, t.y - headLen*ny + headLen*0.4*nx);
+    ctx.fill();
+
+    // Label
+    if (label) {
+      ctx.fillStyle = color;
+      ctx.font = 'bold 12px monospace';
+      const lo = labelOffset || 10;
+      ctx.fillText(label, t.x + lo*nx - lo*ny*0.5, t.y + lo*ny + lo*nx*0.5);
+    }
+  }
+
+  // Draw v (current direction) — blue
+  drawArrow(0, 0, vx, vy, '#448aff', 3, false, 'v', 12);
+
+  // Draw dashed projection of g onto v (parallel component) — dashed red
+  if (Math.abs(parX) > 0.01 || Math.abs(parY) > 0.01) {
+    drawArrow(0, 0, parX, parY, '#ff525288', 2, true, '', 0);
+  }
+
+  // Draw perpendicular component — green (this is what actually updates V')
+  if (Math.abs(perpX) > 0.01 || Math.abs(perpY) > 0.01) {
+    // Draw from tip of parallel to tip of g
+    drawArrow(parX, parY, gx, gy, '#69f0ae', 3, false, 'g⊥', 14);
+  }
+
+  // Draw g LAST (on top) — red
+  drawArrow(0, 0, gx, gy, '#ff5252', 2.5, false, 'g', 14);
+
+  // Draw dotted line from g tip to v-line (visual projection)
+  const gTip = toScreen(gx, gy);
+  const parTip = toScreen(parX, parY);
+  ctx.strokeStyle = '#ffffff22';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([2, 4]);
+  ctx.beginPath();
+  ctx.moveTo(gTip.x, gTip.y);
+  ctx.lineTo(parTip.x, parTip.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Right angle marker at projection point
+  const p = toScreen(parX, parY);
+  const rightAngleSize = 8;
+  const vux = vx / vNorm, vuy = vy / vNorm;
+  const perpux = perpX / Math.sqrt(perpX*perpX + perpY*perpY);
+  const perpuy = perpY / Math.sqrt(perpX*perpX + perpY*perpY);
+  if (Math.abs(perpX) > 0.01 || Math.abs(perpY) > 0.01) {
+    ctx.strokeStyle = '#69f0ae55';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(p.x - rightAngleSize*vux, p.y + rightAngleSize*vuy);
+    ctx.lineTo(p.x - rightAngleSize*vux + rightAngleSize*perpux, p.y + rightAngleSize*vuy + rightAngleSize*perpuy);
+    ctx.lineTo(p.x + rightAngleSize*perpux, p.y + rightAngleSize*perpuy);
+    ctx.stroke();
+  }
+
+  // Labels at axis
+  ctx.fillStyle = '#ffffff33';
+  ctx.font = '9px monospace';
+  ctx.fillText('0', origin.x + 6, origin.y - 6);
+  for (let u = -5; u <= 5; u++) {
+    if (u === 0) continue;
+    const p = toScreen(u, 0);
+    ctx.fillText(u, p.x - 4, origin.y + 14);
+    const q = toScreen(0, u);
+    ctx.fillText(u, origin.x + 6, q.y + 4);
+  }
+}
+
+// Init
+render();
+</script>
+</body>
+</html>
