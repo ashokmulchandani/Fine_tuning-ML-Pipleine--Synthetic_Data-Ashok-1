@@ -2430,6 +2430,87 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
     <strong>📋 What You Need That You Already Have:</strong> Your Alpaca-format Q&A data already has images. You just need to assign each image an index (0, 1, 2, ...). That index IS the Identifier's "label." No extra annotation needed.<br><br>
     <strong>🔗 FMR + ASIF Together:</strong> Both plug into the SAME place (after vision encoder, before LLM). FMR adds an entropy maximization loss on features. ASIF adds a reversed identification loss on features. They run simultaneously, attacking different problems, with zero conflict.
   </div>
+
+  <!-- Building Intuition: Classifier Logit vs ASIF Identifier Logit -->
+  <h5 style="color:var(--amber); margin-top:16px;">🔍 Classifier Logit vs ASIF Identifier Logit — What's the Difference?</h5>
+  <p>This is the key to understanding ASIF. The Classifier and the Identifier both produce <strong>logits</strong> — but they answer <strong>completely different questions</strong>.</p>
+
+  <table style="width:100%; border-collapse:collapse; font-size:0.8rem; margin:12px 0;">
+    <tr style="border-bottom:2px solid var(--border);">
+      <th style="padding:8px; text-align:left; color:var(--text-dim);"></th>
+      <th style="padding:8px; text-align:center; color:var(--cyan);">Classifier Logit (3-class)</th>
+      <th style="padding:8px; text-align:center; color:var(--amber);">ASIF Identifier Logit (N-class)</th>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:8px;"><strong>Question it answers</strong></td>
+      <td style="padding:8px; text-align:center;">"WHAT bird species?"</td>
+      <td style="padding:8px; text-align:center;">"WHICH training image?"</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:8px;"><strong>Number of outputs</strong></td>
+      <td style="padding:8px; text-align:center; font-family:var(--font-mono);">3 (one per species)</td>
+      <td style="padding:8px; text-align:center; font-family:var(--font-mono);">200 (one per training image!)</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:8px;"><strong>Example output</strong></td>
+      <td style="padding:8px; text-align:center; font-family:var(--font-mono); font-size:0.75rem;">[1.82, 0.08, 0.42]</td>
+      <td style="padding:8px; text-align:center; font-family:var(--font-mono); font-size:0.72rem;">[0.01, 0.02, ..., <span style="color:var(--red);">8.5</span>, ..., 0.03]</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:8px;"><strong>After Softmax</strong></td>
+      <td style="padding:8px; text-align:center;">72% Indigo, 5% Lazuli, 23% Painted</td>
+      <td style="padding:8px; text-align:center;">73% sure this is <strong>Image #47</strong></td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:8px;"><strong>Label source</strong></td>
+      <td style="padding:8px; text-align:center;">Human: "Indigo Bunting"</td>
+      <td style="padding:8px; text-align:center;">Auto: image index 47 (row number)</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:8px;"><strong>Loss used</strong></td>
+      <td style="padding:8px; text-align:center;">CrossEntropy(logit, species_label)</td>
+      <td style="padding:8px; text-align:center;">CrossEntropy(logit, image_index) <strong>→ REVERSED</strong></td>
+    </tr>
+    <tr>
+      <td style="padding:8px;"><strong>Goal</strong></td>
+      <td style="padding:8px; text-align:center; color:var(--green);">MINIMIZE this loss (classify well)</td>
+      <td style="padding:8px; text-align:center; color:var(--red);">MAXIMIZE this loss (identify poorly)</td>
+    </tr>
+  </table>
+
+  <div style="margin:12px 0; padding:14px; background:var(--deep); border-radius:8px; border:1px solid var(--border); font-family:var(--font-mono); font-size:0.72rem; line-height:1.8;">
+    <span style="color:var(--amber);">VISUAL — Same features, two different questions:</span><br><br>
+    <span class="dim">features = vision_encoder(image)  # [2048] — same for both branches</span><br><br>
+    <span style="color:var(--cyan);">Classifier: features → Linear(2048, </span><span style="color:var(--cyan); font-weight:bold;">3</span><span style="color:var(--cyan);">) → logit [1.82, 0.08, 0.42]</span><br>
+    <span class="dim">&nbsp;&nbsp;→ softmax → [72%, 5%, 23%] → "Indigo Bunting"</span><br>
+    <span class="dim">&nbsp;&nbsp;→ L_cls = "Am I right?" → MINIMIZE this</span><br><br>
+    <span style="color:var(--amber);">ASIF Identifier: features → Linear(2048, </span><span style="color:var(--amber); font-weight:bold;">200</span><span style="color:var(--amber);">) → logit [0.01, 0.02, ..., 8.5, ...]</span><br>
+    <span class="dim">&nbsp;&nbsp;→ softmax → [0.1%, 0.1%, ..., </span><span style="color:var(--red);">73%</span><span class="dim">, ...] → "Image #47!"</span><br>
+    <span class="dim">&nbsp;&nbsp;→ L_id = "Can I identify this?" → gradient REVERSED → MAXIMIZE this</span><br><br>
+    <span style="color:#b388ff;">THE TRICK: The Identifier's "label" is just 47 (the row number). No human ever labeled this. If Identifier succeeds (low L_id), the gradient PUNISHES the feature extractor. The feature extractor learns: "Produce features that confuse the Identifier."</span>
+  </div>
+
+  <div class="insight-callout">
+    <strong>📁 Where Exactly in Your Code Is This?</strong><br><br>
+    Your training script (e.g., <code>train.py</code> or <code>finetune_llava.py</code>) already has a loop like:<br><br>
+    <code style="font-size:0.75rem;">
+    images = batch["image"].to(device)<br>
+    questions = batch["conversations"]<br>
+    answers = batch["answers"]<br><br>
+    # THIS is where vision_encoder(images) happens:<br>
+    vision_features = model.vision_tower(images) &nbsp;# ← THIS LINE<br>
+    # OR: vision_features = clip_model.encode_image(images)<br>
+    # OR: vision_features = processor(images, return_tensors="pt")<br><br>
+    # Then these features flow into the LLM:<br>
+    llm_output = model.language_model(vision_features, questions)<br>
+    L_llm = cross_entropy(llm_output, answers)<br>
+    </code><br><br>
+    <strong>FMR plugs in RIGHT AFTER</strong> <code>vision_features = ...</code>:<br>
+    <code style="font-size:0.75rem;">L_fmr = fmr_loss(vision_features)</code><br><br>
+    <strong>ASIF plugs in RIGHT AFTER that</strong> — same features, different question:<br>
+    <code style="font-size:0.75rem;">id_logits = identifier(vision_features) &nbsp;# 200 outputs, not 3!</code><br><br>
+    The 3-class logit from the Excel is the Classifier output. The 200-class id_logit is the Identifier output. They're computed from the SAME features but serve OPPOSITE goals.
+  </div>
 </div>
 
 <!-- SECTION 11: Could FMR Apply to Other Layers? -->
