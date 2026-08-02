@@ -1436,6 +1436,41 @@
       <strong>Same training. Same test question. Different knob design → different response.</strong>
     </div>
 
+    <!-- Mental Model -->
+    <div class="key-insight" style="margin-top:10px;">
+      <div class="big">🧠 Simple Mental Model: Direction = WHAT, Magnitude = HOW LOUD</div>
+      <div style="margin-top:8px; font-size:0.82rem; line-height:2.0;">
+        <strong>Direction (V') = WHAT you say</strong> — the vocabulary, the topic, the domain knowledge<br>
+        <strong>Magnitude (m) = HOW LOUD you say it</strong> — the intensity, confidence, urgency<br><br>
+        Think of a person speaking:<br>
+        &nbsp;&nbsp;• <strong style="color:var(--purple);">Direction</strong> = which language? (English? Medical jargon? Casual slang?)<br>
+        &nbsp;&nbsp;• <strong style="color:var(--amber);">Magnitude</strong> = how loud? (whisper? normal? SHOUTING?)<br><br>
+        <table style="width:100%; border-collapse:collapse; font-size:0.72rem; margin-top:6px;">
+          <tr style="border-bottom:1px solid var(--border);">
+            <th style="padding:4px 8px; text-align:left;">Scenario</th>
+            <th style="padding:4px 8px; text-align:center; color:var(--purple);">Direction (WHAT)</th>
+            <th style="padding:4px 8px; text-align:center; color:var(--amber);">Magnitude (HOW LOUD)</th>
+            <th style="padding:4px 8px; text-align:center;">Result</th>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:4px 8px;">Chest pain (training)</td>
+            <td style="padding:4px 8px; text-align:center;">Medical emergency vocab</td>
+            <td style="padding:4px 8px; text-align:center; color:var(--amber);">🔊 HIGH</td>
+            <td style="padding:4px 8px; text-align:center; color:var(--green);">"GO TO ER!" ✅</td>
+          </tr>
+          <tr>
+            <td style="padding:4px 8px;">Mild headache (new)</td>
+            <td style="padding:4px 8px; text-align:center;">Medical knowledge</td>
+            <td style="padding:4px 8px; text-align:center; color:var(--amber);">🔈 LOW</td>
+            <td style="padding:4px 8px; text-align:center; color:var(--green);">"It's common, rest." ✅</td>
+          </tr>
+        </table>
+        <br>
+        <strong style="color:var(--cyan);">LoRA's problem:</strong> It learned "medical vocab" and "shouting" as <strong>one knob</strong> — every time it uses medical words, it also shouts. Can't whisper medical advice.<br>
+        <strong style="color:var(--magenta);">DoRA's fix:</strong> Two knobs. Can whisper medical advice (mild headache) or shout it (chest pain). Context decides.
+      </div>
+    </div>
+
     <!-- What happened under the hood -->
     <div class="key-insight" style="margin-top:10px;">
       <div class="big">🔬 What Actually Happened Inside the Weights</div>
