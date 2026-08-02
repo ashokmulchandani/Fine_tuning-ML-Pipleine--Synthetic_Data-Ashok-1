@@ -952,6 +952,75 @@
     </div>
   </div>
 
+  <!-- L2 Norm Distribution + FMR Connection -->
+  <div class="card card-dora full-width" style="margin-bottom:16px;">
+    <h3>📊 L2 Norm Distribution — Same Concept as FMR Feature Magnitudes <span class="info-badge dora">INTUITION</span></h3>
+    <p class="card-desc">
+      The L2 norm of each column is the <strong>Pythagorean theorem in d dimensions</strong>: ‖v‖ = √(v₁² + v₂² + ... + v_d²).
+      It measures "how long" each column vector is — exactly like FMR feature magnitudes measuring "how loud" each CNN feature is.
+    </p>
+
+    <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-start;">
+      <div style="flex:1; min-width:300px;">
+        <div class="canvas-wrap" style="margin:0;">
+          <canvas id="doraL2NormCanvas" width="500" height="260"></canvas>
+        </div>
+      </div>
+      <div style="flex:0; min-width:160px; font-size:0.72rem; font-family:'Space Grotesk',monospace; line-height:1.8;">
+        <div style="background:var(--deep); border:1px solid var(--border); border-radius:8px; padding:10px;">
+          <div style="color:var(--amber); font-weight:700; margin-bottom:4px;">🔶 Raw m (column norms)</div>
+          <div>col₀: <span style="color:var(--amber);">0.5916</span></div>
+          <div>col₁: <span style="color:var(--amber);">0.5385</span></div>
+          <div>col₂: <span style="color:var(--amber);">0.6633</span></div>
+          <div style="color:var(--text-dim); margin-top:2px;">Mean: 0.5978 | Std: 0.0511</div>
+        </div>
+        <div style="background:var(--deep); border:1px solid var(--border); border-radius:8px; padding:10px; margin-top:6px;">
+          <div style="color:var(--purple); font-weight:700; margin-bottom:4px;">🟣 After Softmax (probabilities)</div>
+          <div>p₀: <span style="color:var(--purple);">0.331</span></div>
+          <div>p₁: <span style="color:var(--purple);">0.314</span></div>
+          <div>p₂: <span style="color:var(--purple);">0.355</span></div>
+          <div style="margin-top:4px; padding-top:4px; border-top:1px solid var(--border);">
+            Entropy H = <span style="color:var(--green); font-weight:700;">1.098</span><br>
+            H_max = <span style="color:var(--text-dim);">1.099</span><br>
+            H/H_max = <span style="color:var(--green);">99.9%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FMR vs DoRA distinction -->
+    <div class="compare-grid" style="margin-top:12px;">
+      <div style="background:var(--deep); border:2px solid var(--cyan); border-radius:10px; padding:14px;">
+        <h4 style="color:var(--cyan); font-size:0.8rem; margin-bottom:6px;">🔵 FMR (Feature Magnitude Regularization)</h4>
+        <p style="font-size:0.74rem; line-height:1.6; color:var(--text-dim);">
+          <strong>Mechanism:</strong> Adds entropy maximization loss<br>
+          <code style="font-size:0.68rem;">L_total = L_CE − λ·H(softmax(f))</code><br>
+          <strong>Forces uniformity?</strong> <span style="color:var(--green);">✅ Yes</span> — explicitly pushes features toward equal prominence.<br>
+          <strong>Goal:</strong> "Make all features equally loud so smart ones can compete."<br>
+          <strong>Best for:</strong> Low-data fine-grained recognition where pretrained features are skewed in a harmful way (sky detector at 0.91, beak shape at 0.12 regardless of task).
+        </p>
+      </div>
+      <div style="background:var(--deep); border:2px solid var(--magenta); border-radius:10px; padding:14px;">
+        <h4 style="color:var(--magenta); font-size:0.8rem; margin-bottom:6px;">🟣 DoRA (Weight-Decomposed LoRA)</h4>
+        <p style="font-size:0.74rem; line-height:1.6; color:var(--text-dim);">
+          <strong>Mechanism:</strong> Splits gradient — direction gets projected part, magnitude gets parallel part.<br>
+          <strong>Forces uniformity?</strong> <span style="color:var(--red);">❌ No</span> — m learns freely from the task loss. No entropy constraint.<br>
+          <strong>Goal:</strong> "Let magnitude and direction learn independently so they don't interfere."<br>
+          <strong>Best for:</strong> Any fine-tuning task where LoRA's coupling limits learning capacity. The task loss decides optimal magnitudes.
+        </p>
+      </div>
+    </div>
+
+    <div class="key-insight" style="margin-top:10px;">
+      <div class="big">⚖️ FMR vs DoRA — Same Tool, Different Philosophy</div>
+      <div style="margin-top:6px; font-size:0.82rem; line-height:2.0;">
+        <strong style="color:var(--cyan);">FMR:</strong> "I don't care what the task wants — make everything equal!"<br>
+        <strong style="color:var(--magenta);">DoRA:</strong> "I'll let the task loss decide how loud each column should be, but I'll make sure direction and magnitude don't interfere."<br><br>
+        <strong>Why DoRA doesn't need entropy regularization:</strong> FMR fixes a <strong>data problem</strong> (pretrained features are skewed regardless of the task — the sky detector is ALWAYS loud). DoRA fixes a <strong>gradient problem</strong> (LoRA couples magnitude and direction updates). If the task genuinely needs column 2 to be louder than column 1, DoRA allows it — FMR would fight it. The entropy of m in DoRA is <strong>not forced to be uniform</strong> — it ends up wherever the loss takes it.
+      </div>
+    </div>
+  </div>
+
   <!-- Gradient Analysis -->
   <div class="card card-dora full-width" style="margin-bottom:16px;">
     <h3>Gradient Analysis: Why It Works <span class="info-badge dora">THEORY</span></h3>
@@ -1398,6 +1467,7 @@ function switchTab(tab) {
   } else if (tab === 'dora') {
     setTimeout(drawDoraCorrelation, 100);
     setTimeout(drawDoraRankChart, 150);
+    setTimeout(drawDoraL2NormHist, 200);
   } else if (tab === 'demo') {
     setTimeout(updateDemo, 100);
   }
@@ -1516,6 +1586,96 @@ function drawLoraSubspace() {
 }
 
 // ==================== CANVAS: DORA CORRELATION ====================
+// ==================== DORA L2 NORM HISTOGRAM ====================
+function drawDoraL2NormHist() {
+  const canvas = document.getElementById('doraL2NormCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  const mv = [0.5916, 0.5385, 0.6633];
+  const labels = ['col₀', 'col₁', 'col₂'];
+  const mean = mv.reduce((a,b)=>a+b,0)/3;
+
+  const expV = mv.map(v => Math.exp(v));
+  const sumExp = expV.reduce((a,b)=>a+b,0);
+  const probs = expV.map(v => v/sumExp);
+  const uniform = 1/3;
+  const entropyH = -probs.reduce((s,p) => s + p * Math.log(p), 0);
+  const entropyHmax = Math.log(3);
+
+  const pad = { l: 50, r: 15, t: 15, b: 50 };
+  const midX = W * 0.52;
+  const leftW = midX - pad.l - 10;
+  const rightW = W - midX - pad.r - 10;
+  const barHeight = H - pad.t - pad.b;
+
+  // LEFT: Raw m
+  const barAreaL = pad.l;
+  const barW = Math.min(40, leftW / 3 - 6);
+
+  ctx.strokeStyle = '#ffffff22'; ctx.lineWidth = 0.8;
+  ctx.beginPath(); ctx.moveTo(barAreaL, pad.t); ctx.lineTo(barAreaL, pad.t + barHeight); ctx.lineTo(barAreaL + leftW - 10, pad.t + barHeight); ctx.stroke();
+  ctx.fillStyle = '#ffb300cc'; ctx.font = 'bold 9px "Space Grotesk", sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('Raw m (L2 norms)', barAreaL + leftW/2 - 5, pad.t - 2);
+
+  const maxM = 0.75;
+  mv.forEach((v, i) => {
+    const x = barAreaL + 10 + i * (leftW / 3);
+    const y = pad.t + barHeight - (v / maxM) * (barHeight - 20);
+    const h = (v / maxM) * (barHeight - 20);
+    const grad = ctx.createLinearGradient(x, y, x, pad.t + barHeight - 20);
+    grad.addColorStop(0, '#ffb300'); grad.addColorStop(1, '#ffb30044');
+    ctx.fillStyle = grad; ctx.fillRect(x - barW/2, y, barW, h);
+    ctx.fillStyle = '#ffb300'; ctx.font = 'bold 9px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(v.toFixed(2), x, y - 4);
+    ctx.fillStyle = '#ffffff55'; ctx.font = '9px monospace'; ctx.fillText(labels[i], x, pad.t + barHeight - 2);
+  });
+
+  const meanY = pad.t + barHeight - (mean / maxM) * (barHeight - 20);
+  ctx.strokeStyle = '#ffffff44'; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
+  ctx.beginPath(); ctx.moveTo(barAreaL + 2, meanY); ctx.lineTo(barAreaL + leftW - 15, meanY); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = '#ffffff55'; ctx.font = '8px monospace'; ctx.textAlign = 'right';
+  ctx.fillText('mean='+mean.toFixed(2), barAreaL + leftW - 18, meanY - 4);
+
+  // RIGHT: After Softmax
+  const barAreaR = midX + 5;
+  ctx.strokeStyle = '#ffffff22'; ctx.lineWidth = 0.8;
+  ctx.beginPath(); ctx.moveTo(barAreaR, pad.t); ctx.lineTo(barAreaR, pad.t + barHeight); ctx.lineTo(barAreaR + rightW, pad.t + barHeight); ctx.stroke();
+  ctx.fillStyle = '#b388ff'; ctx.font = 'bold 9px "Space Grotesk", sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('After Softmax (probabilities)', barAreaR + rightW/2, pad.t - 2);
+
+  const uniformY = pad.t + barHeight - (uniform / 0.5) * (barHeight - 20);
+  ctx.strokeStyle = '#69f0ae55'; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
+  ctx.beginPath(); ctx.moveTo(barAreaR + 2, uniformY); ctx.lineTo(barAreaR + rightW, uniformY); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = '#69f0ae88'; ctx.font = '8px monospace'; ctx.textAlign = 'left';
+  ctx.fillText('uniform = 1/3', barAreaR + 4, uniformY - 3);
+
+  const barW2 = Math.min(35, rightW / 3 - 6);
+  probs.forEach((p, i) => {
+    const x = barAreaR + 10 + i * (rightW / 3);
+    const y = pad.t + barHeight - (p / 0.5) * (barHeight - 20);
+    const h = (p / 0.5) * (barHeight - 20);
+    const dev = Math.abs(p - uniform) / uniform;
+    const r = Math.floor(180 * dev + 105 * (1-dev));
+    const g = Math.floor(136 * dev + 240 * (1-dev));
+    const b = Math.floor(255 * dev + 150 * (1-dev));
+    const grad = ctx.createLinearGradient(x, y, x, pad.t + barHeight - 20);
+    grad.addColorStop(0, `rgb(${r},${g},${b})`); grad.addColorStop(1, `rgba(${r},${g},${b},0.3)`);
+    ctx.fillStyle = grad; ctx.fillRect(x - barW2/2, y, barW2, h);
+    ctx.fillStyle = `rgb(${r},${g},${b})`; ctx.font = 'bold 9px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(p.toFixed(3), x, y - 4);
+    ctx.fillStyle = '#ffffff55'; ctx.font = '9px monospace'; ctx.fillText(labels[i], x, pad.t + barHeight - 2);
+  });
+
+  ctx.fillStyle = '#ffffffaa'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center';
+  ctx.fillText('H='+entropyH.toFixed(3)+' / '+entropyHmax.toFixed(3)+' = ' + ((entropyH/entropyHmax)*100).toFixed(1)+'%', W/2, H-5);
+  ctx.fillStyle = '#69f0ae88'; ctx.font = '9px monospace'; ctx.textAlign = 'left';
+  ctx.fillText('H↑ = more uniform', barAreaR + 4, pad.t + 12);
+  ctx.fillText('H↓ = skewed', barAreaR + 4, pad.t + 24);
+}
+
 function drawDoraCorrelation() {
   const canvas = document.getElementById('doraCorrelationCanvas');
   if (!canvas) return;
