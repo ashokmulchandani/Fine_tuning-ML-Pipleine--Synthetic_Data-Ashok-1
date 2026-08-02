@@ -2511,6 +2511,73 @@ L̂<sub>id</sub> = <span class="fn">log</span>(N<sub>c</sub>)  <span class="comm
     <code style="font-size:0.75rem;">id_logits = identifier(vision_features) &nbsp;# 200 outputs, not 3!</code><br><br>
     The 3-class logit from the Excel is the Classifier output. The 200-class id_logit is the Identifier output. They're computed from the SAME features but serve OPPOSITE goals.
   </div>
+
+  <!-- IdentityClassifier: Where It's Defined -->
+  <h5 style="color:var(--amber); margin-top:16px;">📦 Where Is <code>identifier()</code> Defined? — The IdentityClassifier Class</h5>
+  <p>From <a href="https://github.com/avichapman/identity-feature-suppression/blob/main/src/model_asif.py" target="_blank" style="color:var(--amber);">model_asif.py</a> in the ASIF repo. Here's exactly what happens when you call <code>identifier(vision_features)</code>:</p>
+
+  <div style="margin:10px 0; padding:14px; background:var(--deep); border-radius:8px; border:1px solid var(--border); font-family:var(--font-mono); font-size:0.7rem; line-height:1.6;">
+    <span style="color:var(--amber);"># SETUP (once): Create the Identifier for YOUR dataset</span><br>
+    <span style="color:#69f0ae;">from</span> model_asif <span style="color:#69f0ae;">import</span> IdentityClassifier<br><br>
+    identifier = IdentityClassifier(<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span>in_features=<span style="color:#ffb300;">2048</span>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#6b6b80;"># your vision encoder output dim</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span>out_features=<span style="color:#ffb300;">200</span>,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#6b6b80;"># TOTAL training images (one per image!)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span>reverse_gradient=<span style="color:#69f0ae;">True</span>,&nbsp;&nbsp;<span style="color:#6b6b80;"># REVERSE gradients (the whole point of ASIF)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span>use_dgr=<span style="color:#69f0ae;">True</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#6b6b80;"># Dynamic Gradient Reversal (auto-tuned)</span><br>
+    )<br><br>
+    <span style="color:var(--amber);"># What identifier(vision_features) ACTUALLY does:</span><br>
+    <span style="color:#b388ff;">def</span> <span style="color:#69f0ae;">forward</span>(self, identity_features):<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># Step 1: Apply Gradient Reversal</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span>identity_features = GradientReverse.apply(identity_features, lambda)<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># Features pass through UNCHANGED forward</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># Gradients are MULTIPLIED BY lambda backward</span><br><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># Step 2: Pass through MLP layers</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># Layer 1: Linear(2048, 1024) → BN → ReLU → Dropout(0.3)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># Layer 2: Linear(1024, 2048) → BN → ReLU → Dropout(0.3)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># Layer 3: Linear(2048, 200) → output = id_logits [B, 200]</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#69f0ae;">return</span> self.layer(identity_features)<br><br>
+    <span style="color:var(--amber);"># End of each epoch: update lambda based on how well Identifier did</span><br>
+    <span style="color:#b388ff;">def</span> <span style="color:#69f0ae;">update_lambda</span>(self, prev_avg_loss):<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span>goal = log(out_features) &nbsp;<span style="color:#6b6b80;"># max-entropy baseline (perfect uncertainty)</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span>self.lambda = (prev_avg_loss - goal) / goal<br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># If Identifier was GOOD (low loss): lambda = negative → STRONG reversal</span><br>
+    <span class="dim">&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color:#6b6b80;"># If Identifier was BAD (high loss): lambda ≈ 0 → weak reversal</span>
+  </div>
+
+  <table style="width:100%; border-collapse:collapse; font-size:0.78rem; margin:10px 0;">
+    <tr style="border-bottom:2px solid var(--border);">
+      <th style="padding:6px; text-align:left; color:var(--amber);">What You Create</th>
+      <th style="padding:6px; text-align:center; color:var(--amber);">Input Dim</th>
+      <th style="padding:6px; text-align:center; color:var(--amber);">Output Dim</th>
+      <th style="padding:6px; text-align:left; color:var(--amber);">What Each Output Means</th>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:6px;"><strong>For 200 training images</strong></td>
+      <td style="padding:6px; text-align:center;">2048</td>
+      <td style="padding:6px; text-align:center; color:var(--red); font-weight:bold;">200</td>
+      <td style="padding:6px;">id_logit[0] = evidence for image #0, id_logit[47] = evidence for image #47, etc.</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:6px;"><strong>For 1000 training images</strong></td>
+      <td style="padding:6px; text-align:center;">2048</td>
+      <td style="padding:6px; text-align:center; color:var(--red); font-weight:bold;">1000</td>
+      <td style="padding:6px;">Scales with dataset size. Large datasets = more Identifier outputs.</td>
+    </tr>
+    <tr>
+      <td style="padding:6px;"><strong>Compare: Classifier</strong></td>
+      <td style="padding:6px; text-align:center;">2048</td>
+      <td style="padding:6px; text-align:center; color:var(--green); font-weight:bold;">3</td>
+      <td style="padding:6px;">logit[0]=Indigo, logit[1]=Lazuli, logit[2]=Painted. Fixed by number of species.</td>
+    </tr>
+  </table>
+
+  <div class="insight-callout">
+    <strong>🧠 How to Build Intuition for id_logit:</strong><br>
+    &nbsp;&nbsp;• The Identifier is like a <strong>police lineup</strong> with 200 faces. It tries to point at which one it saw.<br>
+    &nbsp;&nbsp;• id_logit[47] = 8.5 means "I'm very confident this is image #47" → gradient gets REVERSED → "STOP recognizing #47!"<br>
+    &nbsp;&nbsp;• After ASIF training, ALL id_logits are near zero — the Identifier is guessing randomly. That means identity features have been stripped.<br>
+    &nbsp;&nbsp;• <strong>The Identifier is never used at inference.</strong> It's training-only, just like FMR. After training, you throw it away.
+  </div>
 </div>
 
 <!-- SECTION 11: Could FMR Apply to Other Layers? -->
